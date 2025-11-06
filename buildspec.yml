@@ -1,0 +1,42 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_REPO_NAME: "kosp-frontend"
+    IMAGE_TAG: "latest"
+  exported-variables:
+    - IMAGE_URI
+    - IMAGE_TAG
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "[install] 의존성 설치 중"
+      - npm ci
+  pre_build:
+    commands:
+      - echo "[pre_build] Amazon ECR 로그인"
+      - aws --version
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+      - echo "[pre_build] Next.js 빌드 수행"
+      - npm run build
+      - IMAGE_TAG=${IMAGE_TAG:-$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-7)}
+      - export IMAGE_TAG
+      - IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+      - export IMAGE_URI
+  build:
+    commands:
+      - echo "[build] Docker 이미지 빌드 시작: ${IMAGE_URI}"
+      - docker build -t "${IMAGE_URI}" .
+  post_build:
+    commands:
+      - echo "[post_build] Docker 이미지 푸시"
+      - docker push "${IMAGE_URI}"
+      - printf '{"ImageURI":"%s"}' "${IMAGE_URI}" > imageDetail.json
+
+artifacts:
+  files:
+    - imageDetail.json
+
