@@ -21,23 +21,10 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
       <Header />
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            교내 오픈소스 활동을
-          </h1>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            한눈에 찾고 함께 만들어요
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100">
-            프로젝트 검색부터 팀 빌딩, 협업까지 한 곳에서
-          </p>
-          
-        
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <SearchBar />
-            </div>
+            <SearchBar />
           </div>
         </div>
       </section>
