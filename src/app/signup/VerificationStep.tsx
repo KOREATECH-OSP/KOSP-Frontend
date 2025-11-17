@@ -23,7 +23,7 @@ export default function VerificationStep({
       <div className="mb-6">
         <p className="text-sm text-gray-600 text-center mb-4">
           <span className="font-medium text-gray-900">{email}</span>로<br />
-          인증 코드를 전송했습니다.
+          인증 코드를 전송하시겠습니까?
         </p>
         {!sentCode && (
           <button

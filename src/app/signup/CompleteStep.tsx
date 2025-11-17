@@ -7,7 +7,7 @@ export default function CompleteStep() {
         회원가입 완료!
       </h3>
       <p className="text-gray-600 mb-8">
-        DevTeam의 회원이 되신 것을 환영합니다.
+        KOSP의 회원이 되신 것을 환영합니다.
       </p>
       <Link
         href="/"

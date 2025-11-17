@@ -76,7 +76,6 @@ export default function SignupPage() {
             </p>
           </div>
 
-          {/* 퍼널 */}
           <Funnel>
             <Funnel.Step name="github">
               <StepIndicator currentStep="github" />
