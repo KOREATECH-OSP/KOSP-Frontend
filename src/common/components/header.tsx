@@ -1,5 +1,9 @@
+'use client';
+
+import { Fragment, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Dialog, Transition } from '@headlessui/react';
 import { suitFont } from "../../style/font";
 import LogoImage from "../../assets/images/koreatech_hangeul.png";
 
@@ -8,6 +12,7 @@ interface HeaderProps {
 }
 
 function Header({ simple = false }: HeaderProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navItems = [
     { href: "/community", label: "커뮤니티" },
     { href: "/team-recruit", label: "팀모집" },
@@ -47,23 +52,121 @@ function Header({ simple = false }: HeaderProps) {
           </div>
 
           {!simple && (
-            <div className="flex items-center gap-4">
-              <Link
-                href="/signup"
-                className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
+            <>
+              <div className="hidden md:flex items-center gap-4">
+                <Link
+                  href="/signup"
+                  className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
+                >
+                  <span className="hidden sm:inline">회원가입</span>
+                </Link>
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold text-white bg-gray-900 px-4 py-2 rounded-xl hover:bg-black transition-colors	duration-200"
+                >
+                  로그인
+                </Link>
+              </div>
+
+              <button
+                type="button"
+                className="md:hidden flex flex-col gap-1.5 p-2 text-gray-700"
+                aria-label="모바일 메뉴 열기"
+                aria-expanded={mobileMenuOpen}
+                onClick={() => setMobileMenuOpen(true)}
               >
-                <span className="hidden sm:inline">회원가입</span>
-              </Link>
-              <Link
-                href="/login"
-                className="text-sm font-semibold text-white bg-gray-900 px-4 py-2 rounded-full hover:bg-black transition-colors duration-200"
-              >
-                로그인
-              </Link>
-            </div>
+                <span className="block w-6 h-0.5 bg-gray-800" />
+                <span className="block w-6 h-0.5 bg-gray-800" />
+                <span className="block w-6 h-0.5 bg-gray-800" />
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {!simple && (
+        <Transition show={mobileMenuOpen} as={Fragment}>
+          <Dialog as="div" className="relative z-[60] md:hidden" onClose={setMobileMenuOpen}>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-200"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-150"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black/10 backdrop-blur-[1px]" aria-hidden="true" />
+            </Transition.Child>
+
+            <div className="fixed inset-0 flex justify-end">
+              <Transition.Child
+                as={Fragment}
+                enter="transform transition ease-out duration-300"
+                enterFrom="translate-x-full"
+                enterTo="translate-x-0"
+                leave="transform transition ease-in duration-200"
+                leaveFrom="translate-x-0"
+                leaveTo="translate-x-full"
+              >
+                <Dialog.Panel className="w-full max-w-sm bg-white h-full border-l border-gray-100 px-6 py-8 shadow-xl flex flex-col">
+                  <div className="flex items-center justify-between h-[50px] mb-10">
+                    <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                      <Image
+                        src={LogoImage}
+                        alt="KOREATECH 로고"
+                        className="h-6 w-auto"
+                        priority
+                      />
+                      <span className="text-lg font-semibold text-gray-900">오픈소스포털</span>
+                    </Link>
+                    <button
+                      type="button"
+                      className="p-3 text-gray-700"
+                      aria-label="모바일 메뉴 닫기"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-800" aria-hidden="true">
+                        <path
+                          d="M6 6L18 18M6 18L18 6"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <nav className="flex flex-col gap-6 text-lg font-semibold text-gray-800">
+                    {navItems.map(({ href, label }) => (
+                      <Link key={href} href={href} onClick={() => setMobileMenuOpen(false)}>
+                        {label}
+                      </Link>
+                    ))}
+                  </nav>
+
+                  <div className="mt-auto flex flex-col gap-4 pt-10">
+                    <Link
+                      href="/signup"
+                      className="text-base font-medium text-gray-600 border border-gray-200 rounded-full py-3 text-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      회원가입
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="text-base font-semibold text-white bg-gray-900 rounded-full py-3 text-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      로그인
+                    </Link>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition>
+      )}
     </nav>
   );
 }

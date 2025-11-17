@@ -20,7 +20,7 @@ function SearchBar() {
             <div className="w-16 drop-shadow-sm pointer-events-none select-none">
               <Image src={KoriCharacter} alt="캐릭터" className="w-full h-auto" priority />
             </div>
-            <div className="flex w-full items-center bg-white border border-gray-200/70 rounded-full pl-6 pr-2 py-2 focus-within:border-gray-400 focus-within:ring focus-within:ring-gray-200 transition">
+            <div className="flex w-full items-center bg-white border border-gray-200/70 rounded-2xl pl-6 pr-2 py-2 focus-within:border-gray-400 focus-within:ring focus-within:ring-gray-200 transition space-x-3">
             <input
               type="text"
               value={searchQuery}
@@ -30,7 +30,7 @@ function SearchBar() {
             />
             <button
               type="submit"
-              className="ml-3 px-6 py-2.5 rounded-full text-white font-medium shadow-sm transition bg-gradient-to-r from-[#E2AB3C] to-[#D06B2B] hover:opacity-90 cursor-pointer"
+              className="px-6 py-2.5 rounded-2xl text-white font-medium shadow-sm transition bg-gradient-to-r from-[#E2AB3C] to-[#D06B2B] hover:opacity-90 cursor-pointer"
             >
               Go →
             </button>
