@@ -1,6 +1,7 @@
 import { suitFont } from "../style/font";
 import Link from 'next/link';
 import SearchBar from '../common/components/searchBar';
+import Header from "../common/components/header";
 
 export default function Home() {
   const communityPosts = [
@@ -19,62 +20,20 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
-      <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">K</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">KOSP</span>
-            </Link>
-
-            {/* 메뉴 */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="/community" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition">
-                {/* <MessageSquare className="w-4 h-4" /> */}
-                <span>커뮤니티</span>
-              </Link>
-              <Link href="/team-recruit" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition">
-                {/* <Users className="w-4 h-4" /> */}
-                <span>팀모집</span>
-              </Link>
-              <Link href="/team-board" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition">
-                {/* <Users className="w-4 h-4" /> */}
-                <span>팀게시판</span>
-              </Link>
-              <Link href="/challenge" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition">
-                {/* <Trophy className="w-4 h-4" /> */}
-                <span>챌린지</span>
-              </Link>
-            </div>
-
-            {/* 로그인/회원가입 */}
-            <div className="flex items-center space-x-4">
-              <Link href="/signup" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition">
-                {/* <UserPlus className="w-4 h-4" /> */}
-                <span className="hidden sm:inline">회원가입</span>
-              </Link>
-              <Link href="/login" className="flex items-center space-x-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                {/* <LogIn className="w-4 h-4" /> */}
-                <span>로그인</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* 히어로 섹션 */}
+      <Header />
       <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            개발자들의 협업 공간
+            교내 오픈소스 활동을
+          </h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            한눈에 찾고 함께 만들어요
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-blue-100">
-            팀을 만들고, 프로젝트를 시작하고, 함께 성장하세요
+            프로젝트 검색부터 팀 빌딩, 협업까지 한 곳에서
           </p>
           
-          {/* 검색창 */}
+        
           <div className="max-w-2xl mx-auto">
             <div className="relative">
               <SearchBar />
@@ -83,7 +42,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           

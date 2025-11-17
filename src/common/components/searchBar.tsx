@@ -1,8 +1,6 @@
 'use client';
-
-
 import { useState } from 'react';
-// import SearchIcon from '../../assets/svg/search.svg';
+import { suitFont } from "../../style/font";
 
 function SearchBar() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,21 +11,20 @@ function SearchBar() {
   };
 
   return (
-    <section className="bg-trans py-12">
+    <section className={`bg-trans ${suitFont.className}`}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <form onSubmit={handleSearch} className="relative">
           <div className="relative flex items-center">
-            {/* <SearchIcon width={26} height={26} /> */}
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="프로젝트, 팀, 기술스택을 검색해보세요"
-              className="w-full pl-14 pr-32 py-4 text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm hover:shadow-md"
+              placeholder="프로젝트, 팀, 기술스택을 검색해보세요."
+              className="w-full pl-6 pr-32 py-4 text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm hover:shadow-md"
             />
             <button
               type="submit"
-              className="absolute right-2 bg-blue-600 text-white px-6 py-2.5 rounded-full hover:bg-blue-700 transition font-medium shadow-sm"
+              className="absolute right-2 bg-blue-600 text-white px-6 py-2.5 rounded-[8px] hover:bg-blue-700 transition font-medium shadow-sm"
             >
               검색
             </button>
