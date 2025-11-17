@@ -23,7 +23,7 @@ export default function Home() {
       <Header />
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto w-full">
             <SearchBar />
           </div>
         </div>
