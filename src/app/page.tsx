@@ -145,32 +145,6 @@ export default function Home() {
               })}
             </div>
           </section>
-          <div className="h-px bg-gray-200" aria-hidden="true" />
-
-          {/* 통계 섹션 */}
-          <section>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: '활성 프로젝트', value: '1,234', icon: CircleGauge },
-                { label: '팀 멤버', value: '5,678', icon: Users },
-                { label: '진행중인 팀', value: '890', icon: Layers3 },
-                { label: '완료된 프로젝트', value: '234', icon: CheckCircle },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-gray-200/70 bg-white px-6 py-5 flex items-center gap-5 transition hover:border-gray-900/30"
-                >
-                  <div className="text-gray-600">
-                    <item.icon className="w-6 h-6" aria-hidden="true" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs uppercase tracking-wide text-gray-500">{item.label}</span>
-                    <span className="text-3xl font-semibold text-gray-900">{item.value}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
       </main>
 
