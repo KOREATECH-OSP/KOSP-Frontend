@@ -2,7 +2,8 @@ import { suitFont } from "../style/font";
 import Link from 'next/link';
 import SearchBar from '../common/components/searchBar';
 import Header from "../common/components/header";
-import { ChevronRight, Eye, MessageSquare, CircleGauge, Users, Layers3, CheckCircle } from "lucide-react";
+import { ChevronRight, Eye, MessageSquare, Youtube, Facebook, Instagram } from "lucide-react";
+import FootLogo from "../assets/images/foot_logo.svg";
 
 export default function Home() {
   const communityPosts = [
@@ -20,7 +21,7 @@ export default function Home() {
   ];
 
   return (
-    <div className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
+    <div id="top" className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
       <Header />
       <section className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -149,40 +150,50 @@ export default function Home() {
       </main>
 
       {/* 푸터 */}
-      <footer className="bg-gray-800 text-white mt-12 sm:mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-bold mb-4">DevTeam</h3>
-              <p className="text-gray-400">개발자들의 협업 플랫폼</p>
+      <footer className="bg-[#2e3358] text-white mt-12 sm:mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <FootLogo className="w-[220px] h-auto" aria-label="KOREATECH" />
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">서비스</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/community" className="hover:text-white transition">커뮤니티</Link></li>
-                <li><Link href="/team-recruit" className="hover:text-white transition">팀모집</Link></li>
-                <li><Link href="/challenge" className="hover:text-white transition">챌린지</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">고객지원</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/faq" className="hover:text-white transition">FAQ</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition">문의하기</Link></li>
-                <li><Link href="/guide" className="hover:text-white transition">이용가이드</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">회사</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition">회사소개</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition">이용약관</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition">개인정보처리방침</Link></li>
-              </ul>
-            </div>
+            <ul className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/80">
+              <li>
+                <Link
+                  href="https://www.koreatech.ac.kr/menu.es?mid=a10903000000"
+                  className="hover:text-white text-[#f39800]"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  개인정보처리방침
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="https://www.koreatech.ac.kr/menu.es?mid=a10904000000"
+                  className="hover:text-white"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  영상정보처리기기운영·관리방침
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="https://www.koreatech.ac.kr/menu.es?mid=a10905000000"
+                  className="hover:text-white"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  이메일무단수집거부
+                </Link>
+              </li>
+            </ul>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 DevTeam. All rights reserved.</p>
+
+          <div className="space-y-4 text-sm text-white/70 leading-relaxed">
+            <p>[31253] 충청남도 천안시 동남구 병천면 충절로 1600 (가전리, 한국기술교육대학교) / TEL : 041-560-1114</p>
+            <p>COPYRIGHT © KOREATECH. ALL RIGHTS RESERVED.</p>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between" />
           </div>
         </div>
       </footer>
