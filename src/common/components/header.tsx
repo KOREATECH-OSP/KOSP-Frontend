@@ -15,7 +15,7 @@ function Header({ simple = false }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navItems = [
     { href: "/community", label: "커뮤니티" },
-    { href: "/team-recruit", label: "팀모집" },
+    { href: "/recruit", label: "팀모집" },
     { href: "/team-board", label: "팀게시판" },
     { href: "/challenge", label: "챌린지" },
   ];

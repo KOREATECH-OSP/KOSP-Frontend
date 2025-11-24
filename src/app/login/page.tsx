@@ -92,6 +92,7 @@ export default function LoginPage() {
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                    disabled
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
                     로그인 유지
@@ -99,7 +100,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-sm">
-                  <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                  <Link href="/forgotPasswordPage" className="font-medium text-blue-600 hover:text-blue-500">
                     비밀번호 찾기
                   </Link>
                 </div>

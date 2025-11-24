@@ -33,8 +33,6 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="flex flex-col gap-8 sm:gap-10">
-          
-          {/* 커뮤니티 섹션 */}
           <section>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
@@ -77,13 +75,12 @@ export default function Home() {
 
           <div className="h-px bg-gray-200" aria-hidden="true" />
 
-          {/* 팀모집 섹션 */}
           <section>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
                 <span>팀모집</span>
               </h2>
-              <Link href="/team-recruit" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/recruit" className="text-blue-600 hover:text-blue-700 font-medium">
                 전체보기 →
               </Link>
             </div>
