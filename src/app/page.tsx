@@ -2,7 +2,7 @@ import { suitFont } from "../style/font";
 import Link from 'next/link';
 import SearchBar from '../common/components/searchBar';
 import Header from "../common/components/header";
-import { ChevronRight, Eye, MessageSquare, Youtube, Facebook, Instagram } from "lucide-react";
+import { ChevronRight, Eye, MessageSquare } from "lucide-react";
 import FootLogo from "../assets/images/foot_logo.svg";
 
 export default function Home() {
