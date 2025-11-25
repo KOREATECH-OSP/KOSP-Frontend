@@ -30,32 +30,20 @@ function NotFound() {
           className="w-24 h-auto"
           priority
         />
-        <div className="space-y-2 text-gray-600 leading-relaxed">
+        <div className="space-y-2 text-center">
           <p className="text-2xl font-medium text-gray-800">
             페이지를 찾을 수 없습니다
           </p>
-          <p className="text-base">
-            방문하시려는 페이지의 주소가 잘못 입력되었거나,
-            페이지의 주소가 변경 혹은 삭제되어 요청하신 페이지를 찾을 수 없습니다.
-          </p>
           <p className="text-base text-gray-500">
-            입력하신 주소가 정확한지 다시 한번 확인해 주시기 바랍니다.
+            주소가 잘못되었거나 삭제된 페이지입니다.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Link
-            href="/"
-            className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
-          >
-            홈으로 이동
-          </Link>
-          <Link
-            href="/community"
-            className="px-6 py-3 rounded-2xl border border-gray-300 text-gray-700 font-semibold hover:border-gray-500 transition-colors"
-          >
-            커뮤니티 둘러보기
-          </Link>
-        </div>
+        <Link
+          href="/"
+          className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
+        >
+          홈으로 이동
+        </Link>
       </main>
     </div>
   );

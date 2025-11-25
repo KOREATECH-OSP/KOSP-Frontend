@@ -20,20 +20,21 @@ function SearchBar() {
             <div className="w-16 drop-shadow-sm pointer-events-none select-none">
               <Image src={KoriCharacter} alt="캐릭터" className="w-full h-auto" priority />
             </div>
-            <div className="flex w-full items-center bg-white border border-gray-200/70 rounded-2xl pl-6 pr-2 py-2 focus-within:border-gray-400 focus-within:ring focus-within:ring-gray-200 transition space-x-3">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="프로젝트, 팀, 기술스택을 검색해보세요."
-              className="flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-base focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-2xl text-white font-medium shadow-sm transition bg-gradient-to-r from-[#E2AB3C] to-[#D06B2B] hover:opacity-90 cursor-pointer"
-            >
-              Go →
-            </button>
+            {/* 모바일: 세로 배치, 데스크탑: 인라인 배치 */}
+            <div className="flex flex-col w-full gap-3 sm:gap-0 sm:flex-row sm:items-center sm:bg-white sm:border sm:border-gray-200/70 sm:rounded-2xl sm:pl-6 sm:pr-2 sm:py-2 sm:focus-within:border-gray-400 sm:focus-within:ring sm:focus-within:ring-gray-200 sm:transition sm:space-x-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="프로젝트, 팀, 기술스택을 검색해보세요."
+                className="w-full bg-white border border-gray-200/70 rounded-2xl px-5 py-3.5 text-gray-900 placeholder-gray-400 text-base focus:outline-none focus:border-gray-400 focus:ring focus:ring-gray-200 transition sm:flex-1 sm:border-0 sm:rounded-none sm:px-0 sm:py-0 sm:focus:ring-0"
+              />
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-2xl text-white font-medium shadow-sm transition bg-gradient-to-r from-[#E2AB3C] to-[#D06B2B] hover:opacity-90 cursor-pointer sm:w-auto sm:px-6 sm:py-2.5"
+              >
+                Go →
+              </button>
             </div>
           </div>
         </form>
