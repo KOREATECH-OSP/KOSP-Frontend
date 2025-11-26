@@ -1,9 +1,15 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import LogoImage from "../assets/images/koreatech_hangeul.png";
 import NotFoundImage from "../assets/images/kori/11-09 L 놀람 .png";
+import { ArrowLeft } from "lucide-react";
 
 function NotFound() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col px-4">
       <header className="w-full max-w-4xl mx-auto pt-10 flex justify-center">
@@ -38,12 +44,21 @@ function NotFound() {
             주소가 잘못되었거나 삭제된 페이지입니다.
           </p>
         </div>
-        <Link
-          href="/"
-          className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
-        >
-          홈으로 이동
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            이전 페이지로
+          </button>
+          <Link
+            href="/"
+            className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
+          >
+            홈으로 이동
+          </Link>
+        </div>
       </main>
     </div>
   );
