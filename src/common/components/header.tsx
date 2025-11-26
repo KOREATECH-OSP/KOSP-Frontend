@@ -23,17 +23,17 @@ function Header({ simple = false }: HeaderProps) {
   return (
     <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50 ${suitFont.className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[50px]">
-          <div className="flex items-center gap-10">
-            <Link href="/" className="flex items-center gap-3">
+        <div className="flex items-center justify-between h-14 md:h-[50px]">
+          <div className="flex items-center gap-6 md:gap-10">
+            <Link href="/" className="flex items-center gap-2 md:gap-3">
               <Image
                 src={LogoImage}
                 alt="KOREATECH 로고"
-                className="h-6 w-auto"
+                className="h-5 md:h-6 w-auto"
                 priority
               />
-              <span aria-hidden className="block h-5 w-px bg-gray-200" />
-              <span className="text-base font-semibold text-gray-900">오픈소스포털</span>
+              <span aria-hidden className="block h-4 md:h-5 w-px bg-gray-200" />
+              <span className="text-sm md:text-base font-semibold text-gray-900">오픈소스포털</span>
             </Link>
 
             {!simple && (
@@ -70,14 +70,16 @@ function Header({ simple = false }: HeaderProps) {
 
               <button
                 type="button"
-                className="md:hidden flex flex-col gap-1.5 p-2 text-gray-700"
+                className="md:hidden flex items-center justify-center w-10 h-10 -mr-2 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="모바일 메뉴 열기"
                 aria-expanded={mobileMenuOpen}
                 onClick={() => setMobileMenuOpen(true)}
               >
-                <span className="block w-6 h-0.5 bg-gray-800" />
-                <span className="block w-6 h-0.5 bg-gray-800" />
-                <span className="block w-6 h-0.5 bg-gray-800" />
+                <div className="flex flex-col gap-1.5">
+                  <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
+                  <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
+                  <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
+                </div>
               </button>
             </>
           )}
