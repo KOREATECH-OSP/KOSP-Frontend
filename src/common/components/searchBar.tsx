@@ -94,13 +94,11 @@ function SearchBar() {
     }
   }, [isDesktopDropdownOpen, isMobileSearchOpen, allItems, selectedIndex, executeSearch]);
 
-  // 드롭다운 열릴 때 선택 초기화
-  useEffect(() => {
-    if (isDesktopDropdownOpen) {
-      setSelectedIndex(-1);
-      setHoveredIndex(-1);
-    }
-  }, [isDesktopDropdownOpen]);
+  const handleDesktopInputFocus = () => {
+    setIsDesktopDropdownOpen(true);
+    setSelectedIndex(-1);
+    setHoveredIndex(-1);
+  };
 
   // 데스크톱 드롭다운 외부 클릭 감지
   useEffect(() => {
@@ -200,7 +198,7 @@ function SearchBar() {
                     setSearchQuery(e.target.value);
                     setSelectedIndex(-1);
                   }}
-                  onFocus={() => setIsDesktopDropdownOpen(true)}
+                  onFocus={handleDesktopInputFocus}
                   onKeyDown={handleKeyDown}
                   placeholder="프로젝트, 팀, 기술스택을 검색해보세요."
                   className="hidden sm:block min-w-0 flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-base focus:outline-none"
