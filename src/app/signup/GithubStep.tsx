@@ -56,7 +56,6 @@ export default function GithubStep({ onGithubLogin }: GithubStepProps) {
       <div className="space-y-3">
         <label className="flex items-start p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer group">
           <div className="flex items-center h-5">
-            {/* ✅ 상태 연결 */}
             <input
               type="checkbox"
               id="terms"

@@ -27,10 +27,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* 로그인 카드 */}
         <div className="rounded-2xl border border-gray-200/70 bg-white p-6 sm:p-8 transition-all duration-200">
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* 이메일 입력 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 이메일
@@ -48,7 +46,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* 비밀번호 입력 */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 비밀번호
@@ -79,7 +76,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 옵션 */}
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 cursor-pointer group">
                 <input
@@ -99,10 +95,6 @@ export default function LoginPage() {
                 비밀번호 찾기
               </Link>
             </div>
-
-            {/* className="  " */}
-
-
 
             <button
               type="submit"
