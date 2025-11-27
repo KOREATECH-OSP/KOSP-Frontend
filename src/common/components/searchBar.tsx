@@ -84,6 +84,7 @@ function SearchBar() {
       case 'Escape':
         setIsDesktopDropdownOpen(false);
         setSelectedIndex(-1);
+        desktopInputRef.current?.blur();
         break;
       case 'Enter':
         if (selectedIndex >= 0 && selectedIndex < allItems.length) {

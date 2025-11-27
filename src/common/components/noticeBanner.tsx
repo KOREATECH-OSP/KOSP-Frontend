@@ -8,8 +8,12 @@ import { suitFont } from '../../style/font';
 function NoticeBanner() {
   const [isVisible, setIsVisible] = useState(true);
 
-  // 페이지 로드 시 맨 위로 스크롤
+  // 페이지 로드 시 맨 위로 스크롤 (브라우저 scroll restoration 이후에 실행)
   useEffect(() => {
+    // 브라우저의 scroll restoration 비활성화
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
     window.scrollTo(0, 0);
   }, []);
 
