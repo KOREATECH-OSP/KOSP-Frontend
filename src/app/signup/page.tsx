@@ -55,7 +55,6 @@ export default function SignupPage() {
     alert('인증 코드가 이메일로 전송되었습니다.');
   };
 
-  // 이메일 인증 확인
   const handleVerifyEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('인증 코드 확인:', verificationCode);
@@ -64,7 +63,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="flex-1 flex justify-center py-30 px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 flex justify-center pt-30 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900">회원가입</h2>
@@ -80,17 +79,6 @@ export default function SignupPage() {
             <Funnel.Step name="github">
               <StepIndicator currentStep="github" />
               <GithubStep onGithubLogin={handleGithubLogin} />
-              <p className="text-center text-xs text-gray-500 mt-6">
-                회원가입하면{' '}
-                <Link href="/terms" className="text-blue-600 hover:text-blue-500">
-                  이용약관
-                </Link>
-                {' '}및{' '}
-                <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
-                  개인정보처리방침
-                </Link>
-                에 동의하게 됩니다.
-              </p>
             </Funnel.Step>
 
             <Funnel.Step name="info">
