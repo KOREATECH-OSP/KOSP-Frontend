@@ -39,7 +39,7 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
             <span className="text-xs mt-2 text-gray-600 font-medium">{step.label}</span>
           </div>
           {index < steps.length - 1 && (
-            <div className="w-[100px] h-1 bg-gray-300 flex-1 my-5">
+            <div className="h-1 bg-gray-300 flex-1 my-5 w-[calc((100vw-280px)/2)] max-w-[100px]">
               <div 
                 className={`h-full transition-all duration-300 ${
                   index < currentIndex ? 'bg-blue-600' : 'bg-gray-300'
