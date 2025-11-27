@@ -1,15 +1,15 @@
 import Header from '@/src/common/components/header';
+import NoticeBanner from '@/src/common/components/noticeBanner';
 import { suitFont } from '../../style/font'
 
-function UserLayout({ children }: { children: React.ReactNode }) {
+function LoginLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body>
-        <Header simple />
-        <main className={`${suitFont.className}`}>{children}</main>
-      </body>
-    </html>
+    <div className={`min-h-screen bg-gray-50 ${suitFont.className}`}>
+      <NoticeBanner />
+      <Header />
+      <main>{children}</main>
+    </div>
   );
 }
 
-export default UserLayout;
+export default LoginLayout;

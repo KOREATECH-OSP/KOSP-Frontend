@@ -2,6 +2,9 @@ import { suitFont } from "../style/font";
 import Link from 'next/link';
 import SearchBar from '../common/components/searchBar';
 import Header from "../common/components/header";
+import NoticeBanner from "../common/components/noticeBanner";
+import { ChevronRight, Eye, MessageSquare } from "lucide-react";
+import FootLogo from "../assets/images/foot_logo.svg";
 
 export default function Home() {
   const communityPosts = [
@@ -19,31 +22,19 @@ export default function Home() {
   ];
 
   return (
-    <div className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
+    <div id="top" className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
+      <NoticeBanner />
       <Header />
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            교내 오픈소스 활동을
-          </h1>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            한눈에 찾고 함께 만들어요
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100">
-            프로젝트 검색부터 팀 빌딩, 협업까지 한 곳에서
-          </p>
-          
-        
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <SearchBar />
-            </div>
+      <section className="py-12 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto w-full">
+            <SearchBar />
           </div>
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="flex flex-col gap-8 sm:gap-10">
           
           {/* 커뮤니티 섹션 */}
           <section>
@@ -57,39 +48,41 @@ export default function Home() {
               </Link>
             </div>
             
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {communityPosts.map((post, index) => (
-                <div 
+            <div className="space-y-3">
+              {communityPosts.map((post) => (
+                <Link
                   key={post.id}
-                  className={`p-4 hover:bg-gray-50 transition cursor-pointer ${
-                    index !== communityPosts.length - 1 ? 'border-b border-gray-200' : ''
-                  }`}
+                  href={`/community/${post.id}`}
+                  className="relative block rounded-2xl border border-gray-200/70 bg-white px-4 sm:px-5 py-4 transition-all duration-200 cursor-pointer hover:border-gray-900/40"
                 >
-                  <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600">
+                  <span className="block text-[11px] text-gray-500 mb-1 sm:text-xs">
+                    {post.author}
+                  </span>
+                  <h3 className="text-base font-semibold text-gray-900 line-clamp-2 sm:line-clamp-1">
                     {post.title}
                   </h3>
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center space-x-4">
-                      <span>{post.author}</span>
-                      <span className="flex items-center space-x-1">
-                        👁️ <span>{post.views}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        💬 <span>{post.comments}</span>
-                      </span>
-                    </div>
-                    <span className="text-gray-500">{post.time}</span>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-gray-500 sm:text-xs">
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                      <span>{post.views}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                      <span>{post.comments}</span>
+                    </span>
+                    <span>{post.time}</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
+
+          <div className="h-px bg-gray-200" aria-hidden="true" />
 
           {/* 팀모집 섹션 */}
           <section>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-                {/* <Users className="w-6 h-6 text-green-600" /> */}
                 <span>팀모집</span>
               </h2>
               <Link href="/team-recruit" className="text-blue-600 hover:text-blue-700 font-medium">
@@ -97,107 +90,112 @@ export default function Home() {
               </Link>
             </div>
             
-            <div className="space-y-4">
-              {teamRecruits.map((recruit) => (
-                <div 
-                  key={recruit.id}
-                  className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition cursor-pointer"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-semibold text-gray-900 hover:text-blue-600 flex-1">
+            <div className="space-y-3">
+              {teamRecruits.map((recruit) => {
+                const statusClass =
+                  recruit.status === '마감임박'
+                    ? 'bg-gradient-to-l from-red-200/70 via-transparent'
+                    : recruit.status === '모집중'
+                      ? 'bg-gradient-to-l from-green-200/70 via-transparent'
+                      : '';
+
+                return (
+                  <div
+                    key={recruit.id}
+                    className="relative rounded-2xl border border-gray-200/70 bg-white pl-4 pr-12 sm:px-5 py-4 transition-all duration-200 hover:border-gray-900/40 cursor-pointer overflow-hidden"
+                  >
+                    {statusClass && (
+                      <div className={`pointer-events-none absolute inset-y-3 right-3 w-1/3 opacity-40 blur-xl ${statusClass}`} />
+                    )}
+
+                    <div className="relative z-10 flex flex-col gap-1 text-[11px] text-gray-500 mb-2 sm:text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border backdrop-blur-sm ${
+                            recruit.status === '마감임박'
+                              ? 'text-red-700 border-red-200/70'
+                              : recruit.status === '모집중'
+                                ? 'text-green-700 border-green-200/70'
+                                : 'text-gray-500 border-gray-200/70'
+                          }`}
+                        >
+                          {recruit.status}
+                        </span>
+                        <span className="font-semibold text-gray-700">{recruit.deadline}</span>
+                        <span aria-hidden className="h-3 w-px bg-gray-300" />
+                        <span className="font-medium text-gray-700">{recruit.members}</span>
+                      </div>
+                    </div>
+
+                    <h3 className="relative text-base font-semibold text-gray-900 mb-2 line-clamp-2 sm:line-clamp-1 z-10">
                       {recruit.title}
                     </h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      recruit.status === '마감임박' 
-                        ? 'bg-red-100 text-red-700' 
-                        : 'bg-green-100 text-green-700'
-                    }`}>
-                      {recruit.status}
-                    </span>
+
+                    <div className="relative flex flex-wrap gap-2 text-xs text-blue-700 z-10">
+                      {recruit.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 rounded-full bg-blue-50"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <ChevronRight className="absolute top-1/2 -translate-y-1/2 right-4 w-7 h-7 text-gray-900/70 z-10" aria-hidden="true" />
                   </div>
-                  
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {recruit.tags.map((tag, index) => (
-                      <span 
-                        key={index}
-                        className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span className="flex items-center space-x-1">
-                      {/* <Users className="w-4 h-4" /> */}
-                      <span>{recruit.members}</span>
-                    </span>
-                    <span className="font-medium text-gray-700">{recruit.deadline}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </div>
-
-        {/* 통계 섹션 */}
-        <section className="mt-16 bg-white rounded-lg shadow-md p-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">1,234</div>
-              <div className="text-gray-600">활성 프로젝트</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600 mb-2">5,678</div>
-              <div className="text-gray-600">팀 멤버</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600 mb-2">890</div>
-              <div className="text-gray-600">진행중인 팀</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-600 mb-2">234</div>
-              <div className="text-gray-600">완료된 프로젝트</div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* 푸터 */}
-      <footer className="bg-gray-800 text-white mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-bold mb-4">DevTeam</h3>
-              <p className="text-gray-400">개발자들의 협업 플랫폼</p>
+      <footer className="bg-[#2e3358] text-white mt-12 sm:mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div aria-label="KOREATECH" className="flex items-center gap-4">
+              <FootLogo className="w-[220px] h-auto" aria-hidden="true" />
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">서비스</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/community" className="hover:text-white transition">커뮤니티</Link></li>
-                <li><Link href="/team-recruit" className="hover:text-white transition">팀모집</Link></li>
-                <li><Link href="/challenge" className="hover:text-white transition">챌린지</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">고객지원</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/faq" className="hover:text-white transition">FAQ</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition">문의하기</Link></li>
-                <li><Link href="/guide" className="hover:text-white transition">이용가이드</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">회사</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition">회사소개</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition">이용약관</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition">개인정보처리방침</Link></li>
-              </ul>
-            </div>
+            <ul className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/80">
+              <li>
+                <Link
+                  href="https://www.koreatech.ac.kr/menu.es?mid=a10903000000"
+                  className="hover:text-white text-[#f39800]"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  개인정보처리방침
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="https://www.koreatech.ac.kr/menu.es?mid=a10904000000"
+                  className="hover:text-white"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  영상정보처리기기운영·관리방침
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="https://www.koreatech.ac.kr/menu.es?mid=a10905000000"
+                  className="hover:text-white"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  이메일무단수집거부
+                </Link>
+              </li>
+            </ul>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 DevTeam. All rights reserved.</p>
+
+          <div className="space-y-4 text-sm text-white/70 leading-relaxed">
+            <p>[31253] 충청남도 천안시 동남구 병천면 충절로 1600 (가전리, 한국기술교육대학교) / TEL : 041-560-1114</p>
+            <p>COPYRIGHT © KOREATECH. ALL RIGHTS RESERVED.</p>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between" />
           </div>
         </div>
       </footer>
