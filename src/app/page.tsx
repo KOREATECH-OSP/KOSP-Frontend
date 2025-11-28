@@ -2,6 +2,7 @@ import { suitFont } from "../style/font";
 import Link from 'next/link';
 import SearchBar from '../common/components/searchBar';
 import Header from "../common/components/header";
+import NoticeBanner from "../common/components/noticeBanner";
 import { ChevronRight, Eye, MessageSquare } from "lucide-react";
 import FootLogo from "../assets/images/foot_logo.svg";
 
@@ -22,6 +23,7 @@ export default function Home() {
 
   return (
     <div id="top" className={`min-h-screen bg-gray-50  ${suitFont.className}`}>
+      <NoticeBanner />
       <Header />
       <section className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

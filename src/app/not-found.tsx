@@ -1,9 +1,15 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import LogoImage from "../assets/images/koreatech_hangeul.png";
 import NotFoundImage from "../assets/images/kori/11-09 L 놀람 .png";
+import { ArrowLeft } from "lucide-react";
 
 function NotFound() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col px-4">
       <header className="w-full max-w-4xl mx-auto pt-10 flex justify-center">
@@ -30,30 +36,27 @@ function NotFound() {
           className="w-24 h-auto"
           priority
         />
-        <div className="space-y-2 text-gray-600 leading-relaxed">
+        <div className="space-y-2 text-center">
           <p className="text-2xl font-medium text-gray-800">
             페이지를 찾을 수 없습니다
           </p>
-          <p className="text-base">
-            방문하시려는 페이지의 주소가 잘못 입력되었거나,
-            페이지의 주소가 변경 혹은 삭제되어 요청하신 페이지를 찾을 수 없습니다.
-          </p>
           <p className="text-base text-gray-500">
-            입력하신 주소가 정확한지 다시 한번 확인해 주시기 바랍니다.
+            주소가 잘못되었거나 삭제된 페이지입니다.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            이전 페이지로
+          </button>
           <Link
             href="/"
             className="px-6 py-3 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
           >
             홈으로 이동
-          </Link>
-          <Link
-            href="/community"
-            className="px-6 py-3 rounded-2xl border border-gray-300 text-gray-700 font-semibold hover:border-gray-500 transition-colors"
-          >
-            커뮤니티 둘러보기
           </Link>
         </div>
       </main>
