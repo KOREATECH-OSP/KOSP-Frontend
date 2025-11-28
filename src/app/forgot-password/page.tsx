@@ -22,7 +22,7 @@ function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="bg-gray-50 flex flex-1 flex-col items-center justify-center">
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           {!isSubmitted ? (
@@ -130,7 +130,8 @@ function ForgotPasswordPage() {
             </>
           )}
 
-          {!isSubmitted && (
+          {/* 문의하기 페이지 만들꺼임? */}
+          {/* {!isSubmitted && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800">
                 <strong>도움이 필요하신가요?</strong><br />
@@ -141,7 +142,7 @@ function ForgotPasswordPage() {
                 로 문의해주세요.
               </p>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
