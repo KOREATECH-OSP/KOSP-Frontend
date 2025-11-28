@@ -3,12 +3,10 @@ import { suitFont } from '../../style/font'
 
 function SignupLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body>
-        <Header simple />
-        <main className={`${suitFont.className}`}>{children}</main>
-      </body>
-    </html>
+    <div className={`bg-gray-50 ${suitFont.className}`}>
+      <Header simple/>
+      <main className={`flex h-[calc(100vh-56px)]`}>{children}</main>
+    </div>
   );
 }
 
