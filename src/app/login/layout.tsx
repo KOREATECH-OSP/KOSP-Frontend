@@ -1,4 +1,4 @@
-import Header from '@/src/common/components/header';
+import Header from '@/src/common/components/Header';
 import { suitFont } from '../../style/font'
 
 function LoginLayout({ children }: { children: React.ReactNode }) {

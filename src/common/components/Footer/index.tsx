@@ -1,4 +1,4 @@
-import FootLogo from "../../assets/images/foot_logo.svg";
+import FootLogo from "../../../assets/images/foot_logo.svg";
 import Link from 'next/link';
 
 function Footer() { 

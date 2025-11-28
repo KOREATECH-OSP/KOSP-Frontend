@@ -4,8 +4,8 @@ import { Fragment, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Dialog, Transition } from '@headlessui/react';
-import { suitFont } from "../../style/font";
-import LogoImage from "../../assets/images/koreatech_hangeul.png";
+import { suitFont } from "../../../style/font";
+import LogoImage from "../../../assets/images/koreatech_hangeul.png";
 
 interface HeaderProps {
   simple?: boolean;
