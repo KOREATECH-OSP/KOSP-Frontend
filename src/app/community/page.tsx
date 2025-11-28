@@ -80,8 +80,6 @@ export default function CommunityPage() {
         </div>
 
         <div className="">
-          {/* gap-1.5 flex flex-col */}
-          {/* space-y-4 */}
           {filteredPosts.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg">
               <MessageSquare className="w-12 h-12 mx-auto text-gray-400 mb-4" />
@@ -93,7 +91,6 @@ export default function CommunityPage() {
                 key={post.id}
                 href={`/community/${post.id}`}
                 className="block bg-white px-6 pt-6 transition hover:shadow-2xs"
-                // border-0 border-b border-b-gray-100
                 >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-3">

@@ -1,4 +1,3 @@
-// app/write/page.tsx
 'use client';
 
 import WritingGuide from '@/common/components/community/WritingGuide';
