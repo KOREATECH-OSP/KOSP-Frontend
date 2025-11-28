@@ -6,7 +6,6 @@ interface Challenge {
   id: number;
   title: string;
   description: string;
-  icon: string;
   current: number;
   total: number;
   category: 'contribution' | 'learning' | 'community';
@@ -18,7 +17,6 @@ export default function ChallengePage() {
       id: 1,
       title: 'First Contribution',
       description: '첫 번째 오픈소스 기여를 완료하세요',
-      icon: '🌱',
       current: 1,
       total: 1,
       category: 'contribution'
@@ -27,7 +25,6 @@ export default function ChallengePage() {
       id: 2,
       title: 'Pull Request Master',
       description: '10개의 Pull Request를 생성하세요',
-      icon: '🔀',
       current: 7,
       total: 10,
       category: 'contribution'
@@ -36,7 +33,6 @@ export default function ChallengePage() {
       id: 3,
       title: 'Issue Hunter',
       description: '20개의 이슈를 해결하세요',
-      icon: '🎯',
       current: 12,
       total: 20,
       category: 'contribution'
@@ -45,7 +41,6 @@ export default function ChallengePage() {
       id: 4,
       title: 'Code Reviewer',
       description: '30개의 코드 리뷰를 작성하세요',
-      icon: '👀',
       current: 5,
       total: 30,
       category: 'contribution'
@@ -54,7 +49,6 @@ export default function ChallengePage() {
       id: 5,
       title: 'Documentation Writer',
       description: '5개의 문서를 작성하거나 개선하세요',
-      icon: '📝',
       current: 2,
       total: 5,
       category: 'learning'
@@ -63,7 +57,6 @@ export default function ChallengePage() {
       id: 6,
       title: 'Star Collector',
       description: '프로젝트에 50개의 스타를 받으세요',
-      icon: '⭐',
       current: 23,
       total: 50,
       category: 'community'
@@ -72,7 +65,6 @@ export default function ChallengePage() {
       id: 7,
       title: 'Fork Master',
       description: '10개의 프로젝트를 Fork하세요',
-      icon: '🍴',
       current: 10,
       total: 10,
       category: 'learning'
@@ -81,7 +73,6 @@ export default function ChallengePage() {
       id: 8,
       title: 'Commit Streak',
       description: '30일 연속으로 커밋하세요',
-      icon: '🔥',
       current: 15,
       total: 30,
       category: 'contribution'
@@ -90,7 +81,6 @@ export default function ChallengePage() {
       id: 9,
       title: 'Community Helper',
       description: '50개의 댓글로 커뮤니티를 도와주세요',
-      icon: '💬',
       current: 32,
       total: 50,
       category: 'community'
@@ -99,7 +89,6 @@ export default function ChallengePage() {
       id: 10,
       title: 'Language Explorer',
       description: '5가지 다른 프로그래밍 언어로 기여하세요',
-      icon: '🌐',
       current: 3,
       total: 5,
       category: 'learning'
@@ -108,7 +97,6 @@ export default function ChallengePage() {
       id: 11,
       title: 'Open Source Advocate',
       description: '3명의 새로운 기여자를 초대하세요',
-      icon: '🤝',
       current: 1,
       total: 3,
       category: 'community'
@@ -139,6 +127,50 @@ export default function ChallengePage() {
       case 'community':
         return '커뮤니티';
     }
+  };
+
+  const CircularProgress = ({ progress, size = 56 }: { progress: number; size?: number }) => {
+    const strokeWidth = 4;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (progress / 100) * circumference;
+
+    return (
+      <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+        <svg className="transform -rotate-90" width={size} height={size}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            fill="none"
+            className="text-gray-200"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className={`transition-all duration-500 ${
+              progress === 100 ? 'text-green-500' : 'text-blue-500'
+            }`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={`text-sm font-bold ${
+            progress === 100 ? 'text-green-600' : 'text-blue-600'
+          }`}>
+            {progress}%
+          </span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -196,8 +228,8 @@ export default function ChallengePage() {
                 <div className="p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-4xl">{challenge.icon}</div>
+                    <div className="flex items-center gap-4">
+                      <CircularProgress progress={progress} />
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-1">
                           {challenge.title}
@@ -225,7 +257,6 @@ export default function ChallengePage() {
                       <span className="text-gray-600">진행률</span>
                       <span className="font-semibold text-gray-900">
                         {challenge.current} / {challenge.total}
-                        <span className="ml-2 text-blue-600">({progress}%)</span>
                       </span>
                     </div>
                     
@@ -250,7 +281,11 @@ export default function ChallengePage() {
         {/* Info Section */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
           <div className="flex items-start gap-3">
-            <div className="text-2xl">💡</div>
+            <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
             <div>
               <h3 className="font-semibold text-blue-900 mb-2">도전 과제 안내</h3>
               <p className="text-sm text-blue-800">
