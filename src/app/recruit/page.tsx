@@ -159,25 +159,11 @@ export default function TeamRecruitPage() {
                   {team.description}
                 </p>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {team.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100 text-sm">
                   <div className="flex items-center space-x-3 text-gray-600">
                     <span className="flex items-center">
                       <Users className="w-4 h-4 mr-1" />
                       {team.memberCount}명
-                    </span>
-                    <span className="flex items-center">
-                      📁 {team.projectCount}
                     </span>
                   </div>
                 </div>
