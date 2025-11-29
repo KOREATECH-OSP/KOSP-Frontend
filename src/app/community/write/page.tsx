@@ -148,7 +148,6 @@ export default function WritePage() {
       
       alert('게시글이 성공적으로 등록되었습니다!');
       
-      // 폼 초기화
       setFormData({
         title: '',
         category: 'free',
@@ -165,8 +164,7 @@ export default function WritePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 w-full">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">글쓰기</h1>
@@ -349,6 +347,5 @@ export default function WritePage() {
         </form>
         <WritingGuide />
       </div>
-    </div>
   );
 }

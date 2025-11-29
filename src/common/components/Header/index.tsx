@@ -16,7 +16,7 @@ function Header({ simple = false }: HeaderProps) {
   const navItems = [
     { href: "/community", label: "커뮤니티" },
     { href: "/recruit", label: "팀모집" },
-    { href: "/team-board", label: "팀게시판" },
+    { href: "/team", label: "팀게시판" },
     { href: "/challenge", label: "챌린지" },
   ];
 

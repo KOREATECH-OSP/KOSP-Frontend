@@ -7,7 +7,7 @@ import GithubStep from './GithubStep';
 import InfoStep from './InfoStep';
 import VerificationStep from './VerificationStep';
 import CompleteStep from './CompleteStep';
-import { useFunnel } from '@/src/common/hooks/useFunnel';
+import { useFunnel } from '@/common/hooks/useFunnel';
 
 const SIGNUP_STEPS = ['github', 'info', 'verification', 'complete'] as const;
 

@@ -1,4 +1,4 @@
-import Header from '@/src/common/components/Header';
+import Header from '@/common/components/Header';
 import { suitFont } from '../../style/font'
 
 function SignupLayout({ children }: { children: React.ReactNode }) {

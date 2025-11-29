@@ -1,14 +1,14 @@
-import Header from '@/src/common/components/header';
+import Header from '@/common/components/Header';
 import { suitFont } from '../../style/font'
+import Footer from '@/common/components/Footer';
 
 function RecruitPageLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body>
-        <Header />
-        <main className={`${suitFont.className}`}>{children}</main>
-      </body>
-    </html>
+    <div className={`min-h-screen flex flex-col bg-gray-50 ${suitFont.className}`}>
+      <Header simple/>
+      <main className="flex flex-1 justify-center">{children}</main>
+      <Footer />
+    </div>
   );
 }
 
