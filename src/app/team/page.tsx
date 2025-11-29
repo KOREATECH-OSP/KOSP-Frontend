@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users, Mail, UserPlus, Edit } from 'lucide-react';
+import { Users, UserPlus, Edit } from 'lucide-react';
 import TeamEditModal from '@/common/components/team/TeamEditModal';
+import TeamInviteModal from '@/common/components/team/TeamInviteModal';
 import InfoBox from '@/common/components/InfoBox';
 import Image from 'next/image';
 import KoriSupport from '@/assets/images/kori/11-06 L 응원 .png';
@@ -57,6 +58,10 @@ export default function TeamsPage() {
     imageUrl: ''
   });
 
+  // 초대 모달 상태
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [invitingTeam, setInvitingTeam] = useState<Team | null>(null);
+
   const getCategoryLabel = (category: Team['category']) => {
     switch (category) {
       case 'study':
@@ -83,16 +88,16 @@ export default function TeamsPage() {
     }
   };
 
-const handleEdit = (team: Team) => {
-  setEditingTeam(team);
-  setFormData({
-    title: team.title,
-    description: team.description,
-    inviteMessage: team.inviteMessage,
-    imageUrl: team.imageUrl || ''
-  });
-  setIsModalOpen(true);
-};
+  const handleEdit = (team: Team) => {
+    setEditingTeam(team);
+    setFormData({
+      title: team.title,
+      description: team.description,
+      inviteMessage: team.inviteMessage,
+      imageUrl: team.imageUrl || ''
+    });
+    setIsModalOpen(true);
+  };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -136,8 +141,34 @@ const handleEdit = (team: Team) => {
     handleCloseModal();
   };
 
+  // 멤버 초대 핸들러
+  const handleInvite = (team: Team) => {
+    setInvitingTeam(team);
+    setIsInviteModalOpen(true);
+  };
+
+  const handleCloseInviteModal = () => {
+    setIsInviteModalOpen(false);
+    setInvitingTeam(null);
+  };
+
+  const handleSendInvite = (selectedMembers: number[], message: string) => {
+    // API 호출
+    // await fetch('/api/teams/invite', {
+    //   method: 'POST',
+    //   body: JSON.stringify({
+    //     teamId: invitingTeam?.id,
+    //     memberIds: selectedMembers,
+    //     message
+    //   })
+    // });
+
+    alert(`${selectedMembers.length}명에게 초대 메시지를 보냈습니다!`);
+    handleCloseInviteModal();
+  };
+
   useEffect(() => {
-    if (isModalOpen) {
+    if (isModalOpen || isInviteModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -146,7 +177,7 @@ const handleEdit = (team: Team) => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, isInviteModalOpen]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full">
@@ -159,7 +190,7 @@ const handleEdit = (team: Team) => {
           </p>
         </div>
         <Link
-          href="/teams/create"
+          href="/team/create"
           className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap"
         >
           <Users className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -181,7 +212,7 @@ const handleEdit = (team: Team) => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/teams/create"
+                href="/team/create"
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
               >
                 팀 만들기
@@ -205,7 +236,7 @@ const handleEdit = (team: Team) => {
               >
                 <div className="p-4 sm:p-6">
                   {/* 팀 이미지 & 제목 섹션 */}
-                  <div className="flex items-start gap-3 sm:gap-4 mb-3">
+                  <div className="flex items-start gap-3 sm:gap-4 mb-4">
                     {/* 팀 이미지 */}
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                       {team.imageUrl ? (
@@ -216,20 +247,21 @@ const handleEdit = (team: Team) => {
                           className="rounded-lg object-cover"
                         />
                       ) : (
-                      <div className="w-full h-full rounded-lg flex items-center justify-center bg-gray-100">
-                        <Image
-                          src={KoriSupport}
-                          alt="팀 기본 아이콘"
-                          width={48}
-                          height={48}
-                          className="w-10 h-10 sm:w-12 sm:h-12"
-                        />
-                      </div>
+                        <div className="w-full h-full rounded-lg flex items-center justify-center bg-gray-100">
+                          <Image
+                            src={KoriSupport}
+                            alt="팀 기본 아이콘"
+                            width={48}
+                            height={48}
+                            className="w-10 h-10 sm:w-12 sm:h-12"
+                          />
+                        </div>
                       )}
                     </div>
+
                     {/* 제목 & 뱃지 */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2 mb-2">
+                      <div className="flex items-start gap-2 mb-3">
                         <h3 className="flex-1 min-w-0 text-lg sm:text-xl font-semibold text-gray-900 break-words">
                           {team.title}
                         </h3>
@@ -245,54 +277,45 @@ const handleEdit = (team: Team) => {
                         </div>
                       </div>
 
-                      <p className="text-sm sm:text-base text-gray-600 line-clamp-2">
+                      {/* 팀 정보 */}
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span>{team.memberCount} / {team.maxMembers}명</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="truncate">{team.createdBy}</span>
+                        </div>
+                      </div>
+
+                      {/* 팀 설명 */}
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                         {team.description}
                       </p>
                     </div>
                   </div>
 
-                  {/* 초대 메시지 */}
-                  <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-100 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-medium text-blue-900 mb-1">초대 메시지</p>
-                        <p className="text-xs sm:text-sm text-blue-700 break-words">{team.inviteMessage}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 팀 정보 */}
-                  <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>{team.memberCount} / {team.maxMembers}명</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span className="truncate">{team.createdBy}</span>
-                      </div>
-                    </div>
-
-                    {/* 액션 버튼 */}
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button className="flex-1 px-3 sm:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2">
-                        <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        멤버 초대
+                  {/* 액션 버튼 */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-100">
+                    <button 
+                      onClick={() => handleInvite(team)}
+                      className="flex-1 px-3 sm:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                    >
+                      <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      멤버 초대
+                    </button>
+                    {team.isLeader && (
+                      <button
+                        onClick={() => handleEdit(team)}
+                        className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                      >
+                        <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        수정하기
                       </button>
-                      {team.isLeader && (
-                        <button
-                          onClick={() => handleEdit(team)}
-                          className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
-                        >
-                          <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          수정하기
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -318,6 +341,14 @@ const handleEdit = (team: Team) => {
           onChange={handleInputChange}
           onClose={handleCloseModal}
           onSave={handleSave}
+        />
+      )}
+      {invitingTeam && (
+        <TeamInviteModal
+          isOpen={isInviteModalOpen}
+          teamName={invitingTeam.title}
+          onClose={handleCloseInviteModal}
+          onSendInvite={handleSendInvite}
         />
       )}
     </div>
