@@ -62,19 +62,6 @@ export default function TeamsPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [invitingTeam, setInvitingTeam] = useState<Team | null>(null);
 
-  const getCategoryLabel = (category: Team['category']) => {
-    switch (category) {
-      case 'study':
-        return '스터디';
-      case 'project':
-        return '프로젝트';
-      case 'competition':
-        return '대회';
-      case 'networking':
-        return '네트워킹';
-    }
-  };
-
   const getCategoryColor = (category: Team['category']) => {
     switch (category) {
       case 'study':
@@ -266,9 +253,6 @@ export default function TeamsPage() {
                           {team.title}
                         </h3>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`inline-block text-xs px-2 py-1 rounded-full border whitespace-nowrap ${getCategoryColor(team.category)}`}>
-                            {getCategoryLabel(team.category)}
-                          </span>
                           {team.isLeader && (
                             <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full border border-yellow-200 whitespace-nowrap">
                               리더

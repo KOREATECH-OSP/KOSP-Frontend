@@ -27,13 +27,6 @@ export default function CreateTeamPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = [
-    { value: 'study', label: '스터디', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { value: 'project', label: '프로젝트', color: 'bg-green-100 text-green-700 border-green-200' },
-    { value: 'competition', label: '대회', color: 'bg-red-100 text-red-700 border-red-200' },
-    { value: 'networking', label: '네트워킹', color: 'bg-purple-100 text-purple-700 border-purple-200' }
-  ];
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -45,10 +38,6 @@ export default function CreateTeamPage() {
         return newErrors;
       });
     }
-  };
-
-  const handleCategoryChange = (category: CategoryType) => {
-    setFormData(prev => ({ ...prev, category }));
   };
 
   const handleImageClick = () => {
