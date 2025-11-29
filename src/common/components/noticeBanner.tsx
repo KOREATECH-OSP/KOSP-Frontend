@@ -21,23 +21,32 @@ function NoticeBanner() {
 
   return (
     <div 
-      className={`w-full py-2.5 px-4 ${suitFont.className}`}
+      className={`w-full overflow-hidden ${suitFont.className}`}
       style={{ background: 'linear-gradient(272deg, #233786 23.38%, #236286 71.16%)' }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="max-w-7xl mx-auto flex items-stretch">
         {/* 공지 내용 */}
         <Link 
           href="#" 
-          className="flex items-center gap-3 text-white hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 sm:gap-3 text-white hover:opacity-90 transition-opacity min-w-0 flex-1 py-2.5 px-4"
         >
           <Volume2 className="w-4 h-4 shrink-0" />
-          <span className="text-sm font-medium truncate">
+          <span className="text-xs sm:text-sm font-medium truncate">
             2025학년도 1학기 오픈소스 프로젝트 참가자 모집 안내
           </span>
         </Link>
 
-        {/* 버튼 영역 */}
-        <div className="flex items-center gap-3 shrink-0 ml-4">
+        {/* 모바일 닫기 버튼 */}
+        <button 
+          onClick={() => setIsVisible(false)}
+          className="sm:hidden px-4 text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors border-l border-white/20"
+          aria-label="공지 닫기"
+        >
+          닫기
+        </button>
+
+        {/* 데스크탑 버튼 영역 */}
+        <div className="hidden sm:flex items-center gap-3 shrink-0 py-2.5 pr-4">
           <button 
             className="text-xs text-white/70 hover:text-white transition-colors whitespace-nowrap"
           >
