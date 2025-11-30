@@ -12,15 +12,16 @@ interface Comment {
   likes: number;
 }
 
-export default function PostDetailPage({ params }: { params: { id: number } }) {
+export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(23);
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(15);
   const [newComment, setNewComment] = useState('');
+  const routeParams = params;
 
   const post = {
-    id: params.id,
+    id:1,
     category: '홍보',
     title: '2024 해커톤 참가자 모집합니다!',
     content: `안녕하세요! 다음 달 개최되는 해커톤에 함께할 팀원을 찾습니다.
