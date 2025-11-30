@@ -4,8 +4,8 @@ import { Fragment, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Dialog, Transition } from '@headlessui/react';
-import { suitFont } from "../../style/font";
-import LogoImage from "../../assets/images/koreatech_hangeul.png";
+import { suitFont } from "../../../style/font";
+import LogoImage from "../../../assets/images/koreatech_hangeul.png";
 
 interface HeaderProps {
   simple?: boolean;
@@ -15,8 +15,8 @@ function Header({ simple = false }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navItems = [
     { href: "/community", label: "커뮤니티" },
-    { href: "/team-recruit", label: "팀모집" },
-    { href: "/team-board", label: "팀게시판" },
+    { href: "/recruit", label: "팀모집" },
+    { href: "/team", label: "팀게시판" },
     { href: "/challenge", label: "챌린지" },
   ];
 

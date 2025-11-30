@@ -7,7 +7,7 @@ import GithubStep from './GithubStep';
 import InfoStep from './InfoStep';
 import VerificationStep from './VerificationStep';
 import CompleteStep from './CompleteStep';
-import { useFunnel } from '@/src/common/hooks/useFunnel';
+import { useFunnel } from '@/common/hooks/useFunnel';
 
 const SIGNUP_STEPS = ['github', 'info', 'verification', 'complete'] as const;
 
@@ -62,8 +62,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-60px)] bg-gray-50 flex flex-col">
-      <div className="flex-1 flex justify-center pt-20 px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 flex flex-col items-center pt-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900">회원가입</h2>
@@ -109,6 +108,5 @@ export default function SignupPage() {
           </Funnel>
         </div>
       </div>
-    </div>
   );
 }

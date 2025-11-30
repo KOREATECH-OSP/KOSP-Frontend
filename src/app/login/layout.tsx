@@ -1,11 +1,11 @@
-import Header from '@/src/common/components/header';
+import Header from '@/common/components/Header';
 import { suitFont } from '../../style/font'
 
 function LoginLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`min-h-screen bg-gray-50 ${suitFont.className}`}>
+    <div className={`bg-gray-50 ${suitFont.className}`}>
       <Header simple/>
-      <main className={`py-18`}>{children}</main>
+      <main className={`flex h-[calc(100vh-56px)]`}>{children}</main>
     </div>
   );
 }

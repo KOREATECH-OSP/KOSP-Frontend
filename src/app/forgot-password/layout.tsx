@@ -1,7 +1,7 @@
-import Header from '@/common/components/Header';
+import Header from '@/src/common/components/Header';
 import { suitFont } from '../../style/font'
 
-function SignupLayout({ children }: { children: React.ReactNode }) {
+function ForgotPasswordPageLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`bg-gray-50 ${suitFont.className}`}>
       <Header simple/>
@@ -10,4 +10,4 @@ function SignupLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default SignupLayout;
+export default ForgotPasswordPageLayout;
