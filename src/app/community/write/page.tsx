@@ -5,7 +5,7 @@ import { useState, ChangeEvent, FormEvent } from 'react';
 
 interface PostFormData {
   title: string;
-  category: 'promotion' | 'qna' | 'free';
+  category: 'promotion' | 'qna' | 'free' | 'info';
   content: string;
   files: File[];
 }
@@ -24,8 +24,9 @@ export default function WritePage() {
   // 카테고리 옵션
   const categories = [
     { value: 'promotion', label: '홍보', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    { value: 'qna', label: 'Q&A', color: 'bg-green-100 text-green-700 border-green-200' },
-    { value: 'free', label: '자유', color: 'bg-blue-100 text-blue-700 border-blue-200' }
+    { value: 'info', label: '정보', color: 'bg-green-100 text-green-700 border-green-200' },
+    { value: 'qna', label: 'Q&A', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { value: 'free', label: '자유', color: 'bg-orange-100 text-orange-700 border-orange-200' }
   ] as const;
 
   // 입력 핸들러
