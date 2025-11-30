@@ -1,4 +1,4 @@
-import Header from '@/src/common/components/header';
+import Header from '@/common/components/Header';
 import { suitFont } from '../../style/font'
 
 function ResetPasswordPageLayout({ children }: { children: React.ReactNode }) {
