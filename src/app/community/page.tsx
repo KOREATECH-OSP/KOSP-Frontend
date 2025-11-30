@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Eye, ThumbsUp, Search, Plus, Star } from 'lucide-react';
+import { MessageSquare, Eye, ThumbsUp, Plus, Star } from 'lucide-react';
 import { posts } from '@/mocks/community/communityList.mock';
 import type { TabType } from '@/types/community';
 import Pagination from '@/common/components/Pagination';
@@ -56,29 +56,20 @@ export default function CommunityPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 w-full">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">커뮤니티</h1>
-        <p className="text-gray-600">개발자들과 소통하고 정보를 나눠보세요</p>
-      </div>
-
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="게시글 검색..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      <div className="flex mb-8 w-full justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">커뮤니티</h1>
+          <p className="text-gray-600">개발자들과 소통하고 정보를 나눠보세요</p>
         </div>
-        <Link
-          href="/community/write"
-          className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          글쓰기
-        </Link>
+        <div className="sm:flex-row gap-4h-full flex">
+          <Link
+            href="/community/write"
+            className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            글쓰기
+          </Link>
+        </div>
       </div>
 
       <div className="mb-6 border-b border-gray-200 overflow-x-auto">
@@ -99,7 +90,6 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      {/* 게시물 리스트 */}
       <div className="min-h-[600px]">
         {currentPosts.length === 0 ? (
           <div className="bg-white rounded-lg text-center py-12">
