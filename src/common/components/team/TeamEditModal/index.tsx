@@ -32,9 +32,9 @@ function TeamEditModal({
   const [imagePreview, setImagePreview] = useState<string | undefined>(formData.imageUrl);
 
   // formData.imageUrl이 변경될 때 imagePreview 업데이트
-  useEffect(() => {
-    setImagePreview(formData.imageUrl);
-  }, [formData.imageUrl]);
+  // useEffect(() => {
+  //   setImagePreview(formData.imageUrl);
+  // }, [formData.imageUrl]);
 
   const handleImageClick = () => {
     fileInputRef.current?.click();

@@ -12,7 +12,7 @@ interface Comment {
   likes: number;
 }
 
-export default function PostDetailPage({ params }: { params: { id: string } }) {
+export default function PostDetailPage({ params }: { params: { id: number } }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(23);
   const [bookmarked, setBookmarked] = useState(false);
