@@ -139,7 +139,7 @@ export default function TeamsPage() {
     setInvitingTeam(null);
   };
 
-  const handleSendInvite = (selectedMembers: number[], message: string) => {
+  const handleSendInvite = (studentId: string) => {
     // API 호출
     // await fetch('/api/teams/invite', {
     //   method: 'POST',
@@ -149,8 +149,8 @@ export default function TeamsPage() {
     //     message
     //   })
     // });
+    alert(`학번 ${studentId}님께 초대장을 보냈습니다!`);
 
-    alert(`${selectedMembers.length}명에게 초대 메시지를 보냈습니다!`);
     handleCloseInviteModal();
   };
 
