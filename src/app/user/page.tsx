@@ -178,16 +178,13 @@ export default function MyPage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {profile.name}
                 </h1>
-                <button
-                  onClick={() => {
-                    setEditForm(profile);
-                    setIsEditModalOpen(true);
-                  }}
+                <Link
+                  href="/user/edit"
                   className="self-start sm:self-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
                 >
                   <Edit className="w-4 h-4" />
                   <span>정보 수정</span>
-                </button>
+                </Link>
               </div>
 
               <a
@@ -377,7 +374,6 @@ export default function MyPage() {
           </div>
         )}
 
-        {/* 프로필 수정 모달 */}
         {isEditModalOpen && (
           <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
