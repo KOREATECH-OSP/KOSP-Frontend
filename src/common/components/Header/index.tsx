@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { suitFont } from "../../../style/font";
@@ -15,6 +16,7 @@ export interface HeaderProps {
 }
 
 function Header({ simple = false, user = null }: HeaderProps) {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(user);
@@ -77,6 +79,10 @@ function Header({ simple = false, user = null }: HeaderProps) {
     console.log(`[Header] ${intent} 클릭`);
     setMobileProfileOpen(false);
   };
+  const handleMyInfo = () => {
+    setMobileProfileOpen(false);
+    router.push('/user');
+  };
   const handleLogout = async () => {
     try {
       await fetch(`${API_BASE_URL}/v1/auth/logout`, {
@@ -93,7 +99,7 @@ function Header({ simple = false, user = null }: HeaderProps) {
   };
   const profileActions = isLoggedIn
     ? [
-        { label: "내 정보", action: () => handleProfileAction("내 정보") },
+        { label: "내 정보", action: handleMyInfo },
         { label: "알림", action: () => handleProfileAction("알림") },
         { label: "로그아웃", action: handleLogout },
       ]
@@ -185,7 +191,19 @@ function Header({ simple = false, user = null }: HeaderProps) {
                         >
                           <Menu.Items className="absolute right-0 mt-2 w-40 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
                             <div className="py-2">
-                              {profileActions.map(({ label, action }) => (
+                              <Menu.Item key="내 정보">
+                                {({ active }) => (
+                                  <Link
+                                    href="/user"
+                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${
+                                      active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                    }`}
+                                  >
+                                    내 정보
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                              {profileActions.filter(({ label }) => label !== "내 정보").map(({ label, action }) => (
                                 <Menu.Item key={label}>
                                   {({ active }) => (
                                     <button
