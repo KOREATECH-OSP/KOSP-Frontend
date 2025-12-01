@@ -282,7 +282,7 @@ export default function CreateTeamPage() {
           {/* Footer */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
             <Link
-              href="/teams"
+              href="/team"
               className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition-colors text-center"
             >
               취소

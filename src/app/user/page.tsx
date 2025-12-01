@@ -273,7 +273,7 @@ export default function MyPage() {
                 {myPosts.map((post) => (
                   <Link
                     key={post.id}
-                    href={`/team-recruit/${post.id}`}
+                    href={`/recruit/${post.id}`}
                     className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
                   >
                     <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600">
@@ -314,7 +314,7 @@ export default function MyPage() {
                     className="p-4 border border-gray-200 rounded-lg"
                   >
                     <Link
-                      href={`/team-recruit/${comment.id}`}
+                      href={`/recruit/${comment.id}`}
                       className="text-sm text-blue-600 hover:text-blue-700 mb-2 block"
                     >
                       {comment.postTitle}
@@ -347,7 +347,7 @@ export default function MyPage() {
                 {bookmarkedPosts.map((post) => (
                   <Link
                     key={post.id}
-                    href={`/team-recruit/${post.id}`}
+                    href={`/recruit/${post.id}`}
                     className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
