@@ -178,16 +178,13 @@ export default function MyPage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {profile.name}
                 </h1>
-                <button
-                  onClick={() => {
-                    setEditForm(profile);
-                    setIsEditModalOpen(true);
-                  }}
+                <Link
+                  href="/user/edit"
                   className="self-start sm:self-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
                 >
                   <Edit className="w-4 h-4" />
                   <span>정보 수정</span>
-                </button>
+                </Link>
               </div>
 
               <a
@@ -273,7 +270,7 @@ export default function MyPage() {
                 {myPosts.map((post) => (
                   <Link
                     key={post.id}
-                    href={`/team-recruit/${post.id}`}
+                    href={`/recruit/${post.id}`}
                     className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
                   >
                     <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600">
@@ -314,7 +311,7 @@ export default function MyPage() {
                     className="p-4 border border-gray-200 rounded-lg"
                   >
                     <Link
-                      href={`/team-recruit/${comment.id}`}
+                      href={`/recruit/${comment.id}`}
                       className="text-sm text-blue-600 hover:text-blue-700 mb-2 block"
                     >
                       {comment.postTitle}
@@ -347,7 +344,7 @@ export default function MyPage() {
                 {bookmarkedPosts.map((post) => (
                   <Link
                     key={post.id}
-                    href={`/team-recruit/${post.id}`}
+                    href={`/recruit/${post.id}`}
                     className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -377,9 +374,8 @@ export default function MyPage() {
           </div>
         )}
 
-        {/* 프로필 수정 모달 */}
         {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">

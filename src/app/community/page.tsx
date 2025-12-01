@@ -55,7 +55,7 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 w-full">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 w-full">
       <div className="flex mb-8 w-full justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">커뮤니티</h1>
@@ -64,7 +64,7 @@ export default function CommunityPage() {
         <div className="sm:flex-row gap-4h-full flex">
           <Link
             href="/community/write"
-            className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            className="inline-flex items-center justify-center px-6 py-2.5 bg-[#F28A03] text-white rounded-lg hover:bg-blue-700 transition font-medium"
           >
             <Plus className="w-5 h-5 mr-2" />
             글쓰기

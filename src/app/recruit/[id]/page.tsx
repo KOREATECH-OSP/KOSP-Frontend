@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { 
   ArrowLeft, 
@@ -10,9 +9,12 @@ import {
   Bookmark, 
   Calendar,
   Users,
-  Send
+  Send,
+  Edit
 } from 'lucide-react';
 import KoriSupport from '@/assets/images/kori/11-06 L 응원 .png';
+import { useRouter } from 'next/navigation';
+import RecruitmentEditModal from '@/common/components/team/RecruitmentEditModal';
 
 interface Comment {
   id: number;
@@ -23,6 +25,8 @@ interface Comment {
 }
 
 export default function TeamRecruitDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likeCount, setLikeCount] = useState(24);
@@ -43,8 +47,11 @@ export default function TeamRecruitDetailPage({ params }: { params: { id: string
     },
   ]);
 
-  // Mock 데이터
-  const recruitment = {
+  // 현재 사용자가 팀장인지 확인 (실제로는 API에서 가져와야 함)
+  const isTeamLeader = true;
+
+  // Mock 데이터를 state로 변경
+  const [recruitment, setRecruitment] = useState({
     id: 1,
     teamName: 'React 스터디 그룹',
     title: 'React 18 심화 스터디 멤버를 모집합니다!',
@@ -70,7 +77,7 @@ export default function TeamRecruitDetailPage({ params }: { params: { id: string
       memberCount: 5,
       imageUrl: '',
     },
-  };
+  });
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -96,6 +103,21 @@ export default function TeamRecruitDetailPage({ params }: { params: { id: string
     setCommentText('');
   };
 
+  const handleSaveRecruitment = (newData: {
+    title: string;
+    content: string;
+    positionTags: string[];
+    generalTags: string[];
+    recruitmentPeriod: { start: string; end: string };
+  }) => {
+    setRecruitment((prev) => ({
+      ...prev,
+      ...newData,
+    }));
+    alert('모집 공고가 수정되었습니다!');
+    setIsEditModalOpen(false);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
@@ -108,22 +130,34 @@ export default function TeamRecruitDetailPage({ params }: { params: { id: string
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* 뒤로가기 */}
-        <Link
-          href="/recruit"
+        <button
+          type="button"
+          onClick={() => router.back()}
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           목록으로
-        </Link>
+        </button>
 
-        {/* 메인 컨텐츠 */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           {/* 헤더 */}
           <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-              {recruitment.title}
-            </h1>
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <h1 className="flex-1 text-2xl sm:text-3xl font-bold text-gray-900">
+                {recruitment.title}
+              </h1>
+              
+              {/* 수정 버튼 (팀장만 표시) */}
+              {isTeamLeader && (
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm"
+                >
+                  <Edit className="w-4 h-4" />
+                  수정
+                </button>
+              )}
+            </div>
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
@@ -225,7 +259,7 @@ export default function TeamRecruitDetailPage({ params }: { params: { id: string
                       className="object-cover rounded-lg"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-full h-full rounded-lg bg-gray-100 flex items-center justify-center">
                       <Image
                         src={KoriSupport}
                         alt="team icon"
@@ -324,6 +358,20 @@ export default function TeamRecruitDetailPage({ params }: { params: { id: string
             </div>
           </div>
         </div>
+
+        {/* 공고 수정 모달 */}
+        <RecruitmentEditModal
+          isOpen={isEditModalOpen}
+          initialData={{
+            title: recruitment.title,
+            content: recruitment.content,
+            positionTags: recruitment.positionTags,
+            generalTags: recruitment.generalTags,
+            recruitmentPeriod: recruitment.recruitmentPeriod,
+          }}
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={handleSaveRecruitment}
+        />
       </div>
     </div>
   );
