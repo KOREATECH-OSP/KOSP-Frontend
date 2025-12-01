@@ -62,7 +62,7 @@ interface TeamSettingsFormValues {
   positions: string[];
 }
 
-export default function TeamDetailPage({ params }: { params: { id: string } }) {
+export default function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [activeTab, setActiveTab] = useState('모집');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteStudentId, setInviteStudentId] = useState('');
@@ -73,7 +73,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
   // 🔹 팀 정보 state로 관리 (모달에서 수정 가능하도록)
   const [team, setTeam] = useState<TeamInfo>({
-    id: Number(params.id) || 1,
+    id: 1,
     name: 'React 스터디 그룹',
     description:
       'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행되며, 각자 학습한 내용을 공유하고 토론하는 시간을 가집니다.',
@@ -368,7 +368,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                     </h2>
                     {canCreatePost() && (
                       <Link
-                        href={`${params.id}/create`}
+                        href={`${1}/create`}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm"
                       >
                         <Plus className="w-4 h-4" />

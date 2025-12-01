@@ -24,7 +24,7 @@ interface Comment {
   authorImage?: string;
 }
 
-export default function TeamRecruitDetailPage({ params }: { params: { id: string } }) {
+export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id: string }>  }) {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
