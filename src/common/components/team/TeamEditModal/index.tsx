@@ -255,7 +255,7 @@ function TeamEditModal({
           </button>
           <button
             onClick={onSave}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-[#F28A03] text-white rounded-lg hover:bg-[#d97706] transition-colors"
           >
             저장하기
           </button>

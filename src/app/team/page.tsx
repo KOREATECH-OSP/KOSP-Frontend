@@ -171,9 +171,9 @@ export default function TeamsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">내 팀</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">팀게시판</h1>
           <p className="text-sm sm:text-base text-gray-600">
-            함께 성장하는 팀에 참여하거나 새로운 팀을 만들어보세요
+            팀을 만들거나 나의 팀을 관리해보세요
           </p>
         </div>
         <Link
@@ -275,7 +275,6 @@ export default function TeamsPage() {
                         </div>
                       </div>
 
-                      {/* 팀 설명 */}
                       <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                         {team.description}
                       </p>
