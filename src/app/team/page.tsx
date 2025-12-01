@@ -205,7 +205,7 @@ export default function TeamsPage() {
                 팀 만들기
               </Link> 
               <Link
-                href="/team-recruit"
+                href="/recruit"
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
                 팀 둘러보기
