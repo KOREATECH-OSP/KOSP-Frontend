@@ -2,6 +2,8 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import CustomSelector, { SelectorOption } from '@/common/components/Selector';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 interface Team {
   id: number;
@@ -238,9 +240,22 @@ export default function CreateRecruitPage() {
 
   return (
       <div className="flex flex-col max-w-4xl mx-auto px-4 py-8 w-full">
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">팀원 모집하기</h1>
           <p className="text-gray-600">함께 성장할 팀원을 모집해보세요</p>
+        </div> */}
+        <div className="mb-8">
+          <Link
+            href="/recruit"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>돌아가기</span>
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">팀원 모집하기</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            함께 성장할 팀원을 모집해보세요
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

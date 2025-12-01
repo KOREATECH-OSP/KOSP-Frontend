@@ -35,11 +35,11 @@ function Header({ simple = false }: HeaderProps) {
     { href: "/challenge", label: "챌린지" },
   ];
 
-  useEffect(() => {
-    if (!mobileMenuOpen) {
-      setMobileProfileOpen(false);
-    }
-  }, [mobileMenuOpen]);
+  // useEffect(() => {
+  //   if (!mobileMenuOpen) {
+  //     setMobileProfileOpen(false);
+  //   }
+  // }, [mobileMenuOpen]);
 
   return (
     <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50 ${suitFont.className}`}>

@@ -2,176 +2,52 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Users, Search, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import TabNavigation, { Tab } from '@/common/components/TabNavigation';
-import { teamRecruits } from '@/mocks/recruit/teamRecruitList.mock';
-import { teams } from '@/mocks/recruit/teamList.mock';
 
+import TeamRecruitTab from './components/TeamRecruitTab';
+import TeamListTab from './components/TeamListTab';
+
+import type { TeamRecruitment, Team } from '@/types/recruit';
 
 export default function TeamRecruitPage() {
   const [activeTab, setActiveTab] = useState('팀모집');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 탭 정의
+  const teamRecruits: TeamRecruitment[] = [ { id: 1, teamName: 'React 스터디 그룹', title: 'React 18 심화 스터디 멤버를 모집합니다!', positions: ['프론트엔드', '백엔드'], tags: ['React', 'Next.js', 'TypeScript', '스터디'], postedAt: '2024-11-28', postedBy: '김개발', status: '모집중', likes: 24, comments: 8, bookmarks: 12, views: 156, }, { id: 2, teamName: '오픈소스 컨트리뷰션 팀', title: 'Hacktoberfest 함께 참여하실 분 구합니다', positions: ['프론트엔드', '백엔드', 'DevOps'], tags: ['오픈소스', 'Git', 'GitHub', '프로젝트'], postedAt: '2024-11-27', postedBy: '이코드', status: '모집중', likes: 45, comments: 15, bookmarks: 28, views: 342, }, { id: 3, teamName: 'AI 연구 동아리', title: '머신러닝 스터디원 모집 (초보 환영)', positions: ['AI/ML'], tags: ['Python', 'TensorFlow', 'PyTorch', '머신러닝'], postedAt: '2024-11-25', postedBy: '박연구', status: '마감', likes: 67, comments: 23, bookmarks: 41, views: 521, }, ];
+  const teams: Team[] = [ { id: 1, name: 'React 스터디 그룹', description: 'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행되며, 각자 학습한 내용을 공유하고 토론하는 시간을 가집니다.', memberCount: 5, createdBy: '김개발', }, { id: 2, name: '오픈소스 컨트리뷰션 팀', description: 'Hacktoberfest를 준비하며 함께 오픈소스에 기여하는 팀입니다.', memberCount: 3, createdBy: '이코드', }, { id: 3, name: 'AI 연구 동아리', description: '머신러닝과 딥러닝을 함께 연구하고 프로젝트를 진행하는 동아리입니다. 초보자도 환영하며, 매주 스터디와 세미나를 진행합니다.', memberCount: 8, createdBy: '박연구', }, ];
+
   const tabs: Tab[] = [
     { id: '팀모집', label: '팀원 모집' },
     { id: '전체팀', label: '전체 팀 목록' }
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case '모집중':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case '마감임박':
-        return 'bg-red-100 text-red-700 border-red-200';
-      case '마감':
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">팀 모집</h1>
-          <p className="text-gray-600">함께 프로젝트를 진행할 팀원을 찾거나 팀을 둘러보세요</p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">팀 모집</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            함께 프로젝트를 진행할 팀원을 찾거나 팀을 둘러보세요
+          </p>
         </div>
-
-        {/* Search Bar */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="팀, 기술스택 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <Link
-            href="/recruit/write"
-            className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            팀원 모집하기
-          </Link>
-        </div>
-
-        {/* Tab Navigation - 공통 컴포넌트 사용 */}
-        <TabNavigation 
-          tabs={tabs} 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-        />
-
-        {/* 팀원 모집 탭 */}
-        {activeTab === '팀모집' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {teamRecruits.map((recruit) => (
-              <Link
-                key={recruit.id}
-                href={`/team-recruit/${recruit.id}`}
-                className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(recruit.status)}`}>
-                    {recruit.status}
-                  </span>
-                  <span className="text-sm text-gray-500">{recruit.deadline}</span>
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-900 mb-2 hover:text-blue-600">
-                  {recruit.title}
-                </h3>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {recruit.description}
-                </p>
-
-                <div className="mb-4">
-                  <p className="text-xs text-gray-500 mb-2">모집 포지션:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {recruit.positions.map((position, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium"
-                      >
-                        {position}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {recruit.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      <Users className="w-4 h-4 mr-1" />
-                      {recruit.currentMembers}/{recruit.maxMembers}명
-                    </span>
-                    <span>{recruit.createdAt}</span>
-                  </div>
-                  <span className="text-xs text-gray-500">조회 {recruit.views}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* 전체 팀 탭 */}
-        {activeTab === '전체팀' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teams.map((team) => (
-              <Link
-                key={team.id}
-                href={`/team-recruit/team/${team.id}`}
-                className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  {team.isRecruiting && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                      모집중
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-900 mb-2 hover:text-blue-600">
-                  {team.name}
-                </h3>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {team.description}
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100 text-sm">
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <span className="flex items-center">
-                      <Users className="w-4 h-4 mr-1" />
-                      {team.memberCount}명
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <Link
+          href="/recruit/write"
+          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+          팀원 모집하기
+        </Link>
       </div>
+
+
+
+      {/* 탭 네비게이션 */}
+      <TabNavigation tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* 탭 컨텐츠 */}
+      {activeTab === '팀모집' && <TeamRecruitTab recruits={teamRecruits} searchQuery={searchQuery} />}
+      {activeTab === '전체팀' && <TeamListTab teams={teams} searchQuery={searchQuery} />}
     </div>
   );
 }

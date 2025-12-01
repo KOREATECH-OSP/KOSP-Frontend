@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { X, Camera, Upload } from 'lucide-react';
-import React, { useRef, useState, useEffect } from 'react';
+import { X,  Upload } from 'lucide-react';
+import React, { useRef, useState } from 'react';
 import KoriSupport from '@/assets/images/kori/11-06 L 응원 .png';
 import Image from 'next/image';
 
