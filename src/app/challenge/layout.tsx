@@ -1,11 +1,11 @@
-import Header from '@/common/components/Header';
+import AppHeader from '@/common/components/Header/AppHeader';
 import { suitFont } from '../../style/font'
 
 function ChallengePageLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <body>
-        <Header />
+        <AppHeader />
         <main className={`${suitFont.className}`}>{children}</main>
       </body>
     </html>

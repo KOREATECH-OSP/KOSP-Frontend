@@ -6,28 +6,98 @@ import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { suitFont } from "../../../style/font";
 import LogoImage from "../../../assets/images/koreatech_hangeul.png";
+import { API_BASE_URL } from '@/lib/api/config';
+import type { SessionUser } from '@/lib/auth/types';
 
-interface HeaderProps {
+export interface HeaderProps {
   simple?: boolean;
+  user?: SessionUser | null;
 }
 
-function Header({ simple = false }: HeaderProps) {
+function Header({ simple = false, user = null }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
-  const loggedInUser = {
-    name: "박태진",
-    studentId: "2025100166",
-  } as const; // TODO: Replace with real user data when auth integration is ready.
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(user);
+
+  useEffect(() => {
+    setSessionUser(user ?? null);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      return;
+    }
+
+    // localStorage에서 먼저 확인
+    const storedUser = window.localStorage.getItem('kosp:user-info');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser) as SessionUser;
+        setSessionUser(parsed);
+        return;
+      } catch {
+        // 파싱 실패 시 무시
+      }
+    }
+
+    let aborted = false;
+
+    const syncSession = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as SessionUser;
+        if (!aborted) {
+          setSessionUser(payload);
+          window.localStorage.setItem('kosp:user-info', JSON.stringify(payload));
+        }
+      } catch {
+        // 세션 없음 또는 네트워크 오류 - 무시
+      }
+    };
+
+    syncSession();
+
+    return () => {
+      aborted = true;
+    };
+  }, [user]);
+
+  const isLoggedIn = Boolean(sessionUser);
+  const displayName = sessionUser?.name ?? '';
   const handleProfileAction = (intent: string) => {
     console.log(`[Header] ${intent} 클릭`);
     setMobileProfileOpen(false);
   };
-  const isLoggedIn = Boolean(loggedInUser);
-  const profileActions = [
-    { label: "내 정보", action: () => handleProfileAction("내 정보") },
-    { label: "알림", action: () => handleProfileAction("알림") },
-    { label: "로그아웃", action: () => handleProfileAction("로그아웃") },
-  ];
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/v1/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('[Header] 로그아웃 실패', error);
+    } finally {
+      setSessionUser(null);
+      window.localStorage.removeItem('kosp:user-info');
+      window.location.href = '/login';
+    }
+  };
+  const profileActions = isLoggedIn
+    ? [
+        { label: "내 정보", action: () => handleProfileAction("내 정보") },
+        { label: "알림", action: () => handleProfileAction("알림") },
+        { label: "로그아웃", action: handleLogout },
+      ]
+    : [];
   const navItems = [
     { href: "/community", label: "커뮤니티" },
     { href: "/team", label: "팀게시판" },
@@ -73,22 +143,22 @@ function Header({ simple = false }: HeaderProps) {
 
           {!simple && (
             <>
-              <div className="hidden lg:flex h-full items-stretch gap-4">
+              <div className="hidden lg:flex items-center gap-4">
                 {!isLoggedIn && (
                   <Link
                     href="/signup"
-                    className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
+                    className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
                   >
                     <span className="hidden sm:inline">회원가입</span>
                   </Link>
                 )}
 
                 {isLoggedIn ? (
-                  <Menu as="div" className="relative h-full">
+                  <Menu as="div" className="relative">
                     {({ open }) => (
                       <>
-                        <Menu.Button className="flex h-full items-center gap-x-2 border-x border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 hover:bg-gray-50 transition-colors focus:outline-none whitespace-nowrap">
-                          <span>{`${loggedInUser.name}(${loggedInUser.studentId})`}</span>
+                        <Menu.Button className="flex items-center gap-x-2 border border-gray-200 bg-white px-4 py-2 rounded-xl text-sm font-medium text-gray-900 hover:bg-gray-50 transition-colors focus:outline-none whitespace-nowrap">
+                          <span>{displayName}</span>
                           <svg
                             viewBox="0 0 20 20"
                             className={`w-4 h-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
@@ -246,7 +316,7 @@ function Header({ simple = false }: HeaderProps) {
                             onClick={() => setMobileProfileOpen((prev) => !prev)}
                             aria-expanded={mobileProfileOpen}
                           >
-                            <span>{`${loggedInUser.name}(${loggedInUser.studentId})`}</span>
+                            <span>{displayName}</span>
                             <svg
                               viewBox="0 0 20 20"
                               className={`w-4 h-4 text-gray-500 transition-transform ${mobileProfileOpen ? "rotate-180" : ""}`}

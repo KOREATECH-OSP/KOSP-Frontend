@@ -1,18 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api/config';
+
+type AuthMeResponse = {
+  name: string;
+  [key: string]: unknown;
+};
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<AuthMeResponse | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const savedEmail = window.localStorage.getItem('kosp:remember-email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (rememberMe) {
+      window.localStorage.setItem('kosp:remember-email', email);
+    } else {
+      window.localStorage.removeItem('kosp:remember-email');
+    }
+  }, [email, rememberMe]);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('로그인 시도:', { email, password, rememberMe });
+    setErrorMessage(null);
+    setIsLoading(true);
+
+    try {
+      const hashedPassword = await hashToSha256(password);
+      
+      // Next.js API Route를 통해 로그인 (서버에서 /v1/auth/me도 함께 호출)
+      const loginResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password: hashedPassword,
+        }),
+      });
+
+      const data = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        throw new Error(data.error || '로그인에 실패했습니다.');
+      }
+
+      // 서버에서 받은 사용자 정보 저장
+      if (data.user) {
+        window.localStorage.setItem('kosp:user-info', JSON.stringify(data.user));
+        setUserInfo(data.user);
+      }
+
+      router.push('/');
+    } catch (error) {
+      const fallbackMessage =
+        error instanceof Error ? error.message : '로그인에 실패했습니다.';
+      setErrorMessage(fallbackMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -28,6 +92,17 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl border border-gray-200/70 bg-white p-6 sm:p-8 transition-all duration-200">
+          {errorMessage && (
+            <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errorMessage}
+            </div>
+          )}
+          {userInfo && (
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              {`${userInfo.name ?? '회원'}님, 환영합니다.`}
+            </div>
+          )}
+
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -98,9 +173,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+              disabled={isLoading}
+              className="w-full py-3 px-4 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              로그인
+              {isLoading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 
@@ -138,4 +214,30 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+async function hashToSha256(value: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function extractErrorMessage(response: Response) {
+  try {
+    const payload = await response.json();
+    if (typeof payload?.message === 'string') {
+      return payload.message;
+    }
+    if (typeof payload?.error === 'string') {
+      return payload.error;
+    }
+  } catch (error) {
+    console.error('[login] 응답 파싱 실패', error);
+  }
+
+  return response.status === 401
+    ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+    : '로그인에 실패했습니다. 다시 시도해주세요.';
 }
