@@ -178,7 +178,7 @@ export default function TeamsPage() {
         </div>
         <Link
           href="/team/create"
-          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap"
+          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#F28A03] text-white rounded-lg hover:bg-[#d97706] transition-colors flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap"
         >
           <Users className="w-4 h-4 sm:w-5 sm:h-5" />
           팀 만들기
@@ -219,7 +219,7 @@ export default function TeamsPage() {
             {teams.map((team) => (
               <div
                 key={team.id}
-                className="bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200"
+                className="bg-white rounded-xl border border-gray-200"
               >
                 <div className="p-4 sm:p-6">
                   {/* 팀 이미지 & 제목 섹션 */}
@@ -283,10 +283,10 @@ export default function TeamsPage() {
                   </div>
 
                   {/* 액션 버튼 */}
-                  <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
                     <button 
                       onClick={() => handleInvite(team)}
-                      className="flex-1 px-3 sm:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                      className="flex-1 px-2 py-[12px] sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
                     >
                       <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       멤버 초대
@@ -294,7 +294,7 @@ export default function TeamsPage() {
                     {team.isLeader && (
                       <button
                         onClick={() => handleEdit(team)}
-                        className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                        className="flex-1 px-3 py-[12px] sm:px-4 bg-[#F28A03] text-white rounded-lg hover:bg-[#d97706] transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
                       >
                         <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         수정하기
