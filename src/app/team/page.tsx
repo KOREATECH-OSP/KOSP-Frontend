@@ -282,25 +282,26 @@ export default function TeamsPage() {
                     </div>
                   </div>
 
-                  {/* 액션 버튼 */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
+                  <div className="flex flex-row sm:flex-row-reverse gap-3 pt-4 border-t border-gray-100 items-end">
                     <button 
                       onClick={() => handleInvite(team)}
-                      className="flex-1 px-2 py-[12px] sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                      className="flex flex-1 sm:flex-none px-2 py-[12px] sm:px-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium items-center justify-center gap-2"
                     >
                       <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       멤버 초대
                     </button>
+
                     {team.isLeader && (
                       <button
                         onClick={() => handleEdit(team)}
-                        className="flex-1 px-3 py-[12px] sm:px-4 bg-[#F28A03] text-white rounded-lg hover:bg-[#d97706] transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                        className="flex flex-1 sm:flex-none px-3 py-[12px] sm:px-4 bg-[#F28A03] text-white rounded-lg hover:bg-[#d97706] transition-colors text-xs sm:text-sm font-medium items-center justify-center gap-2"
                       >
                         <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         수정하기
                       </button>
                     )}
                   </div>
+
                 </div>
               </div>
             ))}
