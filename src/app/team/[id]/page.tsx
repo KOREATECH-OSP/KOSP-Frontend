@@ -16,10 +16,10 @@ import {
   Eye,
   MessageCircle,
   Clock,
-  LogIn,
 } from 'lucide-react';
 import TabNavigation, { Tab } from '@/common/components/TabNavigation';
 import KoriSupport from '@/assets/images/kori/11-06 L 응원 .png';
+import TeamSettingsModal from '@/common/components/team/TeamSettingsModal';
 
 interface TeamMember {
   id: number;
@@ -41,25 +41,47 @@ interface TeamPost {
   deadline?: string;
 }
 
+// 팀 기본 정보 + 설정 모달에서 수정 가능한 필드들
+interface TeamInfo {
+  id: number;
+  name: string;
+  description: string;
+  createdBy: string;
+  createdAt: string;
+  imageUrl?: string;
+  positions: string[]; // 모달에서 수정 가능한 포지션들
+}
+
 type UserRole = 'leader' | 'member' | 'guest';
+
+// TeamSettingsModal에서 넘겨줄 설정 타입 (모달 props에 맞춰서 사용)
+interface TeamSettingsFormValues {
+  name: string;
+  description: string;
+  imageUrl?: string;
+  positions: string[];
+}
 
 export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState('모집');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteStudentId, setInviteStudentId] = useState('');
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // 현재 사용자의 역할 (실제로는 API에서 가져와야 함)
   const userRole: UserRole = 'leader'; // 'leader', 'member', 'guest' 중 하나
 
-  const team = {
-    id: 1,
+  // 🔹 팀 정보 state로 관리 (모달에서 수정 가능하도록)
+  const [team, setTeam] = useState<TeamInfo>({
+    id: Number(params.id) || 1,
     name: 'React 스터디 그룹',
     description:
       'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행되며, 각자 학습한 내용을 공유하고 토론하는 시간을 가집니다.',
     createdBy: '김개발',
     createdAt: '2024-10-15',
     imageUrl: '',
-  };
+    positions: ['프론트엔드', '백엔드'], // 팀에서 주로 모집하는 포지션 등
+  });
 
   const members: TeamMember[] = [
     {
@@ -92,7 +114,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     {
       id: 1,
       title: 'React 18 심화 스터디 멤버를 모집합니다!',
-      description: '매주 목요일 저녁 8시에 온라인으로 진행되는 React 스터디입니다. 함께 성장하실 분들을 기다립니다!',
+      description:
+        '매주 목요일 저녁 8시에 온라인으로 진행되는 React 스터디입니다. 함께 성장하실 분들을 기다립니다!',
       positions: ['프론트엔드', '백엔드'],
       createdAt: '2024-11-28',
       views: 156,
@@ -103,7 +126,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     {
       id: 2,
       title: 'TypeScript 프로젝트 팀원 모집',
-      description: 'TypeScript와 Node.js를 활용한 실전 프로젝트를 함께 진행하실 분을 찾습니다.',
+      description:
+        'TypeScript와 Node.js를 활용한 실전 프로젝트를 함께 진행하실 분을 찾습니다.',
       positions: ['백엔드', 'DevOps'],
       createdAt: '2024-11-25',
       views: 89,
@@ -114,7 +138,8 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
     {
       id: 3,
       title: 'Next.js 프로젝트 함께 하실 분',
-      description: 'Next.js 14를 활용한 풀스택 프로젝트를 진행했습니다.',
+      description:
+        'Next.js 14를 활용한 풀스택 프로젝트를 진행했습니다.',
       positions: ['프론트엔드'],
       createdAt: '2024-11-20',
       views: 234,
@@ -126,7 +151,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   // 권한별 탭 구성
   const getTabsForRole = () => {
     const baseTabs = [{ id: '모집', label: '팀원 모집' }];
-    
+
     if (userRole === 'leader' || userRole === 'member') {
       return [
         ...baseTabs,
@@ -134,20 +159,23 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
         { id: '게시글', label: '전체 게시글' },
       ];
     }
-    
+
     return baseTabs;
   };
 
   const tabs: Tab[] = getTabsForRole();
 
-  const activeRecruitments = teamPosts.filter((post) => post.status === '모집중');
+  const activeRecruitments = teamPosts.filter(
+    (post) => post.status === '모집중',
+  );
 
   // 권한 체크 함수들
   const canCreatePost = () => userRole === 'leader'; // 팀장만 모집글 작성
   const canEditTeam = () => userRole === 'leader'; // 팀장만 팀 설정 수정
   const canInviteMember = () => userRole === 'leader' || userRole === 'member'; // 팀장, 일반 회원만 초대
   const canRemoveMember = () => userRole === 'leader'; // 팀장만 팀원 내보내기
-  const canViewMembers = () => userRole === 'leader' || userRole === 'member'; // 팀장, 일반 회원만 팀원 보기
+  const canViewMembers = () =>
+    userRole === 'leader' || userRole === 'member'; // 팀장, 일반 회원만 팀원 보기
   const canEditPost = () => userRole === 'leader'; // 팀장만 게시글 수정
 
   const handleInvite = () => {
@@ -169,7 +197,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const handleJoinTeam = () => {
     if (confirm('이 팀에 가입하시겠습니까?')) {
       alert('팀 가입 신청이 완료되었습니다!');
-      // API 호출하여 가입 신청
+      // TODO: API 호출하여 가입 신청
     }
   };
 
@@ -185,15 +213,31 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const getDaysLeft = (deadline: string) => {
     const now = new Date();
     const end = new Date(deadline);
-    const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const diff = Math.ceil(
+      (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
     return diff;
+  };
+
+  // 🔹 팀 설정 저장 핸들러 (모달에서 호출)
+  const handleSaveSettings = (values: TeamSettingsFormValues) => {
+    // 실제로는 여기서 API 호출 → 성공 시 state 업데이트
+    setTeam((prev) => ({
+      ...prev,
+      name: values.name,
+      description: values.description,
+      imageUrl: values.imageUrl,
+      positions: values.positions,
+    }));
+
+    setIsSettingsModalOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Link
-          href="/recruit"
+          href="/team"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -229,32 +273,23 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {team.name}
                 </h1>
-                
+
                 {/* 역할별 액션 버튼 */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {userRole === 'leader' && (
                     <>
                       {canEditTeam() && (
-                        <Link
-                          href={`/team/${team.id}/edit`}
+                        <button
+                          onClick={() => setIsSettingsModalOpen(true)}
                           className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm"
                         >
                           <Settings className="w-4 h-4" />
                           팀 설정
-                        </Link>
-                      )}
-                      {canCreatePost() && (
-                        <Link
-                          href="/recruit/write"
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm"
-                        >
-                          <Plus className="w-4 h-4" />
-                          모집글 작성
-                        </Link>
+                        </button>
                       )}
                     </>
                   )}
-                  
+
                   {userRole === 'member' && canInviteMember() && (
                     <button
                       onClick={() => setIsInviteModalOpen(true)}
@@ -262,6 +297,15 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                     >
                       <UserPlus className="w-4 h-4" />
                       팀원 초대
+                    </button>
+                  )}
+
+                  {userRole === 'guest' && (
+                    <button
+                      onClick={handleJoinTeam}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm"
+                    >
+                      팀 가입 신청
                     </button>
                   )}
                 </div>
@@ -324,7 +368,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                     </h2>
                     {canCreatePost() && (
                       <Link
-                        href="/recruit/write"
+                        href={`${params.id}/create`}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm"
                       >
                         <Plus className="w-4 h-4" />
@@ -335,7 +379,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
                   <div className="space-y-4">
                     {activeRecruitments.map((post) => {
-                      const daysLeft = post.deadline ? getDaysLeft(post.deadline) : null;
+                      const daysLeft = post.deadline
+                        ? getDaysLeft(post.deadline)
+                        : null;
                       return (
                         <div
                           key={post.id}
@@ -357,9 +403,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                               <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                                 {post.title}
                               </h3>
-                              <p className="text-sm text-gray-600 mb-3">
-                                {post.description}
-                              </p>
 
                               <div className="flex flex-wrap gap-2 mb-3">
                                 {post.positions.map((position, idx) => (
@@ -399,14 +442,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                             >
                               자세히 보기
                             </Link>
-                            {canEditPost() && (
-                              <Link
-                                href={`/recruit/${post.id}/edit`}
-                                className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm"
-                              >
-                                수정
-                              </Link>
-                            )}
                           </div>
                         </div>
                       );
@@ -422,7 +457,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                     현재 모집 중인 공고가 없습니다
                   </h3>
                   <p className="text-sm text-gray-600 mb-6">
-                    {canCreatePost() 
+                    {canCreatePost()
                       ? '새로운 팀원을 모집하는 공고를 작성해보세요'
                       : '팀장이 새로운 모집 공고를 올릴 때까지 기다려주세요'}
                   </p>
@@ -441,7 +476,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* 팀원 관리 탭 (팀장, 일반 회원만 접근) */}
+        {/* 팀원 관리 탭 */}
         {activeTab === '팀원' && canViewMembers() && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="p-6">
@@ -502,7 +537,9 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
 
                     {canRemoveMember() && member.role !== 'leader' && (
                       <button
-                        onClick={() => handleRemoveMember(member.id, member.name)}
+                        onClick={() =>
+                          handleRemoveMember(member.id, member.name)
+                        }
                         className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition flex items-center gap-1.5 text-sm"
                       >
                         <UserMinus className="w-4 h-4" />
@@ -516,7 +553,7 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* 전체 게시글 탭 (팀장, 일반 회원만 접근) */}
+        {/* 전체 게시글 탭 */}
         {activeTab === '게시글' && canViewMembers() && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="p-6">
@@ -524,15 +561,6 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
                 <h2 className="text-xl font-bold text-gray-900">
                   전체 게시글 ({teamPosts.length})
                 </h2>
-                {canCreatePost() && (
-                  <Link
-                    href="/recruit/write"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    게시글 작성
-                  </Link>
-                )}
               </div>
 
               {teamPosts.length > 0 ? (
@@ -628,6 +656,18 @@ export default function TeamDetailPage({ params }: { params: { id: string } }) {
           </div>
         )}
       </div>
+
+      <TeamSettingsModal
+        isOpen={isSettingsModalOpen}
+        initialSettings={{
+          name: team.name,
+          description: team.description,
+          imageUrl: team.imageUrl,
+          positions: team.positions,
+        }}
+        onClose={() => setIsSettingsModalOpen(false)}
+        onSave={handleSaveSettings}
+      />
     </div>
   );
 }
