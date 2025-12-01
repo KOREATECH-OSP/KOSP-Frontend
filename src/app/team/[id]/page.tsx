@@ -62,7 +62,7 @@ interface TeamSettingsFormValues {
   positions: string[];
 }
 
-export default function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function TeamDetailPage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState('모집');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteStudentId, setInviteStudentId] = useState('');
@@ -73,7 +73,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
   // 🔹 팀 정보 state로 관리 (모달에서 수정 가능하도록)
   const [team, setTeam] = useState<TeamInfo>({
-    id: 1,
+    id: Number(params.id) || 1,
     name: 'React 스터디 그룹',
     description:
       'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행되며, 각자 학습한 내용을 공유하고 토론하는 시간을 가집니다.',
@@ -289,7 +289,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                       )}
                     </>
                   )}
-
+{/* 
                   {userRole === 'member' && canInviteMember() && (
                     <button
                       onClick={() => setIsInviteModalOpen(true)}
@@ -307,7 +307,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                     >
                       팀 가입 신청
                     </button>
-                  )}
+                  )} */}
                 </div>
               </div>
 
@@ -333,7 +333,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* 비회원 안내 메시지 */}
-        {userRole === 'guest' && (
+        {/* {userRole === 'guest' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
               <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -347,7 +347,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* 탭 네비게이션 */}
         <TabNavigation
@@ -368,7 +368,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                     </h2>
                     {canCreatePost() && (
                       <Link
-                        href={`${1}/create`}
+                        href={`${params.id}/create`}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm"
                       >
                         <Plus className="w-4 h-4" />
