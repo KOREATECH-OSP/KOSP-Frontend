@@ -7,6 +7,7 @@ import GithubStep from './GithubStep';
 import InfoStep from './InfoStep';
 import CompleteStep from './CompleteStep';
 import { useFunnel } from '@/common/hooks/useFunnel';
+import { API_BASE_URL } from '@/lib/api/config';
 
 const SIGNUP_STEPS = ['github', 'info', 'complete'] as const;
 
@@ -64,11 +65,13 @@ export default function SignupPage() {
       // 비밀번호 SHA-256 해싱
       const hashedPassword = await hashToSha256(formData.password);
 
-      const response = await fetch('/api/auth/signup', {
+      // 백엔드 API 직접 호출
+      const response = await fetch(`${API_BASE_URL}/v1/users/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: formData.name,
           kut_id: formData.studentId,
@@ -77,15 +80,20 @@ export default function SignupPage() {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || '회원가입에 실패했습니다.');
+        const errorText = await response.text();
+        throw new Error(errorText || '회원가입에 실패했습니다.');
       }
 
-      // 사용자 정보 저장 (자동 로그인)
-      if (data.user) {
-        window.localStorage.setItem('kosp:user-info', JSON.stringify(data.user));
+      // 회원가입 성공 후 사용자 정보 조회 (자동 로그인)
+      const meResponse = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (meResponse.ok) {
+        const user = await meResponse.json();
+        window.localStorage.setItem('kosp:user-info', JSON.stringify(user));
       }
 
       // 완료 단계로 이동

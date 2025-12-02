@@ -44,29 +44,35 @@ export default function LoginPage() {
 
     try {
       const hashedPassword = await hashToSha256(password);
-      
-      // Next.js API Route를 통해 로그인 (서버에서 /v1/auth/me도 함께 호출)
-      const loginResponse = await fetch('/api/auth/login', {
+
+      // 백엔드 API 직접 호출
+      const loginResponse = await fetch(`${API_BASE_URL}/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           email,
           password: hashedPassword,
         }),
       });
 
-      const data = await loginResponse.json();
-
       if (!loginResponse.ok) {
-        throw new Error(data.error || '로그인에 실패했습니다.');
+        const errorMsg = await extractErrorMessage(loginResponse);
+        throw new Error(errorMsg);
       }
 
-      // 서버에서 받은 사용자 정보 저장
-      if (data.user) {
-        window.localStorage.setItem('kosp:user-info', JSON.stringify(data.user));
-        setUserInfo(data.user);
+      // 로그인 성공 후 사용자 정보 조회
+      const meResponse = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (meResponse.ok) {
+        const user = await meResponse.json();
+        window.localStorage.setItem('kosp:user-info', JSON.stringify(user));
+        setUserInfo(user);
       }
 
       router.push('/');
