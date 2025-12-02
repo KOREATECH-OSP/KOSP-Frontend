@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.kosp.kro.kr)",
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(sha256sum:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
