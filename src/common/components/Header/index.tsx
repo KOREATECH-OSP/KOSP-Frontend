@@ -30,6 +30,13 @@ function Header({ simple = false, user = null }: HeaderProps) {
       return;
     }
 
+    // 로그아웃 직후인 경우 세션 동기화 건너뛰기
+    const isLoggingOut = window.sessionStorage.getItem('kosp:logging-out');
+    if (isLoggingOut) {
+      window.sessionStorage.removeItem('kosp:logging-out');
+      return;
+    }
+
     // localStorage에서 먼저 확인
     const storedUser = window.localStorage.getItem('kosp:user-info');
     if (storedUser) {
@@ -94,6 +101,7 @@ function Header({ simple = false, user = null }: HeaderProps) {
     } finally {
       setSessionUser(null);
       window.localStorage.removeItem('kosp:user-info');
+      window.sessionStorage.setItem('kosp:logging-out', 'true');
       window.location.href = '/login';
     }
   };
