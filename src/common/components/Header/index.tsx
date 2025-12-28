@@ -1,87 +1,27 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
+import { signOut } from 'next-auth/react';
+import type { Session } from 'next-auth';
 import { suitFont } from "../../../style/font";
 import LogoImage from "../../../assets/images/koreatech_hangeul.png";
-import { API_BASE_URL } from '@/lib/api/config';
-import type { SessionUser } from '@/lib/auth/types';
 
 export interface HeaderProps {
   simple?: boolean;
-  user?: SessionUser | null;
+  session?: Session | null;
 }
 
-function Header({ simple = false, user = null }: HeaderProps) {
+function Header({ simple = false, session = null }: HeaderProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
-  const [sessionUser, setSessionUser] = useState<SessionUser | null>(user);
 
-  useEffect(() => {
-    setSessionUser(user ?? null);
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      return;
-    }
-
-    // 로그아웃 직후인 경우 세션 동기화 건너뛰기
-    const isLoggingOut = window.sessionStorage.getItem('kosp:logging-out');
-    if (isLoggingOut) {
-      window.sessionStorage.removeItem('kosp:logging-out');
-      return;
-    }
-
-    // localStorage에서 먼저 확인
-    const storedUser = window.localStorage.getItem('kosp:user-info');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser) as SessionUser;
-        setSessionUser(parsed);
-        return;
-      } catch {
-        // 파싱 실패 시 무시
-      }
-    }
-
-    let aborted = false;
-
-    const syncSession = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const payload = (await response.json()) as SessionUser;
-        if (!aborted) {
-          setSessionUser(payload);
-          window.localStorage.setItem('kosp:user-info', JSON.stringify(payload));
-        }
-      } catch {
-        // 세션 없음 또는 네트워크 오류 - 무시
-      }
-    };
-
-    syncSession();
-
-    return () => {
-      aborted = true;
-    };
-  }, [user]);
-
-  const isLoggedIn = Boolean(sessionUser);
-  const displayName = sessionUser?.name ?? '';
+  const isLoggedIn = Boolean(session?.user);
+  const displayName = session?.user?.name ?? '';
   const handleProfileAction = (intent: string) => {
     console.log(`[Header] ${intent} 클릭`);
     setMobileProfileOpen(false);
@@ -91,17 +31,22 @@ function Header({ simple = false, user = null }: HeaderProps) {
     router.push('/user');
   };
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE_URL}/v1/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-    } catch (error) {
-      console.error('[Header] 로그아웃 실패', error);
-    } finally {
-      setSessionUser(null);
-      window.localStorage.removeItem('kosp:user-info');
-      window.sessionStorage.setItem('kosp:logging-out', 'true');
+    // Authentik 서버 로그아웃 URL
+    const idToken = session?.idToken;
+    const postLogoutRedirectUri = typeof window !== 'undefined'
+      ? `${window.location.origin}/login`
+      : '/login';
+
+    // next-auth 세션 먼저 제거
+    await signOut({ redirect: false });
+
+    // Authentik 서버에서도 로그아웃
+    if (idToken) {
+      const endSessionUrl = new URL('https://auth.swkoreatech.io/application/o/swkoreatech-osp/end-session/');
+      endSessionUrl.searchParams.set('id_token_hint', idToken);
+      endSessionUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+      window.location.href = endSessionUrl.toString();
+    } else {
       window.location.href = '/login';
     }
   };

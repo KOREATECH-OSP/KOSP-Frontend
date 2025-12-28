@@ -5,6 +5,7 @@ interface VerificationStepProps {
   onCodeChange: (code: string) => void;
   onSendCode: () => void;
   onVerify: (e: React.FormEvent) => void;
+  isLoading?: boolean;
 }
 
 export default function VerificationStep({
@@ -14,6 +15,7 @@ export default function VerificationStep({
   onCodeChange,
   onSendCode,
   onVerify,
+  isLoading = false,
 }: VerificationStepProps) {
   return (
     <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
@@ -60,10 +62,10 @@ export default function VerificationStep({
 
         <button
           type="submit"
-          disabled={!sentCode}
+          disabled={!sentCode || isLoading}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          인증 완료
+          {isLoading ? '처리 중...' : '인증 완료'}
         </button>
 
         <button
