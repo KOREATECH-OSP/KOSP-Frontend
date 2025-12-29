@@ -97,15 +97,6 @@ function Header({ simple = false, session = null }: HeaderProps) {
           {!simple && (
             <>
               <div className="hidden lg:flex items-center gap-4">
-                {!isLoggedIn && (
-                  <Link
-                    href="/login"
-                    className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
-                  >
-                    <span className="hidden sm:inline">시작하기</span>
-                  </Link>
-                )}
-
                 {isLoggedIn ? (
                   <Menu as="div" className="relative">
                     {({ open }) => (
@@ -176,7 +167,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     href="/login"
                     className="text-sm font-semibold text-white bg-gray-900 px-4 py-2 rounded-xl hover:bg-black transition-colors duration-200"
                   >
-                    로그인
+                    시작하기
                   </Link>
                 )}
               </div>
