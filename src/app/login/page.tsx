@@ -48,10 +48,10 @@ function LoginContent() {
       <div className="max-w-md w-full space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            로그인
+            시작하기
           </h1>
           <p className="text-sm text-gray-500">
-            오픈소스포털에 오신 것을 환영합니다
+            로그인 또는 회원가입을 진행합니다
           </p>
         </div>
 
@@ -71,15 +71,15 @@ function LoginContent() {
             {isLoading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                로그인 중...
+                진행 중...
               </>
             ) : (
-              '한국기술교육대 오픈소스포털 계정으로 로그인'
+              '오픈소스포털 계정으로 계속하기'
             )}
           </button>
 
           <p className="mt-4 text-center text-xs text-gray-500">
-            회원가입은 로그인 후 진행해주세요.
+            처음이신가요? 버튼을 누르면 회원가입도 함께 진행됩니다.
           </p>
         </div>
       </div>
@@ -93,10 +93,10 @@ function LoadingFallback() {
       <div className="max-w-md w-full space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            로그인
+            시작하기
           </h1>
           <p className="text-sm text-gray-500">
-            오픈소스포털에 오신 것을 환영합니다
+            로그인 또는 회원가입을 진행합니다
           </p>
         </div>
         <div className="rounded-2xl border border-gray-200/70 bg-white p-6 sm:p-8 flex justify-center">

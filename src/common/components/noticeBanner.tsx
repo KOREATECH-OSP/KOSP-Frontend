@@ -5,29 +5,61 @@ import Link from 'next/link';
 import { Volume2, X } from 'lucide-react';
 import { suitFont } from '../../style/font';
 
-function NoticeBanner() {
-  const [isVisible, setIsVisible] = useState(true);
+const STORAGE_KEY = 'notice-banner-hidden-until';
 
-  // 페이지 로드 시 맨 위로 스크롤 (브라우저 scroll restoration 이후에 실행)
+function NoticeBanner() {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
   useEffect(() => {
-    // 브라우저의 scroll restoration 비활성화
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = 'manual';
+    // localStorage에서 숨김 상태 확인
+    const hiddenUntil = localStorage.getItem(STORAGE_KEY);
+
+    if (hiddenUntil) {
+      const hiddenUntilDate = new Date(hiddenUntil);
+      const now = new Date();
+
+      // 아직 숨김 기간이 지나지 않았으면 숨김 유지
+      if (now < hiddenUntilDate) {
+        setIsVisible(false);
+      } else {
+        // 기간이 지났으면 localStorage 삭제하고 표시
+        localStorage.removeItem(STORAGE_KEY);
+        setIsVisible(true);
+      }
+    } else {
+      setIsVisible(true);
     }
-    window.scrollTo(0, 0);
+
+    setIsLoaded(true);
   }, []);
 
+  const handleClose = () => {
+    setIsVisible(false);
+  };
+
+  const handleHideForDay = () => {
+    // 24시간 후 날짜 계산
+    const tomorrow = new Date();
+    tomorrow.setHours(tomorrow.getHours() + 24);
+
+    localStorage.setItem(STORAGE_KEY, tomorrow.toISOString());
+    setIsVisible(false);
+  };
+
+  // 로딩 전에는 아무것도 렌더링하지 않음 (깜빡임 방지)
+  if (!isLoaded) return null;
   if (!isVisible) return null;
 
   return (
-    <div 
+    <div
       className={`w-full overflow-hidden ${suitFont.className}`}
       style={{ background: 'linear-gradient(272deg, #233786 23.38%, #236286 71.16%)' }}
     >
       <div className="max-w-7xl mx-auto flex items-stretch">
         {/* 공지 내용 */}
-        <Link 
-          href="#" 
+        <Link
+          href="#"
           className="flex items-center gap-2 sm:gap-3 text-white hover:opacity-90 transition-opacity min-w-0 flex-1 py-2.5 px-4"
         >
           <Volume2 className="w-4 h-4 shrink-0" />
@@ -36,25 +68,26 @@ function NoticeBanner() {
           </span>
         </Link>
 
-        {/* 모바일 닫기 버튼 */}
-        <button 
-          onClick={() => setIsVisible(false)}
+        {/* 모바일 버튼 */}
+        <button
+          onClick={handleHideForDay}
           className="sm:hidden px-4 text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors border-l border-white/20"
-          aria-label="공지 닫기"
+          aria-label="하루동안 열지 않기"
         >
           닫기
         </button>
 
         {/* 데스크탑 버튼 영역 */}
         <div className="hidden sm:flex items-center gap-3 shrink-0 py-2.5 pr-4">
-          <button 
+          <button
+            onClick={handleHideForDay}
             className="text-xs text-white/70 hover:text-white transition-colors whitespace-nowrap"
           >
             하루동안 열지 않기
           </button>
           <span className="w-px h-3 bg-white/30" />
-          <button 
-            onClick={() => setIsVisible(false)}
+          <button
+            onClick={handleClose}
             className="p-1 text-white/70 hover:text-white transition-colors"
             aria-label="공지 닫기"
           >
@@ -67,4 +100,3 @@ function NoticeBanner() {
 }
 
 export default NoticeBanner;
-

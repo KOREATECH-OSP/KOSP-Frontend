@@ -102,7 +102,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     href="/login"
                     className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
                   >
-                    <span className="hidden sm:inline">회원가입</span>
+                    <span className="hidden sm:inline">시작하기</span>
                   </Link>
                 )}
 
@@ -327,22 +327,13 @@ function Header({ simple = false, session = null }: HeaderProps) {
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <Link
-                          href="/login"
-                          className="block w-full text-center text-[15px] font-semibold text-white bg-gray-900 rounded-xl py-3 hover:bg-gray-800 transition-colors"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          로그인
-                        </Link>
-                        <Link
-                          href="/login"
-                          className="block w-full text-center text-[15px] font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl py-3 hover:bg-gray-100 transition-colors"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          회원가입
-                        </Link>
-                      </>
+                      <Link
+                        href="/login"
+                        className="block w-full text-center text-[15px] font-semibold text-white bg-gray-900 rounded-xl py-3 hover:bg-gray-800 transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        시작하기
+                      </Link>
                     )}
                   </div>
                 </Dialog.Panel>
