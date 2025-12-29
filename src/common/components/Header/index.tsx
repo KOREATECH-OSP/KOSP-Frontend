@@ -31,23 +31,17 @@ function Header({ simple = false, session = null }: HeaderProps) {
     router.push('/user');
   };
   const handleLogout = async () => {
-    // Authentik 서버 로그아웃 URL
-    const idToken = session?.idToken;
-    const postLogoutRedirectUri = typeof window !== 'undefined'
-      ? `${window.location.origin}/login`
-      : '/login';
-
-    // next-auth 세션 먼저 제거
+    // 1. Next-Auth 세션 삭제
     await signOut({ redirect: false });
 
-    // Authentik 서버에서도 로그아웃
-    if (idToken) {
-      const endSessionUrl = new URL('https://auth.swkoreatech.io/application/o/swkoreatech-osp/end-session/');
-      endSessionUrl.searchParams.set('id_token_hint', idToken);
-      endSessionUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    // 2. Authentik end-session URL로 리다이렉트
+    const endSessionBaseUrl = process.env.NEXT_PUBLIC_AUTHENTIK_END_SESSION_URL;
+    if (endSessionBaseUrl) {
+      const endSessionUrl = new URL(endSessionBaseUrl);
+      endSessionUrl.searchParams.set('post_logout_redirect_uri', `${window.location.origin}/logout`);
       window.location.href = endSessionUrl.toString();
     } else {
-      window.location.href = '/login';
+      window.location.href = '/logout';
     }
   };
   const profileActions = isLoggedIn
@@ -105,7 +99,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
               <div className="hidden lg:flex items-center gap-4">
                 {!isLoggedIn && (
                   <Link
-                    href="/signup"
+                    href="/login"
                     className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200"
                   >
                     <span className="hidden sm:inline">회원가입</span>
@@ -342,7 +336,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                           로그인
                         </Link>
                         <Link
-                          href="/signup"
+                          href="/login"
                           className="block w-full text-center text-[15px] font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl py-3 hover:bg-gray-100 transition-colors"
                           onClick={() => setMobileMenuOpen(false)}
                         >

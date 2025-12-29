@@ -77,6 +77,10 @@ function LoginContent() {
               '한국기술교육대 오픈소스포털 계정으로 로그인'
             )}
           </button>
+
+          <p className="mt-4 text-center text-xs text-gray-500">
+            회원가입은 로그인 후 진행해주세요.
+          </p>
         </div>
       </div>
     </div>
