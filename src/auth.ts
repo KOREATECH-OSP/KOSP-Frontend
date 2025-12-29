@@ -21,7 +21,6 @@ const authentikConfig: OIDCConfig<AuthentikProfile> = {
     url: 'https://auth.swkoreatech.io/application/o/authorize/',
     params: {
       scope: 'openid profile email',
-      prompt: 'login',
     },
   },
   token: 'https://auth.swkoreatech.io/application/o/token/',
