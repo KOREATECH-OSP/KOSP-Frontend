@@ -1,18 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { 
-  ArrowLeft, 
-  Eye, 
-  Heart, 
-  Bookmark, 
-  Calendar,
+import Link from 'next/link';
+import {
+  ArrowLeft,
+  Eye,
+  Heart,
+  Bookmark,
   Users,
   Send,
-  Edit
+  Edit,
+  Clock,
+  MessageCircle,
+  User,
 } from 'lucide-react';
-import KoriSupport from '@/assets/images/kori/11-06 L 응원 .png';
 import { useRouter } from 'next/navigation';
 import RecruitmentEditModal from '@/common/components/team/RecruitmentEditModal';
 
@@ -21,10 +22,9 @@ interface Comment {
   author: string;
   content: string;
   createdAt: string;
-  authorImage?: string;
 }
 
-export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id: string }>  }) {
+export default function TeamRecruitDetailPage() {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -47,10 +47,8 @@ export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id
     },
   ]);
 
-  // 현재 사용자가 팀장인지 확인 (실제로는 API에서 가져와야 함)
   const isTeamLeader = true;
 
-  // Mock 데이터를 state로 변경
   const [recruitment, setRecruitment] = useState({
     id: 1,
     teamName: 'React 스터디 그룹',
@@ -72,10 +70,11 @@ export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id
       end: '2024-12-15',
     },
     team: {
+      id: 1,
       name: 'React 스터디 그룹',
-      description: 'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행됩니다.',
+      description:
+        'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행됩니다.',
       memberCount: 5,
-      imageUrl: '',
     },
   });
 
@@ -91,14 +90,12 @@ export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id
 
   const handleCommentSubmit = () => {
     if (!commentText.trim()) return;
-
     const newComment: Comment = {
       id: comments.length + 1,
       author: '나',
       content: commentText,
       createdAt: new Date().toISOString().split('T')[0],
     };
-
     setComments([...comments, newComment]);
     setCommentText('');
   };
@@ -110,10 +107,7 @@ export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id
     generalTags: string[];
     recruitmentPeriod: { start: string; end: string };
   }) => {
-    setRecruitment((prev) => ({
-      ...prev,
-      ...newData,
-    }));
+    setRecruitment((prev) => ({ ...prev, ...newData }));
     alert('모집 공고가 수정되었습니다!');
     setIsEditModalOpen(false);
   };
@@ -122,257 +116,338 @@ export default function TeamRecruitDetailPage({ params }: { params: Promise<{ id
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          목록으로
-        </button>
+  const getDaysLeft = () => {
+    const now = new Date();
+    const end = new Date(recruitment.recruitmentPeriod.end);
+    return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  };
 
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+  const daysLeft = getDaysLeft();
+
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      {/* 뒤로가기 */}
+      <button
+        onClick={() => router.back()}
+        className="mb-6 inline-flex items-center text-sm text-gray-500 hover:text-gray-900"
+      >
+        <ArrowLeft className="mr-1.5 h-4 w-4" />
+        목록으로
+      </button>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* 메인 콘텐츠 */}
+        <div className="lg:col-span-2">
           {/* 헤더 */}
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <h1 className="flex-1 text-2xl sm:text-3xl font-bold text-gray-900">
-                {recruitment.title}
-              </h1>
-              
-              {/* 수정 버튼 (팀장만 표시) */}
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    모집중
+                  </span>
+                  {daysLeft <= 7 && daysLeft > 0 && (
+                    <span className="flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
+                      <Clock className="h-3 w-3" />
+                      D-{daysLeft}
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  {recruitment.title}
+                </h1>
+              </div>
               {isTeamLeader && (
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="flex-shrink-0 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 text-sm"
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="h-4 w-4" />
                   수정
                 </button>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                <span>{recruitment.postedBy}</span>
-              </div>
-              <span className="text-gray-400">•</span>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                {recruitment.postedBy}
+              </span>
+              <span className="h-3 w-px bg-gray-200" />
               <span>{formatDate(recruitment.postedAt)}</span>
-              <span className="text-gray-400">•</span>
-              <div className="flex items-center gap-1">
-                <Eye className="w-4 h-4" />
-                <span>조회 {recruitment.views}</span>
-              </div>
+              <span className="h-3 w-px bg-gray-200" />
+              <span className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                {recruitment.views}
+              </span>
             </div>
           </div>
 
           {/* 본문 */}
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <div className="prose max-w-none">
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {recruitment.content}
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+              {recruitment.content}
+            </p>
+
+            {/* 모집 포지션 */}
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <p className="mb-2 text-xs font-medium text-gray-500">
+                모집 포지션
               </p>
+              <div className="flex flex-wrap gap-2">
+                {recruitment.positionTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-600"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* 태그 */}
-            <div className="mt-6 space-y-3">
-              {/* 모집 포지션 */}
-              <div>
-                <p className="text-xs text-gray-500 mb-2">모집 포지션</p>
-                <div className="flex flex-wrap gap-2">
-                  {recruitment.positionTags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-700 rounded-md border border-blue-200"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* 일반 태그 */}
-              <div>
-                <p className="text-xs text-gray-500 mb-2">태그</p>
-                <div className="flex flex-wrap gap-2">
-                  {recruitment.generalTags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-medium text-gray-500">태그</p>
+              <div className="flex flex-wrap gap-2">
+                {recruitment.generalTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm text-gray-600"
+                  >
+                    #{tag}
+                  </span>
+                ))}
               </div>
             </div>
 
             {/* 좋아요 & 즐겨찾기 */}
-            <div className="flex gap-3 mt-6">
+            <div className="mt-6 flex gap-2">
               <button
                 onClick={handleLike}
-                className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg border transition flex items-center justify-center gap-2 ${
+                className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition ${
                   isLiked
-                    ? 'bg-red-50 border-red-200 text-red-600'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? 'border-red-200 bg-red-50 text-red-600'
+                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                <span className="font-medium">좋아요 {likeCount}</span>
+                <Heart
+                  className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`}
+                />
+                좋아요 {likeCount}
               </button>
-
               <button
                 onClick={handleBookmark}
-                className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg border transition flex items-center justify-center gap-2 ${
+                className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition ${
                   isBookmarked
-                    ? 'bg-yellow-50 border-yellow-200 text-yellow-600'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? 'border-amber-200 bg-amber-50 text-amber-600'
+                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
-                <span className="font-medium">즐겨찾기 {bookmarkCount}</span>
+                <Bookmark
+                  className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`}
+                />
+                저장 {bookmarkCount}
               </button>
             </div>
           </div>
 
-          {/* 팀 정보 */}
-          <div className="p-6 sm:p-8 bg-gray-50">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">팀 정보</h2>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-start gap-4 mb-4">
-                {/* 팀 이미지 */}
-                <div className="relative w-16 h-16 flex-shrink-0">
-                  {recruitment.team.imageUrl ? (
-                    <Image
-                      src={recruitment.team.imageUrl}
-                      alt={recruitment.team.name}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Image
-                        src={KoriSupport}
-                        alt="team icon"
-                        width={40}
-                        height={40}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* 팀 정보 */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    {recruitment.team.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {recruitment.team.description}
-                  </p>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <Users className="w-4 h-4" />
-                    <span>팀원 {recruitment.team.memberCount}명</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 모집 기간 */}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-blue-900">
-                  <Calendar className="w-4 h-4" />
-                  <span className="font-medium">모집 기간:</span>
-                  <span>
-                    {formatDate(recruitment.recruitmentPeriod.start)} ~{' '}
-                    {formatDate(recruitment.recruitmentPeriod.end)}
-                  </span>
-                </div>
-              </div>
-
-              {/* 지원하기 버튼 */}
-              <button className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-                지원하기
-              </button>
+          {/* 댓글 */}
+          <div className="rounded-xl border border-gray-200 bg-white">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                <MessageCircle className="h-4 w-4" />
+                댓글 {comments.length}
+              </h2>
             </div>
-          </div>
-
-          {/* 댓글 섹션 */}
-          <div className="p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              댓글 {comments.length}
-            </h2>
 
             {/* 댓글 작성 */}
-            <div className="mb-6">
+            <div className="border-b border-gray-100 px-6 py-4">
               <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="댓글을 입력하세요..."
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && handleCommentSubmit()
+                  }
+                  className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                 />
                 <button
                   onClick={handleCommentSubmit}
-                  className="px-4 sm:px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                  className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
                 >
-                  <Send className="w-4 h-4" />
-                  <span className="hidden sm:inline">작성</span>
+                  <Send className="h-4 w-4" />
+                  작성
                 </button>
               </div>
             </div>
 
             {/* 댓글 목록 */}
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">
-                      {comment.author}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(comment.createdAt)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{comment.content}</p>
+            <div className="divide-y divide-gray-100">
+              {comments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <MessageCircle className="mb-2 h-10 w-10 text-gray-200" />
+                  <p className="text-sm text-gray-500">
+                    첫 번째 댓글을 작성해보세요!
+                  </p>
                 </div>
-              ))}
-
-              {comments.length === 0 && (
-                <p className="text-center text-gray-500 py-8">
-                  첫 번째 댓글을 작성해보세요!
-                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="px-6 py-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+                          {comment.author.charAt(0)}
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {comment.author}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {formatDate(comment.createdAt)}
+                      </span>
+                    </div>
+                    <p className="pl-9 text-sm text-gray-600">
+                      {comment.content}
+                    </p>
+                  </div>
+                ))
               )}
             </div>
           </div>
         </div>
 
-        {/* 공고 수정 모달 */}
-        <RecruitmentEditModal
-          isOpen={isEditModalOpen}
-          initialData={{
-            title: recruitment.title,
-            content: recruitment.content,
-            positionTags: recruitment.positionTags,
-            generalTags: recruitment.generalTags,
-            recruitmentPeriod: recruitment.recruitmentPeriod,
-          }}
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={handleSaveRecruitment}
-        />
+        {/* 사이드바 */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-8 space-y-4">
+            {/* 팀 정보 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-4 text-sm font-bold text-gray-900">팀 정보</h3>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900 text-white">
+                  <Users className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {recruitment.team.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    팀원 {recruitment.team.memberCount}명
+                  </p>
+                </div>
+              </div>
+              <p className="mb-4 text-sm text-gray-500">
+                {recruitment.team.description}
+              </p>
+              <Link
+                href={`/team/${recruitment.team.id}`}
+                className="block rounded-lg border border-gray-200 py-2.5 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                팀 페이지 보기
+              </Link>
+            </div>
+
+            {/* 모집 기간 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-4 text-sm font-bold text-gray-900">모집 기간</h3>
+              <div className="mb-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">시작일</span>
+                  <span className="font-medium text-gray-900">
+                    {formatDate(recruitment.recruitmentPeriod.start)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">마감일</span>
+                  <span className="font-medium text-gray-900">
+                    {formatDate(recruitment.recruitmentPeriod.end)}
+                  </span>
+                </div>
+                {daysLeft > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">남은 기간</span>
+                    <span className="font-medium text-emerald-600">
+                      {daysLeft}일
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button className="w-full rounded-xl bg-gray-900 py-3 text-sm font-medium text-white transition hover:bg-gray-800">
+                지원하기
+              </button>
+            </div>
+
+            {/* 통계 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-4 text-sm font-bold text-gray-900">통계</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Eye className="h-4 w-4" />
+                    조회수
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {recruitment.views}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Heart className="h-4 w-4" />
+                    좋아요
+                  </span>
+                  <span className="font-medium text-gray-900">{likeCount}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Bookmark className="h-4 w-4" />
+                    저장
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {bookmarkCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <MessageCircle className="h-4 w-4" />
+                    댓글
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {comments.length}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
+
+      {/* 모바일 하단 고정 버튼 */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 lg:hidden">
+        <button className="w-full rounded-xl bg-gray-900 py-3.5 text-sm font-medium text-white transition hover:bg-gray-800">
+          지원하기
+        </button>
+      </div>
+
+      {/* 공고 수정 모달 */}
+      <RecruitmentEditModal
+        isOpen={isEditModalOpen}
+        initialData={{
+          title: recruitment.title,
+          content: recruitment.content,
+          positionTags: recruitment.positionTags,
+          generalTags: recruitment.generalTags,
+          recruitmentPeriod: recruitment.recruitmentPeriod,
+        }}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleSaveRecruitment}
+      />
     </div>
   );
 }

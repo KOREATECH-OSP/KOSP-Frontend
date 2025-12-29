@@ -1,34 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Eye, ThumbsUp, Plus, Star } from 'lucide-react';
+import { MessageSquare, Plus, Search } from 'lucide-react';
 import { posts } from '@/mocks/community/communityList.mock';
-import type { TabType } from '@/types/community';
+import type { TabType, Post } from '@/types/community';
 import Pagination from '@/common/components/Pagination';
+import CommunityPostCard from '@/common/components/community/CommunityPostCard';
 
-const POSTS_PER_PAGE = 10;
+const POSTS_PER_PAGE = 15;
+
+type SortType = 'latest' | 'popular' | 'comments';
+
+const SORT_OPTIONS: { value: SortType; label: string }[] = [
+  { value: 'latest', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+  { value: 'comments', label: '댓글순' },
+];
+
+const sortPosts = (posts: Post[], sortBy: SortType): Post[] => {
+  const sorted = [...posts];
+  switch (sortBy) {
+    case 'popular':
+      return sorted.sort((a, b) => b.views - a.views);
+    case 'comments':
+      return sorted.sort((a, b) => b.comments - a.comments);
+    case 'latest':
+    default:
+      return sorted.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+  }
+};
 
 export default function CommunityPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('홍보');
+  const [activeTab, setActiveTab] = useState<TabType>('전체');
+  const [sortBy, setSortBy] = useState<SortType>('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredPosts = posts.filter(post => {
-    const matchesTab = activeTab === '홍보' || post.category === activeTab;
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  const filteredAndSortedPosts = useMemo(() => {
+    const filtered = posts.filter((post) => {
+      const matchesTab = activeTab === '전체' || post.category === activeTab;
+      const matchesSearch = post.title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      return matchesTab && matchesSearch;
+    });
+    return sortPosts(filtered, sortBy);
+  }, [activeTab, searchQuery, sortBy]);
 
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
+  const totalPages = Math.ceil(filteredAndSortedPosts.length / POSTS_PER_PAGE);
   const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-  const endIndex = startIndex + POSTS_PER_PAGE;
-  const currentPosts = filteredPosts.slice(startIndex, endIndex);
+  const currentPosts = filteredAndSortedPosts.slice(
+    startIndex,
+    startIndex + POSTS_PER_PAGE,
+  );
 
-  // 탭이나 검색어 변경 시 첫 페이지로 이동
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (sort: SortType) => {
+    setSortBy(sort);
     setCurrentPage(1);
   };
 
@@ -37,127 +73,104 @@ export default function CommunityPage() {
     setCurrentPage(1);
   };
 
-  const tabs: TabType[] = [ '홍보', '정보', 'Q&A', '자유'];
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case '홍보':
-        return 'bg-purple-100 text-purple-700';
-      case '정보':
-        return 'bg-green-100 text-green-700';
-      case 'Q&A':
-        return 'bg-blue-100 text-blue-700';
-      case '자유':
-        return 'bg-orange-100 text-orange-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  const tabs: TabType[] = ['전체', '홍보', '정보', 'Q&A', '자유'];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 w-full">
-      <div className="flex mb-8 w-full justify-between items-end">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      {/* 헤더 */}
+      <div className="mb-8 flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">커뮤니티</h1>
-          <p className="text-gray-600">개발자들과 소통하고 정보를 나눠보세요</p>
+          <h1 className="text-2xl font-bold text-gray-900">커뮤니티</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            개발자들과 소통하고 정보를 나눠보세요
+          </p>
         </div>
-        <div className="sm:flex-row gap-4h-full flex">
-          <Link
-            href="/community/write"
-            className="inline-flex items-center justify-center px-6 py-2.5 bg-[#F28A03] text-white rounded-lg hover:bg-blue-700 transition font-medium"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            글쓰기
-          </Link>
+        <Link
+          href="/community/write"
+          className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          글쓰기
+        </Link>
+      </div>
+
+      {/* 검색바 */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="제목으로 검색..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+          />
         </div>
       </div>
 
-      <div className="mb-6 border-b border-gray-200 overflow-x-auto">
-        <div className="flex space-x-6 min-w-max sm:min-w-0">
+      {/* 필터 영역 */}
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* 탭 필터 */}
+        <div className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition whitespace-nowrap ${
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
               }`}
             >
               {tab}
             </button>
           ))}
         </div>
+
+        {/* 정렬 옵션 */}
+        <div className="flex items-center gap-1 text-sm">
+          {SORT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleSortChange(option.value)}
+              className={`rounded px-2 py-1 transition-colors ${
+                sortBy === option.value
+                  ? 'font-medium text-gray-900'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="min-h-[600px]">
+      {/* 게시글 수 표시 */}
+      <div className="mb-2 text-xs text-gray-400">
+        총 {filteredAndSortedPosts.length}개의 게시글
+      </div>
+
+      {/* 게시글 리스트 */}
+      <div className="rounded-xl border border-gray-200 bg-white">
         {currentPosts.length === 0 ? (
-          <div className="bg-white rounded-lg text-center py-12">
-            <MessageSquare className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <div className="flex flex-col items-center justify-center py-16">
+            <MessageSquare className="mb-3 h-12 w-12 text-gray-200" />
             <p className="text-gray-500">게시글이 없습니다.</p>
+            <p className="mt-1 text-sm text-gray-400">
+              첫 번째 게시글을 작성해보세요!
+            </p>
           </div>
         ) : (
-          <div className="space-y-4 sm:space-y-0 sm:bg-white sm:rounded-lg">
-            {currentPosts.map((post, index) => (
-              <Link
-                key={post.id}
-                href={`/community/${post.id}`}
-                className="block bg-white sm:bg-transparent rounded-lg sm:rounded-none px-4 py-4 sm:px-6 sm:py-6 transition hover:bg-gray-50 shadow-sm sm:shadow-none"
-              >
-                <div className="space-y-3 sm:space-y-2">
-                  <div className="flex items-start gap-2 sm:gap-3">
-                    <span
-                      className={` flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(
-                        post.category,
-                      )}`}
-                    >
-                      {post.category}
-                    </span>
-                    <h2 className="truncate flex-1 text-base sm:text-lg font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
-                      {post.title}
-                    </h2>
-                  </div>
-
-                  {/* 작성자 정보 + 통계 */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-500">
-                    {/* 작성자 & 날짜 */}
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-gray-700">{post.author}</span>
-                      <span className="text-xs sm:text-sm">{post.createdAt}</span>
-                    </div>
-
-                    {/* 통계 정보 */}
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        <span className="text-xs sm:text-sm">{post.views}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <ThumbsUp className="w-4 h-4" />
-                        <span className="text-xs sm:text-sm">{post.likes}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4" />
-                        <span className="text-xs sm:text-sm">{post.comments}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Star className="w-4 h-4" />
-                        <span className="text-xs sm:text-sm">{post.bookmarks}</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {index < currentPosts.length - 1 && (
-                  <div className="hidden sm:block mt-6 border-b border-gray-100"></div>
-                )}
-              </Link>
+          <div>
+            {currentPosts.map((post) => (
+              <CommunityPostCard key={post.id} post={post} />
             ))}
           </div>
         )}
       </div>
 
-      {/* {totalPages > 1 && ( */}
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
         <div className="mt-8">
           <Pagination
             currentPage={currentPage}
@@ -165,7 +178,7 @@ export default function CommunityPage() {
             onPageChange={setCurrentPage}
           />
         </div>
-      {/* )} */}
+      )}
     </div>
   );
 }

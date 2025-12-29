@@ -13,15 +13,22 @@ import {
   MessageCircle,
   Bookmark,
   ExternalLink,
-  X,
+  Eye,
+  FileText,
+  ChevronRight,
+  Trophy,
 } from 'lucide-react';
-import TabNavigation, { Tab } from '@/common/components/TabNavigation';
 
 interface UserProfile {
   name: string;
   profileImage?: string;
   githubUrl: string;
   bio: string;
+  stats: {
+    posts: number;
+    comments: number;
+    challenges: number;
+  };
 }
 
 interface GithubActivity {
@@ -48,19 +55,22 @@ interface CommentItem {
   createdAt: string;
 }
 
+type TabType = '활동' | '작성글' | '댓글' | '즐겨찾기';
+
 export default function MyPage() {
-  const [activeTab, setActiveTab] = useState('활동');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
-  const [profile, setProfile] = useState<UserProfile>({
+  const [activeTab, setActiveTab] = useState<TabType>('활동');
+
+  const [profile] = useState<UserProfile>({
     name: '김개발',
     githubUrl: 'https://github.com/kimdev',
     bio: '풀스택 개발자입니다. React와 Node.js를 주로 사용합니다.',
+    stats: {
+      posts: 12,
+      comments: 48,
+      challenges: 3,
+    },
   });
 
-  const [editForm, setEditForm] = useState<UserProfile>(profile);
-
-  // Mock 데이터
   const githubActivities: GithubActivity[] = [
     {
       id: 1,
@@ -130,331 +140,320 @@ export default function MyPage() {
     },
   ];
 
-  const tabs: Tab[] = [
-    { id: '활동', label: '활동' },
-    { id: '작성글', label: '작성한 글' },
-    { id: '댓글', label: '작성한 댓글' },
-    { id: '즐겨찾기', label: '즐겨찾기' },
+  const tabs: { key: TabType; label: string }[] = [
+    { key: '활동', label: '활동' },
+    { key: '작성글', label: '작성한 글' },
+    { key: '댓글', label: '작성한 댓글' },
+    { key: '즐겨찾기', label: '즐겨찾기' },
   ];
-
-  const handleEditSubmit = () => {
-    setProfile(editForm);
-    setIsEditModalOpen(false);
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
   };
 
   return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
-        {/* 프로필 카드 */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 sm:p-8 mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            {/* 프로필 이미지 */}
-            <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0">
-              {profile.profileImage ? (
-                <Image
-                  src={profile.profileImage}
-                  alt={profile.name}
-                  fill
-                  className="rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <User className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* 사이드바 - 프로필 */}
+        <aside className="lg:col-span-1">
+          <div className="sticky top-8 space-y-4">
+            {/* 프로필 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="relative h-20 w-20">
+                  {profile.profileImage ? (
+                    <Image
+                      src={profile.profileImage}
+                      alt={profile.name}
+                      fill
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-900">
+                      <User className="h-10 w-10 text-white" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* 프로필 정보 */}
-            <div className="flex-1 min-w-0 w-full">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {profile.name}
-                </h1>
                 <Link
                   href="/user/edit"
-                  className="self-start sm:self-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+                  className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-50"
                 >
-                  <Edit className="w-4 h-4" />
-                  <span>정보 수정</span>
+                  <Edit className="h-4 w-4" />
                 </Link>
               </div>
+
+              <h1 className="mb-1 text-xl font-bold text-gray-900">
+                {profile.name}
+              </h1>
 
               <a
                 href={profile.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3"
+                className="mb-3 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900"
               >
-                <Github className="w-5 h-5" />
-                <span className="text-sm sm:text-base">{profile.githubUrl}</span>
-                <ExternalLink className="w-4 h-4" />
+                <Github className="h-4 w-4" />
+                {profile.githubUrl.replace('https://github.com/', '')}
+                <ExternalLink className="h-3 w-3" />
               </a>
 
-              <p className="text-sm sm:text-base text-gray-600">{profile.bio}</p>
+              <p className="text-sm text-gray-600">{profile.bio}</p>
+            </div>
+
+            {/* 통계 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-4 text-sm font-bold text-gray-900">활동 통계</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <FileText className="h-4 w-4" />
+                    작성한 글
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {profile.stats.posts}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <MessageCircle className="h-4 w-4" />
+                    작성한 댓글
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {profile.stats.comments}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Trophy className="h-4 w-4" />
+                    완료한 챌린지
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {profile.stats.challenges}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </aside>
 
-        {/* 탭 네비게이션 */}
-        <TabNavigation tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+        {/* 메인 콘텐츠 */}
+        <div className="lg:col-span-2">
+          {/* 탭 필터 */}
+          <div className="mb-6 flex gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        {/* 활동 탭 */}
-        {activeTab === '활동' && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">최근 GitHub 활동</h2>
-              <div className="space-y-4">
-                {githubActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* 아이콘 */}
-                      <div className="flex-shrink-0 mt-1">
+          {/* 활동 탭 */}
+          {activeTab === '활동' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <Github className="h-4 w-4" />
+                  최근 GitHub 활동
+                </h2>
+              </div>
+
+              {githubActivities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Github className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">GitHub 활동이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {githubActivities.map((activity) => (
+                    <a
+                      key={activity.id}
+                      href={activity.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                    >
+                      <div
+                        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
+                          activity.type === 'pr'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-blue-50 text-blue-600'
+                        }`}
+                      >
                         {activity.type === 'pr' ? (
-                          <GitPullRequest className="w-5 h-5 text-green-600" />
+                          <GitPullRequest className="h-4 w-4" />
                         ) : (
-                          <GitCommit className="w-5 h-5 text-blue-600" />
+                          <GitCommit className="h-4 w-4" />
                         )}
                       </div>
 
-                      {/* 내용 */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <GitBranch className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {activity.repoName}
-                          </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2 text-xs text-gray-400">
+                          <GitBranch className="h-3 w-3" />
+                          {activity.repoName}
                         </div>
-                        <p className="text-gray-700 mb-2">{activity.title}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">
-                            {formatDate(activity.date)}
+                        <p className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                          {activity.title}
+                        </p>
+                        <span className="text-xs text-gray-400">
+                          {formatDate(activity.date)}
+                        </span>
+                      </div>
+
+                      <ExternalLink className="h-4 w-4 flex-shrink-0 text-gray-300 group-hover:text-gray-400" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 작성한 글 탭 */}
+          {activeTab === '작성글' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">
+                  작성한 글 ({myPosts.length})
+                </h2>
+              </div>
+
+              {myPosts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">작성한 글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {myPosts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/recruit/${post.id}`}
+                      className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <h3 className="mb-1 truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                          {post.title}
+                        </h3>
+                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <span>{formatDate(post.createdAt)}</span>
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {post.views}
                           </span>
-                          <a
-                            href={activity.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                          >
-                            자세히 보기
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
+                          <span className="flex items-center gap-1">
+                            <MessageCircle className="h-3 w-3" />
+                            {post.comments}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 작성한 글 탭 */}
-        {activeTab === '작성글' && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                작성한 글 ({myPosts.length})
-              </h2>
-              <div className="space-y-3">
-                {myPosts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/recruit/${post.id}`}
-                    className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
-                  >
-                    <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600">
-                      {post.title}
-                    </h3>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{formatDate(post.createdAt)}</span>
-                      <span>조회 {post.views}</span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" />
-                        {post.comments}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-
-                {myPosts.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">
-                    작성한 글이 없습니다.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 작성한 댓글 탭 */}
-        {activeTab === '댓글' && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                작성한 댓글 ({myComments.length})
-              </h2>
-              <div className="space-y-3">
-                {myComments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="p-4 border border-gray-200 rounded-lg"
-                  >
-                    <Link
-                      href={`/recruit/${comment.id}`}
-                      className="text-sm text-blue-600 hover:text-blue-700 mb-2 block"
-                    >
-                      {comment.postTitle}
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
                     </Link>
-                    <p className="text-gray-700 mb-2">{comment.content}</p>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(comment.createdAt)}
-                    </span>
-                  </div>
-                ))}
-
-                {myComments.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">
-                    작성한 댓글이 없습니다.
-                  </p>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 즐겨찾기 탭 */}
-        {activeTab === '즐겨찾기' && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                즐겨찾기한 글 ({bookmarkedPosts.length})
-              </h2>
-              <div className="space-y-3">
-                {bookmarkedPosts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/recruit/${post.id}`}
-                    className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="flex-1 font-semibold text-gray-900 hover:text-blue-600">
-                        {post.title}
-                      </h3>
-                      <Bookmark className="w-5 h-5 text-yellow-500 fill-current flex-shrink-0" />
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{formatDate(post.createdAt)}</span>
-                      <span>조회 {post.views}</span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" />
-                        {post.comments}
+          {/* 작성한 댓글 탭 */}
+          {activeTab === '댓글' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">
+                  작성한 댓글 ({myComments.length})
+                </h2>
+              </div>
+
+              {myComments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <MessageCircle className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">작성한 댓글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {myComments.map((comment) => (
+                    <Link
+                      key={comment.id}
+                      href={`/recruit/${comment.id}`}
+                      className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
+                    >
+                      <p className="mb-1 text-xs text-blue-600 group-hover:text-blue-700">
+                        {comment.postTitle}
+                      </p>
+                      <p className="mb-2 text-sm text-gray-700">
+                        {comment.content}
+                      </p>
+                      <span className="text-xs text-gray-400">
+                        {formatDate(comment.createdAt)}
                       </span>
-                    </div>
-                  </Link>
-                ))}
-
-                {bookmarkedPosts.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">
-                    즐겨찾기한 글이 없습니다.
-                  </p>
-                )}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">프로필 수정</h2>
-                  <button
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {/* 이름 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      이름
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.name}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, name: e.target.value })
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* GitHub URL */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      GitHub 주소
-                    </label>
-                    <input
-                      type="url"
-                      value={editForm.githubUrl}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, githubUrl: e.target.value })
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://github.com/username"
-                    />
-                  </div>
-
-                  {/* 자기소개 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      자기소개
-                    </label>
-                    <textarea
-                      value={editForm.bio}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, bio: e.target.value })
-                      }
-                      rows={4}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      placeholder="간단한 자기소개를 입력해주세요"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 mt-6">
-                  <button
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleEditSubmit}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                  >
-                    저장
-                  </button>
-                </div>
+          {/* 즐겨찾기 탭 */}
+          {activeTab === '즐겨찾기' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">
+                  즐겨찾기한 글 ({bookmarkedPosts.length})
+                </h2>
               </div>
+
+              {bookmarkedPosts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Bookmark className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">즐겨찾기한 글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {bookmarkedPosts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/recruit/${post.id}`}
+                      className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <Bookmark className="h-4 w-4 flex-shrink-0 fill-amber-400 text-amber-400" />
+                          <h3 className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                            {post.title}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <span>{formatDate(post.createdAt)}</span>
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {post.views}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageCircle className="h-3 w-3" />
+                            {post.comments}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+    </div>
   );
 }

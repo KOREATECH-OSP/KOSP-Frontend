@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye, ThumbsUp, MessageSquare, Star, Send } from 'lucide-react';
+import { ArrowLeft, Eye, ThumbsUp, MessageSquare, Bookmark } from 'lucide-react';
 
 interface Comment {
   id: number;
@@ -12,16 +12,18 @@ interface Comment {
   likes: number;
 }
 
-export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PostDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(23);
   const [bookmarked, setBookmarked] = useState(false);
-  const [bookmarkCount, setBookmarkCount] = useState(15);
   const [newComment, setNewComment] = useState('');
-  const routeParams = params;
 
   const post = {
-    id:1,
+    id: 1,
     category: '홍보',
     title: '2024 해커톤 참가자 모집합니다!',
     content: `안녕하세요! 다음 달 개최되는 해커톤에 함께할 팀원을 찾습니다.
@@ -46,8 +48,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     author: '해커톤매니저',
     views: 342,
     likes: likeCount,
-    comments: 12,
-    createdAt: '2024-11-19 14:30',
+    createdAt: '2024-11-19',
   };
 
   const [comments, setComments] = useState<Comment[]>([
@@ -56,22 +57,22 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       author: '프론트엔드개발자',
       content: '관심있습니다! React 3년차 경험 있습니다.',
       createdAt: '3시간 전',
-      likes: 5
+      likes: 5,
     },
     {
       id: 2,
       author: 'UI디자이너',
       content: 'Figma로 작업 가능합니다. 참여하고 싶어요!',
       createdAt: '2시간 전',
-      likes: 3
+      likes: 3,
     },
     {
       id: 3,
       author: '백엔드개발자',
       content: 'Node.js와 Python 둘 다 가능합니다. 연락 주세요~',
       createdAt: '1시간 전',
-      likes: 4
-    }
+      likes: 4,
+    },
   ]);
 
   const handleLike = () => {
@@ -81,7 +82,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
-    setBookmarkCount(bookmarked ? bookmarkCount - 1 : bookmarkCount + 1);
   };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
@@ -93,178 +93,207 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       author: '현재사용자',
       content: newComment,
       createdAt: '방금 전',
-      likes: 0
+      likes: 0,
     };
 
     setComments([...comments, comment]);
     setNewComment('');
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case '홍보':
-        return 'bg-purple-100 text-purple-700';
-      case 'Q&A':
-        return 'bg-blue-100 text-blue-700';
-      case '자유':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       {/* 뒤로가기 */}
       <Link
         href="/community"
-        className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
+        className="mb-6 inline-flex items-center text-sm text-gray-500 hover:text-gray-900"
       >
-        <ArrowLeft className="w-4 h-4 mr-2" />
+        <ArrowLeft className="mr-1.5 h-4 w-4" />
         목록으로
       </Link>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-start justify-between mb-4">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(post.category)}`}>
-              {post.category}
-            </span>
-          </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* 메인 콘텐츠 */}
+        <div className="lg:col-span-2">
+          {/* 게시글 */}
+          <article className="rounded-xl border border-gray-200 bg-white">
+            {/* 헤더 */}
+            <div className="border-b border-gray-100 p-6">
+              <div className="mb-3 flex items-center gap-2 text-xs text-gray-400">
+                <span className="font-medium text-gray-900">{post.category}</span>
+                <span>·</span>
+                <span>{post.createdAt}</span>
+              </div>
+              <h1 className="text-xl font-bold text-gray-900">{post.title}</h1>
+            </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {post.title}
-          </h1>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold">
+            {/* 작성자 정보 */}
+            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-medium text-white">
                   {post.author.charAt(0)}
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {post.author}
                 </span>
               </div>
-              <div>
-                <p className="font-medium text-gray-900">{post.author}</p>
-                <p className="text-sm text-gray-500">{post.createdAt}</p>
+              <div className="flex items-center gap-4 text-xs text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  {post.views}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MessageSquare className="h-4 w-4" />
+                  {comments.length}
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <span className="flex items-center">
-                <Eye className="w-4 h-4 mr-1" />
-                {post.views}
-              </span>
-              <span className="flex items-center">
-                <MessageSquare className="w-4 h-4 mr-1" />
-                {comments.length}
-              </span>
+            {/* 본문 */}
+            <div className="p-6">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-gray-700">
+                {post.content}
+              </p>
+            </div>
+
+            {/* 액션 버튼 */}
+            <div className="flex items-center gap-2 border-t border-gray-100 px-6 py-4">
+              <button
+                onClick={handleLike}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  liked
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <ThumbsUp
+                  className={`h-4 w-4 ${liked ? 'fill-current' : ''}`}
+                />
+                좋아요 {likeCount}
+              </button>
               <button
                 onClick={handleBookmark}
-                className="flex items-center hover:text-yellow-600 transition"
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  bookmarked
+                    ? 'bg-yellow-50 text-yellow-600'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
               >
-                <Star className={`w-4 h-4 mr-1 ${bookmarked ? 'fill-yellow-500 text-yellow-500' : ''}`} />
-                {bookmarkCount}
+                <Bookmark
+                  className={`h-4 w-4 ${bookmarked ? 'fill-current' : ''}`}
+                />
+                북마크
               </button>
             </div>
-          </div>
-        </div>
+          </article>
 
-        {/* 본문 */}
-        <div className="p-6">
-          <div className="prose max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {post.content}
-            </p>
-          </div>
-        </div>
-
-        {/* 액션 버튼 */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handleLike}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
-                liked
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-              <span className="font-medium">{likeCount}</span>
-            </button>
-
-            <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
-              <Star className="w-5 h-5" />
-              <span className="font-medium">{bookmarkCount}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 댓글 섹션 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
-          댓글 {comments.length}개
-        </h2>
-
-        {/* 댓글 작성 */}
-        <form onSubmit={handleCommentSubmit} className="mb-6">
-          <div className="flex space-x-3">
-            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-gray-600 font-semibold">U</span>
+          {/* 댓글 섹션 */}
+          <section className="mt-6 rounded-xl border border-gray-200 bg-white">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="text-sm font-bold text-gray-900">
+                댓글 {comments.length}
+              </h2>
             </div>
-            <div className="flex-1">
+
+            {/* 댓글 작성 */}
+            <form onSubmit={handleCommentSubmit} className="border-b border-gray-100 p-6">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="댓글을 입력하세요..."
                 rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-sm focus:border-gray-400 focus:outline-none"
               />
-              <div className="mt-2 flex justify-end">
+              <div className="mt-3 flex justify-end">
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
                 >
-                  <Send className="w-4 h-4 mr-2" />
                   댓글 작성
                 </button>
               </div>
-            </div>
-          </div>
-        </form>
+            </form>
 
-        {/* 댓글 목록 */}
-        <div className="space-y-6">
-          {comments.map((comment) => (
-            <div key={comment.id} className="flex space-x-3">
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-gray-600 font-semibold">
-                  {comment.author.charAt(0)}
-                </span>
-              </div>
-              <div className="flex-1">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">
-                      {comment.author}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {comment.createdAt}
-                    </span>
+            {/* 댓글 목록 */}
+            <div className="divide-y divide-gray-100">
+              {comments.map((comment) => (
+                <div key={comment.id} className="px-6 py-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600">
+                        {comment.author.charAt(0)}
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {comment.author}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {comment.createdAt}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-gray-700">{comment.content}</p>
-                </div>
-                <div className="mt-2 flex items-center space-x-4 text-sm">
-                  <button className="flex items-center text-gray-500 hover:text-blue-600 transition">
-                    <ThumbsUp className="w-4 h-4 mr-1" />
+                  <p className="mb-2 text-sm text-gray-700">{comment.content}</p>
+                  <button className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-600">
+                    <ThumbsUp className="h-3.5 w-3.5" />
                     {comment.likes}
                   </button>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </section>
         </div>
+
+        {/* 사이드바 */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-8 space-y-4">
+            {/* 작성자 정보 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-900 text-lg font-medium text-white">
+                  {post.author.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{post.author}</p>
+                  <p className="text-xs text-gray-400">작성자</p>
+                </div>
+              </div>
+              <button className="w-full rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                프로필 보기
+              </button>
+            </div>
+
+            {/* 관련 게시글 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-3 text-sm font-bold text-gray-900">
+                관련 게시글
+              </h3>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link
+                    href="#"
+                    className="line-clamp-2 text-gray-600 hover:text-gray-900"
+                  >
+                    KOSP 2024 Spring 챌린지 참가자 모집
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="#"
+                    className="line-clamp-2 text-gray-600 hover:text-gray-900"
+                  >
+                    해커톤 준비 팁 공유합니다
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="#"
+                    className="line-clamp-2 text-gray-600 hover:text-gray-900"
+                  >
+                    첫 해커톤 후기 (우수상 수상!)
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );
