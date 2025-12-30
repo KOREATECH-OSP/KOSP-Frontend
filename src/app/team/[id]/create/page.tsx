@@ -8,36 +8,28 @@ import {
   Upload,
   FileText,
   Calendar,
-  Users,
   Tag,
   Info,
   Loader2,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
+import type { BoardListResponse } from '@/lib/api/types';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 interface RecruitFormData {
   title: string;
   content: string;
   tags: string[];
-  positions: string[];
   startDate: string;
   endDate: string;
   files: File[];
 }
 
-const POSITION_OPTIONS = [
-  '프론트엔드',
-  '백엔드',
-  'DevOps',
-  'AI/ML',
-  '디자인',
-  'PM',
-  'QA',
-];
-
 function stripHtml(html: string): string {
+  if (typeof document === 'undefined') return html;
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
   return tmp.textContent || tmp.innerText || '';
@@ -45,20 +37,20 @@ function stripHtml(html: string): string {
 
 export default function CreateRecruitPage() {
   const router = useRouter();
+  const params = useParams();
+  const teamId = parseInt(params.id as string, 10);
   const { upload: uploadImage } = useImageUpload();
 
   const [formData, setFormData] = useState<RecruitFormData>({
     title: '',
     content: '',
     tags: [],
-    positions: [],
     startDate: '',
     endDate: '',
     files: [],
   });
 
   const [tagInput, setTagInput] = useState('');
-  const [positionInput, setPositionInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<
     Partial<Record<keyof RecruitFormData, string>>
@@ -79,43 +71,6 @@ export default function CreateRecruitPage() {
     if (errors.content) {
       setErrors((prev) => ({ ...prev, content: '' }));
     }
-  };
-
-  const handleAddPosition = (position: string) => {
-    if (!formData.positions.includes(position)) {
-      setFormData((prev) => ({
-        ...prev,
-        positions: [...prev.positions, position],
-      }));
-      if (errors.positions) {
-        setErrors((prev) => ({ ...prev, positions: '' }));
-      }
-    }
-  };
-
-  const handleAddCustomPosition = () => {
-    const trimmed = positionInput.trim();
-    if (trimmed && !formData.positions.includes(trimmed)) {
-      if (formData.positions.length >= 10) {
-        alert('포지션은 최대 10개까지 추가할 수 있습니다.');
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        positions: [...prev.positions, trimmed],
-      }));
-      setPositionInput('');
-      if (errors.positions) {
-        setErrors((prev) => ({ ...prev, positions: '' }));
-      }
-    }
-  };
-
-  const handleRemovePosition = (position: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      positions: prev.positions.filter((p) => p !== position),
-    }));
   };
 
   const handleAddTag = () => {
@@ -184,14 +139,8 @@ export default function CreateRecruitPage() {
     if (!contentText) {
       newErrors.content = '내용을 입력해주세요';
     }
-    if (formData.positions.length === 0) {
-      newErrors.positions = '최소 1개 이상의 모집 포지션을 선택해주세요';
-    }
     if (!formData.startDate) {
       newErrors.startDate = '모집 시작일을 선택해주세요';
-    }
-    if (!formData.endDate) {
-      newErrors.endDate = '모집 마감일을 선택해주세요';
     }
     if (
       formData.startDate &&
@@ -211,10 +160,42 @@ export default function CreateRecruitPage() {
 
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 모집공고 게시판 ID 조회
+      const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`);
+      if (!boardsRes.ok) {
+        throw new Error('게시판 정보를 불러오지 못했습니다.');
+      }
+      const boardsResponse: BoardListResponse = await boardsRes.json();
+      const recruitBoard = boardsResponse.boards.find((b) => b.isRecruitAllowed);
+
+      if (!recruitBoard) {
+        throw new Error('모집공고 게시판을 찾을 수 없습니다.');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/v1/community/recruits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          boardId: recruitBoard.id,
+          title: formData.title,
+          content: formData.content,
+          tags: formData.tags.length > 0 ? formData.tags : undefined,
+          teamId,
+          startDate: new Date(formData.startDate).toISOString(),
+          endDate: formData.endDate
+            ? new Date(formData.endDate).toISOString()
+            : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create recruit');
+      }
+
       alert('팀원 모집글이 성공적으로 등록되었습니다!');
       router.back();
-    } catch {
+    } catch (error) {
+      console.error('모집공고 작성 실패:', error);
       alert('등록에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);
@@ -281,81 +262,6 @@ export default function CreateRecruitPage() {
           />
         </div>
 
-        {/* 모집 포지션 */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <label className="mb-3 block text-sm font-medium text-gray-900">
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-gray-400" />
-              모집 포지션 <span className="text-red-500">*</span>
-            </span>
-          </label>
-
-          {/* 선택된 포지션 */}
-          {formData.positions.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {formData.positions.map((position) => (
-                <span
-                  key={position}
-                  className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1.5 text-sm font-medium text-blue-600"
-                >
-                  {position}
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePosition(position)}
-                    className="ml-0.5 rounded-full p-0.5 transition hover:bg-blue-100"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* 포지션 선택 버튼들 */}
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {POSITION_OPTIONS.filter(
-              (p) => !formData.positions.includes(p)
-            ).map((position) => (
-              <button
-                key={position}
-                type="button"
-                onClick={() => handleAddPosition(position)}
-                className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-gray-600 transition hover:border-gray-300 hover:bg-gray-50"
-              >
-                {position}
-              </button>
-            ))}
-          </div>
-
-          {/* 커스텀 포지션 추가 */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={positionInput}
-              onChange={(e) => setPositionInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddCustomPosition();
-                }
-              }}
-              placeholder="직접 입력"
-              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={handleAddCustomPosition}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-gray-500 transition hover:bg-gray-50"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-
-          {errors.positions && (
-            <p className="mt-2 text-sm text-red-500">{errors.positions}</p>
-          )}
-        </div>
-
         {/* 모집 기간 */}
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <label className="mb-3 block text-sm font-medium text-gray-900">
@@ -383,7 +289,9 @@ export default function CreateRecruitPage() {
               )}
             </div>
             <div>
-              <label className="mb-2 block text-xs text-gray-500">마감일</label>
+              <label className="mb-2 block text-xs text-gray-500">
+                마감일 (선택)
+              </label>
               <input
                 type="date"
                 name="endDate"

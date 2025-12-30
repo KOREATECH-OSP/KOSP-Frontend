@@ -1,14 +1,15 @@
-export type TabType = '전체' | '홍보' | '정보' | 'Q&A' | '자유';
+// API 응답 타입은 @/lib/api/types에서 가져와 사용
+// 이 파일은 UI 관련 타입만 정의
 
-export interface Post {
+export type BoardTab = {
   id: number;
-  title: string;
-  category: TabType;
-  author: string;
-  authorProfile: string;
-  createdAt: string;
-  views: number;
-  likes: number;
-  comments: number;
-  bookmarks: number;
-}
+  name: string;
+};
+
+export type SortType = 'latest' | 'popular' | 'comments';
+
+export const SORT_OPTIONS: { value: SortType; label: string }[] = [
+  { value: 'latest', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+  { value: 'comments', label: '댓글순' },
+];

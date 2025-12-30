@@ -1,31 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, User, ChevronRight } from 'lucide-react';
-import type { TeamRecruitment } from '@/types/recruit';
+import { Users, User, ChevronRight, Eye, MessageSquare } from 'lucide-react';
+import type { RecruitResponse } from '@/lib/api/types';
 
 interface TeamRecruitTabProps {
-  teams: TeamRecruitment[];
-  searchQuery: string;
+  recruits: RecruitResponse[];
 }
 
-export default function TeamRecruitTab({
-  teams,
-  searchQuery,
-}: TeamRecruitTabProps) {
-  const filtered = teams.filter((team) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
+export default function TeamRecruitTab({ recruits }: TeamRecruitTabProps) {
+  const openRecruits = recruits.filter((r) => r.status === 'OPEN');
 
-    return (
-      team.name.toLowerCase().includes(q) ||
-      team.description.toLowerCase().includes(q) ||
-      team.createdBy.toLowerCase().includes(q) ||
-      (team.positions && team.positions.some((p) => p.toLowerCase().includes(q)))
-    );
-  });
-
-  if (filtered.length === 0) {
+  if (openRecruits.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <Users className="mb-3 h-12 w-12 text-gray-200" />
@@ -36,17 +22,17 @@ export default function TeamRecruitTab({
 
   return (
     <div className="divide-y divide-gray-100">
-      {filtered.map((team) => (
-        <TeamCard team={team} key={team.id} />
+      {openRecruits.map((recruit) => (
+        <RecruitCard recruit={recruit} key={recruit.id} />
       ))}
     </div>
   );
 }
 
-function TeamCard({ team }: { team: TeamRecruitment }) {
+function RecruitCard({ recruit }: { recruit: RecruitResponse }) {
   return (
     <Link
-      href={`/team/${team.id}`}
+      href={`/recruit/${recruit.id}`}
       className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-gray-50/80"
     >
       {/* 팀 아이콘 */}
@@ -61,21 +47,18 @@ function TeamCard({ team }: { team: TeamRecruitment }) {
             모집중
           </span>
           <h3 className="truncate text-[15px] font-medium text-gray-900 group-hover:text-blue-600">
-            {team.name}
+            {recruit.title}
           </h3>
         </div>
-        <p className="mb-2 line-clamp-1 text-sm text-gray-500">
-          {team.description}
-        </p>
         <div className="flex flex-wrap items-center gap-2">
-          {team.positions && team.positions.length > 0 && (
+          {recruit.tags && recruit.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {team.positions.map((position: string) => (
+              {recruit.tags.slice(0, 3).map((tag) => (
                 <span
-                  key={position}
+                  key={tag}
                   className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-600"
                 >
-                  {position}
+                  {tag}
                 </span>
               ))}
             </div>
@@ -84,11 +67,15 @@ function TeamCard({ team }: { team: TeamRecruitment }) {
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1">
               <User className="h-3.5 w-3.5" />
-              {team.createdBy}
+              {recruit.author.name}
             </span>
             <span className="flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" />
-              {team.memberCount}명
+              <Eye className="h-3.5 w-3.5" />
+              {recruit.views}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5" />
+              {recruit.comments}
             </span>
           </div>
         </div>

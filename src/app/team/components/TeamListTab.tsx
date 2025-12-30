@@ -2,26 +2,14 @@
 
 import Link from 'next/link';
 import { Users, User, ChevronRight } from 'lucide-react';
-import type { Team } from '@/types/recruit';
+import type { TeamResponse } from '@/lib/api/types';
 
 interface TeamListTabProps {
-  teams: Team[];
-  searchQuery: string;
+  teams: TeamResponse[];
 }
 
-export default function TeamListTab({ teams, searchQuery }: TeamListTabProps) {
-  const filtered = teams.filter((team) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-
-    return (
-      team.name.toLowerCase().includes(q) ||
-      team.description.toLowerCase().includes(q) ||
-      team.createdBy.toLowerCase().includes(q)
-    );
-  });
-
-  if (filtered.length === 0) {
+export default function TeamListTab({ teams }: TeamListTabProps) {
+  if (teams.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <Users className="mb-3 h-12 w-12 text-gray-200" />
@@ -32,14 +20,14 @@ export default function TeamListTab({ teams, searchQuery }: TeamListTabProps) {
 
   return (
     <div className="divide-y divide-gray-100">
-      {filtered.map((team) => (
+      {teams.map((team) => (
         <TeamCard team={team} key={team.id} />
       ))}
     </div>
   );
 }
 
-function TeamCard({ team }: { team: Team }) {
+function TeamCard({ team }: { team: TeamResponse }) {
   return (
     <Link
       href={`/team/${team.id}`}
@@ -47,7 +35,15 @@ function TeamCard({ team }: { team: Team }) {
     >
       {/* 팀 아이콘 */}
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
-        <Users className="h-5 w-5" />
+        {team.imageUrl ? (
+          <img
+            src={team.imageUrl}
+            alt={team.name}
+            className="h-10 w-10 rounded-lg object-cover"
+          />
+        ) : (
+          <Users className="h-5 w-5" />
+        )}
       </div>
 
       {/* 팀 정보 */}

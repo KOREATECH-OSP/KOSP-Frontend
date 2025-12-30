@@ -13,20 +13,31 @@ import {
   BookOpen,
   GitPullRequest,
   CheckCircle2,
+  GitCommit,
+  Calendar,
+  Bug,
+  Eye,
+  GitMerge,
+  MessageSquare,
+  Code,
+  Crown,
+  GitFork,
+  Award,
 } from 'lucide-react';
 
 interface Challenge {
   id: number;
   title: string;
   description: string;
+  condition: string;
   current: number;
   total: number;
-  category: 'contribution' | 'learning' | 'community';
+  category: 'beginner' | 'intermediate' | 'advanced' | 'special';
   icon: React.ElementType;
   reward: number;
 }
 
-type CategoryFilter = 'all' | 'contribution' | 'learning' | 'community';
+type CategoryFilter = 'all' | 'beginner' | 'intermediate' | 'advanced' | 'special';
 
 export default function ChallengePage() {
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all');
@@ -41,115 +52,229 @@ export default function ChallengePage() {
   const cardsRef = useRef<HTMLDivElement>(null);
 
   const challenges: Challenge[] = [
+    // 초급 도전과제
     {
       id: 1,
-      title: 'First Contribution',
-      description: '첫 번째 오픈소스 기여를 완료하세요',
-      current: 1,
+      title: '첫 걸음',
+      description: '오픈소스의 세계에 첫 발을 내딛어보세요!',
+      condition: '커밋 1회 이상',
+      current: 0,
       total: 1,
-      category: 'contribution',
-      icon: GitPullRequest,
-      reward: 100,
+      category: 'beginner',
+      icon: GitCommit,
+      reward: 50,
     },
     {
       id: 2,
-      title: 'Pull Request Master',
-      description: '10개의 Pull Request를 생성하세요',
-      current: 7,
-      total: 10,
-      category: 'contribution',
-      icon: GitPullRequest,
-      reward: 500,
+      title: '꾸준함의 시작',
+      description: '7일 동안 매일 커밋하여 개발 습관을 만들어보세요.',
+      condition: '7일 연속 커밋',
+      current: 0,
+      total: 7,
+      category: 'beginner',
+      icon: Flame,
+      reward: 200,
     },
     {
       id: 3,
-      title: 'Issue Hunter',
-      description: '20개의 이슈를 해결하세요',
-      current: 12,
-      total: 20,
-      category: 'contribution',
-      icon: Target,
-      reward: 800,
-    },
-    {
-      id: 4,
-      title: 'Code Reviewer',
-      description: '30개의 코드 리뷰를 작성하세요',
-      current: 5,
-      total: 30,
-      category: 'contribution',
-      icon: CheckCircle2,
-      reward: 1000,
-    },
-    {
-      id: 5,
-      title: 'Documentation Writer',
-      description: '5개의 문서를 작성하거나 개선하세요',
-      current: 2,
-      total: 5,
-      category: 'learning',
-      icon: BookOpen,
+      title: '백 번의 헌신',
+      description: '100개의 커밋을 통해 프로젝트에 기여해보세요.',
+      condition: '누적 커밋 100회 이상',
+      current: 0,
+      total: 100,
+      category: 'beginner',
+      icon: GitCommit,
       reward: 300,
     },
     {
-      id: 6,
-      title: 'Star Collector',
-      description: '프로젝트에 50개의 스타를 받으세요',
-      current: 23,
-      total: 50,
-      category: 'community',
-      icon: Star,
-      reward: 1500,
+      id: 4,
+      title: '이슈 헌터',
+      description: '버그 제보나 기능 제안으로 프로젝트 개선에 참여하세요.',
+      condition: '이슈 생성 10회 이상',
+      current: 0,
+      total: 10,
+      category: 'beginner',
+      icon: Bug,
+      reward: 150,
     },
     {
-      id: 7,
-      title: 'Fork Master',
-      description: '10개의 프로젝트를 Fork하세요',
-      current: 10,
-      total: 10,
-      category: 'learning',
-      icon: Zap,
+      id: 5,
+      title: '출석왕',
+      description: '한 달 동안 플랫폼을 꾸준히 방문해보세요.',
+      condition: '사이트 출석체크 30회',
+      current: 0,
+      total: 30,
+      category: 'beginner',
+      icon: Calendar,
+      reward: 250,
+    },
+    // 중급 도전과제
+    {
+      id: 6,
+      title: 'PR 마스터',
+      description: '다양한 프로젝트에 코드 기여를 시작하세요.',
+      condition: 'PR 생성 20회 이상',
+      current: 0,
+      total: 20,
+      category: 'intermediate',
+      icon: GitPullRequest,
       reward: 400,
     },
     {
+      id: 7,
+      title: '머지의 달인',
+      description: '여러분의 코드가 실제 프로젝트에 반영되는 기쁨을 느껴보세요.',
+      condition: '머지된 PR 10개 이상',
+      current: 0,
+      total: 10,
+      category: 'intermediate',
+      icon: GitMerge,
+      reward: 500,
+    },
+    {
       id: 8,
-      title: 'Commit Streak',
-      description: '30일 연속으로 커밋하세요',
-      current: 15,
-      total: 30,
-      category: 'contribution',
-      icon: Flame,
-      reward: 1200,
+      title: '코드 리뷰어',
+      description: '다른 개발자의 코드를 리뷰하며 함께 성장하세요.',
+      condition: 'PR 리뷰 또는 코멘트 50회 이상',
+      current: 0,
+      total: 50,
+      category: 'intermediate',
+      icon: Eye,
+      reward: 350,
     },
     {
       id: 9,
-      title: 'Community Helper',
-      description: '50개의 댓글로 커뮤니티를 도와주세요',
-      current: 32,
-      total: 50,
-      category: 'community',
-      icon: Users,
-      reward: 600,
+      title: '이슈 해결사',
+      description: '버그를 수정하고 기능을 구현하여 이슈를 닫아보세요.',
+      condition: '이슈 클로즈 15회 이상',
+      current: 0,
+      total: 15,
+      category: 'intermediate',
+      icon: CheckCircle2,
+      reward: 450,
     },
     {
       id: 10,
-      title: 'Language Explorer',
-      description: '5가지 다른 프로그래밍 언어로 기여하세요',
-      current: 3,
-      total: 5,
-      category: 'learning',
+      title: '한 달의 기록',
+      description: '30일 동안 매일 코드를 작성하는 습관을 만들어보세요.',
+      condition: '30일 연속 커밋',
+      current: 0,
+      total: 30,
+      category: 'intermediate',
+      icon: Flame,
+      reward: 600,
+    },
+    {
+      id: 11,
+      title: '스타 수집가',
+      description: '매력적인 프로젝트를 만들어 커뮤니티의 관심을 받아보세요.',
+      condition: '본인 레포지토리 누적 스타 100개 이상',
+      current: 0,
+      total: 100,
+      category: 'intermediate',
       icon: Star,
       reward: 700,
     },
     {
-      id: 11,
-      title: 'Open Source Advocate',
-      description: '3명의 새로운 기여자를 초대하세요',
-      current: 1,
-      total: 3,
-      category: 'community',
+      id: 12,
+      title: '다재다능',
+      description: '다양한 프로젝트에 참여하며 경험을 넓혀보세요.',
+      condition: '5개 이상의 다른 레포지토리에 기여',
+      current: 0,
+      total: 5,
+      category: 'intermediate',
+      icon: Target,
+      reward: 400,
+    },
+    // 고급 도전과제
+    {
+      id: 13,
+      title: '코드의 거장',
+      description: '오픈소스 활동의 베테랑이 되어보세요.',
+      condition: '누적 커밋 1000회 이상',
+      current: 0,
+      total: 1000,
+      category: 'advanced',
+      icon: Crown,
+      reward: 1500,
+    },
+    {
+      id: 14,
+      title: '100일의 헌신',
+      description: '100일 동안 매일 코딩하는 진정한 개발자가 되어보세요.',
+      condition: '100일 연속 커밋',
+      current: 0,
+      total: 100,
+      category: 'advanced',
+      icon: Flame,
+      reward: 2000,
+    },
+    {
+      id: 15,
+      title: '메인테이너',
+      description: '본인의 레포지토리에서 다른 사람의 PR을 머지해보세요.',
+      condition: '다른 사용자의 PR 머지 10회 이상',
+      current: 0,
+      total: 10,
+      category: 'advanced',
+      icon: Users,
+      reward: 800,
+    },
+    {
+      id: 16,
+      title: '컨트리뷰터 챔피언',
+      description: '다양한 오픈소스 생태계에 발자취를 남겨보세요.',
+      condition: '10개 이상의 레포지토리에 머지된 PR 보유',
+      current: 0,
+      total: 10,
+      category: 'advanced',
       icon: Trophy,
+      reward: 1200,
+    },
+    {
+      id: 17,
+      title: '대규모 기여자',
+      description: '방대한 양의 코드로 프로젝트를 발전시켜보세요.',
+      condition: '누적 코드 추가 10,000줄 이상',
+      current: 0,
+      total: 10000,
+      category: 'advanced',
+      icon: Code,
+      reward: 1000,
+    },
+    // 특별 도전과제
+    {
+      id: 18,
+      title: '인기 프로젝트 메이커',
+      description: '많은 개발자들이 참여하고 싶어하는 프로젝트를 만들어보세요.',
+      condition: '본인 레포지토리 누적 포크 50개 이상',
+      current: 0,
+      total: 50,
+      category: 'special',
+      icon: GitFork,
+      reward: 600,
+    },
+    {
+      id: 19,
+      title: '슈퍼 리뷰어',
+      description: '커뮤니티에 적극적으로 피드백을 제공하세요.',
+      condition: 'PR 리뷰 또는 코멘트 100회 이상',
+      current: 0,
+      total: 100,
+      category: 'special',
+      icon: MessageSquare,
       reward: 500,
+    },
+    {
+      id: 20,
+      title: '연중무휴 개발자',
+      description: '일 년 동안 플랫폼과 함께한 진정한 열정을 보여주세요.',
+      condition: '사이트 출석체크 365회',
+      current: 0,
+      total: 365,
+      category: 'special',
+      icon: Award,
+      reward: 3000,
     },
   ];
 
@@ -265,15 +390,7 @@ export default function ChallengePage() {
 
   const getCategoryStyle = (category: Challenge['category']) => {
     switch (category) {
-      case 'contribution':
-        return {
-          bg: 'from-blue-500 to-indigo-600',
-          light: 'bg-blue-50',
-          text: 'text-blue-600',
-          border: 'border-blue-200',
-          glow: 'shadow-blue-500/20',
-        };
-      case 'learning':
+      case 'beginner':
         return {
           bg: 'from-emerald-500 to-teal-600',
           light: 'bg-emerald-50',
@@ -281,7 +398,15 @@ export default function ChallengePage() {
           border: 'border-emerald-200',
           glow: 'shadow-emerald-500/20',
         };
-      case 'community':
+      case 'intermediate':
+        return {
+          bg: 'from-blue-500 to-indigo-600',
+          light: 'bg-blue-50',
+          text: 'text-blue-600',
+          border: 'border-blue-200',
+          glow: 'shadow-blue-500/20',
+        };
+      case 'advanced':
         return {
           bg: 'from-purple-500 to-pink-600',
           light: 'bg-purple-50',
@@ -289,17 +414,27 @@ export default function ChallengePage() {
           border: 'border-purple-200',
           glow: 'shadow-purple-500/20',
         };
+      case 'special':
+        return {
+          bg: 'from-amber-500 to-orange-600',
+          light: 'bg-amber-50',
+          text: 'text-amber-600',
+          border: 'border-amber-200',
+          glow: 'shadow-amber-500/20',
+        };
     }
   };
 
   const getCategoryName = (category: Challenge['category']) => {
     switch (category) {
-      case 'contribution':
-        return '기여';
-      case 'learning':
-        return '학습';
-      case 'community':
-        return '커뮤니티';
+      case 'beginner':
+        return '초급';
+      case 'intermediate':
+        return '중급';
+      case 'advanced':
+        return '고급';
+      case 'special':
+        return '특별';
     }
   };
 
@@ -412,9 +547,10 @@ export default function ChallengePage() {
 
   const filters: { key: CategoryFilter; label: string; icon: React.ElementType }[] = [
     { key: 'all', label: '전체', icon: Trophy },
-    { key: 'contribution', label: '기여', icon: GitPullRequest },
-    { key: 'learning', label: '학습', icon: BookOpen },
-    { key: 'community', label: '커뮤니티', icon: Users },
+    { key: 'beginner', label: '초급', icon: Target },
+    { key: 'intermediate', label: '중급', icon: TrendingUp },
+    { key: 'advanced', label: '고급', icon: Crown },
+    { key: 'special', label: '특별', icon: Award },
   ];
 
   return (
@@ -630,8 +766,11 @@ export default function ChallengePage() {
                   </div>
 
                   {/* Description */}
-                  <p className="mb-4 text-sm text-gray-500">
+                  <p className="mb-2 text-sm text-gray-500">
                     {challenge.description}
+                  </p>
+                  <p className="mb-4 text-xs text-gray-400">
+                    <span className="font-medium">조건:</span> {challenge.condition}
                   </p>
 
                   {/* Progress Bar */}

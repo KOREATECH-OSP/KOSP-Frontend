@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { Eye, MessageSquare, ThumbsUp } from 'lucide-react';
-import type { Post } from '@/types/community';
+import type { ArticleResponse } from '@/lib/api/types';
 
 interface CommunityPostCardProps {
-  post: Post;
+  post: ArticleResponse;
+  boardName?: string;
 }
 
-export default function CommunityPostCard({ post }: CommunityPostCardProps) {
+export default function CommunityPostCard({ post, boardName }: CommunityPostCardProps) {
   return (
     <Link
       href={`/community/${post.id}`}
@@ -18,18 +19,31 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       <div className="min-w-0 flex-1">
         {/* 상단: 카테고리 + 제목 */}
         <div className="mb-1 flex items-center gap-2">
-          <span className="flex-shrink-0 text-xs font-medium text-gray-400">
-            {post.category}
-          </span>
+          {boardName && (
+            <span className="flex-shrink-0 text-xs font-medium text-gray-400">
+              {boardName}
+            </span>
+          )}
           <h3 className="truncate text-[15px] font-medium text-gray-900 group-hover:text-blue-600">
             {post.title}
           </h3>
+          {post.tags && post.tags.length > 0 && (
+            <div className="hidden items-center gap-1 sm:flex">
+              {post.tags.slice(0, 2).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* 하단: 작성자 + 날짜 + 통계 */}
+        {/* 하단: 작성자 + 통계 */}
         <div className="flex items-center gap-3 text-xs text-gray-400">
-          <span className="font-medium text-gray-500">{post.author}</span>
-          <span>{post.createdAt}</span>
+          <span className="font-medium text-gray-500">{post.author.name}</span>
           <span className="hidden h-3 w-px bg-gray-200 sm:block" />
           <div className="hidden items-center gap-3 sm:flex">
             <span className="flex items-center gap-1">
