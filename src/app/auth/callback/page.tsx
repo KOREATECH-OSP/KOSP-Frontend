@@ -2,17 +2,24 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { SessionUser } from '@/lib/auth/types';
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status: sessionStatus } = useSession();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
+      // 세션 로딩 중이면 대기
+      if (sessionStatus === 'loading') {
+        return;
+      }
+
       // 쿼리 파라미터 로깅 (디버깅용)
       const params: Record<string, string> = {};
       searchParams.forEach((value, key) => {
@@ -61,11 +68,20 @@ function AuthCallbackContent() {
         return;
       }
 
+      // 세션이 없으면 에러
+      if (!session?.accessToken) {
+        setStatus('error');
+        setErrorMessage('세션이 없습니다. 다시 로그인해주세요.');
+        return;
+      }
+
       try {
-        // 기존 사용자: 쿠키에 토큰이 설정된 상태에서 사용자 정보 조회
+        // 기존 사용자: JWT 토큰으로 사용자 정보 조회
         const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
           method: 'GET',
-          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
           cache: 'no-store',
         });
 
@@ -89,7 +105,7 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, session, sessionStatus]);
 
   if (status === 'error') {
     return (

@@ -14,6 +14,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { TiptapEditor } from '@/common/components/Editor';
+import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
 
 interface RecruitFormData {
   title: string;
@@ -35,8 +37,15 @@ const POSITION_OPTIONS = [
   'QA',
 ];
 
+function stripHtml(html: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
 export default function CreateRecruitPage() {
   const router = useRouter();
+  const { upload: uploadImage } = useImageUpload();
 
   const [formData, setFormData] = useState<RecruitFormData>({
     title: '',
@@ -62,6 +71,13 @@ export default function CreateRecruitPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof RecruitFormData]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleContentChange = (html: string) => {
+    setFormData((prev) => ({ ...prev, content: html }));
+    if (errors.content) {
+      setErrors((prev) => ({ ...prev, content: '' }));
     }
   };
 
@@ -164,7 +180,8 @@ export default function CreateRecruitPage() {
     if (!formData.title.trim()) {
       newErrors.title = '제목을 입력해주세요';
     }
-    if (!formData.content.trim()) {
+    const contentText = stripHtml(formData.content).trim();
+    if (!contentText) {
       newErrors.content = '내용을 입력해주세요';
     }
     if (formData.positions.length === 0) {
@@ -251,28 +268,17 @@ export default function CreateRecruitPage() {
           <label className="mb-3 block text-sm font-medium text-gray-900">
             내용 <span className="text-red-500">*</span>
           </label>
-          <textarea
-            name="content"
-            value={formData.content}
-            onChange={handleInputChange}
+          <TiptapEditor
+            content={formData.content}
+            onChange={handleContentChange}
             placeholder="팀 소개, 모집 배경, 활동 내용 등을 자세히 작성해주세요"
-            rows={10}
-            className={`w-full resize-none rounded-xl border px-4 py-3 text-sm transition-colors focus:outline-none ${
-              errors.content
-                ? 'border-red-300 bg-red-50 focus:border-red-400'
-                : 'border-gray-200 focus:border-gray-400'
-            }`}
+            minHeight={250}
+            maxCharacters={5000}
+            showCharacterCount
+            onImageUpload={uploadImage}
+            error={!!errors.content}
+            errorMessage={errors.content}
           />
-          <div className="mt-2 flex items-center justify-between">
-            {errors.content ? (
-              <p className="text-sm text-red-500">{errors.content}</p>
-            ) : (
-              <span />
-            )}
-            <span className="text-xs text-gray-400">
-              {formData.content.length} / 5000
-            </span>
-          </div>
         </div>
 
         {/* 모집 포지션 */}

@@ -11,7 +11,7 @@ export default function LogoutPage() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          window.location.href = '/login';
+          window.location.href = '/';
           return 0;
         }
         return prev - 1;
@@ -50,13 +50,13 @@ export default function LogoutPage() {
 
         <div className="rounded-2xl border border-gray-200/70 bg-white p-6 sm:p-8 text-center space-y-4">
           <p className="text-sm text-gray-600">
-            {countdown}초 후 로그인 페이지로 이동합니다.
+            {countdown}초 후 홈으로 이동합니다.
           </p>
           <Link
-            href="/login"
+            href="/"
             className="inline-block w-full py-3 px-4 rounded-xl text-sm font-medium text-white bg-gray-900 hover:bg-black transition-all duration-200"
           >
-            로그인 페이지로 이동
+            홈으로 이동
           </Link>
         </div>
       </div>

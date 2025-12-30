@@ -1,18 +1,14 @@
 'use server';
 
 import 'server-only';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { SessionUser } from './types';
 
 export async function fetchSessionUser(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const serializedCookies = cookieStore
-    .getAll()
-    .map(({ name, value }) => `${name}=${value}`)
-    .join('; ');
+  const session = await auth();
 
-  if (!serializedCookies) {
+  if (!session?.accessToken) {
     return null;
   }
 
@@ -20,7 +16,7 @@ export async function fetchSessionUser(): Promise<SessionUser | null> {
     const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
       method: 'GET',
       headers: {
-        Cookie: serializedCookies,
+        Authorization: `Bearer ${session.accessToken}`,
       },
       cache: 'no-store',
     });

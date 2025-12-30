@@ -31,18 +31,19 @@ function Header({ simple = false, session = null }: HeaderProps) {
     router.push('/user');
   };
   const handleLogout = async () => {
+    // idToken 미리 저장 (signOut 호출 후에는 세션이 없어짐)
+    const idToken = session?.idToken;
+
     // 1. Next-Auth 세션 삭제
     await signOut({ redirect: false });
 
     // 2. Authentik end-session URL로 리다이렉트
-    const endSessionBaseUrl = process.env.NEXT_PUBLIC_AUTHENTIK_END_SESSION_URL;
-    if (endSessionBaseUrl) {
-      const endSessionUrl = new URL(endSessionBaseUrl);
-      endSessionUrl.searchParams.set('post_logout_redirect_uri', `${window.location.origin}/logout`);
-      window.location.href = endSessionUrl.toString();
-    } else {
-      window.location.href = '/logout';
+    const endSessionUrl = new URL('https://auth.swkoreatech.io/application/o/swkoreatech-osp-dev/end-session/');
+    endSessionUrl.searchParams.set('post_logout_redirect_uri', `${window.location.origin}/`);
+    if (idToken) {
+      endSessionUrl.searchParams.set('id_token_hint', idToken);
     }
+    window.location.href = endSessionUrl.toString();
   };
   const profileActions = isLoggedIn
     ? [

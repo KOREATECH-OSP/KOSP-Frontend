@@ -3,6 +3,8 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, X, Loader2, Paperclip } from 'lucide-react';
+import { TiptapEditor } from '@/common/components/Editor';
+import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
 
 interface PostFormData {
   title: string;
@@ -18,8 +20,16 @@ const categories = [
   { value: 'free', label: '자유' },
 ] as const;
 
+// HTML 태그를 제거하고 텍스트만 추출
+function stripHtml(html: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
 export default function WritePage() {
   const router = useRouter();
+  const { upload: uploadImage } = useImageUpload();
   const [formData, setFormData] = useState<PostFormData>({
     title: '',
     category: 'free',
@@ -39,6 +49,13 @@ export default function WritePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof PostFormData]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleContentChange = (html: string) => {
+    setFormData((prev) => ({ ...prev, content: html }));
+    if (errors.content) {
+      setErrors((prev) => ({ ...prev, content: '' }));
     }
   };
 
@@ -88,9 +105,10 @@ export default function WritePage() {
       newErrors.title = '제목은 최소 2자 이상이어야 합니다';
     }
 
-    if (!formData.content.trim()) {
+    const contentText = stripHtml(formData.content).trim();
+    if (!contentText) {
       newErrors.content = '내용을 입력해주세요';
-    } else if (formData.content.length < 10) {
+    } else if (contentText.length < 10) {
       newErrors.content = '내용은 최소 10자 이상이어야 합니다';
     }
 
@@ -190,35 +208,19 @@ export default function WritePage() {
 
         {/* 내용 */}
         <div>
-          <label
-            htmlFor="content"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
+          <label className="mb-2 block text-sm font-medium text-gray-700">
             내용
           </label>
-          <textarea
-            id="content"
-            name="content"
-            value={formData.content}
-            onChange={handleInputChange}
+          <TiptapEditor
+            content={formData.content}
+            onChange={handleContentChange}
             placeholder="내용을 입력하세요"
-            rows={14}
-            className={`w-full resize-none rounded-lg border px-4 py-3 text-sm focus:outline-none ${
-              errors.content
-                ? 'border-red-300 focus:border-red-400'
-                : 'border-gray-200 focus:border-gray-400'
-            }`}
+            minHeight={300}
+            showCharacterCount
+            onImageUpload={uploadImage}
+            error={!!errors.content}
+            errorMessage={errors.content}
           />
-          <div className="mt-1.5 flex items-center justify-between">
-            {errors.content ? (
-              <p className="text-sm text-red-500">{errors.content}</p>
-            ) : (
-              <span />
-            )}
-            <span className="text-xs text-gray-400">
-              {formData.content.length.toLocaleString()}자
-            </span>
-          </div>
         </div>
 
         {/* 파일 첨부 */}

@@ -25,12 +25,8 @@ const authentikConfig: OIDCConfig<AuthentikProfile> = {
   },
   token: 'https://auth.swkoreatech.io/application/o/token/',
   userinfo: 'https://auth.swkoreatech.io/application/o/userinfo/',
-  // Authentik uses HS256 for ID token signing
   idToken: true,
   checks: ['state'],
-  client: {
-    id_token_signed_response_alg: 'HS256',
-  },
 };
 
 export const authConfig: NextAuthConfig = {

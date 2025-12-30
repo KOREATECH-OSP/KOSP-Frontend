@@ -226,6 +226,7 @@ export default function ChallengePage() {
         });
       },
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedChallenges, overallProgress, totalPoints]);
 
   // Card animations

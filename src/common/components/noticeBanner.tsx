@@ -7,30 +7,31 @@ import { suitFont } from '../../style/font';
 
 const STORAGE_KEY = 'notice-banner-hidden-until';
 
+function getInitialVisibility(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const hiddenUntil = localStorage.getItem(STORAGE_KEY);
+  if (!hiddenUntil) return true;
+
+  const hiddenUntilDate = new Date(hiddenUntil);
+  const now = new Date();
+
+  if (now < hiddenUntilDate) {
+    return false;
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+    return true;
+  }
+}
+
 function NoticeBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // localStorage에서 숨김 상태 확인
-    const hiddenUntil = localStorage.getItem(STORAGE_KEY);
-
-    if (hiddenUntil) {
-      const hiddenUntilDate = new Date(hiddenUntil);
-      const now = new Date();
-
-      // 아직 숨김 기간이 지나지 않았으면 숨김 유지
-      if (now < hiddenUntilDate) {
-        setIsVisible(false);
-      } else {
-        // 기간이 지났으면 localStorage 삭제하고 표시
-        localStorage.removeItem(STORAGE_KEY);
-        setIsVisible(true);
-      }
-    } else {
-      setIsVisible(true);
-    }
-
+    // localStorage 접근은 클라이언트에서만 가능하므로 useEffect 사용 필수
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsVisible(getInitialVisibility());
     setIsLoaded(true);
   }, []);
 
