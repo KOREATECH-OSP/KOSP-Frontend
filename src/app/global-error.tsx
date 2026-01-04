@@ -50,6 +50,7 @@ export default function GlobalError({
               >
                 다시 시도
               </button>
+{/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
               <a
                 href="/"
                 className="h-[54px] w-full rounded-2xl bg-[#f2f4f6] text-[15px] font-medium text-[#191f28] transition-colors hover:bg-[#e5e8eb] flex items-center justify-center"
