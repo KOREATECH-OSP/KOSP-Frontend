@@ -29,13 +29,14 @@ function Header({ simple = false, session = null }: HeaderProps) {
     setMobileProfileOpen(false);
     router.push('/user');
   };
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('로그아웃 실패:', error);
-    }
-    window.location.href = '/';
+  const handleLogout = () => {
+    setMobileMenuOpen(false);
+    setMobileProfileOpen(false);
+    fetch('/api/auth/logout', { method: 'POST' })
+      .catch((error) => console.error('로그아웃 실패:', error))
+      .finally(() => {
+        window.location.href = '/';
+      });
   };
   const profileActions = isLoggedIn
     ? [

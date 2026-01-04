@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Github, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import GithubIcon from "@/assets/svg/github.svg";
 import { useState } from "react";
 
 interface GithubStepProps {
@@ -25,7 +26,7 @@ export default function GithubStep({ onGithubLogin }: GithubStepProps) {
             : 'bg-[#e5e8eb] text-[#8b95a1] cursor-not-allowed'
         }`}
       >
-        <Github className="w-5 h-5" />
+        <GithubIcon className="w-5 h-5" />
         GitHub로 계속하기
       </button>
 

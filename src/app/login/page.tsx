@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Github } from 'lucide-react';
+import GithubIcon from '@/assets/svg/github.svg';
 import { OAUTH_BASE_URL } from '@/lib/api/config';
 
 function LoginContent() {
@@ -130,7 +130,7 @@ function LoginContent() {
           onClick={handleGithubLogin}
           className="w-full h-[54px] flex items-center justify-center gap-2.5 bg-[#191f28] text-white text-[15px] font-medium rounded-2xl hover:bg-[#333d4b] active:bg-[#4e5968] transition-colors"
         >
-          <Github className="w-5 h-5" />
+          <GithubIcon className="w-5 h-5" />
           GitHub로 계속하기
         </button>
       </div>
