@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, clientApiClient } from './client';
 import type {
   UserSignupRequest,
   UserUpdateRequest,
@@ -6,13 +6,11 @@ import type {
   ArticleListResponse,
   CommentListResponse,
   GithubActivityResponse,
+  AuthTokenResponse,
 } from './types';
 
-/**
- * 회원가입 및 즉시 로그인
- */
-export async function signup(data: UserSignupRequest): Promise<void> {
-  await apiClient<void>('/v1/users/signup', {
+export async function signup(data: UserSignupRequest): Promise<AuthTokenResponse> {
+  return clientApiClient<AuthTokenResponse>('/v1/users/signup', {
     method: 'POST',
     body: data,
   });

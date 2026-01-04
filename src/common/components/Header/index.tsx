@@ -51,12 +51,6 @@ function Header({ simple = false, session = null }: HeaderProps) {
     { href: "/challenge", label: "챌린지" },
   ];
 
-  // useEffect(() => {
-  //   if (!mobileMenuOpen) {
-  //     setMobileProfileOpen(false);
-  //   }
-  // }, [mobileMenuOpen]);
-
   return (
     <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50 ${suitFont.className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -210,7 +204,6 @@ function Header({ simple = false, session = null }: HeaderProps) {
                 leaveTo="translate-x-full"
               >
                 <Dialog.Panel className="w-[85%] max-w-xs bg-white h-full shadow-2xl flex flex-col">
-                  {/* 헤더 영역 */}
                   <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
                       <Image
@@ -239,7 +232,6 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     </button>
                   </div>
 
-                  {/* 네비게이션 메뉴 */}
                   <nav className="flex-1 px-3 py-4 overflow-y-auto">
                     <div className="space-y-1">
                       {navItems.map(({ href, label }) => (
@@ -255,7 +247,6 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     </div>
                   </nav>
 
-                  {/* 하단 버튼 영역 */}
                   <div className="px-5 py-5 border-t border-gray-100 space-y-3">
                     {isLoggedIn ? (
                       <div className="space-y-3">

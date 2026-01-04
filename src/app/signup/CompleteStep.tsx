@@ -1,7 +1,10 @@
-import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
 
-export default function CompleteStep() {
+interface CompleteStepProps {
+  onLogin: () => void;
+}
+
+export default function CompleteStep({ onLogin }: CompleteStepProps) {
   return (
     <div className="text-center">
       <div className="flex justify-center mb-6">
@@ -15,12 +18,13 @@ export default function CompleteStep() {
       <p className="text-[15px] text-[#8b95a1] mb-8">
         오픈소스포털의 회원이 되신 것을 환영해요
       </p>
-      <Link
-        href="/login"
-        className="block w-full h-[54px] leading-[54px] bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] transition-colors"
+      <button
+        type="button"
+        onClick={onLogin}
+        className="w-full h-[54px] bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] transition-colors"
       >
-        로그인하기
-      </Link>
+        시작하기
+      </button>
     </div>
   );
 }

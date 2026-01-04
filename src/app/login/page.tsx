@@ -3,62 +3,65 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { toast } from 'sonner';
 import GithubIcon from '@/assets/svg/github.svg';
-import { OAUTH_BASE_URL } from '@/lib/api/config';
+import { GITHUB_CLIENT_ID } from '@/lib/api/config';
 
 function LoginContent() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (!email.trim()) {
-      setError('이메일을 입력해주세요');
+      toast.error('이메일을 입력해주세요');
       return;
     }
     if (!password) {
-      setError('비밀번호를 입력해주세요');
+      toast.error('비밀번호를 입력해주세요');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || '로그인에 실패했습니다');
+      if (result?.error) {
+        toast.error('이메일 또는 비밀번호가 올바르지 않습니다');
+      } else {
+        toast.success('로그인되었습니다');
+        router.push('/');
+        router.refresh();
       }
-
-      router.push('/');
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다');
+    } catch {
+      toast.error('로그인에 실패했습니다');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGithubLogin = () => {
+    if (!GITHUB_CLIENT_ID) {
+      toast.error('GitHub 로그인이 설정되지 않았습니다');
+      return;
+    }
     window.sessionStorage.setItem('kosp:oauth-from', 'login');
-    const redirectUri = `${window.location.origin}/auth/callback`;
-    const oauthUrl = `${OAUTH_BASE_URL}/oauth2/authorization/github?redirect_uri=${encodeURIComponent(redirectUri)}`;
+    const redirectUri = `${window.location.origin}/api/auth/github/callback`;
+    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email`;
     window.location.href = oauthUrl;
   };
 
   return (
     <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
       <div className="w-full max-w-[400px]">
-        {/* 헤더 */}
         <div className="mb-10">
           <h1 className="text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
             오픈소스포털에
@@ -67,14 +70,6 @@ function LoginContent() {
           </h1>
         </div>
 
-        {/* 에러 */}
-        {error && (
-          <div className="mb-5 p-4 rounded-2xl bg-[#fff0f0] text-[#e53935] text-[14px]">
-            {error}
-          </div>
-        )}
-
-        {/* 폼 */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="email"
@@ -103,7 +98,6 @@ function LoginContent() {
           </button>
         </form>
 
-        {/* 링크 */}
         <div className="flex items-center justify-center gap-3 mt-5 text-[14px] text-[#6b7684]">
           <Link href="/signup" className="hover:text-[#3182f6] transition-colors">
             회원가입
@@ -114,7 +108,6 @@ function LoginContent() {
           </Link>
         </div>
 
-        {/* 구분선 */}
         <div className="relative my-8">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[#e5e8eb]" />
@@ -124,7 +117,6 @@ function LoginContent() {
           </div>
         </div>
 
-        {/* GitHub 로그인 */}
         <button
           type="button"
           onClick={handleGithubLogin}

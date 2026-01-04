@@ -23,7 +23,16 @@ type RequestOptions = {
   revalidate?: number;
 };
 
-// TODO: 새로운 인증 플로우에 맞게 인증 헤더 처리 구현 필요
+function parseErrorMessage(text: string, status: number): string {
+  if (!text) return `API Error: ${status}`;
+  try {
+    const json = JSON.parse(text);
+    return json.message || json.error || `API Error: ${status}`;
+  } catch {
+    return text;
+  }
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options: RequestOptions = {}
@@ -54,11 +63,11 @@ export async function apiClient<T>(
     const errorText = await response.text();
     throw new ApiException(
       response.status,
-      errorText || `API Error: ${response.status}`
+      parseErrorMessage(errorText, response.status)
     );
   }
 
-  // 204 No Content 또는 빈 응답 처리
+  // 204 No Content
   const text = await response.text();
   if (!text) {
     return undefined as T;
@@ -89,7 +98,7 @@ export async function clientApiClient<T>(
     const errorText = await response.text();
     throw new ApiException(
       response.status,
-      errorText || `API Error: ${response.status}`
+      parseErrorMessage(errorText, response.status)
     );
   }
 

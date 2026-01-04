@@ -2,10 +2,11 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api/config';
-import type { SessionUser } from '@/lib/auth/types';
+import { signIn } from 'next-auth/react';
+import { toast } from 'sonner';
+import { exchangeGithubToken } from '@/lib/api/auth';
+import { ApiException } from '@/lib/api/client';
 
-// TODO: 새로운 인증 플로우에 맞게 콜백 페이지 재구현 필요
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -14,60 +15,91 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // 쿼리 파라미터 로깅 (디버깅용)
-      const params: Record<string, string> = {};
-      searchParams.forEach((value, key) => {
-        params[key] = value;
-      });
-      console.log('[AuthCallback] 받은 파라미터:', params);
-
-      // 에러 체크
       const error = searchParams.get('error');
       if (error) {
         const errorDescription = searchParams.get('error_description') || '인증에 실패했습니다.';
-        console.error('[AuthCallback] 에러:', error, errorDescription);
         setStatus('error');
         setErrorMessage(errorDescription);
         return;
       }
 
-      // 신규 사용자 여부 확인
+      const oauthFrom = window.sessionStorage.getItem('kosp:oauth-from');
+      window.sessionStorage.removeItem('kosp:oauth-from');
+
+      const githubAccessToken = searchParams.get('access_token');
       const isNew = searchParams.get('isNew');
-      const githubId = searchParams.get('githubId');
+      const signupToken = searchParams.get('signupToken') || searchParams.get('verificationToken');
 
-      console.log('[AuthCallback] isNew:', isNew, 'githubId:', githubId);
-
-      if (isNew === 'true') {
-        // 신규 사용자 → 회원가입 페이지로 이동
-        router.replace(`/signup?githubId=${githubId}&step=info`);
+      if (isNew === 'true' && signupToken) {
+        router.replace(`/signup?signupToken=${encodeURIComponent(signupToken)}&step=info`);
         return;
       }
 
-      try {
-        // 기존 사용자: 쿠키 기반 인증으로 사용자 정보 조회
-        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
+      if (githubAccessToken) {
+        try {
+          if (oauthFrom === 'signup') {
+            const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
+            router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=info`);
+          } else {
+            const result = await signIn('github-login', {
+              githubAccessToken,
+              redirect: false,
+            });
+
+            if (result?.error) {
+              throw new ApiException(404, result.error);
+            }
+
+            toast.success('로그인되었습니다');
+            router.replace('/');
+          }
+        } catch (err) {
+          if (err instanceof ApiException) {
+            if (err.status === 404 && oauthFrom !== 'signup') {
+              toast.error('가입되지 않은 GitHub 계정이에요. 회원가입을 진행해주세요.');
+              try {
+                const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
+                router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=info`);
+                return;
+              } catch {
+                setStatus('error');
+                setErrorMessage('회원가입 처리 중 오류가 발생했어요.');
+                return;
+              }
+            }
+            setStatus('error');
+            setErrorMessage(err.message || '인증 처리에 실패했어요.');
+          } else {
+            setStatus('error');
+            setErrorMessage('인증 처리에 실패했어요.');
+          }
+        }
+        return;
+      }
+
+      const accessToken = searchParams.get('accessToken');
+      const refreshToken = searchParams.get('refreshToken');
+      
+      if (accessToken && refreshToken) {
+        const result = await signIn('signup-token', {
+          accessToken,
+          refreshToken,
+          redirect: false,
         });
 
-        if (!response.ok) {
-          throw new Error('사용자 정보를 가져오는데 실패했습니다.');
+        if (result?.error) {
+          setStatus('error');
+          setErrorMessage('세션 생성에 실패했어요.');
+          return;
         }
 
-        const user = (await response.json()) as SessionUser;
-        console.log('[AuthCallback] 사용자 정보:', user);
-
-        // localStorage에 사용자 정보 저장
-        window.localStorage.setItem('kosp:user-info', JSON.stringify(user));
-
-        // 홈으로 리다이렉트
+        toast.success('로그인되었습니다');
         router.replace('/');
-      } catch (err) {
-        console.error('[AuthCallback] 처리 실패:', err);
-        setStatus('error');
-        setErrorMessage(err instanceof Error ? err.message : '로그인 처리에 실패했습니다.');
+        return;
       }
+
+      setStatus('error');
+      setErrorMessage('GitHub 인증 정보를 받지 못했어요.');
     };
 
     handleCallback();
@@ -75,14 +107,14 @@ function AuthCallbackContent() {
 
   if (status === 'error') {
     return (
-      <div className="flex-1 flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center space-y-4">
           <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">오류</h1>
+          <h1 className="text-xl font-bold text-gray-900">오류가 발생했어요</h1>
           <p className="text-sm text-gray-600">{errorMessage}</p>
           <button
             onClick={() => router.push('/login')}
@@ -96,7 +128,7 @@ function AuthCallbackContent() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 mx-auto border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
         <p className="text-sm text-gray-600">처리 중...</p>
@@ -107,7 +139,7 @@ function AuthCallbackContent() {
 
 function LoadingFallback() {
   return (
-    <div className="flex-1 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 mx-auto border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
         <p className="text-sm text-gray-600">처리 중...</p>

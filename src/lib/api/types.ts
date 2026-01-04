@@ -20,11 +20,61 @@ export interface AuthorResponse {
 
 export interface LoginRequest {
   email: string;
-  password: string; // SHA-256 해시
+  password: string;
+}
+
+export interface AuthTokenResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface AuthMeResponse {
+  id: number;
+  email: string;
   name: string;
+  profileImage: string | null;
+  introduction: string | null;
+}
+
+export interface GithubTokenRequest {
+  githubAccessToken: string;
+}
+
+export interface GithubVerificationResponse {
+  verificationToken: string;
+}
+
+export interface EmailRequest {
+  email: string;
+  signupToken?: string;
+}
+
+export interface EmailVerificationRequest {
+  email: string;
+  code: string;
+}
+
+export interface EmailVerificationResponse {
+  signupToken: string;
+}
+
+export interface CheckMemberIdRequest {
+  id: string;
+}
+
+export interface CheckMemberIdResponse {
+  success: boolean;
+  available: boolean;
+  message: string;
+}
+
+export interface ReissueRequest {
+  refreshToken: string;
+}
+
+export interface PasswordResetRequest {
+  token: string;
+  newPassword: string;
 }
 
 // ============================================
@@ -35,8 +85,8 @@ export interface UserSignupRequest {
   name: string;
   kutId: string;
   kutEmail: string;
-  password: string; // SHA-256 해시 (64자)
-  githubId: number;
+  password: string;
+  signupToken: string;
 }
 
 export interface UserUpdateRequest {

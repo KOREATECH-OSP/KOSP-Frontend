@@ -1,33 +1,112 @@
-import { apiClient } from './client';
-import type { LoginRequest, AuthMeResponse } from './types';
+import { clientApiClient } from './client';
+import type {
+  LoginRequest,
+  AuthTokenResponse,
+  AuthMeResponse,
+  GithubTokenRequest,
+  GithubVerificationResponse,
+  EmailRequest,
+  EmailVerificationRequest,
+  EmailVerificationResponse,
+  CheckMemberIdResponse,
+  ReissueRequest,
+  PasswordResetRequest,
+} from './types';
 
-/**
- * 일반 로그인
- * 이메일과 비밀번호(SHA-256 해시)를 전달받아 로그인 처리
- */
-export async function login(data: LoginRequest): Promise<void> {
-  await apiClient<void>('/v1/auth/login', {
+export async function login(data: LoginRequest): Promise<AuthTokenResponse> {
+  return clientApiClient<AuthTokenResponse>('/v1/auth/login', {
     method: 'POST',
     body: data,
   });
 }
 
-/**
- * 로그아웃
- * 현재 로그인한 사용자의 세션/토큰을 무효화
- */
+export async function loginWithGithub(data: GithubTokenRequest): Promise<AuthTokenResponse> {
+  return clientApiClient<AuthTokenResponse>('/v1/auth/login/github', {
+    method: 'POST',
+    body: data,
+  });
+}
+
+export async function exchangeGithubToken(data: GithubTokenRequest): Promise<GithubVerificationResponse> {
+  return clientApiClient<GithubVerificationResponse>('/v1/auth/github/exchange', {
+    method: 'POST',
+    body: data,
+  });
+}
+
 export async function logout(): Promise<void> {
-  await apiClient<void>('/v1/auth/logout', {
+  return clientApiClient<void>('/v1/auth/logout', {
     method: 'POST',
   });
 }
 
-/**
- * 내 정보 조회
- * 현재 로그인된 사용자의 기본 정보를 조회
- */
-export async function getMyInfo(): Promise<AuthMeResponse> {
-  return apiClient<AuthMeResponse>('/v1/auth/me', {
+export async function getMyInfo(accessToken: string): Promise<AuthMeResponse> {
+  return clientApiClient<AuthMeResponse>('/v1/auth/me', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
     cache: 'no-store',
   });
+}
+
+export async function sendVerificationEmail(data: EmailRequest): Promise<void> {
+  return clientApiClient<void>('/v1/auth/verify/email', {
+    method: 'POST',
+    body: data,
+  });
+}
+
+export async function verifyEmailCode(data: EmailVerificationRequest): Promise<EmailVerificationResponse> {
+  return clientApiClient<EmailVerificationResponse>('/v1/auth/verify/email/confirm', {
+    method: 'POST',
+    body: data,
+  });
+}
+
+export async function checkMemberId(id: string): Promise<CheckMemberIdResponse> {
+  return clientApiClient<CheckMemberIdResponse>(`/v1/auth/verify/identity?id=${encodeURIComponent(id)}`);
+}
+
+export async function reissueToken(data: ReissueRequest): Promise<AuthTokenResponse> {
+  return clientApiClient<AuthTokenResponse>('/v1/auth/reissue', {
+    method: 'POST',
+    body: data,
+  });
+}
+
+export async function sendPasswordResetEmail(data: EmailRequest): Promise<void> {
+  return clientApiClient<void>('/v1/auth/reset/password', {
+    method: 'POST',
+    body: data,
+  });
+}
+
+export async function resetPassword(data: PasswordResetRequest): Promise<void> {
+  return clientApiClient<void>('/v1/auth/reset/password/confirm', {
+    method: 'POST',
+    body: data,
+  });
+}
+
+export function validateSignupTokenFormat(token: string): { valid: boolean; error?: string } {
+  if (!token) {
+    return { valid: false, error: '토큰이 없습니다' };
+  }
+  
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return { valid: false, error: '유효하지 않은 토큰 형식입니다' };
+  }
+  
+  try {
+    const payload = JSON.parse(atob(parts[1]));
+    
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return { valid: false, error: 'GitHub 인증이 만료되었어요' };
+    }
+    
+    return { valid: true };
+  } catch {
+    return { valid: false, error: '토큰을 파싱할 수 없습니다' };
+  }
 }
