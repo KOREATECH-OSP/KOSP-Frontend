@@ -19,6 +19,7 @@ export default function InfoStep({ formData, onFormChange, onSubmit }: InfoStepP
 
   const passwordsMatch = formData.password === formData.passwordConfirm;
   const isPasswordValid = formData.password.length >= 8;
+  const isFormFilled = formData.name.trim() && formData.studentId.trim() && formData.email.trim();
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
@@ -101,7 +102,7 @@ export default function InfoStep({ formData, onFormChange, onSubmit }: InfoStepP
       {/* 다음 버튼 */}
       <button
         type="submit"
-        disabled={!isPasswordValid || !passwordsMatch}
+        disabled={!isFormFilled || !isPasswordValid || !passwordsMatch}
         className="w-full h-[54px] mt-2 bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] active:bg-[#1957c2] disabled:bg-[#a8caff] disabled:cursor-not-allowed transition-colors"
       >
         다음

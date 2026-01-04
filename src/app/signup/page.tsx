@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import StepIndicator from './IndicatorStep';
+import StepIndicator from './StepIndicator';
 import GithubStep from './GithubStep';
 import InfoStep from './InfoStep';
 import VerificationStep from './VerificationStep';
@@ -47,8 +47,7 @@ function SignupContent() {
     }
   }, [githubIdParam]);
 
-  const [verificationCode, setVerificationCode] = useState('');
-  const [sentCode, setSentCode] = useState(false);
+
 
   const handleGithubLogin = () => {
     window.sessionStorage.setItem('kosp:oauth-from', 'signup');
@@ -76,15 +75,6 @@ function SignupContent() {
       return;
     }
     setStep('verification');
-  };
-
-  const handleSendVerification = async () => {
-    if (!formData.email) {
-      alert('이메일을 입력해주세요.');
-      return;
-    }
-    setSentCode(true);
-    alert('인증 코드가 이메일로 전송되었습니다.');
   };
 
   const handleVerifyEmail = async (e: React.FormEvent) => {
@@ -183,10 +173,6 @@ function SignupContent() {
             <StepIndicator currentStep="verification" />
             <VerificationStep
               email={formData.email}
-              verificationCode={verificationCode}
-              sentCode={sentCode}
-              onCodeChange={setVerificationCode}
-              onSendCode={handleSendVerification}
               onVerify={handleVerifyEmail}
               isLoading={isLoading}
             />
@@ -203,8 +189,8 @@ function SignupContent() {
 
 function LoadingFallback() {
   return (
-    <div className="flex items-center justify-center w-full py-12">
-      <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
+      <div className="w-8 h-8 border-[3px] border-[#e5e8eb] border-t-[#3182f6] rounded-full animate-spin" />
     </div>
   );
 }

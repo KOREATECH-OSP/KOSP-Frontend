@@ -16,10 +16,10 @@ export default function CompleteStep() {
         오픈소스포털의 회원이 되신 것을 환영해요
       </p>
       <Link
-        href="/"
+        href="/login"
         className="block w-full h-[54px] leading-[54px] bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] transition-colors"
       >
-        시작하기
+        로그인하기
       </Link>
     </div>
   );

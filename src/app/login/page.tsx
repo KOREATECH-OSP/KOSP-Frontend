@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Github } from 'lucide-react';
+import { OAUTH_BASE_URL } from '@/lib/api/config';
 
 function LoginContent() {
   const router = useRouter();
@@ -48,7 +49,10 @@ function LoginContent() {
   };
 
   const handleGithubLogin = () => {
-    window.location.href = '/api/auth/github';
+    window.sessionStorage.setItem('kosp:oauth-from', 'login');
+    const redirectUri = `${window.location.origin}/auth/callback`;
+    const oauthUrl = `${OAUTH_BASE_URL}/oauth2/authorization/github?redirect_uri=${encodeURIComponent(redirectUri)}`;
+    window.location.href = oauthUrl;
   };
 
   return (
@@ -136,7 +140,7 @@ function LoginContent() {
 
 function LoadingFallback() {
   return (
-    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)]">
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
       <div className="w-8 h-8 border-[3px] border-[#e5e8eb] border-t-[#3182f6] rounded-full animate-spin" />
     </div>
   );
