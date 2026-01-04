@@ -4,6 +4,20 @@ interface StepIndicatorProps {
   currentStep: SignupStep;
 }
 
+function CheckIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={3}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   const steps = [
     { id: 'github', label: 'GitHub' },
@@ -19,36 +33,49 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   const currentIndex = getStepIndex(currentStep);
 
   return (
-    <div className="flex items-center justify-center gap-1 mb-8">
-      {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center">
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold ${
-                index <= currentIndex
-                  ? 'bg-[#3182f6] text-white'
-                  : 'bg-[#e5e8eb] text-[#8b95a1]'
-              }`}
-            >
-              {index + 1}
+    <div className="mb-8">
+      <div className="flex items-center justify-center gap-3">
+        {steps.map((step, index) => {
+          const isCompleted = index < currentIndex;
+          const isCurrent = index === currentIndex;
+
+          return (
+            <div key={step.id} className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`
+                    w-7 h-7 rounded-full flex items-center justify-center
+                    text-[12px] font-semibold transition-all duration-300
+                    ${isCompleted
+                      ? 'bg-[#3182f6] text-white'
+                      : isCurrent
+                        ? 'bg-[#3182f6] text-white'
+                        : 'bg-[#e5e8eb] text-[#8b95a1]'
+                    }
+                  `}
+                >
+                  {isCompleted ? <CheckIcon /> : index + 1}
+                </div>
+                <span
+                  className={`
+                    text-[13px] font-medium transition-colors duration-300
+                    ${isCompleted || isCurrent ? 'text-[#191f28]' : 'text-[#8b95a1]'}
+                  `}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {index < steps.length - 1 && (
+                <div
+                  className={`w-8 h-[2px] rounded-full transition-colors duration-300 ${
+                    isCompleted ? 'bg-[#3182f6]' : 'bg-[#e5e8eb]'
+                  }`}
+                />
+              )}
             </div>
-            <span
-              className={`text-[13px] font-medium ${
-                index <= currentIndex ? 'text-[#191f28]' : 'text-[#8b95a1]'
-              }`}
-            >
-              {step.label}
-            </span>
-          </div>
-          {index < steps.length - 1 && (
-            <div
-              className={`w-6 h-[2px] mx-2 rounded ${
-                index < currentIndex ? 'bg-[#3182f6]' : 'bg-[#e5e8eb]'
-              }`}
-            />
-          )}
-        </div>
-      ))}
+          );
+        })}
+      </div>
     </div>
   );
 }

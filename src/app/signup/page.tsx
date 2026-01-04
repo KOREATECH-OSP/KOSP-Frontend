@@ -131,8 +131,7 @@ function SignupContent() {
   return (
     <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
       <div className="w-full max-w-[400px]">
-        {/* 헤더 */}
-        <div className="mb-10">
+        <div className="mb-8">
           <h1 className="text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
             오픈소스포털
             <br />
