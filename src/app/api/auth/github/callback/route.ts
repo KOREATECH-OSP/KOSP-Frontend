@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET ?? '';
+const AUTH_URL = process.env.AUTH_URL ?? '';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
-  const baseUrl = request.nextUrl.origin;
+  const baseUrl = AUTH_URL || request.nextUrl.origin;
 
   if (error) {
     return NextResponse.redirect(
