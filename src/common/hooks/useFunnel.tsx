@@ -49,12 +49,11 @@ export const useFunnel = <Steps extends NonEmptyArray<string>>(
   options?: { initialStep?: Steps[number]; onStepChange?: (step: Steps[number]) => void }
 ) => {
   const [currentStep, setCurrentStep] = useState<Steps[number]>(options?.initialStep ?? _steps[0]);
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
+  const onStepChangeRef = useRef(options?.onStepChange);
 
   const setStep = useCallback((newStep: Steps[number]) => {
     setCurrentStep(newStep);
-    optionsRef.current?.onStepChange?.(newStep);
+    onStepChangeRef.current?.(newStep);
   }, []);
 
   return [currentStep, setStep] as const;

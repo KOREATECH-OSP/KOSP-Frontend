@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       `${baseUrl}/auth/callback?access_token=${encodeURIComponent(accessToken)}`
     );
-  } catch (err) {
+  } catch {
     return NextResponse.redirect(
       `${baseUrl}/auth/callback?error=${encodeURIComponent('Failed to exchange code')}`
     );

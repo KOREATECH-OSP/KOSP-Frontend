@@ -10,7 +10,6 @@ import {
   Zap,
   TrendingUp,
   Users,
-  BookOpen,
   GitPullRequest,
   CheckCircle2,
   GitCommit,

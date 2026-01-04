@@ -29,9 +29,7 @@ export default function ReportsManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showProcessModal, setShowProcessModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [processNote, setProcessNote] = useState('');
 
   const filteredReports = reports.filter((report) => {
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
@@ -46,12 +44,6 @@ export default function ReportsManagement() {
     setShowDetailModal(true);
   };
 
-  const handleStartProcess = (report: Report) => {
-    setSelectedReport(report);
-    setProcessNote('');
-    setShowProcessModal(true);
-  };
-
   const handleProcess = (action: '처리완료' | '기각') => {
     if (!selectedReport) return;
 
@@ -63,7 +55,6 @@ export default function ReportsManagement() {
           : r
       )
     );
-    setShowProcessModal(false);
     setShowDetailModal(false);
     alert(`신고가 ${action === '처리완료' ? '처리 완료' : '기각'} 되었습니다.`);
   };
