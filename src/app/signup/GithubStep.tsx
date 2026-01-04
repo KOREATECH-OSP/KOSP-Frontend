@@ -10,94 +10,77 @@ export default function GithubStep({ onGithubLogin }: GithubStepProps) {
   const [isChecked, setIsChecked] = useState(false);
 
   return (
-    <div className="bg-white py-10 px-8 shadow-xl rounded-2xl border border-gray-100 max-w-md mx-auto">
-      <div className="flex justify-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-2xl flex items-center justify-center shadow-lg">
-          <Github className="w-8 h-8 text-white" />
-        </div>
-      </div>
+    <div className="space-y-5">
+      <p className="text-[15px] text-[#8b95a1] text-center">
+        GitHub 계정을 연동하여 회원가입을 진행해요
+      </p>
 
-      <div className="text-center space-y-3 mb-8">
-        <h3 className="text-2xl font-bold text-gray-900">
-          GitHub으로 시작하기
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          GitHub 계정을 연동하여
-          <br />
-          간편하게 회원가입을 시작하세요
-        </p>
-      </div>
-
+      {/* GitHub 버튼 */}
       <button
         onClick={onGithubLogin}
         disabled={!isChecked}
-        className={`
-          w-full inline-flex justify-center items-center py-3.5 px-4 rounded-xl shadow-md 
-          text-white text-sm font-semibold transition-all duration-200
-          ${isChecked
-            ? "bg-gradient-to-r from-gray-800 to-gray-900 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-            : "bg-gray-300 cursor-not-allowed opacity-70"
-          }
-        `}
+        className={`w-full h-[54px] flex items-center justify-center gap-2.5 rounded-2xl text-[15px] font-medium transition-colors ${
+          isChecked
+            ? 'bg-[#191f28] text-white hover:bg-[#333d4b] active:bg-[#4e5968]'
+            : 'bg-[#e5e8eb] text-[#8b95a1] cursor-not-allowed'
+        }`}
       >
-        <Github className="w-5 h-5 mr-2" />
-        GitHub으로 계속하기
+        <Github className="w-5 h-5" />
+        GitHub로 계속하기
       </button>
 
-      <div className="relative my-8">
+      {/* 구분선 */}
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-[#e5e8eb]" />
         </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="px-3 bg-white text-gray-500">약관 동의</span>
+        <div className="relative flex justify-center">
+          <span className="px-4 bg-white text-[13px] text-[#8b95a1]">약관 동의</span>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <label className="flex items-start p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer group">
-          <div className="flex items-center h-5">
-            <input
-              type="checkbox"
-              id="terms"
-              required
-              checked={isChecked}
-              onChange={(e) => setIsChecked(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 transition cursor-pointer"
-            />
+      {/* 약관 동의 */}
+      <label className="flex items-start gap-3 p-4 rounded-2xl bg-[#f2f4f6] cursor-pointer hover:bg-[#e5e8eb] transition-colors">
+        <input
+          type="checkbox"
+          checked={isChecked}
+          onChange={(e) => setIsChecked(e.target.checked)}
+          className="sr-only"
+        />
+        <div
+          className={`w-[22px] h-[22px] mt-0.5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+            isChecked
+              ? 'bg-[#3182f6]'
+              : 'bg-white border-2 border-[#d1d6db]'
+          }`}
+        >
+          {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+        </div>
+        <div className="text-[14px]">
+          <span className="text-[#191f28] font-medium">아래 약관에 모두 동의합니다</span>
+          <div className="mt-1.5 text-[13px] text-[#6b7684]">
+            <Link
+              href="/terms"
+              className="text-[#3182f6] hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              이용약관
+            </Link>
+            {' 및 '}
+            <Link
+              href="https://www.koreatech.ac.kr/menu.es?mid=a10903000000"
+              className="text-[#3182f6] hover:underline"
+              target="_blank"
+              onClick={(e) => e.stopPropagation()}
+            >
+              개인정보처리방침
+            </Link>
           </div>
-          <div className="ml-3 text-xs leading-relaxed">
-            <span className="text-gray-700 font-medium">
-              아래 약관에 모두 동의합니다
-            </span>
-            <div className="mt-2 space-y-1 text-gray-600">
-              <div className="flex items-center">
-                <Check className="w-3 h-3 mr-1.5 text-gray-400" />
-                <Link
-                  href="/terms"
-                  className="text-blue-600 hover:text-blue-700 hover:underline transition"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  이용약관
-                </Link>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-3 h-3 mr-1.5 text-gray-400" />
-                <Link
-                  href="https://www.koreatech.ac.kr/menu.es?mid=a10903000000"
-                  className="text-blue-600 hover:text-blue-700 hover:underline transition"
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  개인정보처리방침
-                </Link>
-              </div>
-            </div>
-          </div>
-        </label>
-      </div>
+        </div>
+      </label>
 
-      <p className="text-center text-xs text-gray-500 mt-6">
-        약관동의 시 GitHub 연동이 활성화 됩니다
+      <p className="text-center text-[13px] text-[#8b95a1]">
+        약관 동의 후 GitHub 연동이 가능해요
       </p>
     </div>
   );

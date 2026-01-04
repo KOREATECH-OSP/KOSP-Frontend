@@ -3,7 +3,6 @@ import { ApiException } from '@/lib/api/client';
 import { auth } from '@/auth';
 import HomePageClient from './HomePageClient';
 import type { ArticleResponse, RecruitResponse } from '@/lib/api/types';
-import type { Session } from 'next-auth';
 
 async function fetchHomeData(): Promise<{
   articles: ArticleResponse[];

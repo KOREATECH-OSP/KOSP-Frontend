@@ -18,64 +18,57 @@ export default function VerificationStep({
   isLoading = false,
 }: VerificationStepProps) {
   return (
-    <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
-      <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-        이메일 인증
-      </h3>
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 text-center mb-4">
-          <span className="font-medium text-gray-900">{email}</span>로<br />
-          인증 코드를 전송하시겠습니까?
+    <div className="space-y-5">
+      <div className="text-center">
+        <p className="text-[15px] text-[#191f28] font-medium">
+          {email}
         </p>
-        {!sentCode && (
-          <button
-            onClick={onSendCode}
-            className="w-full py-2 px-4 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition text-sm font-medium"
-          >
-            인증 코드 전송
-          </button>
-        )}
-        {sentCode && (
-          <p className="text-sm text-green-600 text-center">
-            ✓ 인증 코드가 전송되었습니다.
-          </p>
-        )}
+        <p className="text-[14px] text-[#8b95a1] mt-1">
+          위 이메일로 인증 코드를 전송해요
+        </p>
       </div>
 
-      <form onSubmit={onVerify} className="space-y-6">
-        <div>
-          <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
-            인증 코드
-          </label>
-          <input
-            id="code"
-            name="code"
-            type="text"
-            required
-            value={verificationCode}
-            onChange={(e) => onCodeChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-center text-2xl tracking-widest"
-            placeholder="000000"
-            maxLength={6}
-          />
-        </div>
-
+      {!sentCode ? (
         <button
-          type="submit"
-          disabled={!sentCode || isLoading}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {isLoading ? '처리 중...' : '인증 완료'}
-        </button>
-
-        <button
-          type="button"
           onClick={onSendCode}
-          className="w-full text-sm text-gray-600 hover:text-gray-800 transition"
+          className="w-full h-[54px] bg-[#f2f4f6] text-[#191f28] text-[15px] font-medium rounded-2xl hover:bg-[#e5e8eb] transition-colors"
         >
-          인증 코드를 받지 못하셨나요? 재전송
+          인증 코드 전송
         </button>
-      </form>
+      ) : (
+        <form onSubmit={onVerify} className="space-y-4">
+          <div>
+            <input
+              type="text"
+              required
+              value={verificationCode}
+              onChange={(e) => onCodeChange(e.target.value)}
+              placeholder="인증 코드 6자리"
+              maxLength={6}
+              className="w-full h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] text-center tracking-widest placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
+            />
+            <p className="text-[13px] text-[#00c471] mt-2 text-center">
+              인증 코드가 전송되었어요
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading || verificationCode.length < 6}
+            className="w-full h-[54px] bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] active:bg-[#1957c2] disabled:bg-[#a8caff] disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? '처리 중...' : '인증 완료'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onSendCode}
+            className="w-full text-[14px] text-[#6b7684] hover:text-[#3182f6] transition-colors"
+          >
+            인증 코드 재전송
+          </button>
+        </form>
+      )}
     </div>
   );
 }

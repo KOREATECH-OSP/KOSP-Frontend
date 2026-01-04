@@ -1,24 +1,16 @@
 'use server';
 
 import 'server-only';
-import { auth } from '@/auth';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { SessionUser } from './types';
 
+// TODO: 새로운 인증 플로우에 맞게 세션 조회 로직 구현 필요
 export async function fetchSessionUser(): Promise<SessionUser | null> {
-  const session = await auth();
-
-  if (!session?.accessToken) {
-    return null;
-  }
-
   try {
     const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${session.accessToken}`,
-      },
       cache: 'no-store',
+      credentials: 'include',
     });
 
     if (!response.ok) {

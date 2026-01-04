@@ -1,4 +1,3 @@
-import { auth } from '@/auth';
 import { API_BASE_URL } from './config';
 
 export interface ApiError {
@@ -24,34 +23,21 @@ type RequestOptions = {
   revalidate?: number;
 };
 
-async function getAuthHeader(): Promise<Record<string, string>> {
-  try {
-    const session = await auth();
-    if (session?.accessToken) {
-      return { Authorization: `Bearer ${session.accessToken}` };
-    }
-  } catch {
-    // 클라이언트 사이드에서는 auth() 호출 불가
-  }
-  return {};
-}
-
+// TODO: 새로운 인증 플로우에 맞게 인증 헤더 처리 구현 필요
 export async function apiClient<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
   const { method = 'GET', body, headers = {}, cache, revalidate } = options;
 
-  const authHeader = await getAuthHeader();
-
   const fetchOptions: RequestInit & { next?: { revalidate?: number } } = {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...authHeader,
       ...headers,
     },
     cache,
+    credentials: 'include',
   };
 
   if (body) {
@@ -84,24 +70,19 @@ export async function apiClient<T>(
 // 클라이언트 사이드용 API 클라이언트
 export async function clientApiClient<T>(
   endpoint: string,
-  options: RequestOptions & { accessToken?: string } = {}
+  options: RequestOptions = {}
 ): Promise<T> {
-  const { method = 'GET', body, headers = {}, accessToken, cache } = options;
-
-  const requestHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...headers,
-  };
-
-  if (accessToken) {
-    requestHeaders['Authorization'] = `Bearer ${accessToken}`;
-  }
+  const { method = 'GET', body, headers = {}, cache } = options;
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
-    headers: requestHeaders,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
     body: body ? JSON.stringify(body) : undefined,
     cache,
+    credentials: 'include',
   });
 
   if (!response.ok) {

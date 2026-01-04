@@ -2,7 +2,6 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { ArrowLeft, X, Loader2, Paperclip } from 'lucide-react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
@@ -31,7 +30,6 @@ function stripHtml(html: string): string {
 
 export default function WritePageClient({ boards }: WritePageClientProps) {
   const router = useRouter();
-  const { data: session } = useSession();
   const { upload: uploadImage } = useImageUpload();
 
   const [formData, setFormData] = useState<PostFormData>({
@@ -150,16 +148,6 @@ export default function WritePageClient({ boards }: WritePageClientProps) {
     setIsSubmitting(true);
 
     try {
-      // 디버깅: 세션 정보 확인
-      console.log('[WritePageClient] session:', session);
-      console.log('[WritePageClient] accessToken exists:', !!session?.accessToken);
-
-      if (!session?.accessToken) {
-        alert('로그인이 필요합니다.');
-        router.push('/login');
-        return;
-      }
-
       await clientApiClient('/v1/community/articles', {
         method: 'POST',
         body: {
@@ -168,7 +156,6 @@ export default function WritePageClient({ boards }: WritePageClientProps) {
           content: formData.content,
           tags: formData.tags.length > 0 ? formData.tags : undefined,
         },
-        accessToken: session.accessToken,
       });
 
       alert('게시글이 성공적으로 등록되었습니다!');

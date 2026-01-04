@@ -3,9 +3,11 @@ import { suitFont } from '../../style/font'
 
 function LoginLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`bg-gray-50 ${suitFont.className}`}>
+    <div className={`min-h-screen bg-white ${suitFont.className}`}>
       <AppHeader simple />
-      <main className={`flex h-[calc(100vh-56px)]`}>{children}</main>
+      <main className="flex justify-center min-h-[calc(100vh-56px)]">
+        {children}
+      </main>
     </div>
   );
 }

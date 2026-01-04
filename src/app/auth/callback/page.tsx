@@ -2,24 +2,18 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { SessionUser } from '@/lib/auth/types';
 
+// TODO: 새로운 인증 플로우에 맞게 콜백 페이지 재구현 필요
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status: sessionStatus } = useSession();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
-      // 세션 로딩 중이면 대기
-      if (sessionStatus === 'loading') {
-        return;
-      }
-
       // 쿼리 파라미터 로깅 (디버깅용)
       const params: Record<string, string> = {};
       searchParams.forEach((value, key) => {
@@ -27,16 +21,11 @@ function AuthCallbackContent() {
       });
       console.log('[AuthCallback] 받은 파라미터:', params);
 
-      // 어디서 왔는지 확인 (login / signup)
-      const from = window.sessionStorage.getItem('kosp:oauth-from') || 'login';
-      window.sessionStorage.removeItem('kosp:oauth-from');
-      console.log('[AuthCallback] from:', from);
-
       // 에러 체크
       const error = searchParams.get('error');
       if (error) {
         const errorDescription = searchParams.get('error_description') || '인증에 실패했습니다.';
-        console.error('[AuthCallback] OAuth 에러:', error, errorDescription);
+        console.error('[AuthCallback] 에러:', error, errorDescription);
         setStatus('error');
         setErrorMessage(errorDescription);
         return;
@@ -48,40 +37,17 @@ function AuthCallbackContent() {
 
       console.log('[AuthCallback] isNew:', isNew, 'githubId:', githubId);
 
-      if (from === 'signup') {
-        // 회원가입에서 온 경우
-        if (isNew === 'true') {
-          // 신규 사용자 → 회원가입 계속 진행
-          router.replace(`/signup?githubId=${githubId}&step=info`);
-        } else {
-          // 기존 사용자 → 회원가입 불가
-          setStatus('error');
-          setErrorMessage('이미 가입된 GitHub 계정입니다. 로그인 페이지에서 로그인해주세요.');
-        }
-        return;
-      }
-
-      // 로그인에서 온 경우
       if (isNew === 'true') {
         // 신규 사용자 → 회원가입 페이지로 이동
         router.replace(`/signup?githubId=${githubId}&step=info`);
         return;
       }
 
-      // 세션이 없으면 에러
-      if (!session?.accessToken) {
-        setStatus('error');
-        setErrorMessage('세션이 없습니다. 다시 로그인해주세요.');
-        return;
-      }
-
       try {
-        // 기존 사용자: JWT 토큰으로 사용자 정보 조회
+        // 기존 사용자: 쿠키 기반 인증으로 사용자 정보 조회
         const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+          credentials: 'include',
           cache: 'no-store',
         });
 
@@ -105,7 +71,7 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, router, session, sessionStatus]);
+  }, [searchParams, router]);
 
   if (status === 'error') {
     return (

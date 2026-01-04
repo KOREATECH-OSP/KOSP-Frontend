@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Upload, X, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,7 +12,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export default function CreateTeamPage() {
   const router = useRouter();
-  const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -101,12 +99,6 @@ export default function CreateTeamPage() {
       return;
     }
 
-    if (!session?.accessToken) {
-      alert('로그인이 필요합니다.');
-      router.push('/login');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -114,8 +106,8 @@ export default function CreateTeamPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.accessToken}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,

@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import {
   ArrowLeft,
   ThumbsUp,
@@ -28,7 +27,6 @@ export default function ArticleDetailClient({
   initialComments,
 }: ArticleDetailClientProps) {
   const router = useRouter();
-  const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
 
   const [liked, setLiked] = useState(article.isLiked);
@@ -38,19 +36,12 @@ export default function ArticleDetailClient({
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getAuthHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (session?.accessToken) {
-      headers['Authorization'] = `Bearer ${session.accessToken}`;
-    }
-    return headers;
-  };
-
   const handleLike = () => {
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/likes`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
         .then((res) => res.json())
         .then((response: { isLiked: boolean }) => {
@@ -67,7 +58,8 @@ export default function ArticleDetailClient({
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/bookmarks`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
         .then((res) => res.json())
         .then((response: { isBookmarked: boolean }) => {
@@ -87,7 +79,8 @@ export default function ArticleDetailClient({
     try {
       await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ content: newComment }),
       });
       setNewComment('');
@@ -106,7 +99,8 @@ export default function ArticleDetailClient({
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}`, {
         method: 'DELETE',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
         .then(() => {
           setComments((prev) => prev.filter((c) => c.id !== commentId));
@@ -122,7 +116,8 @@ export default function ArticleDetailClient({
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}/likes`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       })
         .then((res) => res.json())
         .then((response: { isLiked: boolean }) => {

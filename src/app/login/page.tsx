@@ -1,87 +1,134 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-
-function getErrorMessage(errorParam: string | null): string | null {
-  if (!errorParam) return null;
-  switch (errorParam) {
-    case 'OAuthSignin':
-      return 'OAuth 로그인 시작에 실패했습니다.';
-    case 'OAuthCallback':
-      return 'OAuth 콜백 처리에 실패했습니다.';
-    case 'OAuthCreateAccount':
-      return '계정 생성에 실패했습니다.';
-    case 'Callback':
-      return '콜백 처리 중 오류가 발생했습니다.';
-    default:
-      return '로그인에 실패했습니다. 다시 시도해주세요.';
-  }
-}
+import { Suspense, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Github } from 'lucide-react';
 
 function LoginContent() {
-  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const urlError = useMemo(
-    () => getErrorMessage(searchParams.get('error')),
-    [searchParams]
-  );
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-  const error = loginError || urlError;
+    if (!email.trim()) {
+      setError('이메일을 입력해주세요');
+      return;
+    }
+    if (!password) {
+      setError('비밀번호를 입력해주세요');
+      return;
+    }
 
-  const handleLogin = async () => {
     setIsLoading(true);
-    setLoginError(null);
     try {
-      await signIn('authentik', { callbackUrl: '/' });
-    } catch {
-      setLoginError('로그인에 실패했습니다.');
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '로그인에 실패했습니다');
+      }
+
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '로그인에 실패했습니다');
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const handleGithubLogin = () => {
+    window.location.href = '/api/auth/github';
+  };
+
   return (
-    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            시작하기
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
+      <div className="w-full max-w-[400px]">
+        {/* 헤더 */}
+        <div className="mb-10">
+          <h1 className="text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
+            오픈소스포털에
+            <br />
+            로그인하세요
           </h1>
-          <p className="text-sm text-gray-500">
-            로그인 또는 회원가입을 진행합니다
-          </p>
         </div>
 
-        <div className="rounded-2xl border border-gray-200/70 bg-white p-6 sm:p-8 transition-all duration-200">
-          {error && (
-            <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+        {/* 에러 */}
+        {error && (
+          <div className="mb-5 p-4 rounded-2xl bg-[#fff0f0] text-[#e53935] text-[14px]">
+            {error}
+          </div>
+        )}
+
+        {/* 폼 */}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일 주소"
+            autoComplete="email"
+            className="w-full h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
+          />
+
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호"
+            autoComplete="current-password"
+            className="w-full h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
+          />
 
           <button
-            type="button"
-            onClick={handleLogin}
+            type="submit"
             disabled={isLoading}
-            className="w-full inline-flex justify-center items-center gap-3 py-3 px-4 rounded-xl border border-gray-200 text-sm font-medium text-white bg-gray-900 hover:bg-black focus:ring-gray-900 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-[54px] mt-2 bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] active:bg-[#1957c2] disabled:bg-[#a8caff] disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                진행 중...
-              </>
-            ) : (
-              '오픈소스포털 계정으로 계속하기'
-            )}
+            {isLoading ? '로그인 중...' : '로그인'}
           </button>
+        </form>
 
-          <p className="mt-4 text-center text-xs text-gray-500">
-            처음이신가요? 버튼을 누르면 회원가입도 함께 진행됩니다.
-          </p>
+        {/* 링크 */}
+        <div className="flex items-center justify-center gap-3 mt-5 text-[14px] text-[#6b7684]">
+          <Link href="/signup" className="hover:text-[#3182f6] transition-colors">
+            회원가입
+          </Link>
+          <span className="text-[#d1d6db]">·</span>
+          <Link href="/forgot-password" className="hover:text-[#3182f6] transition-colors">
+            비밀번호 찾기
+          </Link>
         </div>
+
+        {/* 구분선 */}
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#e5e8eb]" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="px-4 bg-white text-[13px] text-[#8b95a1]">간편 로그인</span>
+          </div>
+        </div>
+
+        {/* GitHub 로그인 */}
+        <button
+          type="button"
+          onClick={handleGithubLogin}
+          className="w-full h-[54px] flex items-center justify-center gap-2.5 bg-[#191f28] text-white text-[15px] font-medium rounded-2xl hover:bg-[#333d4b] active:bg-[#4e5968] transition-colors"
+        >
+          <Github className="w-5 h-5" />
+          GitHub로 계속하기
+        </button>
       </div>
     </div>
   );
@@ -89,20 +136,8 @@ function LoginContent() {
 
 function LoadingFallback() {
   return (
-    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            시작하기
-          </h1>
-          <p className="text-sm text-gray-500">
-            로그인 또는 회원가입을 진행합니다
-          </p>
-        </div>
-        <div className="rounded-2xl border border-gray-200/70 bg-white p-6 sm:p-8 flex justify-center">
-          <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
-        </div>
-      </div>
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)]">
+      <div className="w-8 h-8 border-[3px] border-[#e5e8eb] border-t-[#3182f6] rounded-full animate-spin" />
     </div>
   );
 }

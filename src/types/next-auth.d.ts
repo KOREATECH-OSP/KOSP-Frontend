@@ -1,36 +1,12 @@
 import 'next-auth';
-import 'next-auth/jwt';
 
+// TODO: 새로운 인증 플로우에 맞게 타입 재정의 필요
 declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
       name: string;
       email: string;
-      username?: string;
     };
-    accessToken?: string;
-    idToken?: string;
-  }
-
-  interface Profile {
-    sub: string;
-    email?: string;
-    name?: string;
-    preferred_username?: string;
-    groups?: string[];
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
-    idToken?: string;
-    expiresAt?: number;
-    sub?: string;
-    email?: string;
-    name?: string;
-    preferred_username?: string;
   }
 }
