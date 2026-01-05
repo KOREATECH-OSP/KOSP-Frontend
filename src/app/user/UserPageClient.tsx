@@ -15,10 +15,12 @@ import {
   Bookmark,
   Eye,
   FileText,
-  ChevronRight, Trophy,
+  ChevronRight,
+  Trophy,
   Star,
   AlertCircle,
   Loader2,
+  Code,
 } from 'lucide-react';
 import {
   getUserPosts,
@@ -368,10 +370,51 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       </div>
                     </>
                   ) : (
-                    <div className="text-sm text-gray-400 text-center py-2">-</div>
+                    <div className="text-sm text-gray-400 text-center py-2">
+                      아직 분석된 레포지토리가 없습니다
+                    </div>
                   )}
                 </div>
               </div>
+
+              <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
+                  <Code className="h-4 w-4" />
+                  Language Stats
+                </h2>
+                {githubAnalysis?.languageStats && Object.keys(githubAnalysis.languageStats).length > 0 ? (
+                  <div className="space-y-2">
+                    {Object.entries(githubAnalysis.languageStats)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 5)
+                      .map(([lang, percent]) => (
+                        <div key={lang} className="flex items-center gap-3">
+                          <span className="w-20 text-sm text-gray-700 truncate">{lang}</span>
+                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-gray-700 to-gray-900 rounded-full"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                          <span className="w-12 text-xs text-gray-500 text-right">{percent.toFixed(1)}%</span>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-400 text-center py-2">
+                    아직 분석된 언어 통계가 없습니다
+                  </div>
+                )}
+              </div>
+
+              {!profile?.githubUrl && (
+                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                  <Github className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    GitHub 계정을 연동하면 활동 기록을 확인할 수 있습니다
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
