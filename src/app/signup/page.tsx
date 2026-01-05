@@ -17,6 +17,7 @@ import {
   verifyEmailCode, 
   checkMemberId,
   validateSignupTokenFormat,
+  validateSignupToken,
 } from '@/lib/api/auth';
 import { signup } from '@/lib/api/user';
 import { ApiException } from '@/lib/api/client';
@@ -35,6 +36,7 @@ function SignupContent() {
 
   const [signupToken, setSignupToken] = useState<string | null>(null);
   const [isTokenVerifying, setIsTokenVerifying] = useState(!!signupTokenParam);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -57,19 +59,29 @@ function SignupContent() {
       return;
     }
 
-    const validation = validateSignupTokenFormat(signupTokenParam);
-    
-    if (validation.valid) {
-      setSignupToken(signupTokenParam);
-      if (stepParam === 'info') {
-        setStep('info');
+    const verifyToken = async () => {
+      const formatValidation = validateSignupTokenFormat(signupTokenParam);
+      
+      if (!formatValidation.valid) {
+        setTokenError(formatValidation.error || '잘못된 접근입니다');
+        setIsTokenVerifying(false);
+        return;
       }
-    } else {
-      toast.error(validation.error || 'GitHub 인증이 유효하지 않아요. 다시 시도해주세요.');
-      router.replace('/signup');
-    }
-    
-    setIsTokenVerifying(false);
+
+      try {
+        await validateSignupToken(signupTokenParam);
+        setSignupToken(signupTokenParam);
+        if (stepParam === 'info') {
+          setStep('info');
+        }
+      } catch {
+        setTokenError('잘못된 접근입니다. 유효하지 않거나 만료된 토큰입니다.');
+      } finally {
+        setIsTokenVerifying(false);
+      }
+    };
+
+    verifyToken();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signupTokenParam, stepParam, router]);
 
@@ -241,6 +253,28 @@ function SignupContent() {
     return (
       <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
         <div className="w-8 h-8 border-[3px] border-[#e5e8eb] border-t-[#3182f6] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (tokenError) {
+    return (
+      <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
+        <div className="w-full max-w-[400px] text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#fef2f2] flex items-center justify-center">
+            <svg className="w-8 h-8 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-[22px] font-bold text-[#191f28] mb-2">잘못된 접근입니다</h1>
+          <p className="text-[15px] text-[#8b95a1] mb-8">{tokenError}</p>
+          <Link
+            href="/signup"
+            className="inline-flex items-center justify-center w-full h-[54px] bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] transition-colors"
+          >
+            회원가입 다시 시작하기
+          </Link>
+        </div>
       </div>
     );
   }

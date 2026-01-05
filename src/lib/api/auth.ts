@@ -88,6 +88,10 @@ export async function resetPassword(data: PasswordResetRequest): Promise<void> {
   });
 }
 
+export async function validateSignupToken(token: string): Promise<void> {
+  return clientApiClient<void>(`/v1/auth/verify/token/signup?token=${encodeURIComponent(token)}`);
+}
+
 export function validateSignupTokenFormat(token: string): { valid: boolean; error?: string } {
   if (!token) {
     return { valid: false, error: '토큰이 없습니다' };
