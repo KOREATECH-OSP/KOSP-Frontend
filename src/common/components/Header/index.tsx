@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { signOut } from 'next-auth/react';
@@ -17,6 +17,7 @@ export interface HeaderProps {
 
 function Header({ simple = false, session = null }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
 
@@ -66,15 +67,25 @@ function Header({ simple = false, session = null }: HeaderProps) {
 
             {!simple && (
               <div className="hidden lg:flex items-center gap-6">
-                {navItems.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors duration-200"
-                  >
-                    {label}
-                  </Link>
-                ))}
+                {navItems.map(({ href, label }) => {
+                  const isActive = pathname.startsWith(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={`relative text-sm font-medium transition-colors duration-200 py-1 ${
+                        isActive ? 'text-gray-900' : 'text-gray-400 hover:text-gray-900'
+                      } group`}
+                    >
+                      {label}
+                      <span
+                        className={`absolute bottom-0 left-0 h-[2px] bg-gray-900 transition-all duration-300 ${
+                          isActive ? 'w-full' : 'w-0 group-hover:w-full group-hover:bg-gray-300'
+                        }`}
+                      />
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
