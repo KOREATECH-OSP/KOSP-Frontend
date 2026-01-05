@@ -20,6 +20,7 @@ import {
 import type { ArticleResponse, CommentResponse } from '@/lib/api/types';
 import ReportModal from '@/common/components/ReportModal';
 import { deleteArticle } from '@/lib/api/article';
+import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 
 interface ArticleDetailClientProps {
@@ -110,7 +111,7 @@ export default function ArticleDetailClient({
     e.preventDefault();
     if (!newComment.trim() || isSubmitting) return;
     if (!accessToken) {
-      alert('로그인이 필요합니다.');
+      toast.error('로그인이 필요합니다.');
       return;
     }
 
@@ -132,7 +133,8 @@ export default function ArticleDetailClient({
       setComments(data.comments);
     } catch (error) {
       console.error('댓글 작성 실패:', error);
-      alert('댓글 작성에 실패했습니다.');
+      const message = error instanceof Error ? error.message : '댓글 작성에 실패했습니다.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -156,7 +158,8 @@ export default function ArticleDetailClient({
         })
         .catch((error) => {
           console.error('댓글 삭제 실패:', error);
-          alert('댓글 삭제에 실패했습니다.');
+          const message = error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.';
+          toast.error(message);
         });
     });
   };
@@ -195,22 +198,23 @@ export default function ArticleDetailClient({
   const handleDeleteArticle = async () => {
     if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
     if (!accessToken) {
-      alert('로그인이 필요합니다.');
+      toast.error('로그인이 필요합니다.');
       return;
     }
     try {
       await deleteArticle(article.id, { accessToken });
-      alert('게시글이 삭제되었습니다.');
+      toast.success('게시글이 삭제되었습니다.');
       router.push('/community');
     } catch (error) {
       console.error('게시글 삭제 실패:', error);
-      alert('게시글 삭제에 실패했습니다.');
+      const message = error instanceof Error ? error.message : '게시글 삭제에 실패했습니다.';
+      toast.error(message);
     }
   };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    alert('링크가 복사되었습니다.');
+    toast.success('링크가 복사되었습니다.');
   };
 
   const formatDate = (dateString: string) => {

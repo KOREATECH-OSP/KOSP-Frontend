@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { reportArticle } from '@/lib/api/article';
+import { toast } from '@/lib/toast';
 import { ReportReason } from '@/lib/api/types';
 
 interface ReportModalProps {
@@ -30,19 +31,20 @@ export default function ReportModal({ isOpen, onClose, articleId, accessToken }:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) {
-      alert('로그인이 필요합니다.');
+      toast.error('로그인이 필요합니다.');
       return;
     }
     setIsSubmitting(true);
     try {
       await reportArticle(articleId, { reason, description }, { accessToken });
-      alert('신고가 접수되었습니다.');
+      toast.success('신고가 접수되었습니다.');
       onClose();
       setDescription('');
       setReason('SPAM');
     } catch (error) {
       console.error('신고 실패:', error);
-      alert('신고 접수에 실패했습니다.');
+      const message = error instanceof Error ? error.message : '신고 접수에 실패했습니다.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -8,6 +8,7 @@ import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
 import { uploadFile } from '@/lib/api/upload';
 import { createArticle, updateArticle } from '@/lib/api/article';
+import { toast } from '@/lib/toast';
 import type { BoardResponse, ArticleResponse } from '@/lib/api/types';
 
 interface WritePageClientProps {
@@ -152,7 +153,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
     }
 
     if (!session?.accessToken) {
-      alert('로그인이 필요합니다.');
+      toast.error('로그인이 필요합니다.');
       router.push('/login');
       return;
     }
@@ -179,17 +180,18 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
 
       if (isEditMode && initialData) {
         await updateArticle(initialData.id, payload, auth);
-        alert('게시글이 수정되었습니다!');
+        toast.success('게시글이 수정되었습니다.');
         router.push(`/community/${initialData.id}`);
       } else {
         await createArticle(payload, auth);
-        alert('게시글이 성공적으로 등록되었습니다!');
+        toast.success('게시글이 등록되었습니다.');
         router.push('/community');
       }
       
     } catch (error) {
       console.error('게시글 저장 실패:', error);
-      alert('게시글 저장에 실패했습니다. 다시 시도해주세요.');
+      const message = error instanceof Error ? error.message : '게시글 저장에 실패했습니다.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
