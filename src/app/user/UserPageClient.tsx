@@ -302,83 +302,76 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
           {activeTab === '활동' && (
             <div className="space-y-6">
-              {/* GitHub Analysis */}
-              {githubAnalysis ? (
-                  <>
-                  {/* Contribution Rank (using rankInfo) */}
-                  <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-slate-50 to-gray-100">
-                    <div className="border-b border-gray-200/50 bg-white/60 px-6 py-4 backdrop-blur-sm">
-                        <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                        <Trophy className="h-4 w-4 text-amber-500" />
-                        Contribution Rank
-                        </h2>
-                    </div>
-                    <div className="p-4 sm:p-6 flex items-center justify-center flex-col">
-                        <div className={`text-4xl font-black mb-2 bg-gradient-to-r ${rankInfo.color} bg-clip-text text-transparent`}>
-                            {rankInfo.grade}
-                        </div>
-                        <div className="flex gap-1 mb-2">
-                            {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`h-5 w-5 ${i < rankInfo.stars ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} />
-                            ))}
-                        </div>
-                        <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">{rankInfo.label}</span>
-                    </div>
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-slate-50 to-gray-100">
+                <div className="border-b border-gray-200/50 bg-white/60 px-6 py-4 backdrop-blur-sm">
+                  <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    Contribution Rank
+                  </h2>
+                </div>
+                <div className="p-4 sm:p-6 flex items-center justify-center flex-col">
+                  <div className={`text-4xl font-black mb-2 bg-gradient-to-r ${rankInfo.color} bg-clip-text text-transparent`}>
+                    {rankInfo.grade}
                   </div>
-
-                  <div className="overflow-hidden rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-4 sm:p-6">
-                    <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-white sm:mb-6">
-                      <Github className="h-4 w-4" />
-                      Contribution Overview
-                    </h2>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
-                      <div className="text-center">
-                        <GitCommit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                        <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis.stats.totalCommits}</div>
-                        <div className="text-[10px] text-gray-400 sm:text-xs">Total Commits</div>
-                      </div>
-                      <div className="text-center">
-                        <GitPullRequest className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                        <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis.stats.totalPrs}</div>
-                        <div className="text-[10px] text-gray-400 sm:text-xs">Pull Requests</div>
-                      </div>
-                      <div className="text-center">
-                        <Star className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                        <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis.stats.totalStars}</div>
-                        <div className="text-[10px] text-gray-400 sm:text-xs">Stars</div>
-                      </div>
-                      <div className="text-center">
-                        <AlertCircle className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                        <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis.stats.totalIssues}</div>
-                        <div className="text-[10px] text-gray-400 sm:text-xs">Issues</div>
-                      </div>
-                    </div>
+                  <div className="flex gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`h-5 w-5 ${i < rankInfo.stars ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} />
+                    ))}
                   </div>
+                  <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">{rankInfo.label}</span>
+                </div>
+              </div>
 
-                  {/* Top Repository */}
-                  {githubAnalysis.analysis.bestRepository && (
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-                        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
-                            <GitBranch className="h-4 w-4" />
-                            Best Repository
-                        </h2>
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <div className="font-semibold text-lg text-blue-600 mb-2">
-                                {githubAnalysis.analysis.bestRepository.name}
-                            </div>
-                            <div className="flex gap-4 text-sm text-gray-500">
-                                <span>Commits: {githubAnalysis.analysis.bestRepository.totalCommits}</span>
-                                <span>Lines: {githubAnalysis.analysis.bestRepository.totalLines}</span>
-                            </div>
-                        </div>
+              <div className="overflow-hidden rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-4 sm:p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-white sm:mb-6">
+                  <Github className="h-4 w-4" />
+                  Contribution Overview
+                </h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
+                  <div className="text-center">
+                    <GitCommit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
+                    <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis?.stats?.totalCommits ?? '-'}</div>
+                    <div className="text-[10px] text-gray-400 sm:text-xs">Total Commits</div>
+                  </div>
+                  <div className="text-center">
+                    <GitPullRequest className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
+                    <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis?.stats?.totalPrs ?? '-'}</div>
+                    <div className="text-[10px] text-gray-400 sm:text-xs">Pull Requests</div>
+                  </div>
+                  <div className="text-center">
+                    <Star className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
+                    <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis?.stats?.totalStars ?? '-'}</div>
+                    <div className="text-[10px] text-gray-400 sm:text-xs">Stars</div>
+                  </div>
+                  <div className="text-center">
+                    <AlertCircle className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
+                    <div className="text-2xl font-bold text-white sm:text-3xl">{githubAnalysis?.stats?.totalIssues ?? '-'}</div>
+                    <div className="text-[10px] text-gray-400 sm:text-xs">Issues</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
+                  <GitBranch className="h-4 w-4" />
+                  Best Repository
+                </h2>
+                <div className="rounded-lg border border-gray-200 p-4">
+                  {githubAnalysis?.analysis?.bestRepository ? (
+                    <>
+                      <div className="font-semibold text-lg text-blue-600 mb-2">
+                        {githubAnalysis.analysis.bestRepository.name}
                       </div>
+                      <div className="flex gap-4 text-sm text-gray-500">
+                        <span>Commits: {githubAnalysis.analysis.bestRepository.totalCommits}</span>
+                        <span>Lines: {githubAnalysis.analysis.bestRepository.totalLines}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-gray-400 text-center py-2">-</div>
                   )}
-                  </>
-              ) : (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
-                    GitHub 계정이 연동되지 않았거나 분석 정보가 없습니다.
-                  </div>
-              )}
+                </div>
+              </div>
             </div>
           )}
 
