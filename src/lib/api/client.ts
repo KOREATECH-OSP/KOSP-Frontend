@@ -21,6 +21,7 @@ type RequestOptions = {
   headers?: Record<string, string>;
   cache?: RequestCache;
   revalidate?: number;
+  accessToken?: string;
 };
 
 function parseErrorMessage(text: string, status: number): string {
@@ -37,14 +38,20 @@ export async function apiClient<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = 'GET', body, headers = {}, cache, revalidate } = options;
+  const { method = 'GET', body, headers = {}, cache, revalidate, accessToken } = options;
+
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...headers,
+  };
+
+  if (accessToken) {
+    requestHeaders['Authorization'] = `Bearer ${accessToken}`;
+  }
 
   const fetchOptions: RequestInit & { next?: { revalidate?: number } } = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: requestHeaders,
     cache,
     credentials: 'include',
   };
@@ -76,19 +83,24 @@ export async function apiClient<T>(
   return JSON.parse(text) as T;
 }
 
-// 클라이언트 사이드용 API 클라이언트
 export async function clientApiClient<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = 'GET', body, headers = {}, cache } = options;
+  const { method = 'GET', body, headers = {}, cache, accessToken } = options;
+
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...headers,
+  };
+
+  if (accessToken) {
+    requestHeaders['Authorization'] = `Bearer ${accessToken}`;
+  }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: requestHeaders,
     body: body ? JSON.stringify(body) : undefined,
     cache,
     credentials: 'include',

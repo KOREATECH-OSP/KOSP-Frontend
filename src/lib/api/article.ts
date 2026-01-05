@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, clientApiClient } from './client';
 import type {
   ArticleRequest,
   ArticleResponse,
@@ -7,6 +7,10 @@ import type {
   ToggleBookmarkResponse,
   ReportRequest,
 } from './types';
+
+interface AuthOptions {
+  accessToken: string;
+}
 
 interface GetArticlesOptions {
   page?: number;
@@ -40,64 +44,47 @@ export async function getArticle(id: number): Promise<ArticleResponse> {
   });
 }
 
-/**
- * 게시글 작성
- */
-export async function createArticle(data: ArticleRequest): Promise<void> {
-  await apiClient<void>('/v1/community/articles', {
+export async function createArticle(data: ArticleRequest, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>('/v1/community/articles', {
     method: 'POST',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
 
-/**
- * 게시글 수정
- */
-export async function updateArticle(id: number, data: ArticleRequest): Promise<void> {
-  await apiClient<void>(`/v1/community/articles/${id}`, {
+export async function updateArticle(id: number, data: ArticleRequest, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>(`/v1/community/articles/${id}`, {
     method: 'PUT',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
 
-/**
- * 게시글 삭제
- */
-export async function deleteArticle(id: number): Promise<void> {
-  await apiClient<void>(`/v1/community/articles/${id}`, {
+export async function deleteArticle(id: number, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>(`/v1/community/articles/${id}`, {
     method: 'DELETE',
+    accessToken: auth.accessToken,
   });
 }
 
-/**
- * 게시글 좋아요 토글
- */
-export async function toggleArticleLike(id: number): Promise<ToggleLikeResponse> {
-  return apiClient<ToggleLikeResponse>(`/v1/community/articles/${id}/likes`, {
+export async function toggleArticleLike(id: number, auth: AuthOptions): Promise<ToggleLikeResponse> {
+  return clientApiClient<ToggleLikeResponse>(`/v1/community/articles/${id}/likes`, {
     method: 'POST',
+    accessToken: auth.accessToken,
   });
 }
 
-/**
- * 게시글 북마크 토글
- */
-export async function toggleArticleBookmark(
-  id: number
-): Promise<ToggleBookmarkResponse> {
-  return apiClient<ToggleBookmarkResponse>(`/v1/community/articles/${id}/bookmarks`, {
+export async function toggleArticleBookmark(id: number, auth: AuthOptions): Promise<ToggleBookmarkResponse> {
+  return clientApiClient<ToggleBookmarkResponse>(`/v1/community/articles/${id}/bookmarks`, {
     method: 'POST',
+    accessToken: auth.accessToken,
   });
 }
 
-/**
- * 게시글 신고
- */
-export async function reportArticle(
-  articleId: number,
-  data: ReportRequest
-): Promise<void> {
-  await apiClient<void>(`/v1/community/articles/${articleId}/reports`, {
+export async function reportArticle(articleId: number, data: ReportRequest, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>(`/v1/community/articles/${articleId}/reports`, {
     method: 'POST',
     body: data,
+    accessToken: auth.accessToken,
   });
 }

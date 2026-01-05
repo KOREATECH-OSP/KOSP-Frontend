@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { ArrowLeft, X, Loader2, Paperclip } from 'lucide-react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
@@ -32,6 +33,7 @@ function stripHtml(html: string): string {
 
 export default function WritePageClient({ boards, initialData }: WritePageClientProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const { upload: uploadImage } = useImageUpload();
   const isEditMode = !!initialData;
 
@@ -78,6 +80,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddTag();
@@ -148,19 +151,24 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
       return;
     }
 
+    if (!session?.accessToken) {
+      alert('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
+    const auth = { accessToken: session.accessToken };
     setIsSubmitting(true);
 
     try {
-      // 1. Upload files first
       const attachmentIds: number[] = [];
       if (formData.files.length > 0) {
         for (const file of formData.files) {
-          const uploaded = await uploadFile(file);
+          const uploaded = await uploadFile(file, auth);
           attachmentIds.push(uploaded.id);
         }
       }
 
-      // 2. Create or Update Article
       const payload = {
         boardId: formData.boardId,
         title: formData.title,
@@ -170,16 +178,11 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
       };
 
       if (isEditMode && initialData) {
-        // Update
-        // Note: We are sending new attachmentIds. If existing attachments need to be preserved, 
-        // we should have included them. Since we can't see them, this might be an issue.
-        // Assuming update only adds or replaces if specified.
-        await updateArticle(initialData.id, payload);
+        await updateArticle(initialData.id, payload, auth);
         alert('게시글이 수정되었습니다!');
         router.push(`/community/${initialData.id}`);
       } else {
-        // Create
-        await createArticle(payload);
+        await createArticle(payload, auth);
         alert('게시글이 성공적으로 등록되었습니다!');
         router.push('/community');
       }

@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import {
   ArrowLeft,
   ThumbsUp,
@@ -33,7 +34,10 @@ export default function ArticleDetailClient({
   currentUserId,
 }: ArticleDetailClientProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
+  
+  const accessToken = session?.accessToken;
 
   const [liked, setLiked] = useState(article.isLiked);
   const [likeCount, setLikeCount] = useState(article.likes);
@@ -60,10 +64,14 @@ export default function ArticleDetailClient({
   }, [showMenu]);
 
   const handleLike = () => {
+    if (!accessToken) return;
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/likes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         credentials: 'include',
       })
         .then((res) => res.json())
@@ -78,10 +86,14 @@ export default function ArticleDetailClient({
   };
 
   const handleBookmark = () => {
+    if (!accessToken) return;
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/bookmarks`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         credentials: 'include',
       })
         .then((res) => res.json())
@@ -97,27 +109,24 @@ export default function ArticleDetailClient({
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || isSubmitting) return;
+    if (!accessToken) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         credentials: 'include',
         body: JSON.stringify({ content: newComment }),
       });
       setNewComment('');
       router.refresh();
-      // Re-fetch comments or optimistic update would be better here, but router.refresh works for now
-      // Actually, we should fetch new comments or add optimistic one. 
-      // For simplicity, reload page or fetch comments again?
-      // router.refresh() re-runs the server component, but client state 'comments' might persist if not reset.
-      // But initialComments prop will update, and we initialized state with it.
-      // We need a useEffect or key change to update state from prop. 
-      // Or just simpler: window.location.reload() or strict data flow.
-      // Let's assume router.refresh() updates the prop, and we need to watch it?
-      // No, we initialized state once.
-      // Better: Fetch comments manually after submit.
       const res = await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`);
       const data = await res.json();
       setComments(data.comments);
@@ -131,11 +140,15 @@ export default function ArticleDetailClient({
 
   const handleCommentDelete = (commentId: number) => {
     if (!confirm('댓글을 삭제하시겠습니까?')) return;
+    if (!accessToken) return;
 
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         credentials: 'include',
       })
         .then(() => {
@@ -149,10 +162,14 @@ export default function ArticleDetailClient({
   };
 
   const handleCommentLike = (commentId: number) => {
+    if (!accessToken) return;
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}/likes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         credentials: 'include',
       })
         .then((res) => res.json())
@@ -177,8 +194,12 @@ export default function ArticleDetailClient({
 
   const handleDeleteArticle = async () => {
     if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
+    if (!accessToken) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     try {
-      await deleteArticle(article.id);
+      await deleteArticle(article.id, { accessToken });
       alert('게시글이 삭제되었습니다.');
       router.push('/community');
     } catch (error) {
@@ -206,7 +227,8 @@ export default function ArticleDetailClient({
       <ReportModal 
         isOpen={isReportModalOpen} 
         onClose={() => setIsReportModalOpen(false)} 
-        articleId={article.id} 
+        articleId={article.id}
+        accessToken={accessToken}
       />
 
       {/* 뒤로가기 */}

@@ -9,6 +9,7 @@ interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   articleId: number;
+  accessToken?: string;
 }
 
 const REASONS: { value: ReportReason; label: string }[] = [
@@ -19,7 +20,7 @@ const REASONS: { value: ReportReason; label: string }[] = [
   { value: 'OTHER', label: '기타' },
 ];
 
-export default function ReportModal({ isOpen, onClose, articleId }: ReportModalProps) {
+export default function ReportModal({ isOpen, onClose, articleId, accessToken }: ReportModalProps) {
   const [reason, setReason] = useState<ReportReason>('SPAM');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,9 +29,13 @@ export default function ReportModal({ isOpen, onClose, articleId }: ReportModalP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!accessToken) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await reportArticle(articleId, { reason, description });
+      await reportArticle(articleId, { reason, description }, { accessToken });
       alert('신고가 접수되었습니다.');
       onClose();
       setDescription('');

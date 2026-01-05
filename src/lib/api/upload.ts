@@ -2,11 +2,11 @@ import { API_BASE_URL } from './config';
 import type { FileResponse } from './types';
 import { ApiException } from './client';
 
-/**
- * 파일 업로드
- * Note: clientApiClient uses JSON body, so we use fetch directly for FormData
- */
-export async function uploadFile(file: File): Promise<FileResponse> {
+interface AuthOptions {
+  accessToken: string;
+}
+
+export async function uploadFile(file: File, auth: AuthOptions): Promise<FileResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -14,6 +14,9 @@ export async function uploadFile(file: File): Promise<FileResponse> {
     method: 'POST',
     body: formData,
     credentials: 'include',
+    headers: {
+      'Authorization': `Bearer ${auth.accessToken}`,
+    },
   });
 
   if (!response.ok) {
