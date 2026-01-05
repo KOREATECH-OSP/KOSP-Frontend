@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
   ArrowLeft,
   Eye,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import RecruitmentEditModal from '@/common/components/team/RecruitmentEditModal';
+import { toast } from '@/lib/toast';
 
 interface Comment {
   id: number;
@@ -26,6 +28,7 @@ interface Comment {
 
 export default function TeamRecruitDetailPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -47,7 +50,7 @@ export default function TeamRecruitDetailPage() {
     },
   ]);
 
-  const isTeamLeader = true;
+  const isTeamLeader = session ? true : false;
 
   const [recruitment, setRecruitment] = useState({
     id: 1,
@@ -79,25 +82,45 @@ export default function TeamRecruitDetailPage() {
   });
 
   const handleLike = () => {
+    if (!session) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
     setIsLiked(!isLiked);
     setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
   };
 
   const handleBookmark = () => {
+    if (!session) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
     setIsBookmarked(!isBookmarked);
     setBookmarkCount(isBookmarked ? bookmarkCount - 1 : bookmarkCount + 1);
   };
 
   const handleCommentSubmit = () => {
+    if (!session) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
     if (!commentText.trim()) return;
     const newComment: Comment = {
       id: comments.length + 1,
-      author: '나',
+      author: session.user?.name ?? '익명',
       content: commentText,
       createdAt: new Date().toISOString().split('T')[0],
     };
     setComments([...comments, newComment]);
     setCommentText('');
+  };
+
+  const handleApply = () => {
+    if (!session) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
+    toast.info('지원 기능은 준비 중입니다');
   };
 
   const handleSaveRecruitment = (newData: {
@@ -108,7 +131,7 @@ export default function TeamRecruitDetailPage() {
     recruitmentPeriod: { start: string; end: string };
   }) => {
     setRecruitment((prev) => ({ ...prev, ...newData }));
-    alert('모집 공고가 수정되었습니다!');
+    toast.success('모집 공고가 수정되었습니다');
     setIsEditModalOpen(false);
   };
 
@@ -131,7 +154,6 @@ export default function TeamRecruitDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      {/* 뒤로가기 */}
       <button
         onClick={() => router.back()}
         className="mb-6 inline-flex items-center text-sm text-gray-500 hover:text-gray-900"
@@ -141,9 +163,7 @@ export default function TeamRecruitDetailPage() {
       </button>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* 메인 콘텐츠 */}
         <div className="lg:col-span-2">
-          {/* 헤더 */}
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -188,13 +208,11 @@ export default function TeamRecruitDetailPage() {
             </div>
           </div>
 
-          {/* 본문 */}
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
               {recruitment.content}
             </p>
 
-            {/* 모집 포지션 */}
             <div className="mt-6 border-t border-gray-100 pt-6">
               <p className="mb-2 text-xs font-medium text-gray-500">
                 모집 포지션
@@ -211,7 +229,6 @@ export default function TeamRecruitDetailPage() {
               </div>
             </div>
 
-            {/* 태그 */}
             <div className="mt-4">
               <p className="mb-2 text-xs font-medium text-gray-500">태그</p>
               <div className="flex flex-wrap gap-2">
@@ -226,7 +243,6 @@ export default function TeamRecruitDetailPage() {
               </div>
             </div>
 
-            {/* 좋아요 & 즐겨찾기 */}
             <div className="mt-6 flex gap-2">
               <button
                 onClick={handleLike}
@@ -257,7 +273,6 @@ export default function TeamRecruitDetailPage() {
             </div>
           </div>
 
-          {/* 댓글 */}
           <div className="rounded-xl border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-6 py-4">
               <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
@@ -266,7 +281,6 @@ export default function TeamRecruitDetailPage() {
               </h2>
             </div>
 
-            {/* 댓글 작성 */}
             <div className="border-b border-gray-100 px-6 py-4">
               <div className="flex gap-2">
                 <input
@@ -289,7 +303,6 @@ export default function TeamRecruitDetailPage() {
               </div>
             </div>
 
-            {/* 댓글 목록 */}
             <div className="divide-y divide-gray-100">
               {comments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
@@ -324,10 +337,8 @@ export default function TeamRecruitDetailPage() {
           </div>
         </div>
 
-        {/* 사이드바 */}
         <aside className="hidden lg:block">
           <div className="sticky top-8 space-y-4">
-            {/* 팀 정보 카드 */}
             <div className="rounded-xl border border-gray-200 bg-white p-5">
               <h3 className="mb-4 text-sm font-bold text-gray-900">팀 정보</h3>
               <div className="mb-4 flex items-center gap-3">
@@ -354,7 +365,6 @@ export default function TeamRecruitDetailPage() {
               </Link>
             </div>
 
-            {/* 모집 기간 카드 */}
             <div className="rounded-xl border border-gray-200 bg-white p-5">
               <h3 className="mb-4 text-sm font-bold text-gray-900">모집 기간</h3>
               <div className="mb-4 space-y-2 text-sm">
@@ -379,12 +389,14 @@ export default function TeamRecruitDetailPage() {
                   </div>
                 )}
               </div>
-              <button className="w-full rounded-xl bg-gray-900 py-3 text-sm font-medium text-white transition hover:bg-gray-800">
+              <button
+                onClick={handleApply}
+                className="w-full rounded-xl bg-gray-900 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+              >
                 지원하기
               </button>
             </div>
 
-            {/* 통계 카드 */}
             <div className="rounded-xl border border-gray-200 bg-white p-5">
               <h3 className="mb-4 text-sm font-bold text-gray-900">통계</h3>
               <div className="space-y-3 text-sm">
@@ -428,14 +440,15 @@ export default function TeamRecruitDetailPage() {
         </aside>
       </div>
 
-      {/* 모바일 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 lg:hidden">
-        <button className="w-full rounded-xl bg-gray-900 py-3.5 text-sm font-medium text-white transition hover:bg-gray-800">
+        <button
+          onClick={handleApply}
+          className="w-full rounded-xl bg-gray-900 py-3.5 text-sm font-medium text-white transition hover:bg-gray-800"
+        >
           지원하기
         </button>
       </div>
 
-      {/* 공고 수정 모달 */}
       <RecruitmentEditModal
         isOpen={isEditModalOpen}
         initialData={{

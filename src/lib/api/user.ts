@@ -2,6 +2,7 @@ import { apiClient, clientApiClient } from './client';
 import type {
   UserSignupRequest,
   UserUpdateRequest,
+  UserPasswordChangeRequest,
   UserProfileResponse,
   ArticleListResponse,
   CommentListResponse,
@@ -9,6 +10,10 @@ import type {
   GithubAnalysisResponse,
   AuthTokenResponse,
 } from './types';
+
+interface AuthOptions {
+  accessToken: string;
+}
 
 export async function signup(data: UserSignupRequest): Promise<AuthTokenResponse> {
   return clientApiClient<AuthTokenResponse>('/v1/users/signup', {
@@ -26,25 +31,33 @@ export async function getUserProfile(userId: number): Promise<UserProfileRespons
   });
 }
 
-/**
- * 사용자 정보 수정
- */
 export async function updateUser(
   userId: number,
-  data: UserUpdateRequest
+  data: UserUpdateRequest,
+  auth: AuthOptions
 ): Promise<void> {
-  await apiClient<void>(`/v1/users/${userId}`, {
+  await clientApiClient<void>(`/v1/users/${userId}`, {
     method: 'PUT',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
 
-/**
- * 회원 탈퇴 (Soft Delete)
- */
-export async function deleteUser(userId: number): Promise<void> {
-  await apiClient<void>(`/v1/users/${userId}`, {
+export async function changePassword(
+  data: UserPasswordChangeRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>('/v1/users/me/password', {
+    method: 'PUT',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+export async function deleteUser(userId: number, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>(`/v1/users/${userId}`, {
     method: 'DELETE',
+    accessToken: auth.accessToken,
   });
 }
 

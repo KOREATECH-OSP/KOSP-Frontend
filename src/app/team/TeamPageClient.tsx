@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Users, Search } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
 
@@ -20,6 +21,7 @@ export default function TeamPageClient({
   initialTeams,
   initialRecruits,
 }: TeamPageClientProps) {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>('전체');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -57,13 +59,15 @@ export default function TeamPageClient({
             함께 프로젝트를 진행할 팀원을 찾거나 팀을 둘러보세요
           </p>
         </div>
-        <Link
-          href="/team/create"
-          className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
-        >
-          <Users className="mr-1.5 h-4 w-4" />
-          팀 만들기
-        </Link>
+        {session && (
+          <Link
+            href="/team/create"
+            className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+          >
+            <Users className="mr-1.5 h-4 w-4" />
+            팀 만들기
+          </Link>
+        )}
       </div>
 
       {/* 검색바 */}

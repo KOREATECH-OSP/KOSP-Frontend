@@ -94,6 +94,11 @@ export interface UserUpdateRequest {
   introduction?: string;
 }
 
+export interface UserPasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface UserProfileResponse {
   id: number;
   name: string;

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { MessageSquare, Plus, Loader2 } from 'lucide-react';
 import type { BoardResponse, ArticleResponse, PageMeta, ArticleListResponse } from '@/lib/api/types';
 import Pagination from '@/common/components/Pagination';
@@ -19,6 +20,7 @@ export default function CommunityPageClient({
   initialArticles,
   initialPagination,
 }: CommunityPageClientProps) {
+  const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
   const [activeBoard, setActiveBoard] = useState<number | null>(1);
   const [articles, setArticles] = useState<ArticleResponse[]>(initialArticles);
@@ -74,13 +76,15 @@ export default function CommunityPageClient({
             개발자들과 소통하고 정보를 나눠보세요
           </p>
         </div>
-        <Link
-          href="/community/write"
-          className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          글쓰기
-        </Link>
+        {session && (
+          <Link
+            href="/community/write"
+            className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            글쓰기
+          </Link>
+        )}
       </div>
 
       {/* 게시판 탭 */}

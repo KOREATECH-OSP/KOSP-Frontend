@@ -65,7 +65,10 @@ export default function ArticleDetailClient({
   }, [showMenu]);
 
   const handleLike = () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/likes`, {
         method: 'POST',
@@ -87,7 +90,10 @@ export default function ArticleDetailClient({
   };
 
   const handleBookmark = () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/bookmarks`, {
         method: 'POST',
@@ -142,7 +148,10 @@ export default function ArticleDetailClient({
 
   const handleCommentDelete = (commentId: number) => {
     if (!confirm('댓글을 삭제하시겠습니까?')) return;
-    if (!accessToken) return;
+    if (!accessToken) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
 
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}`, {
@@ -165,7 +174,10 @@ export default function ArticleDetailClient({
   };
 
   const handleCommentLike = (commentId: number) => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      toast.error('로그인이 필요합니다');
+      return;
+    }
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}/likes`, {
         method: 'POST',
