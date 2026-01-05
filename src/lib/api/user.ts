@@ -6,6 +6,7 @@ import type {
   ArticleListResponse,
   CommentListResponse,
   GithubActivityResponse,
+  GithubStatsResponse,
   AuthTokenResponse,
 } from './types';
 
@@ -85,6 +86,14 @@ export async function getUserGithubActivities(
   userId: number
 ): Promise<GithubActivityResponse> {
   return apiClient<GithubActivityResponse>(`/v1/users/${userId}/activities/github`, {
+    cache: 'no-store',
+  });
+}
+
+export async function getUserGithubStats(
+  userId: number
+): Promise<GithubStatsResponse> {
+  return apiClient<GithubStatsResponse>(`/v1/users/${userId}/github/stats`, {
     cache: 'no-store',
   });
 }
