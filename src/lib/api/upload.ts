@@ -20,6 +20,12 @@ export async function uploadFile(file: File, auth: AuthOptions): Promise<FileRes
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new ApiException(401, '로그인이 필요합니다.');
+    }
+    if (response.status === 403) {
+      throw new ApiException(403, '권한이 없습니다.');
+    }
     const errorText = await response.text();
     throw new ApiException(response.status, errorText || 'File upload failed');
   }

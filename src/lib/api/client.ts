@@ -25,6 +25,12 @@ type RequestOptions = {
 };
 
 function parseErrorMessage(text: string, status: number): string {
+  if (status === 401) {
+    return '로그인이 필요합니다.';
+  }
+  if (status === 403) {
+    return '권한이 없습니다.';
+  }
   if (!text) return `API Error: ${status}`;
   try {
     const json = JSON.parse(text);
