@@ -3,10 +3,26 @@ import Link from 'next/link';
 import { getTeam } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
 import TeamDetailClient from './TeamDetailClient';
+import type { TeamDetailResponse } from '@/lib/api/types';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
+
+// 목업 데이터 (개발용)
+const MOCK_TEAM: TeamDetailResponse = {
+  id: 1,
+  name: 'KOSP 개발팀',
+  description: '한국기술교육대학교 오픈소스 포털 서비스를 개발하는 팀입니다. React, Next.js, TypeScript를 사용하여 프론트엔드를 개발하고 있으며, 백엔드는 Spring Boot로 구성되어 있습니다. 매주 수요일 오후 7시에 정기 미팅을 진행합니다.',
+  imageUrl: null,
+  members: [
+    { id: 1, name: '김영규', profileImage: null, role: 'LEADER' },
+    { id: 2, name: '박태진', profileImage: null, role: 'MEMBER' },
+    { id: 3, name: '이서준', profileImage: null, role: 'MEMBER' },
+    { id: 4, name: '정민수', profileImage: null, role: 'MEMBER' },
+    { id: 5, name: '최유진', profileImage: null, role: 'MEMBER' },
+  ],
+};
 
 async function fetchTeamData(teamId: number) {
   try {
@@ -35,8 +51,9 @@ export default async function TeamDetailPage({ params }: PageProps) {
 
   const { team, error } = await fetchTeamData(teamId);
 
+  // 404인 경우 목업 데이터 사용 (개발용)
   if (error === 'notfound') {
-    notFound();
+    return <TeamDetailClient team={{ ...MOCK_TEAM, id: teamId }} />;
   }
 
   if (error === 'unauthorized') {
