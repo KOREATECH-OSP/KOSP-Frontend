@@ -2,16 +2,16 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, X, ArrowLeft, Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Upload, X, ArrowLeft, Loader2, Users } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import KoriSupport from '@/assets/images/kori/11-06 L 응원 .png';
-import InfoBox from '@/common/components/InfoBox';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { toast } from '@/lib/toast';
+import { API_BASE_URL } from '@/lib/api/config';
 
 export default function CreateTeamPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -46,12 +46,12 @@ export default function CreateTeamPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('이미지 크기는 5MB 이하여야 합니다.');
+        toast.error('이미지 크기는 5MB 이하여야 합니다.');
         return;
       }
 
       if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
+        toast.error('이미지 파일만 업로드 가능합니다.');
         return;
       }
 
@@ -99,6 +99,13 @@ export default function CreateTeamPage() {
       return;
     }
 
+    const accessToken = session?.accessToken;
+    if (!accessToken) {
+      toast.error('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -106,6 +113,7 @@ export default function CreateTeamPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -116,190 +124,160 @@ export default function CreateTeamPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create team');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          throw new Error(errorData.message || '로그인이 필요합니다.');
+        }
+        if (response.status === 403) {
+          throw new Error(errorData.message || '권한이 없습니다.');
+        }
+        throw new Error(errorData.message || '팀 생성에 실패했습니다.');
       }
 
-      alert('팀이 생성되었습니다!');
+      toast.success('팀이 생성되었습니다.');
       router.push('/team');
     } catch (error) {
       console.error('팀 생성 실패:', error);
-      alert('팀 생성에 실패했습니다. 다시 시도해주세요.');
+      const message = error instanceof Error ? error.message : '팀 생성에 실패했습니다.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/team"
-          className="mb-4 inline-flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-900"
+    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+      {/* 헤더 */}
+      <div className="mb-6 flex items-center justify-between">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900"
         >
-          <ArrowLeft className="h-5 w-5" />
-          <span>팀 목록으로 돌아가기</span>
-        </Link>
-        <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">
-          팀 만들기
-        </h1>
-        <p className="text-sm text-gray-600 sm:text-base">
-          새로운 팀을 만들고 함께 성장할 팀원들을 모집하세요
-        </p>
+          <ArrowLeft className="h-4 w-4" />
+          돌아가기
+        </button>
       </div>
 
-      {/* Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-xl border border-gray-200 bg-white shadow-sm"
-      >
-        <div className="space-y-6 p-6">
-          {/* 팀 이미지 */}
-          <div>
-            <label className="mb-3 block text-sm font-semibold text-gray-900">
-              팀 이미지
-            </label>
-            <div className="flex flex-col items-start gap-4 sm:flex-row">
-              <div className="relative">
-                <div
-                  onClick={handleImageClick}
-                  className="group relative h-24 w-24 cursor-pointer overflow-hidden rounded-lg border-2 border-gray-200 transition-colors hover:border-blue-500"
-                >
-                  {imagePreview ? (
-                    <Image
-                      src={imagePreview}
-                      alt="팀 이미지 미리보기"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-lg bg-gray-100">
-                      <Image
-                        src={KoriSupport}
-                        alt="팀 기본 아이콘"
-                        width={48}
-                        height={48}
-                        className="h-10 w-10 sm:h-12 sm:w-12"
-                      />
-                    </div>
-                  )}
+      <h1 className="mb-6 text-xl font-semibold text-gray-900">팀 만들기</h1>
 
-                  <div className="absolute inset-0 flex items-center justify-center bg-transparent transition-all group-hover:bg-black/40">
-                    <Upload className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
-                  </div>
-                </div>
-
-                {imagePreview && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-colors hover:bg-red-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* 팀 이미지 */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            팀 이미지
+          </label>
+          <div className="flex items-start gap-4">
+            <div className="relative">
+              <div
+                onClick={handleImageClick}
+                className="group relative flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 transition hover:border-gray-400"
+              >
+                {imagePreview ? (
+                  <Image
+                    src={imagePreview}
+                    alt="팀 이미지"
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <Users className="h-8 w-8 text-gray-400" />
                 )}
-              </div>
-
-              <div className="flex-1">
-                <p className="mb-3 text-sm text-gray-600">
-                  팀을 대표하는 이미지를 업로드하세요
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleImageClick}
-                    className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                  >
-                    <Upload className="h-4 w-4" />
-                    이미지 선택
-                  </button>
-                  {imagePreview && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
-                    >
-                      이미지 제거
-                    </button>
-                  )}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/40">
+                  <Upload className="h-5 w-5 text-white opacity-0 transition group-hover:opacity-100" />
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  JPG, PNG 형식 | 최대 5MB
-                </p>
               </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/jpg,image/webp"
-                onChange={handleImageChange}
-                className="hidden"
-              />
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white shadow hover:bg-gray-700"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="name"
-              className="mb-2 block text-sm font-semibold text-gray-900"
-            >
-              팀 이름 <span className="text-red-500">*</span>
-            </label>
+            <div className="flex-1 pt-1">
+              <p className="text-xs text-gray-500">
+                JPG, PNG 형식 · 최대 5MB
+              </p>
+            </div>
             <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="팀 이름을 입력하세요"
-              className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/jpg,image/webp"
+              onChange={handleImageChange}
+              className="hidden"
             />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="mb-2 block text-sm font-semibold text-gray-900"
-            >
-              팀 설명 <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="팀에 대한 설명을 입력하세요"
-              rows={4}
-              className={`w-full resize-none rounded-lg border px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-500">{errors.description}</p>
-            )}
-            <p className="mt-1 text-sm text-gray-500">
-              {formData.description.length} / 500자
-            </p>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex flex-col justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-gray-50 p-6 sm:flex-row">
+        {/* 팀 이름 */}
+        <div>
+          <label
+            htmlFor="name"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            팀 이름
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            placeholder="팀 이름을 입력하세요"
+            className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none ${
+              errors.name
+                ? 'border-red-300 focus:border-red-400'
+                : 'border-gray-200 focus:border-gray-400'
+            }`}
+          />
+          {errors.name && (
+            <p className="mt-1.5 text-sm text-red-500">{errors.name}</p>
+          )}
+        </div>
+
+        {/* 팀 설명 */}
+        <div>
+          <label
+            htmlFor="description"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            팀 설명
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="팀에 대한 설명을 입력하세요"
+            rows={4}
+            className={`w-full resize-none rounded-lg border px-4 py-2.5 text-sm focus:outline-none ${
+              errors.description
+                ? 'border-red-300 focus:border-red-400'
+                : 'border-gray-200 focus:border-gray-400'
+            }`}
+          />
+          {errors.description && (
+            <p className="mt-1.5 text-sm text-red-500">{errors.description}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-400">
+            {formData.description.length} / 500자
+          </p>
+        </div>
+
+        {/* 버튼 */}
+        <div className="flex gap-2 pt-4">
           <Link
             href="/team"
-            className="rounded-lg border border-gray-300 px-6 py-3 text-center text-gray-700 transition-colors hover:bg-white"
+            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
           >
             취소
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-300"
           >
             {isSubmitting ? (
               <>
@@ -312,15 +290,6 @@ export default function CreateTeamPage() {
           </button>
         </div>
       </form>
-
-      <InfoBox
-        title="팀 생성 안내"
-        items={[
-          '팀을 만들면 자동으로 리더가 되어 팀을 관리할 수 있습니다',
-          '팀 이름과 설명은 나중에 수정할 수 있습니다',
-          '팀원 모집 공고를 작성하여 팀원을 모집할 수 있습니다',
-        ]}
-      />
     </div>
   );
 }

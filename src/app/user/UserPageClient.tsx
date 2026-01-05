@@ -97,7 +97,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
     const fetchTabData = async () => {
       try {
-        if (activeTab === '작성글') {
+        if (activeTab === '활동') {
+          if (profile?.githubUrl) {
+            const urlParts = profile.githubUrl.split('/');
+            const username = urlParts[urlParts.length - 1];
+            if (username) {
+              const analysisRes = await getUserGithubAnalysis(username).catch(() => null);
+              setGithubAnalysis(analysisRes);
+            }
+          }
+        } else if (activeTab === '작성글') {
           const res = await getUserPosts(userId);
           setPosts(res.posts);
           setCounts(prev => ({ ...prev, posts: res.pagination.totalItems }));
@@ -115,7 +124,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     };
 
     fetchTabData();
-  }, [activeTab, userId]);
+  }, [activeTab, userId, profile?.githubUrl]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
