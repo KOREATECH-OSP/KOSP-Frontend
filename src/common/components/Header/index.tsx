@@ -22,13 +22,13 @@ function Header({ simple = false, session = null }: HeaderProps) {
 
   const isLoggedIn = Boolean(session?.user);
   const displayName = session?.user?.name ?? '';
-  const handleProfileAction = (intent: string) => {
-    console.log(`[Header] ${intent} 클릭`);
-    setMobileProfileOpen(false);
-  };
   const handleMyInfo = () => {
     setMobileProfileOpen(false);
     router.push('/user');
+  };
+  const handleNotification = () => {
+    setMobileProfileOpen(false);
+    router.push('/notification');
   };
   const handleLogout = () => {
     setMobileMenuOpen(false);
@@ -38,7 +38,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
   const profileActions = isLoggedIn
     ? [
         { label: "내 정보", action: handleMyInfo },
-        { label: "알림", action: () => handleProfileAction("알림") },
+        { label: "알림", action: handleNotification },
         { label: "로그아웃", action: handleLogout },
       ]
     : [];
