@@ -1,47 +1,74 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { suitFont } from "../../style/font";
 import KoriCharacter from "../../assets/images/kori/11-10 B 등교 .png";
 import { ArrowLeft, Search, X, Clock } from 'lucide-react';
 
+const STORAGE_KEY = 'kosp_recent_searches';
+
 function SearchBar() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isDesktopDropdownOpen, setIsDesktopDropdownOpen] = useState(false);
-  const [recentSearches, setRecentSearches] = useState(['React', 'Next.js', '프론트엔드', '팀 프로젝트']);
-  const [selectedIndex, setSelectedIndex] = useState(-1); // 키보드 선택용
-  const [hoveredIndex, setHoveredIndex] = useState(-1); // 마우스 호버용
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [hoveredIndex, setHoveredIndex] = useState(-1);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 전체 선택 가능한 항목 리스트 (최근 검색어)
+  // Load from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        // eslint-disable-next-line
+        setRecentSearches(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse recent searches', e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage
+  const saveToStorage = (searches: string[]) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(searches));
+    setRecentSearches(searches);
+  };
+
   const allItems = recentSearches;
 
-  // 최근 검색어 개별 삭제
   const handleRemoveRecentSearch = (e: React.MouseEvent, term: string) => {
     e.stopPropagation();
-    setRecentSearches(prev => prev.filter(item => item !== term));
+    const newSearches = recentSearches.filter(item => item !== term);
+    saveToStorage(newSearches);
     setSelectedIndex(-1);
   };
 
-  // 최근 검색어 전체 삭제
   const handleClearAllRecentSearches = () => {
-    setRecentSearches([]);
+    saveToStorage([]);
     setSelectedIndex(-1);
   };
 
-  // 검색 실행
   const executeSearch = useCallback((term: string) => {
     if (term.trim()) {
-      console.log('검색어:', term);
-      setSearchQuery(term);
+      const trimmed = term.trim();
+      // Add to recent searches (deduplicate, move to top)
+      const newSearches = [trimmed, ...recentSearches.filter(t => t !== trimmed)].slice(0, 10);
+      saveToStorage(newSearches);
+
+      setSearchQuery(trimmed);
       setIsMobileSearchOpen(false);
       setIsDesktopDropdownOpen(false);
       setSelectedIndex(-1);
+      
+      // Navigate to search page
+      router.push(`/search?keyword=${encodeURIComponent(trimmed)}`);
     }
-  }, []);
+  }, [recentSearches, router]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +93,6 @@ function SearchBar() {
     executeSearch(term);
   };
 
-  // 키보드 네비게이션
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isDesktopDropdownOpen && !isMobileSearchOpen) return;
 
@@ -101,7 +127,6 @@ function SearchBar() {
     setHoveredIndex(-1);
   };
 
-  // 데스크톱 드롭다운 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -120,14 +145,12 @@ function SearchBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 모달 열릴 때 input에 포커스
   useEffect(() => {
     if (isMobileSearchOpen && mobileInputRef.current) {
       mobileInputRef.current.focus();
     }
   }, [isMobileSearchOpen]);
 
-  // 모달 열릴 때 스크롤 방지
   useEffect(() => {
     if (isMobileSearchOpen) {
       document.body.style.overflow = 'hidden';
@@ -139,9 +162,7 @@ function SearchBar() {
     };
   }, [isMobileSearchOpen]);
 
-  // 검색어 아이템 렌더링 (데스크톱)
   const renderSearchItem = (term: string, index: number) => {
-    // 키보드 선택 또는 마우스 호버 중 하나라도 해당되면 하이라이트
     const isHighlighted = selectedIndex === index || hoveredIndex === index;
     
     return (
@@ -151,7 +172,7 @@ function SearchBar() {
         onClick={() => handleItemClick(term)}
         onMouseEnter={() => {
           setHoveredIndex(index);
-          setSelectedIndex(-1); // 마우스 호버 시 키보드 선택 초기화
+          setSelectedIndex(-1);
         }}
         onMouseLeave={() => setHoveredIndex(-1)}
       >
@@ -180,9 +201,7 @@ function SearchBar() {
               <div className="w-16 drop-shadow-sm pointer-events-none select-none">
                 <Image src={KoriCharacter} alt="캐릭터" className="w-full h-auto" priority />
               </div>
-              {/* 모바일: 클릭하면 전체화면 검색 모달 열기 */}
               <div className={`relative flex flex-col w-full gap-3 sm:gap-3 sm:flex-row sm:items-center sm:bg-white sm:border sm:border-gray-200/70 sm:rounded-2xl sm:pl-6 sm:pr-2 sm:py-2 ${isDesktopDropdownOpen ? 'sm:shadow-[0_0_0_1px_rgba(156,163,175,0.8)]' : ''}`}>
-                {/* 모바일 - 클릭 트리거용 가짜 input */}
                 <div
                   className="flex items-center w-full bg-white border border-gray-200/70 rounded-2xl px-5 py-3.5 text-gray-400 text-base cursor-pointer sm:hidden"
                   onClick={handleMobileInputClick}
@@ -190,7 +209,6 @@ function SearchBar() {
                   <Search className="w-5 h-5 mr-3 text-gray-400" />
                   <span>프로젝트, 팀, 기술스택을 검색해보세요.</span>
                 </div>
-                {/* 데스크탑 - 실제 input */}
                 <input
                   ref={desktopInputRef}
                   type="text"
@@ -211,13 +229,11 @@ function SearchBar() {
                   Go →
                 </button>
 
-                {/* 데스크톱 드롭다운 */}
                 {isDesktopDropdownOpen && recentSearches.length > 0 && (
                   <div
                     ref={dropdownRef}
                     className="hidden sm:block absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden py-2"
                   >
-                    {/* 최근 검색어 */}
                     <div className="flex items-center justify-between px-4 py-2">
                       <span className="text-xs font-medium text-gray-500">최근 검색어</span>
                       <button 
@@ -239,10 +255,8 @@ function SearchBar() {
         </div>
       </section>
 
-      {/* 모바일 전체화면 검색 모달 */}
       {isMobileSearchOpen && (
         <div className={`fixed inset-0 z-[100] bg-white sm:hidden ${suitFont.className}`}>
-          {/* 헤더 */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
             <button
               type="button"
@@ -285,7 +299,6 @@ function SearchBar() {
             </form>
           </div>
 
-          {/* 최근 검색어 목록 */}
           {recentSearches.length > 0 && (
             <div className="py-2">
               <div className="flex items-center justify-between px-4 py-2">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowLeft,
   Users,
@@ -101,9 +102,11 @@ export default function TeamDetailClient({ team: initialTeam }: TeamDetailClient
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900 text-white">
                   {team.imageUrl ? (
-                    <img
+                    <Image
                       src={team.imageUrl}
                       alt={team.name}
+                      width={48}
+                      height={48}
                       className="h-12 w-12 rounded-xl object-cover"
                     />
                   ) : (
@@ -206,9 +209,11 @@ export default function TeamDetailClient({ team: initialTeam }: TeamDetailClient
                         {member.role === 'LEADER' ? (
                           <Crown className="h-4 w-4" />
                         ) : member.profileImage ? (
-                          <img
+                          <Image
                             src={member.profileImage}
                             alt={member.name}
+                            width={36}
+                            height={36}
                             className="h-9 w-9 rounded-full object-cover"
                           />
                         ) : (

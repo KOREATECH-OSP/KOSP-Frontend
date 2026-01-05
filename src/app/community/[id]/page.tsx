@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getArticle, getComments } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
 import ArticleDetailClient from './ArticleDetailClient';
+import { auth } from '@/auth';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,9 @@ export default async function PostDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const session = await auth();
+  const currentUserId = session?.user?.id ? parseInt(session.user.id, 10) : null;
+
   const data = await fetchArticleData(articleId);
 
   if (data.error === 'notfound') {
@@ -64,6 +68,7 @@ export default async function PostDetailPage({ params }: PageProps) {
     <ArticleDetailClient
       article={data.article!}
       initialComments={data.comments}
+      currentUserId={currentUserId}
     />
   );
 }

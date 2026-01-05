@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -12,19 +12,25 @@ import {
   Bookmark,
   Loader2,
   Trash2,
+  AlertTriangle,
+  Pencil,
+  MoreVertical
 } from 'lucide-react';
 import type { ArticleResponse, CommentResponse } from '@/lib/api/types';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import ReportModal from '@/common/components/ReportModal';
+import { deleteArticle } from '@/lib/api/article';
+import { API_BASE_URL } from '@/lib/api/config';
 
 interface ArticleDetailClientProps {
   article: ArticleResponse;
   initialComments: CommentResponse[];
+  currentUserId: number | null;
 }
 
 export default function ArticleDetailClient({
   article,
   initialComments,
+  currentUserId,
 }: ArticleDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -35,6 +41,23 @@ export default function ArticleDetailClient({
   const [comments, setComments] = useState<CommentResponse[]>(initialComments);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const isMine = currentUserId === article.author.id;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
 
   const handleLike = () => {
     startTransition(() => {
@@ -85,6 +108,19 @@ export default function ArticleDetailClient({
       });
       setNewComment('');
       router.refresh();
+      // Re-fetch comments or optimistic update would be better here, but router.refresh works for now
+      // Actually, we should fetch new comments or add optimistic one. 
+      // For simplicity, reload page or fetch comments again?
+      // router.refresh() re-runs the server component, but client state 'comments' might persist if not reset.
+      // But initialComments prop will update, and we initialized state with it.
+      // We need a useEffect or key change to update state from prop. 
+      // Or just simpler: window.location.reload() or strict data flow.
+      // Let's assume router.refresh() updates the prop, and we need to watch it?
+      // No, we initialized state once.
+      // Better: Fetch comments manually after submit.
+      const res = await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`);
+      const data = await res.json();
+      setComments(data.comments);
     } catch (error) {
       console.error('댓글 작성 실패:', error);
       alert('댓글 작성에 실패했습니다.');
@@ -139,6 +175,18 @@ export default function ArticleDetailClient({
     });
   };
 
+  const handleDeleteArticle = async () => {
+    if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
+    try {
+      await deleteArticle(article.id);
+      alert('게시글이 삭제되었습니다.');
+      router.push('/community');
+    } catch (error) {
+      console.error('게시글 삭제 실패:', error);
+      alert('게시글 삭제에 실패했습니다.');
+    }
+  };
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     alert('링크가 복사되었습니다.');
@@ -155,6 +203,12 @@ export default function ArticleDetailClient({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <ReportModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+        articleId={article.id} 
+      />
+
       {/* 뒤로가기 */}
       <Link
         href="/community"
@@ -168,21 +222,69 @@ export default function ArticleDetailClient({
       <article className="rounded-2xl border border-gray-200/70 bg-white">
         {/* 헤더 */}
         <div className="px-5 py-5 sm:px-6">
-          {article.tags && article.tags.length > 0 && (
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              {article.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
-                >
-                  {tag}
-                </span>
-              ))}
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              {article.tags && article.tags.length > 0 && (
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  {article.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+                {article.title}
+              </h1>
             </div>
-          )}
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            {article.title}
-          </h1>
+            
+            <div ref={menuRef} className="relative ml-2">
+              <button 
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
+              
+              {showMenu && (
+                <div className="absolute right-0 top-8 z-10 w-32 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  {isMine ? (
+                    <>
+                      <Link
+                        href={`/community/write?id=${article.id}`}
+                        className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        수정
+                      </Link>
+                      <button
+                        onClick={handleDeleteArticle}
+                        className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        삭제
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsReportModalOpen(true);
+                        setShowMenu(false);
+                      }}
+                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      <AlertTriangle className="mr-2 h-4 w-4" />
+                      신고
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <Link

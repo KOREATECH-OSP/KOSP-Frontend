@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Users, User, ChevronRight } from 'lucide-react';
 import type { TeamResponse } from '@/lib/api/types';
 
@@ -36,9 +37,11 @@ function TeamCard({ team }: { team: TeamResponse }) {
       {/* 팀 아이콘 */}
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
         {team.imageUrl ? (
-          <img
+          <Image
             src={team.imageUrl}
             alt={team.name}
+            width={40}
+            height={40}
             className="h-10 w-10 rounded-lg object-cover"
           />
         ) : (

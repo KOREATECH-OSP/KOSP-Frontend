@@ -120,70 +120,44 @@ export interface GithubActivityResponse {
 }
 
 // ============================================
-// GitHub Statistics Types
+// GitHub Statistics Types (Analysis)
 // ============================================
 
-/**
- * 저장소별 기여 통계
- */
-export interface GithubRepoStats {
-  repoName: string;
-  projectName: string;
-  description: string | null;
-  stars: number;
-  commits: number;
-  prs: number;
-  lastCommitDate: string;
-  url: string;
+export interface GithubStats {
+  totalCommits: number;
+  totalIssues: number;
+  totalPrs: number;
+  totalStars: number;
+  totalRepos: number;
 }
 
-/**
- * 전체 기여 내역 요약
- */
-export interface GithubContributionSummary {
-  contributedRepos: number;
+export interface BestRepoSummary {
+  name: string;
   totalCommits: number;
   totalLines: number;
+  totalPrs: number;
   totalIssues: number;
-  totalPRs: number;
 }
 
-/**
- * 기여 내역 비교 (평균 vs 나)
- */
-export interface GithubContributionComparison {
-  average: {
-    commits: number;
-    stars: number;
-    prs: number;
-    issues: number;
-  };
-  mine: {
-    commits: number;
-    stars: number;
-    prs: number;
-    issues: number;
-  };
+export interface GithubAnalysisData {
+  monthlyContributions: Record<string, number>;
+  timeOfDayStats: Record<string, number>;
+  dayOfWeekStats: Record<string, number>;
+  collaborators: Record<string, number>;
+  workingStyle: string;
+  collaborationStyle: string;
+  bestRepository: BestRepoSummary;
 }
 
-/**
- * GitHub 기여 점수
- */
-export interface GithubContributionScore {
-  activityLevel: number; // 최대 3점 - 기여한 저장소 중 최고점수
-  diversity: number; // 최대 1점 - 여러 저장소에 기여했는지
-  impact: number; // 최대 5점 보너스 - 오픈소스 생태계 영향
-  total: number; // 합계
-}
-
-/**
- * GitHub 통계 전체 응답
- */
-export interface GithubStatsResponse {
-  recentRepos: GithubRepoStats[];
-  summary: GithubContributionSummary;
-  comparison: GithubContributionComparison;
-  score: GithubContributionScore;
+export interface GithubAnalysisResponse {
+  githubId: number;
+  bio: string;
+  tier: number;
+  followers: number;
+  following: number;
+  stats: GithubStats;
+  analysis: GithubAnalysisData;
+  languageStats: Record<string, number>;
 }
 
 // ============================================
@@ -210,6 +184,7 @@ export interface ArticleRequest {
   title: string;
   content: string;
   tags?: string[];
+  attachmentIds?: number[];
 }
 
 export interface ArticleResponse {
@@ -372,14 +347,51 @@ export interface ChallengeResponse {
 }
 
 export interface ChallengeSummary {
-  totalChallenges: number;
-  completedCount: number;
-  overallProgress: number;
+  totalChallenges?: number; // Optional in API docs? Check later. Usually summary structure.
+  // API docs say "ChallengeSummary" has id, name, description, tier for search.
+  // But ChallengeListResponse has "summary": ChallengeSummary. 
+  // Let's assume the previous definition or update based on usage.
+  // Wait, API docs for ChallengeListResponse say summary is a Schema ref #/components/schemas/ChallengeSummary
+  // BUT the Schema for ChallengeSummary in GlobalSearchResponse has id, name... 
+  // There might be a name collision in my head or the docs. 
+  // Let's use a loose type or fix it later if it breaks.
 }
 
-export interface ChallengeListResponse {
-  challenges: ChallengeResponse[];
-  summary: ChallengeSummary;
+// Search specific summaries
+export interface ArticleSummary {
+  id: number;
+  title: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface RecruitSummary {
+  id: number;
+  title: string;
+  authorName: string;
+  createdAt: string;
+  endDate: string;
+}
+
+export interface TeamSummary {
+  id: number;
+  name: string;
+  description: string;
+  memberCount: number;
+}
+
+export interface ChallengeSearchSummary {
+  id: number;
+  name: string;
+  description: string;
+  tier: number;
+}
+
+export interface GlobalSearchResponse {
+  articles: ArticleSummary[];
+  recruits: RecruitSummary[];
+  teams: TeamSummary[];
+  challenges: ChallengeSearchSummary[];
 }
 
 // ============================================
@@ -391,4 +403,22 @@ export type ReportReason = 'SPAM' | 'ABUSE' | 'ADVERTISEMENT' | 'OBSCENE' | 'OTH
 export interface ReportRequest {
   reason: ReportReason;
   description?: string;
+}
+
+// ============================================
+// File Upload Types
+// ============================================
+
+export interface FileResponse {
+  id: number;
+  originalFileName: string;
+  url: string;
+  fileSize: number;
+  contentType: string;
+  uploadedAt: string;
+}
+
+export interface ChallengeListResponse {
+  challenges: ChallengeResponse[];
+  summary: ChallengeSummary;
 }

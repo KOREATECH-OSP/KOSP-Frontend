@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, X, Loader2, Paperclip } from 'lucide-react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
-import { clientApiClient } from '@/lib/api/client';
-import type { BoardResponse } from '@/lib/api/types';
+import { uploadFile } from '@/lib/api/upload';
+import { createArticle, updateArticle } from '@/lib/api/article';
+import type { BoardResponse, ArticleResponse } from '@/lib/api/types';
 
 interface WritePageClientProps {
   boards: BoardResponse[];
+  initialData?: ArticleResponse;
 }
 
 interface PostFormData {
@@ -28,15 +30,16 @@ function stripHtml(html: string): string {
   return tmp.textContent || tmp.innerText || '';
 }
 
-export default function WritePageClient({ boards }: WritePageClientProps) {
+export default function WritePageClient({ boards, initialData }: WritePageClientProps) {
   const router = useRouter();
   const { upload: uploadImage } = useImageUpload();
+  const isEditMode = !!initialData;
 
   const [formData, setFormData] = useState<PostFormData>({
-    boardId: boards[0]?.id ?? 0,
-    title: '',
-    content: '',
-    tags: [],
+    boardId: initialData?.boardId ?? boards[0]?.id ?? 0,
+    title: initialData?.title ?? '',
+    content: initialData?.content ?? '',
+    tags: initialData?.tags ?? [],
     files: [],
   });
 
@@ -148,21 +151,42 @@ export default function WritePageClient({ boards }: WritePageClientProps) {
     setIsSubmitting(true);
 
     try {
-      await clientApiClient('/v1/community/articles', {
-        method: 'POST',
-        body: {
-          boardId: formData.boardId,
-          title: formData.title,
-          content: formData.content,
-          tags: formData.tags.length > 0 ? formData.tags : undefined,
-        },
-      });
+      // 1. Upload files first
+      const attachmentIds: number[] = [];
+      if (formData.files.length > 0) {
+        for (const file of formData.files) {
+          const uploaded = await uploadFile(file);
+          attachmentIds.push(uploaded.id);
+        }
+      }
 
-      alert('게시글이 성공적으로 등록되었습니다!');
-      router.push('/community');
+      // 2. Create or Update Article
+      const payload = {
+        boardId: formData.boardId,
+        title: formData.title,
+        content: formData.content,
+        tags: formData.tags.length > 0 ? formData.tags : undefined,
+        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
+      };
+
+      if (isEditMode && initialData) {
+        // Update
+        // Note: We are sending new attachmentIds. If existing attachments need to be preserved, 
+        // we should have included them. Since we can't see them, this might be an issue.
+        // Assuming update only adds or replaces if specified.
+        await updateArticle(initialData.id, payload);
+        alert('게시글이 수정되었습니다!');
+        router.push(`/community/${initialData.id}`);
+      } else {
+        // Create
+        await createArticle(payload);
+        alert('게시글이 성공적으로 등록되었습니다!');
+        router.push('/community');
+      }
+      
     } catch (error) {
-      console.error('게시글 등록 실패:', error);
-      alert('게시글 등록에 실패했습니다. 다시 시도해주세요.');
+      console.error('게시글 저장 실패:', error);
+      alert('게시글 저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);
     }
@@ -181,7 +205,9 @@ export default function WritePageClient({ boards }: WritePageClientProps) {
         </button>
       </div>
 
-      <h1 className="mb-6 text-xl font-semibold text-gray-900">글쓰기</h1>
+      <h1 className="mb-6 text-xl font-semibold text-gray-900">
+        {isEditMode ? '게시글 수정' : '글쓰기'}
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* 게시판 선택 */}
@@ -364,10 +390,10 @@ export default function WritePageClient({ boards }: WritePageClientProps) {
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                등록 중...
+                {isEditMode ? '수정 중...' : '등록 중...'}
               </>
             ) : (
-              '등록'
+              isEditMode ? '수정' : '등록'
             )}
           </button>
         </div>

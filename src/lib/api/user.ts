@@ -6,7 +6,7 @@ import type {
   ArticleListResponse,
   CommentListResponse,
   GithubActivityResponse,
-  GithubStatsResponse,
+  GithubAnalysisResponse,
   AuthTokenResponse,
 } from './types';
 
@@ -90,10 +90,13 @@ export async function getUserGithubActivities(
   });
 }
 
-export async function getUserGithubStats(
-  userId: number
-): Promise<GithubStatsResponse> {
-  return apiClient<GithubStatsResponse>(`/v1/users/${userId}/github/stats`, {
+/**
+ * 사용자 GitHub 활동 분석 (통계)
+ */
+export async function getUserGithubAnalysis(
+  username: string
+): Promise<GithubAnalysisResponse> {
+  return apiClient<GithubAnalysisResponse>(`/v1/github/users/${username}/analysis`, {
     cache: 'no-store',
   });
 }
