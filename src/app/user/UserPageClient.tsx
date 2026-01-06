@@ -21,18 +21,30 @@ import {
   AlertCircle,
   Loader2,
   Code,
+  Users,
+  Calendar,
+  Clock,
+  FolderGit,
+  ExternalLink,
+  TrendingUp,
 } from 'lucide-react';
 import {
   getUserPosts,
   getUserComments,
   getUserBookmarks,
   getUserGithubAnalysis,
+  getUserGithubSummary,
+  getUserGithubRecentContributions,
+  getUserGithubMonthlyActivity,
   getUserProfile,
 } from '@/lib/api/user';
 import type {
   ArticleResponse,
   CommentResponse,
   GithubAnalysisResponse,
+  GithubSummaryResponse,
+  GithubRecentContributionsResponse,
+  GithubMonthlyActivityResponse,
   UserProfileResponse,
 } from '@/lib/api/types';
 
@@ -49,6 +61,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [bookmarks, setBookmarks] = useState<ArticleResponse[]>([]);
   const [githubAnalysis, setGithubAnalysis] = useState<GithubAnalysisResponse | null>(null);
+  const [githubSummary, setGithubSummary] = useState<GithubSummaryResponse | null>(null);
+  const [recentContributions, setRecentContributions] = useState<GithubRecentContributionsResponse | null>(null);
+  const [monthlyActivity, setMonthlyActivity] = useState<GithubMonthlyActivityResponse | null>(null);
   
   const [counts, setCounts] = useState({ posts: 0, comments: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -75,8 +90,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           comments: commentsRes.meta.totalItems,
         });
 
-        const analysisRes = await getUserGithubAnalysis(userId).catch(() => null);
+        const [analysisRes, summaryRes, contributionsRes, monthlyRes] = await Promise.all([
+          getUserGithubAnalysis(userId).catch(() => null),
+          getUserGithubSummary(userId).catch(() => null),
+          getUserGithubRecentContributions(userId, 5).catch(() => null),
+          getUserGithubMonthlyActivity(userId).catch(() => null),
+        ]);
         setGithubAnalysis(analysisRes);
+        setGithubSummary(summaryRes);
+        setRecentContributions(contributionsRes);
+        setMonthlyActivity(monthlyRes);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       } finally {
@@ -93,8 +116,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     const fetchTabData = async () => {
       try {
         if (activeTab === '활동') {
-          const analysisRes = await getUserGithubAnalysis(userId).catch(() => null);
+          const [analysisRes, summaryRes, contributionsRes, monthlyRes] = await Promise.all([
+            getUserGithubAnalysis(userId).catch(() => null),
+            getUserGithubSummary(userId).catch(() => null),
+            getUserGithubRecentContributions(userId, 5).catch(() => null),
+            getUserGithubMonthlyActivity(userId).catch(() => null),
+          ]);
           setGithubAnalysis(analysisRes);
+          setGithubSummary(summaryRes);
+          setRecentContributions(contributionsRes);
+          setMonthlyActivity(monthlyRes);
         } else if (activeTab === '작성글') {
           const res = await getUserPosts(userId);
           setPosts(res.posts);
@@ -393,6 +424,139 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   </div>
                 )}
               </div>
+
+              {githubSummary && (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                  <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
+                    <TrendingUp className="h-4 w-4" />
+                    Detailed Stats
+                  </h2>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div className="rounded-lg bg-gray-50 p-3 text-center">
+                      <div className="text-xl font-bold text-gray-900">{githubSummary.totalLines?.toLocaleString() ?? '-'}</div>
+                      <div className="text-xs text-gray-500">Total Lines</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3 text-center">
+                      <div className="text-xl font-bold text-gray-900">{githubSummary.ownedReposCount ?? '-'}</div>
+                      <div className="text-xs text-gray-500">Owned Repos</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3 text-center">
+                      <div className="text-xl font-bold text-gray-900">{githubSummary.contributedReposCount ?? '-'}</div>
+                      <div className="text-xs text-gray-500">Contributed</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3 text-center">
+                      <div className="text-xl font-bold text-gray-900">{githubSummary.totalStarsReceived ?? '-'}</div>
+                      <div className="text-xs text-gray-500">Stars Received</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {recentContributions?.repositories && recentContributions.repositories.length > 0 && (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                  <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
+                    <FolderGit className="h-4 w-4" />
+                    Recent Contributions
+                  </h2>
+                  <div className="space-y-3">
+                    {recentContributions.repositories.map((repo, idx) => (
+                      <a
+                        key={idx}
+                        href={`https://github.com/${repo.repoOwner}/${repo.repoName}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate font-medium text-gray-900">
+                              {repo.repoOwner}/{repo.repoName}
+                            </span>
+                            <ExternalLink className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                          </div>
+                          <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+                            {repo.primaryLanguage && (
+                              <span className="rounded bg-gray-100 px-1.5 py-0.5">{repo.primaryLanguage}</span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <GitCommit className="h-3 w-3" />
+                              {repo.userCommitsCount}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <GitPullRequest className="h-3 w-3" />
+                              {repo.userPrsCount}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Star className="h-3 w-3" />
+                              {repo.stargazersCount}
+                            </span>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {monthlyActivity?.activities && monthlyActivity.activities.length > 0 && (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                  <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
+                    <Calendar className="h-4 w-4" />
+                    Monthly Activity
+                  </h2>
+                  <div className="space-y-2">
+                    {monthlyActivity.activities.slice(-6).map((activity, idx) => {
+                      const maxCommits = Math.max(...monthlyActivity.activities.map(a => a.commitsCount), 1);
+                      const percentage = (activity.commitsCount / maxCommits) * 100;
+                      return (
+                        <div key={idx} className="flex items-center gap-3">
+                          <span className="w-16 text-xs text-gray-500">
+                            {activity.year}.{String(activity.month).padStart(2, '0')}
+                          </span>
+                          <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-gray-600 to-gray-800 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="w-16 text-xs text-gray-600 text-right">{activity.commitsCount} commits</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(githubAnalysis?.analysis?.workingStyle || githubAnalysis?.analysis?.collaborationStyle) && (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                  <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
+                    <Users className="h-4 w-4" />
+                    Work Style
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {githubAnalysis.analysis.workingStyle && (
+                      <span className="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700">
+                        {githubAnalysis.analysis.workingStyle}
+                      </span>
+                    )}
+                    {githubAnalysis.analysis.collaborationStyle && (
+                      <span className="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700">
+                        {githubAnalysis.analysis.collaborationStyle}
+                      </span>
+                    )}
+                  </div>
+                  {githubAnalysis.bio && (
+                    <p className="mt-3 text-sm text-gray-600">{githubAnalysis.bio}</p>
+                  )}
+                  <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {githubAnalysis.followers ?? 0} followers
+                    </span>
+                    <span>{githubAnalysis.following ?? 0} following</span>
+                  </div>
+                </div>
+              )}
 
               {!profile?.githubUrl && (
                 <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">

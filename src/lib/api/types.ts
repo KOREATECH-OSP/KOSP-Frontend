@@ -125,7 +125,7 @@ export interface GithubActivityResponse {
 }
 
 // ============================================
-// GitHub Statistics Types (Analysis)
+// GitHub Statistics Types
 // ============================================
 
 export interface GithubStats {
@@ -163,6 +163,51 @@ export interface GithubAnalysisResponse {
   stats: GithubStats;
   analysis: GithubAnalysisData;
   languageStats: Record<string, number>;
+}
+
+export interface GithubSummaryResponse {
+  githubId: string;
+  totalCommits: number;
+  totalLines: number;
+  totalAdditions: number;
+  totalDeletions: number;
+  totalPrs: number;
+  totalIssues: number;
+  ownedReposCount: number;
+  contributedReposCount: number;
+  totalStarsReceived: number;
+  totalScore: number;
+  calculatedAt: string;
+  dataPeriodStart: string;
+  dataPeriodEnd: string;
+}
+
+export interface RecentRepository {
+  repoOwner: string;
+  repoName: string;
+  stargazersCount: number;
+  userCommitsCount: number;
+  userPrsCount: number;
+  userIssuesCount: number;
+  lastCommitDate: string;
+  primaryLanguage: string;
+}
+
+export interface GithubRecentContributionsResponse {
+  repositories: RecentRepository[];
+}
+
+export interface MonthlyActivity {
+  year: number;
+  month: number;
+  commitsCount: number;
+  linesCount: number;
+  prsCount: number;
+  issuesCount: number;
+}
+
+export interface GithubMonthlyActivityResponse {
+  activities: MonthlyActivity[];
 }
 
 // ============================================

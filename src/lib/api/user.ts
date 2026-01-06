@@ -8,6 +8,9 @@ import type {
   CommentListResponse,
   GithubActivityResponse,
   GithubAnalysisResponse,
+  GithubSummaryResponse,
+  GithubRecentContributionsResponse,
+  GithubMonthlyActivityResponse,
   AuthTokenResponse,
 } from './types';
 
@@ -103,13 +106,50 @@ export async function getUserGithubActivities(
   });
 }
 
-/**
- * 사용자 GitHub 활동 분석 (통계)
- */
 export async function getUserGithubAnalysis(
   userId: number
 ): Promise<GithubAnalysisResponse> {
   return apiClient<GithubAnalysisResponse>(`/v1/users/${userId}/github/analysis`, {
     cache: 'no-store',
   });
+}
+
+export async function getUserGithubSummary(
+  userId: number
+): Promise<GithubSummaryResponse> {
+  return apiClient<GithubSummaryResponse>(`/v1/users/${userId}/github/summary`, {
+    cache: 'no-store',
+  });
+}
+
+export async function getUserGithubRecentContributions(
+  userId: number,
+  limit: number = 10
+): Promise<GithubRecentContributionsResponse> {
+  return apiClient<GithubRecentContributionsResponse>(
+    `/v1/users/${userId}/github/recent-contributions?limit=${limit}`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function getUserGithubMonthlyActivity(
+  userId: number,
+  options?: {
+    startYear?: number;
+    startMonth?: number;
+    endYear?: number;
+    endMonth?: number;
+  }
+): Promise<GithubMonthlyActivityResponse> {
+  const params = new URLSearchParams();
+  if (options?.startYear) params.append('startYear', options.startYear.toString());
+  if (options?.startMonth) params.append('startMonth', options.startMonth.toString());
+  if (options?.endYear) params.append('endYear', options.endYear.toString());
+  if (options?.endMonth) params.append('endMonth', options.endMonth.toString());
+  
+  const query = params.toString();
+  return apiClient<GithubMonthlyActivityResponse>(
+    `/v1/users/${userId}/github/monthly-activity${query ? `?${query}` : ''}`,
+    { cache: 'no-store' }
+  );
 }

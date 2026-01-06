@@ -36,8 +36,12 @@ interface PasswordForm {
 
 export default function UserEditClient() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[DEBUG] Session:', { status, hasToken: !!session?.accessToken });
+  }
 
   // 프로필 상태
   const [profile, setProfile] = useState<UserProfile>({
@@ -100,17 +104,19 @@ export default function UserEditClient() {
   };
 
   const handleSave = async () => {
-    if (!session?.user?.id || !session?.accessToken) {
-      toast.error('로그인이 필요합니다');
+    const token = session?.accessToken;
+    const userId = session?.user?.id;
+    if (status !== 'authenticated' || !userId || !token || typeof token !== 'string') {
+      toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
       return;
     }
 
     setIsSaving(true);
     try {
       await updateUser(
-        Number(session.user.id),
+        Number(userId),
         { introduction: profile.introduction },
-        { accessToken: session.accessToken }
+        { accessToken: token }
       );
       toast.success('프로필이 수정되었습니다');
       router.push('/user');
@@ -139,8 +145,9 @@ export default function UserEditClient() {
   };
 
   const handleChangePassword = async () => {
-    if (!session?.accessToken) {
-      toast.error('로그인이 필요합니다');
+    const token = session?.accessToken;
+    if (status !== 'authenticated' || !token || typeof token !== 'string') {
+      toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
       return;
     }
 
@@ -167,7 +174,7 @@ export default function UserEditClient() {
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
         },
-        { accessToken: session.accessToken }
+        { accessToken: token }
       );
       toast.success('비밀번호가 변경되었습니다');
       setPasswordForm({
@@ -184,8 +191,10 @@ export default function UserEditClient() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!session?.user?.id || !session?.accessToken) {
-      toast.error('로그인이 필요합니다');
+    const token = session?.accessToken;
+    const userId = session?.user?.id;
+    if (status !== 'authenticated' || !userId || !token || typeof token !== 'string') {
+      toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
       return;
     }
 
@@ -196,7 +205,7 @@ export default function UserEditClient() {
 
     setIsDeleting(true);
     try {
-      await deleteUser(Number(session.user.id), { accessToken: session.accessToken });
+      await deleteUser(Number(userId), { accessToken: token });
       toast.success('회원 탈퇴가 완료되었습니다');
       await signOut({ redirect: false });
       router.push('/');
