@@ -23,7 +23,6 @@ import {
   Code,
   Users,
   Calendar,
-  Clock,
   FolderGit,
   ExternalLink,
   TrendingUp,
