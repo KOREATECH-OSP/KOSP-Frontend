@@ -14,3 +14,4 @@ export * from './team';
 export * from './recruit';
 export * from './challenge';
 export * from './board';
+export * from './admin';

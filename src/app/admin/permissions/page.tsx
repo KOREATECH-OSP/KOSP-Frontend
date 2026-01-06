@@ -1,26 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Key } from 'lucide-react';
-import type { Permission } from '@/types/admin';
-
-const MOCK_PERMISSIONS: Permission[] = [
-  { id: 1, name: 'USER_CREATE', description: '사용자 생성 권한' },
-  { id: 2, name: 'USER_READ', description: '사용자 조회 권한' },
-  { id: 3, name: 'USER_UPDATE', description: '사용자 수정 권한' },
-  { id: 4, name: 'USER_DELETE', description: '사용자 삭제 권한' },
-  { id: 5, name: 'ARTICLE_CREATE', description: '게시글 작성 권한' },
-  { id: 6, name: 'ARTICLE_READ', description: '게시글 조회 권한' },
-  { id: 7, name: 'ARTICLE_UPDATE', description: '게시글 수정 권한' },
-  { id: 8, name: 'ARTICLE_DELETE', description: '게시글 삭제 권한' },
-  { id: 9, name: 'CHALLENGE_MANAGE', description: '챌린지 관리 권한' },
-  { id: 10, name: 'REPORT_MANAGE', description: '신고 관리 권한' },
-];
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Search, Key, Loader2 } from 'lucide-react';
+import { getPermissions } from '@/lib/api/admin';
+import type { PermissionResponse } from '@/types/admin';
+import { toast } from '@/lib/toast';
 
 export default function AdminPermissionsPage() {
+  const { data: session } = useSession();
+  const [permissions, setPermissions] = useState<PermissionResponse[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredPermissions = MOCK_PERMISSIONS.filter(
+  useEffect(() => {
+    async function fetchPermissions() {
+      if (!session?.accessToken) return;
+
+      setIsLoading(true);
+      try {
+        const data = await getPermissions({ accessToken: session.accessToken });
+        setPermissions(data.permissions);
+      } catch (err) {
+        console.error('Failed to fetch permissions:', err);
+        toast.error('권한 목록을 불러오는데 실패했습니다.');
+        setPermissions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPermissions();
+  }, [session?.accessToken]);
+
+  const filteredPermissions = permissions.filter(
     (permission) =>
       permission.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       permission.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -44,7 +57,7 @@ export default function AdminPermissionsPage() {
                 <span className="text-sm text-gray-500">전체 권한</span>
               </div>
               <p className="text-2xl font-bold text-gray-900">
-                {MOCK_PERMISSIONS.length}개
+                {permissions.length}개
               </p>
             </div>
           </div>
@@ -63,55 +76,61 @@ export default function AdminPermissionsPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                    ID
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                    권한 이름
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                    설명
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredPermissions.map((permission) => (
-                  <tr
-                    key={permission.id}
-                    className="transition-colors hover:bg-gray-50"
-                  >
-                    <td className="px-6 py-4 text-sm text-gray-400">
-                      #{permission.id}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Key className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">
-                          {permission.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {permission.description}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {isLoading ? (
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
-
-          {filteredPermissions.length === 0 && (
-            <div className="py-12 text-center">
-              <Key className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-              <p className="text-gray-500">검색 결과가 없습니다</p>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                      ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                      권한 이름
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                      설명
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredPermissions.map((permission) => (
+                    <tr
+                      key={permission.id}
+                      className="transition-colors hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4 text-sm text-gray-400">
+                        #{permission.id}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Key className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium text-gray-900">
+                            {permission.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {permission.description}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+
+            {filteredPermissions.length === 0 && (
+              <div className="py-12 text-center">
+                <Key className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+                <p className="text-gray-500">검색 결과가 없습니다</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -107,9 +107,9 @@ export async function getUserGithubActivities(
  * 사용자 GitHub 활동 분석 (통계)
  */
 export async function getUserGithubAnalysis(
-  username: string
+  userId: number
 ): Promise<GithubAnalysisResponse> {
-  return apiClient<GithubAnalysisResponse>(`/v1/github/users/${username}/analysis`, {
+  return apiClient<GithubAnalysisResponse>(`/v1/users/${userId}/github/analysis`, {
     cache: 'no-store',
   });
 }

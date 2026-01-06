@@ -27,7 +27,7 @@ export async function getArticles(
   const { page = 1, size = 10 } = options;
   const params = new URLSearchParams({
     boardId: String(boardId),
-    page: String(page),
+    page: String(page - 1),
     size: String(size),
   });
   return apiClient<ArticleListResponse>(`/v1/community/articles?${params}`, {

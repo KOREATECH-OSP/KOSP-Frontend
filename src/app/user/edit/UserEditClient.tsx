@@ -11,7 +11,6 @@ import {
   User as UserIcon,
   Trash2,
   Camera,
-  Github,
   Save,
   AlertTriangle,
   Mail,
@@ -362,25 +361,6 @@ export default function UserEditClient() {
                 </p>
               </div>
             )}
-
-            {/* GitHub URL */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                GitHub 주소
-              </label>
-              <div className="relative">
-                <Github className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="url"
-                  value={profile.githubUrl}
-                  onChange={(e) =>
-                    setProfile({ ...profile, githubUrl: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-gray-200/70 py-3 pl-11 pr-4 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                  placeholder="https://github.com/username"
-                />
-              </div>
-            </div>
 
             {/* 자기소개 */}
             <div>

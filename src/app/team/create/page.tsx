@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Upload, X, ArrowLeft, Loader2, Users } from 'lucide-react';
@@ -11,8 +11,15 @@ import { API_BASE_URL } from '@/lib/api/config';
 
 export default function CreateTeamPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      toast.error('로그인이 필요합니다.');
+      router.push('/login');
+    }
+  }, [status, router]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -99,6 +106,11 @@ export default function CreateTeamPage() {
       return;
     }
 
+    if (status === 'loading') {
+      toast.error('잠시 후 다시 시도해주세요.');
+      return;
+    }
+
     const accessToken = session?.accessToken;
     if (!accessToken) {
       toast.error('로그인이 필요합니다.');
@@ -144,6 +156,14 @@ export default function CreateTeamPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">

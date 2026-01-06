@@ -75,15 +75,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           comments: commentsRes.meta.totalItems,
         });
 
-        if (profileData.githubUrl) {
-           const urlParts = profileData.githubUrl.split('/');
-           const username = urlParts[urlParts.length - 1];
-           
-           if (username) {
-             const analysisRes = await getUserGithubAnalysis(username).catch(() => null);
-             setGithubAnalysis(analysisRes);
-           }
-        }
+        const analysisRes = await getUserGithubAnalysis(userId).catch(() => null);
+        setGithubAnalysis(analysisRes);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       } finally {
@@ -100,14 +93,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     const fetchTabData = async () => {
       try {
         if (activeTab === '활동') {
-          if (profile?.githubUrl) {
-            const urlParts = profile.githubUrl.split('/');
-            const username = urlParts[urlParts.length - 1];
-            if (username) {
-              const analysisRes = await getUserGithubAnalysis(username).catch(() => null);
-              setGithubAnalysis(analysisRes);
-            }
-          }
+          const analysisRes = await getUserGithubAnalysis(userId).catch(() => null);
+          setGithubAnalysis(analysisRes);
         } else if (activeTab === '작성글') {
           const res = await getUserPosts(userId);
           setPosts(res.posts);

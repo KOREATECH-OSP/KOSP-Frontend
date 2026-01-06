@@ -35,7 +35,7 @@ export default function CommunityPageClient({
   const fetchArticles = (boardId: number, page: number) => {
     setIsLoading(true);
     startTransition(() => {
-      fetch(`${API_BASE_URL}/v1/community/articles?boardId=${boardId}&page=${page}&size=10`)
+      fetch(`${API_BASE_URL}/v1/community/articles?boardId=${boardId}&page=${page - 1}&size=10`)
         .then((res) => res.json())
         .then((data: ArticleListResponse) => {
           setArticles(data.posts);

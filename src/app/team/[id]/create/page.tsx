@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import {
   ArrowLeft,
   Plus,
@@ -13,11 +13,12 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
+import { API_BASE_URL } from '@/lib/api/config';
+import { toast } from '@/lib/toast';
 import type { BoardListResponse } from '@/lib/api/types';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 interface RecruitFormData {
   title: string;
@@ -39,7 +40,15 @@ export default function CreateRecruitPage() {
   const router = useRouter();
   const params = useParams();
   const teamId = parseInt(params.id as string, 10);
+  const { data: session, status } = useSession();
   const { upload: uploadImage } = useImageUpload();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      toast.error('로그인이 필요합니다.');
+      router.push('/login');
+    }
+  }, [status, router]);
 
   const [formData, setFormData] = useState<RecruitFormData>({
     title: '',
@@ -158,9 +167,20 @@ export default function CreateRecruitPage() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (status === 'loading') {
+      toast.error('잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    const accessToken = session?.accessToken;
+    if (!accessToken) {
+      toast.error('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // 모집공고 게시판 ID 조회
       const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`);
       if (!boardsRes.ok) {
         throw new Error('게시판 정보를 불러오지 못했습니다.');
@@ -174,7 +194,11 @@ export default function CreateRecruitPage() {
 
       const response = await fetch(`${API_BASE_URL}/v1/community/recruits`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        credentials: 'include',
         body: JSON.stringify({
           boardId: recruitBoard.id,
           title: formData.title,
@@ -189,14 +213,16 @@ export default function CreateRecruitPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create recruit');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || '모집공고 작성에 실패했습니다.');
       }
 
-      alert('팀원 모집글이 성공적으로 등록되었습니다!');
+      toast.success('팀원 모집글이 등록되었습니다.');
       router.back();
     } catch (error) {
       console.error('모집공고 작성 실패:', error);
-      alert('등록에 실패했습니다. 다시 시도해주세요.');
+      const message = error instanceof Error ? error.message : '등록에 실패했습니다.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
