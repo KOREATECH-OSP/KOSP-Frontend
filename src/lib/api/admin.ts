@@ -14,6 +14,13 @@ import type {
   AdminUserListResponse,
   AdminStatsResponse,
   AdminActivityResponse,
+  AdminChallengeResponse,
+  AdminChallengeListResponse,
+  AdminChallengeCreateRequest,
+  AdminChallengeUpdateRequest,
+  AdminNoticeResponse,
+  AdminNoticeListResponse,
+  AdminNoticeCreateRequest,
 } from '@/types/admin';
 
 interface AuthOptions {
@@ -366,4 +373,129 @@ export async function activateUser(
     method: 'POST',
     accessToken: auth.accessToken,
   });
+}
+
+// ============================================
+// Challenge Management APIs
+// ============================================
+
+/**
+ * 챌린지 목록 조회
+ */
+export async function getAdminChallenges(
+  auth: AuthOptions
+): Promise<AdminChallengeResponse[]> {
+  const response = await clientApiClient<AdminChallengeListResponse>('/v1/admin/challenges', {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+  return response.challenges || [];
+}
+
+/**
+ * 챌린지 생성
+ */
+export async function createAdminChallenge(
+  data: AdminChallengeCreateRequest,
+  auth: AuthOptions
+): Promise<AdminChallengeResponse> {
+  return clientApiClient<AdminChallengeResponse>('/v1/admin/challenges', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 챌린지 수정
+ */
+export async function updateAdminChallenge(
+  challengeId: number,
+  data: AdminChallengeUpdateRequest,
+  auth: AuthOptions
+): Promise<AdminChallengeResponse> {
+  return clientApiClient<AdminChallengeResponse>(`/v1/admin/challenges/${challengeId}`, {
+    method: 'PUT',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 챌린지 삭제
+ */
+export async function deleteAdminChallenge(
+  challengeId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/challenges/${challengeId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// Notice Management APIs
+// ============================================
+
+/**
+ * 공지사항 목록 조회 (boardId=3이 공지사항 게시판)
+ */
+export async function getAdminNotices(
+  auth: AuthOptions,
+  page: number = 0,
+  size: number = 20
+): Promise<AdminNoticeListResponse> {
+  try {
+    const response = await clientApiClient<AdminNoticeListResponse>(
+      `/v1/community/articles?boardId=3&page=${page}&size=${size}`,
+      {
+        accessToken: auth.accessToken,
+        cache: 'no-store',
+      }
+    );
+    return {
+      posts: response.posts || [],
+      pagination: response.pagination || { currentPage: 0, totalPages: 1, totalItems: 0 },
+    };
+  } catch {
+    return {
+      posts: [],
+      pagination: { currentPage: 0, totalPages: 1, totalItems: 0 },
+    };
+  }
+}
+
+/**
+ * 공지사항 생성
+ */
+export async function createAdminNotice(
+  data: AdminNoticeCreateRequest,
+  auth: AuthOptions
+): Promise<AdminNoticeResponse> {
+  return clientApiClient<AdminNoticeResponse>('/v1/admin/notices', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 공지사항 삭제
+ */
+export async function deleteAdminNotice(
+  noticeId: number,
+  auth: AuthOptions
+): Promise<void> {
+  try {
+    await clientApiClient<void>(`/v1/admin/articles/${noticeId}`, {
+      method: 'DELETE',
+      accessToken: auth.accessToken,
+    });
+  } catch {
+    await clientApiClient<void>(`/v1/admin/notices/${noticeId}`, {
+      method: 'DELETE',
+      accessToken: auth.accessToken,
+    });
+  }
 }

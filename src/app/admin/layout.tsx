@@ -16,6 +16,9 @@ import {
   ChevronRight,
   LayoutDashboard,
   LogOut,
+  Trophy,
+  Bell,
+  FolderOpen,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
@@ -46,6 +49,19 @@ const navigation: NavItem[] = [
       { name: 'Permissions', href: '/admin/permissions', icon: Key },
       { name: 'Policies', href: '/admin/policies', icon: FileText },
       { name: 'Roles', href: '/admin/roles', icon: Shield },
+    ],
+  },
+  {
+    name: '챌린지 관리',
+    href: '/admin/challenges/list',
+    icon: Trophy,
+  },
+  {
+    name: '콘텐츠 관리',
+    href: '/admin/contents',
+    icon: FolderOpen,
+    children: [
+      { name: '공지사항', href: '/admin/contents/notices', icon: Bell },
     ],
   },
 ];

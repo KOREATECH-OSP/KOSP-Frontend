@@ -120,6 +120,86 @@ export interface AdminActivityResponse {
 }
 
 // ============================================
+// Admin Challenge Types
+// ============================================
+
+export interface AdminChallengeResponse {
+  id: number;
+  name: string;
+  description: string;
+  condition: string;
+  tier: number;
+  imageUrl: string;
+  point: number;
+  maxProgress: number;
+  progressField: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminChallengeListResponse {
+  challenges: AdminChallengeResponse[];
+}
+
+export interface AdminChallengeCreateRequest {
+  name: string;
+  description: string;
+  condition: string;
+  tier: number;
+  imageUrl: string;
+  point: number;
+  maxProgress: number;
+  progressField: string;
+}
+
+export interface AdminChallengeUpdateRequest {
+  name: string;
+  description: string;
+  condition: string;
+  tier: number;
+  imageUrl: string;
+  point: number;
+  maxProgress: number;
+  progressField: string;
+}
+
+// ============================================
+// Admin Notice Types
+// ============================================
+
+export interface AdminNoticeResponse {
+  id: number;
+  title: string;
+  content: string;
+  isPinned: boolean;
+  tags: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  author?: {
+    id: number;
+    name: string;
+  };
+  boardId?: number;
+  viewCount?: number;
+}
+
+export interface AdminNoticeListResponse {
+  posts: AdminNoticeResponse[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
+}
+
+export interface AdminNoticeCreateRequest {
+  title: string;
+  content: string;
+  isPinned: boolean;
+  tags: string[];
+}
+
+// ============================================
 // Legacy Types (for backward compatibility)
 // ============================================
 
