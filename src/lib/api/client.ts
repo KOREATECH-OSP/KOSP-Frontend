@@ -60,7 +60,6 @@ export async function apiClient<T>(
     method,
     headers: requestHeaders,
     cache,
-    credentials: 'include',
   };
 
   if (body) {
@@ -110,7 +109,6 @@ export async function clientApiClient<T>(
     headers: requestHeaders,
     body: body ? JSON.stringify(body) : undefined,
     cache,
-    credentials: 'include',
   });
 
   if (!response.ok) {

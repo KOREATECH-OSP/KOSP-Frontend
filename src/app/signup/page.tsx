@@ -268,12 +268,12 @@ function SignupContent() {
           </div>
           <h1 className="text-[22px] font-bold text-[#191f28] mb-2">잘못된 접근입니다</h1>
           <p className="text-[15px] text-[#8b95a1] mb-8">{tokenError}</p>
-          <Link
+          <a
             href="/signup"
             className="inline-flex items-center justify-center w-full h-[54px] bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] transition-colors"
           >
             회원가입 다시 시작하기
-          </Link>
+          </a>
         </div>
       </div>
     );
