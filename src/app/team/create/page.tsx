@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
+import { uploadFile } from '@/lib/api/upload';
 
 export default function CreateTeamPage() {
   const router = useRouter();
@@ -24,9 +25,9 @@ export default function CreateTeamPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    imageUrl: '',
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,19 +63,18 @@ export default function CreateTeamPage() {
         return;
       }
 
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        setFormData((prev) => ({ ...prev, imageUrl: result }));
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleRemoveImage = () => {
+    setImageFile(null);
     setImagePreview('');
-    setFormData((prev) => ({ ...prev, imageUrl: '' }));
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -121,6 +121,18 @@ export default function CreateTeamPage() {
     setIsSubmitting(true);
 
     try {
+      // 이미지 파일이 있으면 먼저 업로드
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        try {
+          const fileResponse = await uploadFile(imageFile, { accessToken });
+          imageUrl = fileResponse.url;
+        } catch (uploadError) {
+          console.error('이미지 업로드 실패:', uploadError);
+          throw new Error('이미지 업로드에 실패했습니다.');
+        }
+      }
+
       const response = await fetch(`${API_BASE_URL}/v1/teams`, {
         method: 'POST',
         headers: {
@@ -131,7 +143,7 @@ export default function CreateTeamPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
-          imageUrl: formData.imageUrl || undefined,
+          imageUrl,
         }),
       });
 

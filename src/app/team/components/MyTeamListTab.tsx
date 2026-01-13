@@ -1,7 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Users, User, ChevronRight, Crown } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Users, User, ChevronRight, Crown, Loader2 } from 'lucide-react';
+import { getMyTeam } from '@/lib/api';
+import type { TeamDetailResponse } from '@/lib/api/types';
 
 interface MyTeam {
   id: number;
@@ -13,26 +17,87 @@ interface MyTeam {
 }
 
 export default function MyTeamListTab() {
-  const myTeams: MyTeam[] = [
-    {
-      id: 1,
-      name: 'React 스터디 그룹',
-      description:
-        'React 18과 Next.js를 함께 공부하는 스터디입니다. 매주 목요일 저녁 8시에 온라인으로 진행되며, 각자 학습한 내용을 공유하고 토론하는 시간을 가집니다.',
-      memberCount: 5,
-      createdBy: '김개발',
-      isLeader: true,
-    },
-    {
-      id: 2,
-      name: '오픈소스 컨트리뷰션 팀',
-      description:
-        'Hacktoberfest를 준비하며 함께 오픈소스에 기여하는 팀입니다.',
-      memberCount: 8,
-      createdBy: '이코드',
-      isLeader: false,
-    },
-  ];
+  const { data: session, status } = useSession();
+  const [myTeams, setMyTeams] = useState<MyTeam[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchMyTeam() {
+      if (status === 'loading') return;
+
+      if (!session?.accessToken) {
+        setIsLoading(false);
+        setError('로그인이 필요합니다.');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const teamData: TeamDetailResponse = await getMyTeam(session.accessToken);
+
+        const currentUserId = session.user?.id ? Number(session.user.id) : null;
+        const leader = teamData.members?.find((m) => m.role === 'LEADER');
+        const isLeader = leader?.id === currentUserId;
+
+        setMyTeams([
+          {
+            id: teamData.id,
+            name: teamData.name,
+            description: teamData.description,
+            memberCount: teamData.members?.length ?? 0,
+            createdBy: leader?.name ?? '미지정',
+            isLeader,
+          },
+        ]);
+      } catch (err) {
+        // 404는 팀이 없는 경우이므로 빈 배열로 처리
+        if (err instanceof Error && 'status' in err && (err as { status: number }).status === 404) {
+          setMyTeams([]);
+        } else {
+          setError('팀 정보를 불러오는데 실패했습니다.');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchMyTeam();
+  }, [session, status]);
+
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <Loader2 className="mb-3 h-8 w-8 animate-spin text-gray-400" />
+        <p className="text-gray-500">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <Users className="mb-3 h-12 w-12 text-gray-200" />
+        <p className="text-gray-500">로그인이 필요합니다.</p>
+        <Link
+          href="/login"
+          className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          로그인하기
+        </Link>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <Users className="mb-3 h-12 w-12 text-gray-200" />
+        <p className="text-gray-500">{error}</p>
+      </div>
+    );
+  }
 
   if (myTeams.length === 0) {
     return (

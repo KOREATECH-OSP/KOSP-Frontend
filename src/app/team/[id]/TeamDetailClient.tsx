@@ -56,24 +56,17 @@ export default function TeamDetailClient({ team: initialTeam }: TeamDetailClient
       toast.error('학번을 입력해주세요');
       return;
     }
-    toast.success(`${inviteStudentId}님께 초대장을 보냈습니다`);
+    toast.info('아직 준비 중인 기능입니다.');
     setInviteStudentId('');
     setIsInviteModalOpen(false);
   };
 
-  const handleRemoveMember = (memberName: string) => {
-    if (confirm(`${memberName}님을 팀에서 내보내시겠습니까?`)) {
-      toast.success(`${memberName}님이 팀에서 제거되었습니다`);
-    }
+  const handleRemoveMember = () => {
+    toast.info('아직 준비 중인 기능입니다.');
   };
 
-  const handleSaveSettings = (values: TeamSettingsFormValues) => {
-    setTeam((prev) => ({
-      ...prev,
-      name: values.name,
-      description: values.description,
-    }));
-    toast.success('팀 정보가 수정되었습니다');
+  const handleSaveSettings = () => {
+    toast.info('아직 준비 중인 기능입니다.');
     setIsSettingsModalOpen(false);
   };
 
@@ -199,7 +192,7 @@ export default function TeamDetailClient({ team: initialTeam }: TeamDetailClient
                     </div>
                     {canRemoveMember() && member.role !== 'LEADER' && (
                       <button
-                        onClick={() => handleRemoveMember(member.name)}
+                        onClick={handleRemoveMember}
                         className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
                       >
                         <UserMinus className="h-4 w-4" />

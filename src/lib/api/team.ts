@@ -33,3 +33,13 @@ export async function createTeam(data: TeamCreateRequest): Promise<void> {
     body: data,
   });
 }
+
+/**
+ * 나의 팀 조회
+ */
+export async function getMyTeam(accessToken: string): Promise<TeamDetailResponse> {
+  return apiClient<TeamDetailResponse>('/v1/teams/me', {
+    cache: 'no-store',
+    accessToken,
+  });
+}

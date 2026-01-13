@@ -17,8 +17,9 @@ import { useSession } from 'next-auth/react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
 import { API_BASE_URL } from '@/lib/api/config';
+import { uploadFile } from '@/lib/api/upload';
 import { toast } from '@/lib/toast';
-import type { BoardListResponse } from '@/lib/api/types';
+import type { BoardListResponse, FileResponse } from '@/lib/api/types';
 
 interface RecruitFormData {
   title: string;
@@ -181,6 +182,20 @@ export default function CreateRecruitPage() {
 
     setIsSubmitting(true);
     try {
+      // 첨부파일 업로드
+      const attachmentIds: number[] = [];
+      if (formData.files.length > 0) {
+        for (const file of formData.files) {
+          try {
+            const fileResponse: FileResponse = await uploadFile(file, { accessToken });
+            attachmentIds.push(fileResponse.id);
+          } catch (uploadError) {
+            console.error('파일 업로드 실패:', file.name, uploadError);
+            throw new Error(`파일 업로드 실패: ${file.name}`);
+          }
+        }
+      }
+
       const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`);
       if (!boardsRes.ok) {
         throw new Error('게시판 정보를 불러오지 못했습니다.');
@@ -194,7 +209,7 @@ export default function CreateRecruitPage() {
 
       const response = await fetch(`${API_BASE_URL}/v1/community/recruits`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -209,6 +224,7 @@ export default function CreateRecruitPage() {
           endDate: formData.endDate
             ? new Date(formData.endDate).toISOString()
             : undefined,
+          attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
         }),
       });
 
