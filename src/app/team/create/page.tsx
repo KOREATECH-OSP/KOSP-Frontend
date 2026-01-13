@@ -139,7 +139,6 @@ export default function CreateTeamPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,

@@ -59,6 +59,7 @@ export async function apiClient<T>(
   const fetchOptions: RequestInit & { next?: { revalidate?: number } } = {
     method,
     headers: requestHeaders,
+    credentials: 'include',
     cache,
   };
 
@@ -107,6 +108,7 @@ export async function clientApiClient<T>(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
     headers: requestHeaders,
+    credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
     cache,
   });

@@ -13,7 +13,6 @@ export async function uploadFile(file: File, auth: AuthOptions): Promise<FileRes
   const response = await fetch(`${API_BASE_URL}/v1/files`, {
     method: 'POST',
     body: formData,
-    credentials: 'include',
     headers: {
       'Authorization': `Bearer ${auth.accessToken}`,
     },

@@ -165,7 +165,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
       const attachmentIds: number[] = [];
       if (formData.files.length > 0) {
         for (const file of formData.files) {
-          const uploaded = await uploadFile(file, auth);
+          const uploaded = await uploadFile(file, { accessToken: session.accessToken });
           attachmentIds.push(uploaded.id);
         }
       }

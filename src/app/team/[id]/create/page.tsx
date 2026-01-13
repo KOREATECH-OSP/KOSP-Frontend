@@ -211,7 +211,6 @@ export default function CreateRecruitPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
         body: JSON.stringify({
