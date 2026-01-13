@@ -21,7 +21,7 @@ interface AuthOptions {
 export async function signup(data: UserSignupRequest, signupToken: string): Promise<AuthTokenResponse> {
   return clientApiClient<AuthTokenResponse>('/v1/users/signup', {
     method: 'POST',
-    body: data,
+    body: { ...data, signupToken },
     headers: {
       'X-Signup-Token': signupToken,
     },

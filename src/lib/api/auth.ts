@@ -95,26 +95,40 @@ export async function resetPassword(data: PasswordResetRequest): Promise<void> {
 }
 
 export async function validateSignupToken(token: string): Promise<void> {
-  return clientApiClient<void>(`/v1/auth/verify/token/signup?token=${encodeURIComponent(token)}`);
+  return clientApiClient<void>('/v1/auth/verify/token/signup', {
+    headers: {
+      'X-Signup-Token': token,
+    },
+  });
+}
+
+function base64UrlDecode(str: string): string {
+  // base64url to base64 변환
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  // 패딩 추가
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  return atob(base64);
 }
 
 export function validateSignupTokenFormat(token: string): { valid: boolean; error?: string } {
   if (!token) {
     return { valid: false, error: '토큰이 없습니다' };
   }
-  
+
   const parts = token.split('.');
   if (parts.length !== 3) {
     return { valid: false, error: '유효하지 않은 토큰 형식입니다' };
   }
-  
+
   try {
-    const payload = JSON.parse(atob(parts[1]));
-    
+    const payload = JSON.parse(base64UrlDecode(parts[1]));
+
     if (payload.exp && payload.exp * 1000 < Date.now()) {
       return { valid: false, error: 'GitHub 인증이 만료되었어요' };
     }
-    
+
     return { valid: true };
   } catch {
     return { valid: false, error: '토큰을 파싱할 수 없습니다' };
