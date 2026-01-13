@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getTeam } from '@/lib/api';
+import { getTeam, getBoards, getRecruits } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
 import TeamDetailClient from './TeamDetailClient';
-import type { TeamDetailResponse } from '@/lib/api/types';
+import type { TeamDetailResponse, RecruitResponse } from '@/lib/api/types';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,14 +27,29 @@ const MOCK_TEAM: TeamDetailResponse = {
 async function fetchTeamData(teamId: number) {
   try {
     const team = await getTeam(teamId);
-    return { team, error: null };
+
+    // 팀의 모집공고 가져오기
+    let teamRecruits: RecruitResponse[] = [];
+    try {
+      const boardsResponse = await getBoards();
+      const recruitBoard = boardsResponse.boards.find((b) => b.isRecruitAllowed);
+      if (recruitBoard) {
+        const recruitsResponse = await getRecruits(recruitBoard.id);
+        // 현재 팀의 모집공고만 필터링
+        teamRecruits = recruitsResponse.recruits.filter((r) => r.teamId === teamId);
+      }
+    } catch {
+      // 모집공고 조회 실패시 무시
+    }
+
+    return { team, recruits: teamRecruits, error: null };
   } catch (error) {
     if (error instanceof ApiException) {
       if (error.status === 404) {
-        return { team: null, error: 'notfound' };
+        return { team: null, recruits: [], error: 'notfound' };
       }
       if (error.status === 401) {
-        return { team: null, error: 'unauthorized' };
+        return { team: null, recruits: [], error: 'unauthorized' };
       }
     }
     throw error;
@@ -49,11 +64,11 @@ export default async function TeamDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { team, error } = await fetchTeamData(teamId);
+  const { team, recruits, error } = await fetchTeamData(teamId);
 
   // 404인 경우 목업 데이터 사용 (개발용)
   if (error === 'notfound') {
-    return <TeamDetailClient team={{ ...MOCK_TEAM, id: teamId }} />;
+    return <TeamDetailClient team={{ ...MOCK_TEAM, id: teamId }} recruits={[]} />;
   }
 
   if (error === 'unauthorized') {
@@ -74,5 +89,5 @@ export default async function TeamDetailPage({ params }: PageProps) {
     );
   }
 
-  return <TeamDetailClient team={team!} />;
+  return <TeamDetailClient team={team!} recruits={recruits} />;
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import DOMPurify from 'isomorphic-dompurify';
 import {
   ArrowLeft,
   ThumbsUp,
@@ -51,6 +52,20 @@ export default function ArticleDetailClient({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isMine = currentUserId === article.author.id;
+
+  // XSS 방어를 위한 HTML sanitization
+  const sanitizedContent = useMemo(() => {
+    return DOMPurify.sanitize(article.content, {
+      ALLOWED_TAGS: [
+        'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'span', 'div', 'hr'
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+      ALLOW_DATA_ATTR: false,
+    });
+  }, [article.content]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -352,7 +367,7 @@ export default function ArticleDetailClient({
         <div className="px-5 py-6 sm:px-6">
           <div
             className="prose prose-sm max-w-none text-gray-700"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         </div>
 

@@ -196,7 +196,12 @@ export default function CreateRecruitPage() {
         }
       }
 
-      const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`);
+      const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        credentials: 'include',
+      });
       if (!boardsRes.ok) {
         throw new Error('게시판 정보를 불러오지 못했습니다.');
       }
@@ -204,13 +209,15 @@ export default function CreateRecruitPage() {
       const recruitBoard = boardsResponse.boards.find((b) => b.isRecruitAllowed);
 
       if (!recruitBoard) {
-        throw new Error('모집공고 게시판을 찾을 수 없습니다.');
+        console.error('Available boards:', boardsResponse.boards);
+        throw new Error('모집공고 게시판을 찾을 수 없습니다. 관리자에게 문의하세요.');
       }
 
       const response = await fetch(`${API_BASE_URL}/v1/community/recruits`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
         body: JSON.stringify({

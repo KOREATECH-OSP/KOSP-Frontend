@@ -22,7 +22,10 @@ export default function TeamPageClient({
   initialRecruits,
 }: TeamPageClientProps) {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<TabType>('전체');
+  // 모집공고가 있으면 '모집중' 탭을 기본으로, 없으면 '전체' 탭
+  const [activeTab, setActiveTab] = useState<TabType>(
+    initialRecruits.length > 0 ? '모집중' : '전체'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   const tabs: TabType[] = ['전체', '모집중', '나의팀'];

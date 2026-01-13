@@ -11,31 +11,35 @@ import {
   Crown,
   UserMinus,
   Settings,
+  Megaphone,
+  Plus,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import TeamSettingsModal from '@/common/components/team/TeamSettingsModal';
 import { toast } from '@/lib/toast';
-import type { TeamDetailResponse } from '@/lib/api/types';
+import { updateRecruitStatus, deleteRecruit } from '@/lib/api/recruit';
+import type { TeamDetailResponse, RecruitResponse, RecruitStatus } from '@/lib/api/types';
 
 type UserRole = 'leader' | 'member' | 'guest';
 
-interface TeamSettingsFormValues {
-  name: string;
-  description: string;
-  imageUrl?: string;
-  positions: string[];
-}
-
 interface TeamDetailClientProps {
   team: TeamDetailResponse;
+  recruits: RecruitResponse[];
 }
 
-export default function TeamDetailClient({ team: initialTeam }: TeamDetailClientProps) {
+export default function TeamDetailClient({ team: initialTeam, recruits: initialRecruits }: TeamDetailClientProps) {
   const { data: session } = useSession();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteStudentId, setInviteStudentId] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-  const [team, setTeam] = useState(initialTeam);
+  const [team] = useState(initialTeam);
+  const [recruits, setRecruits] = useState(initialRecruits);
+  const [activeRecruitMenu, setActiveRecruitMenu] = useState<number | null>(null);
 
   const currentUserId = session?.user?.id ? Number(session.user.id) : null;
   
@@ -68,6 +72,47 @@ export default function TeamDetailClient({ team: initialTeam }: TeamDetailClient
   const handleSaveSettings = () => {
     toast.info('아직 준비 중인 기능입니다.');
     setIsSettingsModalOpen(false);
+  };
+
+  const handleToggleRecruitStatus = async (recruitId: number, currentStatus: RecruitStatus) => {
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    const newStatus: RecruitStatus = currentStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
+    try {
+      await updateRecruitStatus(recruitId, { status: newStatus }, { accessToken: session.accessToken });
+      setRecruits((prev) =>
+        prev.map((r) => (r.id === recruitId ? { ...r, status: newStatus } : r))
+      );
+      toast.success(newStatus === 'OPEN' ? '모집을 재개했습니다.' : '모집을 마감했습니다.');
+    } catch (error) {
+      console.error('모집 상태 변경 실패:', error);
+      toast.error('모집 상태 변경에 실패했습니다.');
+    }
+    setActiveRecruitMenu(null);
+  };
+
+  const handleDeleteRecruit = async (recruitId: number) => {
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (!confirm('정말 이 모집공고를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await deleteRecruit(recruitId, { accessToken: session.accessToken });
+      setRecruits((prev) => prev.filter((r) => r.id !== recruitId));
+      toast.success('모집공고가 삭제되었습니다.');
+    } catch (error) {
+      console.error('모집공고 삭제 실패:', error);
+      toast.error('모집공고 삭제에 실패했습니다.');
+    }
+    setActiveRecruitMenu(null);
   };
 
   const leader = team.members?.find((m) => m.role === 'LEADER');
@@ -197,6 +242,128 @@ export default function TeamDetailClient({ team: initialTeam }: TeamDetailClient
                       >
                         <UserMinus className="h-4 w-4" />
                       </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 모집공고 섹션 */}
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                <Megaphone className="h-4 w-4" />
+                모집공고 ({recruits.length})
+              </h2>
+              {canEditTeam() && (
+                <Link
+                  href={`/team/${team.id}/create`}
+                  className="inline-flex items-center rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-gray-800"
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  작성
+                </Link>
+              )}
+            </div>
+
+            {recruits.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Megaphone className="mb-3 h-12 w-12 text-gray-200" />
+                <p className="text-gray-500">등록된 모집공고가 없습니다.</p>
+                {canEditTeam() && (
+                  <Link
+                    href={`/team/${team.id}/create`}
+                    className="mt-4 text-sm text-gray-900 underline underline-offset-2 hover:text-gray-700"
+                  >
+                    모집공고 작성하기
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {recruits.map((recruit) => (
+                  <div
+                    key={recruit.id}
+                    className="flex items-center justify-between px-6 py-4"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/community/recruits/${recruit.id}`}
+                          className="truncate text-sm font-medium text-gray-900 hover:underline"
+                        >
+                          {recruit.title}
+                        </Link>
+                        <span
+                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                            recruit.status === 'OPEN'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {recruit.status === 'OPEN' ? '모집중' : '마감'}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                        <span>조회 {recruit.views}</span>
+                        <span>·</span>
+                        <span>
+                          {recruit.endDate
+                            ? `~${new Date(recruit.endDate).toLocaleDateString()}`
+                            : '상시모집'}
+                        </span>
+                      </div>
+                    </div>
+                    {canEditTeam() && (
+                      <div className="relative ml-2">
+                        <button
+                          onClick={() =>
+                            setActiveRecruitMenu(
+                              activeRecruitMenu === recruit.id ? null : recruit.id
+                            )
+                          }
+                          className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {activeRecruitMenu === recruit.id && (
+                          <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                            <Link
+                              href={`/team/${team.id}/create?edit=${recruit.id}`}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                              수정
+                            </Link>
+                            <button
+                              onClick={() =>
+                                handleToggleRecruitStatus(recruit.id, recruit.status)
+                              }
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              {recruit.status === 'OPEN' ? (
+                                <>
+                                  <XCircle className="h-3.5 w-3.5" />
+                                  마감하기
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                  모집 재개
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRecruit(recruit.id)}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              삭제
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

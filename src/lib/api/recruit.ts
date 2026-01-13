@@ -12,6 +12,10 @@ interface GetRecruitsOptions {
   size?: number;
 }
 
+interface AuthOptions {
+  accessToken: string;
+}
+
 /**
  * 모집 공고 목록 조회
  */
@@ -42,10 +46,11 @@ export async function getRecruit(id: number): Promise<RecruitResponse> {
 /**
  * 모집 공고 작성
  */
-export async function createRecruit(data: RecruitRequest): Promise<void> {
+export async function createRecruit(data: RecruitRequest, auth: AuthOptions): Promise<void> {
   await apiClient<void>('/v1/community/recruits', {
     method: 'POST',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
 
@@ -54,20 +59,23 @@ export async function createRecruit(data: RecruitRequest): Promise<void> {
  */
 export async function updateRecruit(
   id: number,
-  data: RecruitRequest
+  data: RecruitRequest,
+  auth: AuthOptions
 ): Promise<void> {
   await apiClient<void>(`/v1/community/recruits/${id}`, {
     method: 'PUT',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
 
 /**
  * 모집 공고 삭제
  */
-export async function deleteRecruit(id: number): Promise<void> {
+export async function deleteRecruit(id: number, auth: AuthOptions): Promise<void> {
   await apiClient<void>(`/v1/community/recruits/${id}`, {
     method: 'DELETE',
+    accessToken: auth.accessToken,
   });
 }
 
@@ -76,11 +84,13 @@ export async function deleteRecruit(id: number): Promise<void> {
  */
 export async function updateRecruitStatus(
   id: number,
-  data: RecruitStatusRequest
+  data: RecruitStatusRequest,
+  auth: AuthOptions
 ): Promise<void> {
   await apiClient<void>(`/v1/community/recruits/${id}/status`, {
     method: 'PATCH',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
 
@@ -89,10 +99,12 @@ export async function updateRecruitStatus(
  */
 export async function applyRecruit(
   recruitId: number,
-  data: RecruitApplyRequest
+  data: RecruitApplyRequest,
+  auth: AuthOptions
 ): Promise<void> {
   await apiClient<void>(`/v1/community/recruits/${recruitId}/apply`, {
     method: 'POST',
     body: data,
+    accessToken: auth.accessToken,
   });
 }
