@@ -46,7 +46,6 @@ export interface GithubVerificationResponse {
 
 export interface EmailRequest {
   email: string;
-  signupToken?: string;
 }
 
 export interface EmailVerificationRequest {
@@ -68,9 +67,7 @@ export interface CheckMemberIdResponse {
   message: string;
 }
 
-export interface ReissueRequest {
-  refreshToken: string;
-}
+export type ReissueRequest = Record<string, never>;
 
 export interface PasswordResetRequest {
   token: string;
@@ -86,7 +83,6 @@ export interface UserSignupRequest {
   kutId: string;
   kutEmail: string;
   password: string;
-  signupToken: string;
 }
 
 export interface UserUpdateRequest {

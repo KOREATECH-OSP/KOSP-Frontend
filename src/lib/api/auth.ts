@@ -9,7 +9,6 @@ import type {
   EmailVerificationRequest,
   EmailVerificationResponse,
   CheckMemberIdResponse,
-  ReissueRequest,
   PasswordResetRequest,
 } from './types';
 
@@ -49,10 +48,15 @@ export async function getMyInfo(accessToken: string): Promise<AuthMeResponse> {
   });
 }
 
-export async function sendVerificationEmail(data: EmailRequest): Promise<void> {
+export async function sendVerificationEmail(data: EmailRequest, signupToken?: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (signupToken) {
+    headers['X-Signup-Token'] = signupToken;
+  }
   return clientApiClient<void>('/v1/auth/verify/email', {
     method: 'POST',
     body: data,
+    headers,
   });
 }
 
@@ -67,10 +71,12 @@ export async function checkMemberId(id: string): Promise<CheckMemberIdResponse> 
   return clientApiClient<CheckMemberIdResponse>(`/v1/auth/verify/identity?id=${encodeURIComponent(id)}`);
 }
 
-export async function reissueToken(data: ReissueRequest): Promise<AuthTokenResponse> {
+export async function reissueToken(refreshToken: string): Promise<AuthTokenResponse> {
   return clientApiClient<AuthTokenResponse>('/v1/auth/reissue', {
     method: 'POST',
-    body: data,
+    headers: {
+      'X-Refresh-Token': refreshToken,
+    },
   });
 }
 

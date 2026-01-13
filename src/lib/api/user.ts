@@ -18,10 +18,13 @@ interface AuthOptions {
   accessToken: string;
 }
 
-export async function signup(data: UserSignupRequest): Promise<AuthTokenResponse> {
+export async function signup(data: UserSignupRequest, signupToken: string): Promise<AuthTokenResponse> {
   return clientApiClient<AuthTokenResponse>('/v1/users/signup', {
     method: 'POST',
     body: data,
+    headers: {
+      'X-Signup-Token': signupToken,
+    },
   });
 }
 

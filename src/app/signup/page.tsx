@@ -135,10 +135,9 @@ function SignupContent() {
   const handleSendVerificationEmail = async () => {
     setIsSendingEmail(true);
     try {
-      await sendVerificationEmail({ 
+      await sendVerificationEmail({
         email: formData.email,
-        signupToken: signupToken || undefined,
-      });
+      }, signupToken || undefined);
       setIsEmailSent(true);
       toast.success('인증 코드가 발송되었어요');
     } catch (err) {
@@ -210,8 +209,7 @@ function SignupContent() {
         kutId: formData.studentId,
         kutEmail: formData.email,
         password: formData.password,
-        signupToken: signupToken,
-      });
+      }, signupToken);
 
       const result = await signIn('signup-token', {
         accessToken: tokenResponse.accessToken,
