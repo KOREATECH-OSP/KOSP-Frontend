@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import type { ArticleResponse, CommentResponse } from '@/lib/api/types';
 import ReportModal from '@/common/components/ReportModal';
-import { deleteArticle } from '@/lib/api/article';
+import { deleteArticle, toggleArticleLike, toggleArticleBookmark } from '@/lib/api/article';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 
@@ -79,53 +79,31 @@ export default function ArticleDetailClient({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!accessToken) {
       toast.error('로그인이 필요합니다');
       return;
     }
-    startTransition(() => {
-      fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/likes`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        credentials: 'include',
-      })
-        .then((res) => res.json())
-        .then((response: { isLiked: boolean }) => {
-          setLiked(response.isLiked);
-          setLikeCount((prev) => (response.isLiked ? prev + 1 : prev - 1));
-        })
-        .catch((error) => {
-          console.error('좋아요 실패:', error);
-        });
-    });
+    try {
+      const response = await toggleArticleLike(article.id, { accessToken });
+      setLiked(response.isLiked);
+      setLikeCount((prev) => (response.isLiked ? prev + 1 : prev - 1));
+    } catch (error) {
+      console.error('좋아요 실패:', error);
+    }
   };
 
-  const handleBookmark = () => {
+  const handleBookmark = async () => {
     if (!accessToken) {
       toast.error('로그인이 필요합니다');
       return;
     }
-    startTransition(() => {
-      fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/bookmarks`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        credentials: 'include',
-      })
-        .then((res) => res.json())
-        .then((response: { isBookmarked: boolean }) => {
-          setBookmarked(response.isBookmarked);
-        })
-        .catch((error) => {
-          console.error('북마크 실패:', error);
-        });
-    });
+    try {
+      const response = await toggleArticleBookmark(article.id, { accessToken });
+      setBookmarked(response.isBookmarked);
+    } catch (error) {
+      console.error('북마크 실패:', error);
+    }
   };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {

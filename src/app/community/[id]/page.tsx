@@ -9,10 +9,10 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-async function fetchArticleData(articleId: number) {
+async function fetchArticleData(articleId: number, accessToken?: string) {
   try {
     const [article, commentsResponse] = await Promise.all([
-      getArticle(articleId),
+      getArticle(articleId, accessToken),
       getComments(articleId),
     ]);
     return { article, comments: commentsResponse.comments, error: null };
@@ -39,8 +39,9 @@ export default async function PostDetailPage({ params }: PageProps) {
 
   const session = await auth();
   const currentUserId = session?.user?.id ? parseInt(session.user.id, 10) : null;
+  const accessToken = session?.accessToken;
 
-  const data = await fetchArticleData(articleId);
+  const data = await fetchArticleData(articleId, accessToken);
 
   if (data.error === 'notfound') {
     notFound();

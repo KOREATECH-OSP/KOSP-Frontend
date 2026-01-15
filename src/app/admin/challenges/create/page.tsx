@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ArrowLeft, Trophy, Info, Loader2 } from 'lucide-react';
 import { createAdminChallenge } from '@/lib/api/admin';
 import type { AdminChallengeCreateRequest } from '@/types/admin';
@@ -140,14 +141,18 @@ export default function CreateChallengePage() {
                   {formData.imageUrl && (
                     <div className="rounded-lg border border-gray-200 p-4">
                       <p className="mb-2 text-sm text-gray-600">미리보기</p>
-                      <img
-                        src={formData.imageUrl}
-                        alt="Preview"
-                        className="h-48 w-full rounded-lg object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+                      <div className="relative h-48 w-full overflow-hidden rounded-lg">
+                        <Image
+                          src={formData.imageUrl}
+                          alt="Preview"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

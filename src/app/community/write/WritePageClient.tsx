@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ChangeEvent, FormEvent } from 'react';
+import { useState, useRef, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ArrowLeft, X, Loader2, Paperclip } from 'lucide-react';
@@ -49,6 +49,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof PostFormData, string>>>({});
+  const isComposingRef = useRef(false);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -81,11 +82,19 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.nativeEvent.isComposing) return;
+    if (e.nativeEvent.isComposing || isComposingRef.current) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddTag();
     }
+  };
+
+  const handleTagCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleTagCompositionEnd = () => {
+    isComposingRef.current = false;
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -292,6 +301,8 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
+              onCompositionStart={handleTagCompositionStart}
+              onCompositionEnd={handleTagCompositionEnd}
               placeholder="태그 입력 후 Enter"
               className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
               disabled={formData.tags.length >= 5}

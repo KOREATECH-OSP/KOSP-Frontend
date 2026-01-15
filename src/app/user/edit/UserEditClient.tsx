@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
@@ -15,23 +15,16 @@ import {
   AlertTriangle,
   Mail,
   Lock,
-  Eye,
-  EyeOff,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
-import { updateUser, changePassword, deleteUser } from '@/lib/api/user';
+import { updateUser, deleteUser, getUserProfile } from '@/lib/api/user';
 
 interface UserProfile {
   introduction: string;
   profileImage?: string;
   githubUrl: string;
-}
-
-interface PasswordForm {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
 }
 
 export default function UserEditClient() {
@@ -48,21 +41,11 @@ export default function UserEditClient() {
     introduction: '',
     githubUrl: '',
   });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const [previewImage, setPreviewImage] = useState<string | undefined>(
     profile.profileImage
   );
-
-  // 비밀번호 변경 상태
-  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // 회원 탈퇴 모달 상태
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -71,6 +54,35 @@ export default function UserEditClient() {
 
   // 저장 중 상태
   const [isSaving, setIsSaving] = useState(false);
+
+  // 프로필 데이터 불러오기
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!session?.user?.id) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      try {
+        const userId = parseInt(session.user.id, 10);
+        const profileData = await getUserProfile(userId);
+        setProfile({
+          introduction: profileData.introduction || '',
+          profileImage: profileData.profileImage || undefined,
+          githubUrl: profileData.githubUrl || '',
+        });
+        if (profileData.profileImage) {
+          setPreviewImage(profileData.profileImage);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, [session?.user?.id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,68 +140,6 @@ export default function UserEditClient() {
     }
   };
 
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return '비밀번호는 8자 이상이어야 합니다';
-    }
-    if (!/[a-zA-Z]/.test(password)) {
-      return '비밀번호에 영문자가 포함되어야 합니다';
-    }
-    if (!/[0-9]/.test(password)) {
-      return '비밀번호에 숫자가 포함되어야 합니다';
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      return '비밀번호에 특수문자가 포함되어야 합니다';
-    }
-    return null;
-  };
-
-  const handleChangePassword = async () => {
-    const token = session?.accessToken;
-    if (status !== 'authenticated' || !token || typeof token !== 'string') {
-      toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
-      return;
-    }
-
-    if (!passwordForm.currentPassword) {
-      toast.error('현재 비밀번호를 입력해주세요');
-      return;
-    }
-
-    const passwordError = validatePassword(passwordForm.newPassword);
-    if (passwordError) {
-      toast.error(passwordError);
-      return;
-    }
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('새 비밀번호가 일치하지 않습니다');
-      return;
-    }
-
-    setIsChangingPassword(true);
-    try {
-      await changePassword(
-        {
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-        },
-        { accessToken: token }
-      );
-      toast.success('비밀번호가 변경되었습니다');
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-    } catch (error) {
-      console.error('Failed to change password:', error);
-      toast.error('비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.');
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
   const handleDeleteAccount = async () => {
     const token = session?.accessToken;
     const userId = session?.user?.id;
@@ -207,12 +157,11 @@ export default function UserEditClient() {
     try {
       await deleteUser(Number(userId), { accessToken: token });
       toast.success('회원 탈퇴가 완료되었습니다');
-      await signOut({ redirect: false });
-      router.push('/');
+      // signOut이 완료된 후 자동으로 홈으로 리다이렉트
+      signOut({ callbackUrl: '/' });
     } catch (error) {
       console.error('Failed to delete account:', error);
       toast.error('회원 탈퇴에 실패했습니다');
-    } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
@@ -235,6 +184,15 @@ export default function UserEditClient() {
         >
           로그인하기
         </Link>
+      </div>
+    );
+  }
+
+  // 프로필 로딩 중
+  if (isLoadingProfile) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-center px-4 py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900" />
       </div>
     );
   }
@@ -422,121 +380,25 @@ export default function UserEditClient() {
             <div>
               <h2 className="font-semibold text-gray-900">비밀번호 변경</h2>
               <p className="text-sm text-gray-500">
-                보안을 위해 정기적으로 비밀번호를 변경해주세요
+                비밀번호를 변경하려면 비밀번호 찾기를 이용해주세요
               </p>
             </div>
           </div>
         </div>
 
         <div className="p-6 sm:p-8">
-          <div className="space-y-4">
-            {/* 현재 비밀번호 */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                현재 비밀번호
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  value={passwordForm.currentPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-gray-200/70 py-3 pl-11 pr-11 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                  placeholder="현재 비밀번호를 입력하세요"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* 새 비밀번호 */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                새 비밀번호
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={passwordForm.newPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-gray-200/70 py-3 pl-11 pr-11 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                  placeholder="새 비밀번호를 입력하세요"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <p className="mt-1.5 text-xs text-gray-400">
-                8자 이상, 영문/숫자/특수문자 포함
-              </p>
-            </div>
-
-            {/* 새 비밀번호 확인 */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                새 비밀번호 확인
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-gray-200/70 py-3 pl-11 pr-11 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                  placeholder="새 비밀번호를 다시 입력하세요"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {passwordForm.confirmPassword &&
-                passwordForm.newPassword !== passwordForm.confirmPassword && (
-                  <p className="mt-1.5 text-xs text-red-500">
-                    비밀번호가 일치하지 않습니다
-                  </p>
-                )}
-            </div>
-
-            {/* 변경 버튼 */}
-            <button
-              onClick={handleChangePassword}
-              disabled={isChangingPassword}
-              className="mt-4 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-sm text-gray-600">
+              보안을 위해 비밀번호 변경은 로그인 페이지의{' '}
+              <span className="font-medium text-gray-900">비밀번호 찾기</span> 기능을 이용해주세요.
+            </p>
+            <Link
+              href="/forgot-password"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
             >
-              {isChangingPassword ? '변경 중...' : '비밀번호 변경'}
-            </button>
+              비밀번호 찾기
+              <ExternalLink className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </div>

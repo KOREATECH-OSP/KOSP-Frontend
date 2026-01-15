@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bell, Plus, X, Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function CreateNoticePage() {
   });
   const [tagInput, setTagInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const isComposingRef = useRef(false);
 
   const handleAddTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
@@ -113,7 +114,7 @@ export default function CreateNoticePage() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="공지사항 제목을 입력하세요"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-gray-400"
                 disabled={submitting}
               />
             </div>
@@ -128,9 +129,23 @@ export default function CreateNoticePage() {
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 placeholder="공지사항 내용을 입력하세요"
                 rows={12}
-                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-gray-400"
                 disabled={submitting}
               />
+            </div>
+
+            {/* 상단 고정 */}
+            <div>
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isPinned}
+                  onChange={(e) => setFormData({ ...formData, isPinned: e.target.checked })}
+                  className="h-5 w-5 rounded border-gray-300 text-gray-900 focus:ring-2 focus:ring-gray-400"
+                  disabled={submitting}
+                />
+                <span className="text-sm font-medium text-gray-700">상단 고정</span>
+              </label>
             </div>
 
             {/* 태그 */}
@@ -141,14 +156,17 @@ export default function CreateNoticePage() {
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
+                    if (e.nativeEvent.isComposing || isComposingRef.current) return;
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       handleAddTag();
                     }
                   }}
+                  onCompositionStart={() => { isComposingRef.current = true; }}
+                  onCompositionEnd={() => { isComposingRef.current = false; }}
                   placeholder="태그를 입력하고 엔터 또는 추가 버튼을 클릭하세요"
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-gray-400"
                   disabled={submitting}
                 />
                 <button
@@ -166,13 +184,13 @@ export default function CreateNoticePage() {
                   {formData.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
+                      className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="rounded-full p-0.5 hover:bg-blue-200"
+                        className="rounded-full p-0.5 hover:bg-gray-200"
                         disabled={submitting}
                       >
                         <X className="h-3 w-3" />

@@ -106,7 +106,13 @@ export default function TeamPageClient({
 
       {/* 탭 콘텐츠 */}
       <div className="rounded-xl border border-gray-200 bg-white">
-        {activeTab === '전체' && <TeamListTab teams={filteredTeams} />}
+        {activeTab === '전체' && (
+          <TeamListTab
+            teams={filteredTeams}
+            recruits={filteredRecruits}
+            onShowMoreRecruits={() => setActiveTab('모집중')}
+          />
+        )}
         {activeTab === '모집중' && <TeamRecruitTab recruits={filteredRecruits} />}
         {activeTab === '나의팀' && <MyTeamListTab />}
       </div>

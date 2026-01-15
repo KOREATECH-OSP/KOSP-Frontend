@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Users, User, ChevronRight, Eye, MessageSquare } from 'lucide-react';
 import type { RecruitResponse } from '@/lib/api/types';
 
@@ -9,7 +10,14 @@ interface TeamRecruitTabProps {
 }
 
 export default function TeamRecruitTab({ recruits }: TeamRecruitTabProps) {
+  const router = useRouter();
   const openRecruits = recruits.filter((r) => r.status === 'OPEN');
+
+  const handleAuthorClick = (e: React.MouseEvent, authorId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/user/${authorId}`);
+  };
 
   if (openRecruits.length === 0) {
     return (
@@ -23,13 +31,19 @@ export default function TeamRecruitTab({ recruits }: TeamRecruitTabProps) {
   return (
     <div className="divide-y divide-gray-100">
       {openRecruits.map((recruit) => (
-        <RecruitCard recruit={recruit} key={recruit.id} />
+        <RecruitCard recruit={recruit} key={recruit.id} onAuthorClick={handleAuthorClick} />
       ))}
     </div>
   );
 }
 
-function RecruitCard({ recruit }: { recruit: RecruitResponse }) {
+function RecruitCard({
+  recruit,
+  onAuthorClick,
+}: {
+  recruit: RecruitResponse;
+  onAuthorClick: (e: React.MouseEvent, authorId: number) => void;
+}) {
   return (
     <Link
       href={`/recruit/${recruit.id}`}
@@ -65,10 +79,13 @@ function RecruitCard({ recruit }: { recruit: RecruitResponse }) {
           )}
           <span className="h-3 w-px bg-gray-200" />
           <div className="flex items-center gap-3 text-xs text-gray-400">
-            <span className="flex items-center gap-1">
+            <button
+              onClick={(e) => onAuthorClick(e, recruit.author.id)}
+              className="flex items-center gap-1 hover:text-gray-700 hover:underline"
+            >
               <User className="h-3.5 w-3.5" />
               {recruit.author.name}
-            </span>
+            </button>
             <span className="flex items-center gap-1">
               <Eye className="h-3.5 w-3.5" />
               {recruit.views}

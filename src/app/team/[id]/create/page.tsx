@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import {
   ArrowLeft,
   Plus,
@@ -65,6 +65,7 @@ export default function CreateRecruitPage() {
   const [errors, setErrors] = useState<
     Partial<Record<keyof RecruitFormData, string>>
   >({});
+  const isComposingRef = useRef(false);
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -395,11 +396,14 @@ export default function CreateRecruitPage() {
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing || isComposingRef.current) return;
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleAddTag();
                 }
               }}
+              onCompositionStart={() => { isComposingRef.current = true; }}
+              onCompositionEnd={() => { isComposingRef.current = false; }}
               placeholder="예: React, TypeScript"
               disabled={formData.tags.length >= 5}
               className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm transition-colors focus:border-gray-400 focus:outline-none disabled:bg-gray-50"

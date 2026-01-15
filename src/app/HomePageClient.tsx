@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, MessageSquare, ChevronRight } from 'lucide-react';
 import { suitFont } from '@/style/font';
 import SearchBar from '@/common/components/searchBar';
@@ -41,6 +42,14 @@ const STATUS_GRADIENTS: Record<string, string> = {
 };
 
 export default function HomePageClient({ articles, recruits, session }: HomePageClientProps) {
+  const router = useRouter();
+
+  const handleAuthorClick = (e: React.MouseEvent, authorId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/user/${authorId}`);
+  };
+
   return (
     <div id="top" className={`min-h-screen bg-gray-50 ${suitFont.className}`}>
       <Header session={session} />
@@ -80,9 +89,12 @@ export default function HomePageClient({ articles, recruits, session }: HomePage
                     href={`/community/${post.id}`}
                     className="relative block cursor-pointer rounded-2xl border border-gray-200/70 bg-white px-4 py-4 transition-all duration-200 hover:border-gray-900/40 sm:px-5"
                   >
-                    <span className="mb-1 block text-[11px] text-gray-500 sm:text-xs">
+                    <button
+                      onClick={(e) => handleAuthorClick(e, post.author.id)}
+                      className="mb-1 block text-[11px] text-gray-500 hover:text-gray-900 hover:underline sm:text-xs"
+                    >
                       {post.author.name}
-                    </span>
+                    </button>
                     <h3 className="line-clamp-2 text-base font-semibold text-gray-900 sm:line-clamp-1">
                       {post.title}
                     </h3>
@@ -154,9 +166,12 @@ export default function HomePageClient({ articles, recruits, session }: HomePage
                             {dday}
                           </span>
                           <span aria-hidden className="h-3 w-px bg-gray-300" />
-                          <span className="font-medium text-gray-700">
+                          <button
+                            onClick={(e) => handleAuthorClick(e, recruit.author.id)}
+                            className="font-medium text-gray-700 hover:text-gray-900 hover:underline"
+                          >
                             {recruit.author.name}
-                          </span>
+                          </button>
                         </div>
                       </div>
 

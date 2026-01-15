@@ -290,7 +290,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/community/recruits/${recruit.id}`}
+                          href={`/recruit/${recruit.id}`}
                           className="truncate text-sm font-medium text-gray-900 hover:underline"
                         >
                           {recruit.title}

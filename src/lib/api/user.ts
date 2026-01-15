@@ -11,6 +11,9 @@ import type {
   GithubSummaryResponse,
   GithubRecentContributionsResponse,
   GithubMonthlyActivityResponse,
+  GithubOverallHistoryResponse,
+  GithubRecentActivityResponse,
+  GithubContributionScoreResponse,
   AuthTokenResponse,
 } from './types';
 
@@ -21,7 +24,7 @@ interface AuthOptions {
 export async function signup(data: UserSignupRequest, signupToken: string): Promise<AuthTokenResponse> {
   return clientApiClient<AuthTokenResponse>('/v1/users/signup', {
     method: 'POST',
-    body: { ...data, signupToken },
+    body: data,
     headers: {
       'X-Signup-Token': signupToken,
     },
@@ -149,10 +152,50 @@ export async function getUserGithubMonthlyActivity(
   if (options?.startMonth) params.append('startMonth', options.startMonth.toString());
   if (options?.endYear) params.append('endYear', options.endYear.toString());
   if (options?.endMonth) params.append('endMonth', options.endMonth.toString());
-  
+
   const query = params.toString();
   return apiClient<GithubMonthlyActivityResponse>(
     `/v1/users/${userId}/github/monthly-activity${query ? `?${query}` : ''}`,
+    { cache: 'no-store' }
+  );
+}
+
+// ============================================
+// New GitHub APIs (Backend v1)
+// ============================================
+
+/**
+ * 전체 기여 내역 조회
+ */
+export async function getUserGithubOverallHistory(
+  userId: number
+): Promise<GithubOverallHistoryResponse> {
+  return apiClient<GithubOverallHistoryResponse>(
+    `/v1/users/${userId}/github/overall-history`,
+    { cache: 'no-store' }
+  );
+}
+
+/**
+ * 최근 기여 활동 조회 (최대 6개 저장소)
+ */
+export async function getUserGithubRecentActivity(
+  userId: number
+): Promise<GithubRecentActivityResponse[]> {
+  return apiClient<GithubRecentActivityResponse[]>(
+    `/v1/users/${userId}/github/recent-activity`,
+    { cache: 'no-store' }
+  );
+}
+
+/**
+ * 기여 점수 조회 (활동, 다양성, 영향력 점수)
+ */
+export async function getUserGithubContributionScore(
+  userId: number
+): Promise<GithubContributionScoreResponse> {
+  return apiClient<GithubContributionScoreResponse>(
+    `/v1/users/${userId}/github/contribution-score`,
     { cache: 'no-store' }
   );
 }

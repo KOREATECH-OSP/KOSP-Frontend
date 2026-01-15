@@ -37,10 +37,12 @@ export async function getArticles(
 
 /**
  * 게시글 상세 조회
+ * accessToken이 있으면 isLiked, isBookmarked 상태도 함께 반환
  */
-export async function getArticle(id: number): Promise<ArticleResponse> {
+export async function getArticle(id: number, accessToken?: string): Promise<ArticleResponse> {
   return apiClient<ArticleResponse>(`/v1/community/articles/${id}`, {
     cache: 'no-store',
+    accessToken,
   });
 }
 

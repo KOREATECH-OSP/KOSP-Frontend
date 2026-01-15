@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Plus,
   Edit,
@@ -189,10 +190,12 @@ export default function ChallengesListPage() {
                 {/* 왼쪽: 이미지 */}
                 <div className="relative h-48 w-full flex-shrink-0 bg-gray-100 md:h-auto md:w-48">
                   {challenge.imageUrl ? (
-                    <img
+                    <Image
                       src={challenge.imageUrl}
                       alt={challenge.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      unoptimized
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}

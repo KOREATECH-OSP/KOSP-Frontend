@@ -121,7 +121,45 @@ export interface GithubActivityResponse {
 }
 
 // ============================================
-// GitHub Statistics Types
+// GitHub Statistics Types (Backend API)
+// ============================================
+
+/**
+ * 전체 기여 내역 - /v1/users/{userId}/github/overall-history
+ */
+export interface GithubOverallHistoryResponse {
+  contributedRepoCount: number;
+  totalCommitCount: number;
+  totalAdditions: number;
+  totalDeletions: number;
+  totalIssueCount: number;
+  totalPrCount: number;
+}
+
+/**
+ * 최근 기여 활동 - /v1/users/{userId}/github/recent-activity
+ */
+export interface GithubRecentActivityResponse {
+  repositoryName: string;
+  description: string | null;
+  stargazersCount: number;
+  userCommitCount: number;
+  userPrCount: number;
+  lastCommitDate: string;
+}
+
+/**
+ * 기여 점수 - /v1/users/{userId}/github/contribution-score
+ */
+export interface GithubContributionScoreResponse {
+  activityScore: number;
+  diversityScore: number;
+  impactScore: number;
+  totalScore: number;
+}
+
+// ============================================
+// Legacy GitHub Types (for backward compatibility)
 // ============================================
 
 export interface GithubStats {
