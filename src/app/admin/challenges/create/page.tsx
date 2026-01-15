@@ -16,6 +16,7 @@ export default function CreateChallengePage() {
     name: '',
     description: '',
     condition: '',
+    category: '',
     tier: 0,
     imageUrl: '',
     point: 0,
@@ -33,7 +34,7 @@ export default function CreateChallengePage() {
       return;
     }
 
-    if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
+    if (!formData.name || !formData.description || !formData.condition || !formData.category || !formData.progressField) {
       toast.error('모든 필수 필드를 입력해주세요.');
       return;
     }
@@ -131,6 +132,24 @@ export default function CreateChallengePage() {
                   className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}
                 />
+              </div>
+
+              {/* 카테고리 */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  카테고리 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+                  disabled={submitting}
+                >
+                  <option value="">카테고리 선택</option>
+                  <option value="contribution">기여 (Contribution)</option>
+                  <option value="learning">학습 (Learning)</option>
+                  <option value="community">커뮤니티 (Community)</option>
+                </select>
               </div>
 
               {/* 이미지 URL */}

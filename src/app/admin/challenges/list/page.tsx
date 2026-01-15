@@ -78,17 +78,22 @@ export default function ChallengesListPage() {
       challenge.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getTierBadgeColor = (tier: number) => {
-    const colors = [
-      'bg-gray-100 text-gray-700',
-      'bg-green-100 text-green-700',
-      'bg-blue-100 text-blue-700',
-      'bg-purple-100 text-purple-700',
-      'bg-orange-100 text-orange-700',
-      'bg-red-100 text-red-700',
-    ];
-    return colors[tier] || colors[0];
+  const getCategoryBadgeColor = (category: string) => {
+    const lowerCategory = category?.toLowerCase() || '';
+    if (lowerCategory.includes('contribution') || lowerCategory.includes('기여')) {
+      return 'bg-blue-100 text-blue-700';
+    }
+    if (lowerCategory.includes('learning') || lowerCategory.includes('학습')) {
+      return 'bg-green-100 text-green-700';
+    }
+    if (lowerCategory.includes('community') || lowerCategory.includes('커뮤니티')) {
+      return 'bg-purple-100 text-purple-700';
+    }
+    return 'bg-gray-100 text-gray-700';
   };
+
+  // 카테고리 목록 추출
+  const categories = Array.from(new Set(challenges.map((c) => c.category).filter(Boolean)));
 
   if (status === 'loading' || loading) {
     return (
@@ -142,18 +147,20 @@ export default function ChallengesListPage() {
               </div>
               <p className="text-2xl font-bold text-gray-900">{challenges.length}개</p>
             </div>
-            <div className="flex gap-4">
-              {[0, 1, 2].map((tier) => (
-                <div key={tier} className="text-center">
-                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getTierBadgeColor(tier)}`}>
-                    Tier {tier}
-                  </span>
-                  <p className="mt-1 text-lg font-bold text-gray-900">
-                    {challenges.filter((c) => c.tier === tier).length}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {categories.length > 0 && (
+              <div className="flex gap-4">
+                {categories.map((category) => (
+                  <div key={category} className="text-center">
+                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getCategoryBadgeColor(category)}`}>
+                      {category}
+                    </span>
+                    <p className="mt-1 text-lg font-bold text-gray-900">
+                      {challenges.filter((c) => c.category === category).length}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -206,7 +213,7 @@ export default function ChallengesListPage() {
                       챌린지
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      티어
+                      카테고리
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       포인트
@@ -254,8 +261,8 @@ export default function ChallengesListPage() {
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
-                        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${getTierBadgeColor(challenge.tier)}`}>
-                          Tier {challenge.tier}
+                        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${getCategoryBadgeColor(challenge.category)}`}>
+                          {challenge.category || '-'}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">

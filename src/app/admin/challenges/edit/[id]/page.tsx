@@ -20,6 +20,7 @@ export default function EditChallengePage() {
     name: '',
     description: '',
     condition: '',
+    category: '',
     tier: 0,
     imageUrl: '',
     point: 0,
@@ -37,6 +38,7 @@ export default function EditChallengePage() {
         name: data.name,
         description: data.description,
         condition: data.condition,
+        category: data.category || '',
         tier: data.tier,
         imageUrl: data.imageUrl,
         point: data.point,
@@ -63,7 +65,7 @@ export default function EditChallengePage() {
 
     if (!session?.accessToken) return;
 
-    if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
+    if (!formData.name || !formData.description || !formData.condition || !formData.category || !formData.progressField) {
       toast.error('모든 필수 항목을 입력해주세요.');
       return;
     }
@@ -154,6 +156,24 @@ export default function EditChallengePage() {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none resize-none"
                   disabled={submitting}
                 />
+              </div>
+
+              {/* 카테고리 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  카테고리 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
+                  disabled={submitting}
+                >
+                  <option value="">카테고리 선택</option>
+                  <option value="contribution">기여 (Contribution)</option>
+                  <option value="learning">학습 (Learning)</option>
+                  <option value="community">커뮤니티 (Community)</option>
+                </select>
               </div>
 
               {/* 이미지 URL */}
