@@ -124,7 +124,7 @@ export default function AdminDashboard() {
         {/* 통계 */}
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <button
-            onClick={() => router.push('/admin/users')}
+            onClick={() => router.push('/admin/users/list')}
             className="group rounded-2xl border border-gray-200 bg-white p-5 text-left transition-all hover:border-gray-300 hover:shadow-sm"
           >
             <div className="mb-1 text-sm text-gray-500">전체 사용자</div>
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
               <p className="text-sm text-gray-500">최근 {recentUsers.length}명</p>
             </div>
             <button
-              onClick={() => router.push('/admin/users')}
+              onClick={() => router.push('/admin/users/list')}
               className="text-sm text-gray-500 transition-colors hover:text-gray-900"
             >
               전체 보기
