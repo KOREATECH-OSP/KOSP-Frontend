@@ -428,6 +428,7 @@ export interface ChallengeResponse {
   isCompleted: boolean;
   imageUrl: string | null;
   tier: number;
+  point: number;
 }
 
 export interface ChallengeSummary {
