@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Search, Users, Shield, Plus, CheckCircle2, X, Loader2, Trash2 } from 'lucide-react';
+import { Search, Users, Plus, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { getRoles, getPolicies, createRole, deleteRole, attachPolicyToRole, detachPolicyFromRole } from '@/lib/api/admin';
 import type { RoleResponse, PolicyResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
@@ -23,14 +23,16 @@ export default function AdminRolesPage() {
     setIsLoading(true);
     try {
       const [rolesData, policiesData] = await Promise.all([
-        getRoles({ accessToken: session.accessToken }),
-        getPolicies({ accessToken: session.accessToken }),
+        getRoles({ accessToken: session.accessToken }).catch(() => ({ roles: [] })),
+        getPolicies({ accessToken: session.accessToken }).catch(() => ({ policies: [] })),
       ]);
-      setRoles(rolesData.roles);
-      setPolicies(policiesData.policies);
+      setRoles(rolesData.roles || []);
+      setPolicies(policiesData.policies || []);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       toast.error('데이터를 불러오는데 실패했습니다.');
+      setRoles([]);
+      setPolicies([]);
     } finally {
       setIsLoading(false);
     }
@@ -42,8 +44,8 @@ export default function AdminRolesPage() {
 
   const filteredRoles = roles.filter(
     (role) =>
-      role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      role.description.toLowerCase().includes(searchQuery.toLowerCase())
+      role.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      role.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateRole = async (data: { name: string; description: string; policyIds: number[] }) => {
@@ -60,12 +62,12 @@ export default function AdminRolesPage() {
     }
   };
 
-  const handleDeleteRole = async (roleId: number) => {
+  const handleDeleteRole = async (roleName: string) => {
     if (!session?.accessToken) return;
     if (!confirm('이 역할을 삭제하시겠습니까?')) return;
 
     try {
-      await deleteRole(roleId, { accessToken: session.accessToken });
+      await deleteRole(roleName, { accessToken: session.accessToken });
       toast.success('역할이 삭제되었습니다.');
       fetchData();
     } catch (err) {
@@ -74,15 +76,15 @@ export default function AdminRolesPage() {
     }
   };
 
-  const handlePolicyToggle = async (roleId: number, policyId: number, action: 'add' | 'remove') => {
+  const handlePolicyToggle = async (roleName: string, policyName: string, action: 'add' | 'remove') => {
     if (!session?.accessToken) return;
 
     try {
       if (action === 'add') {
-        await attachPolicyToRole(roleId, policyId, { accessToken: session.accessToken });
+        await attachPolicyToRole(roleName, policyName, { accessToken: session.accessToken });
         toast.success('정책이 추가되었습니다.');
       } else {
-        await detachPolicyFromRole(roleId, policyId, { accessToken: session.accessToken });
+        await detachPolicyFromRole(roleName, policyName, { accessToken: session.accessToken });
         toast.success('정책이 제거되었습니다.');
       }
       fetchData();
@@ -93,7 +95,7 @@ export default function AdminRolesPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 pb-6 md:px-8 md:pb-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">역할(Role) 관리</h1>
@@ -146,72 +148,82 @@ export default function AdminRolesPage() {
             <p className="text-gray-500">검색 결과가 없습니다</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {filteredRoles.map((role) => (
-              <div
-                key={role.id}
-                className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md"
-              >
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900">
-                      <Users className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{role.name}</h3>
-                      <p className="text-sm text-gray-500">{role.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteRole(role.id)}
-                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-700">
-                        보유 정책 ({role.policies.length})
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedRole(role);
-                        setShowPolicyModal(true);
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      정책 관리
-                    </button>
-                  </div>
-
-                  {role.policies.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {role.policies.map((policy) => (
-                        <div
-                          key={policy.id}
-                          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-700">
-                            {policy.name}
-                          </span>
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      역할명
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      설명
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      정책
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      관리
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredRoles.map((role) => (
+                    <tr key={role.id} className="transition-colors hover:bg-gray-50">
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div>
+                          <div className="font-semibold text-gray-900">{role.name}</div>
+                          <div className="text-xs text-gray-400">ID: {role.id}</div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-400">
-                      추가된 정책이 없습니다
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-600">{role.description || '-'}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {role.policies && role.policies.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {role.policies.slice(0, 3).map((policy, index) => (
+                              <span
+                                key={policy.id ?? policy.name ?? index}
+                                className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
+                              >
+                                {policy.name}
+                              </span>
+                            ))}
+                            {role.policies.length > 3 && (
+                              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-400">
+                                +{role.policies.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedRole(role);
+                              setShowPolicyModal(true);
+                            }}
+                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                          >
+                            정책
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRole(role.name)}
+                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -308,9 +320,9 @@ function RoleFormModal({
               정책 선택 ({selectedPolicies.length}개)
             </label>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-gray-200 p-3">
-              {policies.map((policy) => (
+              {policies.map((policy, index) => (
                 <label
-                  key={policy.id}
+                  key={policy.id ?? policy.name ?? index}
                   className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                 >
                   <input
@@ -358,67 +370,123 @@ function PolicyManageModal({
   role: RoleResponse;
   allPolicies: PolicyResponse[];
   onClose: () => void;
-  onToggle: (roleId: number, policyId: number, action: 'add' | 'remove') => void;
+  onToggle: (roleName: string, policyName: string, action: 'add' | 'remove') => void;
 }) {
-  const rolePolicyIds = role.policies.map((p) => p.id);
+  const [searchQuery, setSearchQuery] = useState('');
+  const rolePolicyNames = (role.policies || []).map((p) => p.name);
+  const assignedCount = rolePolicyNames.length;
+
+  const filteredPolicies = allPolicies.filter(
+    (policy) =>
+      policy.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      policy.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">정책 관리</h2>
-            <p className="text-sm text-gray-500">{role.name} 역할의 정책을 관리하세요</p>
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        {/* Header */}
+        <div className="border-b border-gray-200 px-6 py-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">정책 관리</h2>
+              <p className="text-sm text-gray-500">
+                <span className="font-medium text-gray-900">{role.name}</span> 역할에 할당된 정책: {assignedCount}개
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="정책 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-4 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          {allPolicies.map((policy) => {
-            const hasPolicy = rolePolicyIds.includes(policy.id);
-            return (
-              <div
-                key={policy.id}
-                className={`flex items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                  hasPolicy ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{policy.name}</span>
-                      {hasPolicy && <CheckCircle2 className="h-4 w-4 text-gray-900" />}
-                    </div>
-                    <p className="text-xs text-gray-500">{policy.description}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => onToggle(role.id, policy.id, hasPolicy ? 'remove' : 'add')}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    hasPolicy
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
-                  }`}
-                >
-                  {hasPolicy ? '제거' : '추가'}
-                </button>
-              </div>
-            );
-          })}
+        {/* Table */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredPolicies.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-sm text-gray-500">
+              검색 결과가 없습니다
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="sticky top-0 bg-gray-50">
+                <tr className="border-b border-gray-200">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    상태
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    정책명
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    설명
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    작업
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredPolicies.map((policy, index) => {
+                  const hasPolicy = rolePolicyNames.includes(policy.name);
+                  return (
+                    <tr key={policy.id ?? policy.name ?? index} className={`transition-colors ${hasPolicy ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
+                      <td className="whitespace-nowrap px-6 py-3">
+                        {hasPolicy ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <CheckCircle2 className="h-3 w-3" />
+                            할당됨
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                            미할당
+                          </span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-3">
+                        <span className="font-medium text-gray-900">{policy.name}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm text-gray-600">{policy.description || '-'}</span>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-3 text-right">
+                        <button
+                          onClick={() => onToggle(role.name, policy.name, hasPolicy ? 'remove' : 'add')}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                            hasPolicy
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-gray-900 text-white hover:bg-gray-800'
+                          }`}
+                        >
+                          {hasPolicy ? '제거' : '추가'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        {/* Footer */}
+        <div className="flex justify-end border-t border-gray-200 px-6 py-4">
           <button
             onClick={onClose}
-            className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
           >
-            닫기
+            완료
           </button>
         </div>
       </div>

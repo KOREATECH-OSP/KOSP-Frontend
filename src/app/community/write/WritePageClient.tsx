@@ -24,12 +24,17 @@ interface PostFormData {
   files: File[];
 }
 
-// HTML 태그를 제거하고 텍스트만 추출
+/**
+ * HTML 태그를 제거하고 텍스트만 추출
+ * 주의: 이 함수는 사용자 입력 검증용으로만 사용되며, DOM에 삽입되지 않음
+ */
 function stripHtml(html: string): string {
   if (typeof document === 'undefined') return html;
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || '';
+  const text = tmp.textContent || tmp.innerText || '';
+  tmp.remove();
+  return text;
 }
 
 export default function WritePageClient({ boards, initialData }: WritePageClientProps) {
@@ -38,8 +43,10 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
   const { upload: uploadImage } = useImageUpload();
   const isEditMode = !!initialData;
 
+  const availableBoards = boards.filter((board) => board.name !== '공지사항');
+
   const [formData, setFormData] = useState<PostFormData>({
-    boardId: initialData?.boardId ?? boards[0]?.id ?? 0,
+    boardId: initialData?.boardId ?? availableBoards[0]?.id ?? 0,
     title: initialData?.title ?? '',
     content: initialData?.content ?? '',
     tags: initialData?.tags ?? [],
@@ -196,7 +203,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
         toast.success('게시글이 등록되었습니다.');
         router.push('/community');
       }
-      
+
     } catch (error) {
       console.error('게시글 저장 실패:', error);
       const message = error instanceof Error ? error.message : '게시글 저장에 실패했습니다.';
@@ -207,38 +214,35 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
       {/* 헤더 */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-8">
         <button
           onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
           돌아가기
         </button>
+        <h1 className="text-xl font-semibold text-gray-900">
+          {isEditMode ? '게시글 수정' : '글쓰기'}
+        </h1>
       </div>
 
-      <h1 className="mb-6 text-xl font-semibold text-gray-900">
-        {isEditMode ? '게시글 수정' : '글쓰기'}
-      </h1>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* 게시판 선택 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            게시판
-          </label>
+          <label className="mb-2 block text-sm text-gray-500">게시판</label>
           <div className="flex flex-wrap gap-2">
-            {boards.map((board) => (
+            {availableBoards.map((board) => (
               <button
                 key={board.id}
                 type="button"
                 onClick={() => setFormData((prev) => ({ ...prev, boardId: board.id }))}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
                   formData.boardId === board.id
                     ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                 }`}
               >
                 {board.name}
@@ -249,10 +253,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
 
         {/* 제목 */}
         <div>
-          <label
-            htmlFor="title"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="title" className="mb-2 block text-sm text-gray-500">
             제목
           </label>
           <input
@@ -262,22 +263,20 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
             value={formData.title}
             onChange={handleInputChange}
             placeholder="제목을 입력하세요"
-            className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none ${
+            className={`w-full rounded-lg border bg-gray-50 px-4 py-3 text-sm placeholder:text-gray-400 focus:bg-white focus:outline-none ${
               errors.title
                 ? 'border-red-300 focus:border-red-400'
-                : 'border-gray-200 focus:border-gray-400'
+                : 'border-gray-200 focus:border-gray-300'
             }`}
           />
           {errors.title && (
-            <p className="mt-1.5 text-sm text-red-500">{errors.title}</p>
+            <p className="mt-1.5 text-xs text-red-500">{errors.title}</p>
           )}
         </div>
 
         {/* 내용 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            내용
-          </label>
+          <label className="mb-2 block text-sm text-gray-500">내용</label>
           <TiptapEditor
             content={formData.content}
             onChange={handleContentChange}
@@ -292,8 +291,8 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
 
         {/* 태그 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            태그 (최대 5개)
+          <label className="mb-2 block text-sm text-gray-500">
+            태그 <span className="text-gray-400">(최대 5개)</span>
           </label>
           <div className="flex gap-2">
             <input
@@ -304,24 +303,24 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
               onCompositionStart={handleTagCompositionStart}
               onCompositionEnd={handleTagCompositionEnd}
               placeholder="태그 입력 후 Enter"
-              className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-gray-400 focus:outline-none"
+              className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm placeholder:text-gray-400 focus:bg-white focus:border-gray-300 focus:outline-none"
               disabled={formData.tags.length >= 5}
             />
             <button
               type="button"
               onClick={handleAddTag}
               disabled={!tagInput.trim() || formData.tags.length >= 5}
-              className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+              className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-200 disabled:opacity-50"
             >
               추가
             </button>
           </div>
           {formData.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {formData.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-700"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"
                 >
                   {tag}
                   <button
@@ -329,7 +328,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
                     onClick={() => handleRemoveTag(tag)}
                     className="text-gray-400 hover:text-gray-600"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3" strokeWidth={1.5} />
                   </button>
                 </span>
               ))}
@@ -339,18 +338,15 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
 
         {/* 파일 첨부 */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            첨부파일
-          </label>
-
+          <label className="mb-2 block text-sm text-gray-500">첨부파일</label>
           <label
             htmlFor="file-upload"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-4 py-2.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600"
           >
-            <Paperclip className="h-4 w-4" />
+            <Paperclip className="h-4 w-4" strokeWidth={1.5} />
             파일 선택
+            <span className="text-xs text-gray-400">(최대 5개, 각 10MB)</span>
           </label>
-          <span className="ml-2 text-xs text-gray-400">최대 5개, 각 10MB 이하</span>
 
           <input
             id="file-upload"
@@ -362,14 +358,14 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
           />
 
           {formData.files.length > 0 && (
-            <div className="mt-3 space-y-1.5">
+            <div className="mt-3 space-y-2">
               {formData.files.map((file, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span className="truncate text-sm text-gray-700">
+                    <span className="truncate text-sm text-gray-600">
                       {file.name}
                     </span>
                     <span className="flex-shrink-0 text-xs text-gray-400">
@@ -381,7 +377,7 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
                     onClick={() => handleRemoveFile(index)}
                     className="ml-2 p-1 text-gray-400 hover:text-gray-600"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
                 </div>
               ))}
@@ -390,22 +386,22 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
         </div>
 
         {/* 버튼 */}
-        <div className="flex gap-2 pt-4">
+        <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            className="flex-1 rounded-lg py-3 text-sm text-gray-500 hover:bg-gray-50"
           >
             취소
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-300"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-900 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-300"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
                 {isEditMode ? '수정 중...' : '등록 중...'}
               </>
             ) : (

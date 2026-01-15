@@ -13,7 +13,7 @@ async function fetchArticleData(articleId: number, accessToken?: string) {
   try {
     const [article, commentsResponse] = await Promise.all([
       getArticle(articleId, accessToken),
-      getComments(articleId),
+      getComments(articleId, accessToken),
     ]);
     return { article, comments: commentsResponse.comments, error: null };
   } catch (error) {

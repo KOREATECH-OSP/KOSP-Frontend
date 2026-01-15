@@ -10,10 +10,7 @@ import type {
   RoleListResponse,
   RoleCreateRequest,
   RoleUpdateRequest,
-  AdminUserResponse,
   AdminUserListResponse,
-  AdminStatsResponse,
-  AdminActivityResponse,
   AdminChallengeResponse,
   AdminChallengeListResponse,
   AdminChallengeCreateRequest,
@@ -21,37 +18,16 @@ import type {
   AdminNoticeResponse,
   AdminNoticeListResponse,
   AdminNoticeCreateRequest,
+  AdminNoticeUpdateRequest,
+  AdminReportResponse,
+  AdminReportListResponse,
+  AdminArticleResponse,
+  AdminArticleListResponse,
+  AdminSearchResponse,
 } from '@/types/admin';
 
 interface AuthOptions {
   accessToken: string;
-}
-
-// ============================================
-// Dashboard Stats
-// ============================================
-
-/**
- * 관리자 대시보드 통계 조회
- */
-export async function getAdminStats(auth: AuthOptions): Promise<AdminStatsResponse> {
-  return clientApiClient<AdminStatsResponse>('/v1/admin/stats', {
-    accessToken: auth.accessToken,
-    cache: 'no-store',
-  });
-}
-
-/**
- * 최근 활동 조회
- */
-export async function getAdminActivities(
-  auth: AuthOptions,
-  limit: number = 10
-): Promise<AdminActivityResponse> {
-  return clientApiClient<AdminActivityResponse>(`/v1/admin/activities?limit=${limit}`, {
-    accessToken: auth.accessToken,
-    cache: 'no-store',
-  });
 }
 
 // ============================================
@@ -62,20 +38,21 @@ export async function getAdminActivities(
  * 권한 목록 조회
  */
 export async function getPermissions(auth: AuthOptions): Promise<PermissionListResponse> {
-  return clientApiClient<PermissionListResponse>('/v1/admin/permissions', {
+  const permissions = await clientApiClient<PermissionResponse[]>('/v1/admin/permissions', {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
+  return { permissions };
 }
 
 /**
- * 단일 권한 조회
+ * 단일 권한 조회 (by name)
  */
 export async function getPermission(
-  permissionId: number,
+  permissionName: string,
   auth: AuthOptions
 ): Promise<PermissionResponse> {
-  return clientApiClient<PermissionResponse>(`/v1/admin/permissions/${permissionId}`, {
+  return clientApiClient<PermissionResponse>(`/v1/admin/permissions/${encodeURIComponent(permissionName)}`, {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
@@ -89,20 +66,21 @@ export async function getPermission(
  * 정책 목록 조회
  */
 export async function getPolicies(auth: AuthOptions): Promise<PolicyListResponse> {
-  return clientApiClient<PolicyListResponse>('/v1/admin/policies', {
+  const policies = await clientApiClient<PolicyResponse[]>('/v1/admin/policies', {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
+  return { policies };
 }
 
 /**
- * 단일 정책 조회
+ * 단일 정책 조회 (by name)
  */
 export async function getPolicy(
-  policyId: number,
+  policyName: string,
   auth: AuthOptions
 ): Promise<PolicyResponse> {
-  return clientApiClient<PolicyResponse>(`/v1/admin/policies/${policyId}`, {
+  return clientApiClient<PolicyResponse>(`/v1/admin/policies/${encodeURIComponent(policyName)}`, {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
@@ -123,14 +101,14 @@ export async function createPolicy(
 }
 
 /**
- * 정책 수정
+ * 정책 수정 (by name)
  */
 export async function updatePolicy(
-  policyId: number,
+  policyName: string,
   data: PolicyUpdateRequest,
   auth: AuthOptions
-): Promise<PolicyResponse> {
-  return clientApiClient<PolicyResponse>(`/v1/admin/policies/${policyId}`, {
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/policies/${encodeURIComponent(policyName)}`, {
     method: 'PUT',
     body: data,
     accessToken: auth.accessToken,
@@ -138,41 +116,42 @@ export async function updatePolicy(
 }
 
 /**
- * 정책 삭제
+ * 정책 삭제 (by name)
  */
 export async function deletePolicy(
-  policyId: number,
+  policyName: string,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/policies/${policyId}`, {
+  await clientApiClient<void>(`/v1/admin/policies/${encodeURIComponent(policyName)}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
 }
 
 /**
- * 정책에 권한 추가
+ * 정책에 권한 추가 (by name)
  */
 export async function attachPermissionToPolicy(
-  policyId: number,
-  permissionId: number,
+  policyName: string,
+  permissionName: string,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/policies/${policyId}/permissions/${permissionId}`, {
+  await clientApiClient<void>(`/v1/admin/policies/${encodeURIComponent(policyName)}/permissions`, {
     method: 'POST',
+    body: { permissionName },
     accessToken: auth.accessToken,
   });
 }
 
 /**
- * 정책에서 권한 제거
+ * 정책에서 권한 제거 (by name)
  */
 export async function detachPermissionFromPolicy(
-  policyId: number,
-  permissionId: number,
+  policyName: string,
+  permissionName: string,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/policies/${policyId}/permissions/${permissionId}`, {
+  await clientApiClient<void>(`/v1/admin/policies/${encodeURIComponent(policyName)}/permissions/${encodeURIComponent(permissionName)}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
@@ -186,20 +165,21 @@ export async function detachPermissionFromPolicy(
  * 역할 목록 조회
  */
 export async function getRoles(auth: AuthOptions): Promise<RoleListResponse> {
-  return clientApiClient<RoleListResponse>('/v1/admin/roles', {
+  const roles = await clientApiClient<RoleResponse[]>('/v1/admin/roles', {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
+  return { roles };
 }
 
 /**
- * 단일 역할 조회
+ * 단일 역할 조회 (by name)
  */
 export async function getRole(
-  roleId: number,
+  roleName: string,
   auth: AuthOptions
 ): Promise<RoleResponse> {
-  return clientApiClient<RoleResponse>(`/v1/admin/roles/${roleId}`, {
+  return clientApiClient<RoleResponse>(`/v1/admin/roles/${encodeURIComponent(roleName)}`, {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
@@ -220,14 +200,14 @@ export async function createRole(
 }
 
 /**
- * 역할 수정
+ * 역할 수정 (by name)
  */
 export async function updateRole(
-  roleId: number,
+  roleName: string,
   data: RoleUpdateRequest,
   auth: AuthOptions
-): Promise<RoleResponse> {
-  return clientApiClient<RoleResponse>(`/v1/admin/roles/${roleId}`, {
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/roles/${encodeURIComponent(roleName)}`, {
     method: 'PUT',
     body: data,
     accessToken: auth.accessToken,
@@ -235,41 +215,42 @@ export async function updateRole(
 }
 
 /**
- * 역할 삭제
+ * 역할 삭제 (by name)
  */
 export async function deleteRole(
-  roleId: number,
+  roleName: string,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/roles/${roleId}`, {
+  await clientApiClient<void>(`/v1/admin/roles/${encodeURIComponent(roleName)}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
 }
 
 /**
- * 역할에 정책 추가
+ * 역할에 정책 추가 (by name)
  */
 export async function attachPolicyToRole(
-  roleId: number,
-  policyId: number,
+  roleName: string,
+  policyName: string,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/roles/${roleId}/policies/${policyId}`, {
+  await clientApiClient<void>(`/v1/admin/roles/${encodeURIComponent(roleName)}/policies`, {
     method: 'POST',
+    body: { policyName },
     accessToken: auth.accessToken,
   });
 }
 
 /**
- * 역할에서 정책 제거
+ * 역할에서 정책 제거 (by name)
  */
 export async function detachPolicyFromRole(
-  roleId: number,
-  policyId: number,
+  roleName: string,
+  policyName: string,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/roles/${roleId}/policies/${policyId}`, {
+  await clientApiClient<void>(`/v1/admin/roles/${encodeURIComponent(roleName)}/policies/${encodeURIComponent(policyName)}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
@@ -282,8 +263,6 @@ export async function detachPolicyFromRole(
 interface GetUsersParams {
   page?: number;
   size?: number;
-  search?: string;
-  role?: string;
 }
 
 /**
@@ -296,8 +275,6 @@ export async function getAdminUsers(
   const queryParams = new URLSearchParams();
   if (params.page !== undefined) queryParams.append('page', String(params.page - 1));
   if (params.size !== undefined) queryParams.append('size', String(params.size));
-  if (params.search) queryParams.append('search', params.search);
-  if (params.role) queryParams.append('role', params.role);
 
   const queryString = queryParams.toString();
   const endpoint = `/v1/admin/users${queryString ? `?${queryString}` : ''}`;
@@ -309,68 +286,44 @@ export async function getAdminUsers(
 }
 
 /**
- * 회원 상세 조회 (관리자용)
+ * 회원 정보 수정 (관리자용)
  */
-export async function getAdminUser(
+export async function updateAdminUser(
   userId: number,
-  auth: AuthOptions
-): Promise<AdminUserResponse> {
-  return clientApiClient<AdminUserResponse>(`/v1/admin/users/${userId}`, {
-    accessToken: auth.accessToken,
-    cache: 'no-store',
-  });
-}
-
-/**
- * 회원에게 역할 부여
- */
-export async function assignRoleToUser(
-  userId: number,
-  roleId: number,
+  data: { name?: string; introduction?: string; profileImageUrl?: string },
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/users/${userId}/roles/${roleId}`, {
-    method: 'POST',
+  await clientApiClient<void>(`/v1/admin/users/${userId}`, {
+    method: 'PUT',
+    body: data,
     accessToken: auth.accessToken,
   });
 }
 
 /**
- * 회원에서 역할 제거
+ * 회원 강제 탈퇴 (관리자용)
  */
-export async function removeRoleFromUser(
+export async function deleteAdminUser(
   userId: number,
-  roleId: number,
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/users/${userId}/roles/${roleId}`, {
+  await clientApiClient<void>(`/v1/admin/users/${userId}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
 }
 
 /**
- * 회원 비활성화 (정지)
+ * 회원 역할 변경 (역할 배열 전체 교체)
  */
-export async function suspendUser(
+export async function updateUserRoles(
   userId: number,
+  roles: string[],
   auth: AuthOptions
 ): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/users/${userId}/suspend`, {
-    method: 'POST',
-    accessToken: auth.accessToken,
-  });
-}
-
-/**
- * 회원 활성화 (정지 해제)
- */
-export async function activateUser(
-  userId: number,
-  auth: AuthOptions
-): Promise<void> {
-  await clientApiClient<void>(`/v1/admin/users/${userId}/activate`, {
-    method: 'POST',
+  await clientApiClient<void>(`/v1/admin/users/${userId}/roles`, {
+    method: 'PUT',
+    body: { roles },
     accessToken: auth.accessToken,
   });
 }
@@ -390,6 +343,19 @@ export async function getAdminChallenges(
     cache: 'no-store',
   });
   return response.challenges || [];
+}
+
+/**
+ * 챌린지 상세 조회
+ */
+export async function getAdminChallenge(
+  challengeId: number,
+  auth: AuthOptions
+): Promise<AdminChallengeResponse> {
+  return clientApiClient<AdminChallengeResponse>(`/v1/admin/challenges/${challengeId}`, {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
 }
 
 /**
@@ -439,7 +405,49 @@ export async function deleteAdminChallenge(
 // ============================================
 
 /**
- * 공지사항 목록 조회 (boardId=3이 공지사항 게시판)
+ * 공지사항 작성
+ */
+export async function createAdminNotice(
+  data: AdminNoticeCreateRequest,
+  auth: AuthOptions
+): Promise<AdminNoticeResponse> {
+  return clientApiClient<AdminNoticeResponse>('/v1/admin/notices', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 공지사항 수정
+ */
+export async function updateAdminNotice(
+  noticeId: number,
+  data: AdminNoticeUpdateRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/notices/${noticeId}`, {
+    method: 'PUT',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 공지사항 삭제
+ */
+export async function deleteAdminNotice(
+  noticeId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/notices/${noticeId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 공지사항 목록 조회 (커뮤니티 API 사용 - boardId=3이 공지사항)
  */
 export async function getAdminNotices(
   auth: AuthOptions,
@@ -466,36 +474,106 @@ export async function getAdminNotices(
   }
 }
 
+// ============================================
+// Article Management APIs
+// ============================================
+
 /**
- * 공지사항 생성
+ * 게시글 목록 조회 (관리자용)
  */
-export async function createAdminNotice(
-  data: AdminNoticeCreateRequest,
-  auth: AuthOptions
-): Promise<AdminNoticeResponse> {
-  return clientApiClient<AdminNoticeResponse>('/v1/admin/notices', {
-    method: 'POST',
-    body: data,
+export async function getAdminArticles(
+  auth: AuthOptions,
+  boardId?: number,
+  page: number = 0,
+  size: number = 20
+): Promise<AdminArticleListResponse> {
+  const queryParams = new URLSearchParams();
+  if (boardId !== undefined) queryParams.append('boardId', String(boardId));
+  queryParams.append('page', String(page));
+  queryParams.append('size', String(size));
+
+  return clientApiClient<AdminArticleListResponse>(`/v1/admin/articles?${queryParams.toString()}`, {
     accessToken: auth.accessToken,
+    cache: 'no-store',
   });
 }
 
 /**
- * 공지사항 삭제
+ * 게시글 상세 조회 (관리자용)
  */
-export async function deleteAdminNotice(
-  noticeId: number,
+export async function getAdminArticle(
+  articleId: number,
+  auth: AuthOptions
+): Promise<AdminArticleResponse> {
+  return clientApiClient<AdminArticleResponse>(`/v1/admin/articles/${articleId}`, {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 게시글 삭제 (관리자용)
+ */
+export async function deleteAdminArticle(
+  articleId: number,
   auth: AuthOptions
 ): Promise<void> {
-  try {
-    await clientApiClient<void>(`/v1/admin/articles/${noticeId}`, {
-      method: 'DELETE',
-      accessToken: auth.accessToken,
-    });
-  } catch {
-    await clientApiClient<void>(`/v1/admin/notices/${noticeId}`, {
-      method: 'DELETE',
-      accessToken: auth.accessToken,
-    });
-  }
+  await clientApiClient<void>(`/v1/admin/articles/${articleId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// Report Management APIs
+// ============================================
+
+/**
+ * 신고 목록 조회
+ */
+export async function getAdminReports(
+  auth: AuthOptions
+): Promise<AdminReportListResponse> {
+  const reports = await clientApiClient<AdminReportResponse[]>('/v1/admin/reports', {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+  return { reports };
+}
+
+/**
+ * 신고 처리
+ */
+export async function processAdminReport(
+  reportId: number,
+  action: 'DELETE_CONTENT' | 'REJECT',
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/reports/${reportId}`, {
+    method: 'POST',
+    body: { action },
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// Search API
+// ============================================
+
+/**
+ * 통합 검색 (관리자용)
+ */
+export async function adminSearch(
+  keyword: string,
+  type: 'USER' | 'ARTICLE' | 'ALL',
+  auth: AuthOptions
+): Promise<AdminSearchResponse> {
+  const queryParams = new URLSearchParams();
+  queryParams.append('keyword', keyword);
+  queryParams.append('type', type);
+
+  return clientApiClient<AdminSearchResponse>(`/v1/admin/search?${queryParams.toString()}`, {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
 }

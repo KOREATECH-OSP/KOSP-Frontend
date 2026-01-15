@@ -40,7 +40,7 @@ export default function AdminPermissionsPage() {
   );
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 pb-6 md:px-8 md:pb-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">권한(Permission) 관리</h1>

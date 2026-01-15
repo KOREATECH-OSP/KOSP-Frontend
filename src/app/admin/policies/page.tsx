@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Search, Shield, Plus, X, Loader2, Trash2, Key, CheckCircle2 } from 'lucide-react';
+import { Search, Shield, Plus, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { getPolicies, getPermissions, createPolicy, deletePolicy, attachPermissionToPolicy, detachPermissionFromPolicy } from '@/lib/api/admin';
 import type { PolicyResponse, PermissionResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
@@ -23,14 +23,16 @@ export default function AdminPoliciesPage() {
     setIsLoading(true);
     try {
       const [policiesData, permissionsData] = await Promise.all([
-        getPolicies({ accessToken: session.accessToken }),
-        getPermissions({ accessToken: session.accessToken }),
+        getPolicies({ accessToken: session.accessToken }).catch(() => ({ policies: [] })),
+        getPermissions({ accessToken: session.accessToken }).catch(() => ({ permissions: [] })),
       ]);
-      setPolicies(policiesData.policies);
-      setPermissions(permissionsData.permissions);
+      setPolicies(policiesData.policies || []);
+      setPermissions(permissionsData.permissions || []);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       toast.error('데이터를 불러오는데 실패했습니다.');
+      setPolicies([]);
+      setPermissions([]);
     } finally {
       setIsLoading(false);
     }
@@ -42,8 +44,8 @@ export default function AdminPoliciesPage() {
 
   const filteredPolicies = policies.filter(
     (policy) =>
-      policy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      policy.description.toLowerCase().includes(searchQuery.toLowerCase())
+      policy.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      policy.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreatePolicy = async (data: { name: string; description: string; permissionIds: number[] }) => {
@@ -60,12 +62,12 @@ export default function AdminPoliciesPage() {
     }
   };
 
-  const handleDeletePolicy = async (policyId: number) => {
+  const handleDeletePolicy = async (policyName: string) => {
     if (!session?.accessToken) return;
     if (!confirm('이 정책을 삭제하시겠습니까?')) return;
 
     try {
-      await deletePolicy(policyId, { accessToken: session.accessToken });
+      await deletePolicy(policyName, { accessToken: session.accessToken });
       toast.success('정책이 삭제되었습니다.');
       fetchData();
     } catch (err) {
@@ -74,15 +76,15 @@ export default function AdminPoliciesPage() {
     }
   };
 
-  const handlePermissionToggle = async (policyId: number, permissionId: number, action: 'add' | 'remove') => {
+  const handlePermissionToggle = async (policyName: string, permissionName: string, action: 'add' | 'remove') => {
     if (!session?.accessToken) return;
 
     try {
       if (action === 'add') {
-        await attachPermissionToPolicy(policyId, permissionId, { accessToken: session.accessToken });
+        await attachPermissionToPolicy(policyName, permissionName, { accessToken: session.accessToken });
         toast.success('권한이 추가되었습니다.');
       } else {
-        await detachPermissionFromPolicy(policyId, permissionId, { accessToken: session.accessToken });
+        await detachPermissionFromPolicy(policyName, permissionName, { accessToken: session.accessToken });
         toast.success('권한이 제거되었습니다.');
       }
       fetchData();
@@ -93,7 +95,7 @@ export default function AdminPoliciesPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 pb-6 md:px-8 md:pb-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">정책(Policy) 관리</h1>
@@ -146,76 +148,82 @@ export default function AdminPoliciesPage() {
             <p className="text-gray-500">검색 결과가 없습니다</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPolicies.map((policy) => (
-              <div
-                key={policy.id}
-                className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md"
-              >
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100">
-                      <Shield className="h-6 w-6 text-gray-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{policy.name}</h3>
-                      <span className="text-xs text-gray-400">ID: {policy.id}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeletePolicy(policy.id)}
-                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <p className="mb-4 text-sm text-gray-500">{policy.description}</p>
-
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Key className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-700">
-                        권한 ({policy.permissions.length})
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPolicy(policy);
-                        setShowPermissionModal(true);
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      정책명
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      설명
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      권한
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
                       관리
-                    </button>
-                  </div>
-
-                  {policy.permissions.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {policy.permissions.slice(0, 5).map((perm) => (
-                        <span
-                          key={perm.id}
-                          className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
-                        >
-                          {perm.name}
-                        </span>
-                      ))}
-                      {policy.permissions.length > 5 && (
-                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-400">
-                          +{policy.permissions.length - 5}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg bg-gray-50 p-2 text-center text-xs text-gray-400">
-                      권한 없음
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredPolicies.map((policy) => (
+                    <tr key={policy.id} className="transition-colors hover:bg-gray-50">
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div>
+                          <div className="font-semibold text-gray-900">{policy.name}</div>
+                          <div className="text-xs text-gray-400">ID: {policy.id}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-600">{policy.description || '-'}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {policy.permissions && policy.permissions.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {policy.permissions.slice(0, 3).map((perm, index) => (
+                              <span
+                                key={perm.id ?? perm.name ?? index}
+                                className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
+                              >
+                                {perm.name}
+                              </span>
+                            ))}
+                            {policy.permissions.length > 3 && (
+                              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-400">
+                                +{policy.permissions.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedPolicy(policy);
+                              setShowPermissionModal(true);
+                            }}
+                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                          >
+                            권한
+                          </button>
+                          <button
+                            onClick={() => handleDeletePolicy(policy.name)}
+                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -312,9 +320,9 @@ function PolicyFormModal({
               권한 선택 ({selectedPermissions.length}개)
             </label>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-gray-200 p-3">
-              {permissions.map((perm) => (
+              {permissions.map((perm, index) => (
                 <label
-                  key={perm.id}
+                  key={perm.id ?? perm.name ?? index}
                   className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                 >
                   <input
@@ -362,67 +370,123 @@ function PermissionManageModal({
   policy: PolicyResponse;
   allPermissions: PermissionResponse[];
   onClose: () => void;
-  onToggle: (policyId: number, permissionId: number, action: 'add' | 'remove') => void;
+  onToggle: (policyName: string, permissionName: string, action: 'add' | 'remove') => void;
 }) {
-  const policyPermissionIds = policy.permissions.map((p) => p.id);
+  const [searchQuery, setSearchQuery] = useState('');
+  const policyPermissionNames = (policy.permissions || []).map((p) => p.name);
+  const assignedCount = policyPermissionNames.length;
+
+  const filteredPermissions = allPermissions.filter(
+    (perm) =>
+      perm.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      perm.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">권한 관리</h2>
-            <p className="text-sm text-gray-500">{policy.name} 정책의 권한을 관리하세요</p>
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        {/* Header */}
+        <div className="border-b border-gray-200 px-6 py-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">권한 관리</h2>
+              <p className="text-sm text-gray-500">
+                <span className="font-medium text-gray-900">{policy.name}</span> 정책에 할당된 권한: {assignedCount}개
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="권한 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-4 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          {allPermissions.map((perm) => {
-            const hasPermission = policyPermissionIds.includes(perm.id);
-            return (
-              <div
-                key={perm.id}
-                className={`flex items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                  hasPermission ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Key className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{perm.name}</span>
-                      {hasPermission && <CheckCircle2 className="h-4 w-4 text-gray-900" />}
-                    </div>
-                    <p className="text-xs text-gray-500">{perm.description}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => onToggle(policy.id, perm.id, hasPermission ? 'remove' : 'add')}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    hasPermission
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
-                  }`}
-                >
-                  {hasPermission ? '제거' : '추가'}
-                </button>
-              </div>
-            );
-          })}
+        {/* Table */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredPermissions.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-sm text-gray-500">
+              검색 결과가 없습니다
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="sticky top-0 bg-gray-50">
+                <tr className="border-b border-gray-200">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    상태
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    권한명
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    설명
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    작업
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredPermissions.map((perm, index) => {
+                  const hasPermission = policyPermissionNames.includes(perm.name);
+                  return (
+                    <tr key={perm.id ?? perm.name ?? index} className={`transition-colors ${hasPermission ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
+                      <td className="whitespace-nowrap px-6 py-3">
+                        {hasPermission ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <CheckCircle2 className="h-3 w-3" />
+                            할당됨
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                            미할당
+                          </span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-3">
+                        <span className="font-medium text-gray-900">{perm.name}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm text-gray-600">{perm.description || '-'}</span>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-3 text-right">
+                        <button
+                          onClick={() => onToggle(policy.name, perm.name, hasPermission ? 'remove' : 'add')}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                            hasPermission
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-gray-900 text-white hover:bg-gray-800'
+                          }`}
+                        >
+                          {hasPermission ? '제거' : '추가'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        {/* Footer */}
+        <div className="flex justify-end border-t border-gray-200 px-6 py-4">
           <button
             onClick={onClose}
-            className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
           >
-            닫기
+            완료
           </button>
         </div>
       </div>

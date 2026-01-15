@@ -3,33 +3,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { Search, Users, Shield, Plus, CheckCircle2, X, Loader2, ChevronLeft, ChevronRight, Ban, Check } from 'lucide-react';
-import { getAdminUsers, getRoles, assignRoleToUser, removeRoleFromUser, suspendUser, activateUser } from '@/lib/api/admin';
+import { Search, Users, ChevronLeft, ChevronRight, X, CheckCircle2, Loader2 } from 'lucide-react';
+import { getAdminUsers, getRoles, updateUserRoles, deleteAdminUser } from '@/lib/api/admin';
 import type { AdminUserResponse, RoleResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('ko-KR', {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
-}
-
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'ACTIVE':
-      return <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">활성</span>;
-    case 'SUSPENDED':
-      return <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">정지</span>;
-    case 'DELETED':
-      return <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">탈퇴</span>;
-    default:
-      return null;
-  }
 }
 
 export default function AdminUsersPage() {
@@ -51,23 +38,24 @@ export default function AdminUsersPage() {
     try {
       const [usersData, rolesData] = await Promise.all([
         getAdminUsers(
-          { page: currentPage, size: PAGE_SIZE, search: searchQuery || undefined },
+          { page: currentPage, size: PAGE_SIZE },
           { accessToken: session.accessToken }
-        ),
-        getRoles({ accessToken: session.accessToken }),
+        ).catch(() => ({ users: [], totalPages: 1, totalElements: 0 })),
+        getRoles({ accessToken: session.accessToken }).catch(() => ({ roles: [] })),
       ]);
-      setUsers(usersData.users);
-      setTotalPages(usersData.pagination.totalPages);
-      setTotalItems(usersData.pagination.totalItems);
-      setRoles(rolesData.roles);
+      setUsers(usersData.users || []);
+      setTotalPages(usersData.totalPages || 1);
+      setTotalItems(usersData.totalElements || 0);
+      setRoles(rolesData.roles || []);
     } catch (err) {
       console.error('Failed to fetch users:', err);
       toast.error('회원 목록을 불러오는데 실패했습니다.');
       setUsers([]);
+      setRoles([]);
     } finally {
       setIsLoading(false);
     }
-  }, [session?.accessToken, currentPage, searchQuery]);
+  }, [session?.accessToken, currentPage]);
 
   useEffect(() => {
     fetchUsers();
@@ -79,37 +67,26 @@ export default function AdminUsersPage() {
     fetchUsers();
   };
 
-  const handleStatusToggle = async (user: AdminUserResponse) => {
+  const handleDeleteUser = async (user: AdminUserResponse) => {
     if (!session?.accessToken) return;
-
-    const action = user.status === 'ACTIVE' ? '정지' : '활성화';
-    if (!confirm(`${user.name}님을 ${action}하시겠습니까?`)) return;
+    if (!confirm(`${user.name}님을 강제 탈퇴시키겠습니까?`)) return;
 
     try {
-      if (user.status === 'ACTIVE') {
-        await suspendUser(user.id, { accessToken: session.accessToken });
-      } else {
-        await activateUser(user.id, { accessToken: session.accessToken });
-      }
-      toast.success(`회원이 ${action}되었습니다.`);
+      await deleteAdminUser(user.id, { accessToken: session.accessToken });
+      toast.success('회원이 탈퇴 처리되었습니다.');
       fetchUsers();
     } catch (err) {
-      console.error('Status toggle failed:', err);
-      toast.error(`회원 ${action}에 실패했습니다.`);
+      console.error('Delete user failed:', err);
+      toast.error('회원 탈퇴 처리에 실패했습니다.');
     }
   };
 
-  const handleRoleChange = async (userId: number, roleId: number, action: 'add' | 'remove') => {
+  const handleRoleChange = async (userId: number, newRoles: string[]) => {
     if (!session?.accessToken) return;
 
     try {
-      if (action === 'add') {
-        await assignRoleToUser(userId, roleId, { accessToken: session.accessToken });
-        toast.success('역할이 부여되었습니다.');
-      } else {
-        await removeRoleFromUser(userId, roleId, { accessToken: session.accessToken });
-        toast.success('역할이 해제되었습니다.');
-      }
+      await updateUserRoles(userId, newRoles, { accessToken: session.accessToken });
+      toast.success('역할이 변경되었습니다.');
       fetchUsers();
       setShowRoleModal(false);
     } catch (err) {
@@ -118,189 +95,265 @@ export default function AdminUsersPage() {
     }
   };
 
-  const activeCount = users.filter((u) => u.status === 'ACTIVE').length;
-  const roleCount = users.filter((u) => u.roles.length > 0).length;
+  const activeCount = users.filter((u) => !u.isDeleted).length;
+
+  // 페이지 번호 배열 생성
+  const getPageNumbers = () => {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    const end = Math.min(totalPages, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 pb-6 md:px-8 md:pb-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">회원 관리</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            회원에게 역할을 부여하여 권한을 관리합니다
-          </p>
+        {/* 헤더 */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">회원 관리</h1>
+            <p className="mt-0.5 text-sm text-gray-500">
+              전체 {totalItems.toLocaleString()}명 · 활성 {activeCount}명
+            </p>
+          </div>
+
+          {/* 검색 */}
+          <form onSubmit={handleSearch} className="w-full sm:w-72">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="이름, 이메일, 학번 검색"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+          </form>
         </div>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-gray-500">전체 회원</span>
-              <Users className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{totalItems.toLocaleString()}명</p>
-          </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-gray-500">역할 보유자</span>
-              <Shield className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{roleCount}명</p>
-          </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-gray-500">활성 회원</span>
-              <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{activeCount}명</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSearch} className="mb-6 rounded-2xl border border-gray-200 bg-white p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="이름, 이메일, 학번으로 검색"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-            />
-          </div>
-        </form>
-
-        {isLoading ? (
-          <div className="flex min-h-[40vh] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        ) : users.length === 0 ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-            <Users className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-            <p className="text-gray-500">검색 결과가 없습니다</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md"
-                >
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      {user.profileImage ? (
-                        <Image
-                          src={user.profileImage}
-                          alt={user.name}
-                          width={48}
-                          height={48}
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-900 text-lg font-semibold text-white">
-                          {user.name[0]}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-900">{user.name}</h3>
-                          {getStatusBadge(user.status)}
-                        </div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-xs text-gray-400">{user.kutId}</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleStatusToggle(user)}
-                      className={`rounded-lg p-2 transition-colors ${
-                        user.status === 'ACTIVE'
-                          ? 'text-gray-400 hover:bg-red-50 hover:text-red-500'
-                          : 'text-gray-400 hover:bg-green-50 hover:text-green-500'
-                      }`}
-                      title={user.status === 'ACTIVE' ? '정지' : '활성화'}
-                    >
-                      {user.status === 'ACTIVE' ? <Ban className="h-5 w-5" /> : <Check className="h-5 w-5" />}
-                    </button>
-                  </div>
-
-                  <div className="border-t border-gray-100 pt-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">
-                          보유 역할 ({user.roles.length})
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowRoleModal(true);
-                        }}
-                        className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        역할 관리
-                      </button>
-                    </div>
-
-                    {user.roles.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {user.roles.map((role) => (
-                          <div
-                            key={role.id}
-                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-gray-600" />
-                            <span className="text-sm font-medium text-gray-700">{role.name}</span>
+        {/* 테이블 */}
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    회원
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    학번
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    역할
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    상태
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    가입일
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    관리
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-16 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
+                      <p className="mt-2 text-sm text-gray-500">불러오는 중...</p>
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-16 text-center">
+                      <Users className="mx-auto h-8 w-8 text-gray-300" />
+                      <p className="mt-2 text-sm text-gray-500">회원이 없습니다</p>
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      {/* 회원 정보 */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {user.profileImageUrl ? (
+                            <Image
+                              src={user.profileImageUrl}
+                              alt={user.name}
+                              width={36}
+                              height={36}
+                              className="h-9 w-9 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-medium text-white">
+                              {user.name[0]}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-gray-900">
+                              {user.name}
+                            </div>
+                            <div className="truncate text-xs text-gray-500">
+                              {user.kutEmail}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-400">
-                        부여된 역할이 없습니다
-                      </div>
-                    )}
-                  </div>
+                        </div>
+                      </td>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4 text-xs text-gray-400">
-                    <span>가입일: {formatDate(user.createdAt)}</span>
-                    <span className="flex items-center gap-1">
-                      최근 로그인: {formatDate(user.lastLoginAt)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      {/* 학번 */}
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-600">{user.kutId}</span>
+                      </td>
 
-            {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-center gap-2">
+                      {/* 역할 */}
+                      <td className="px-4 py-3">
+                        {user.roles.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles.slice(0, 2).map((role) => (
+                              <span
+                                key={role}
+                                className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700"
+                              >
+                                {role.replace('ROLE_', '')}
+                              </span>
+                            ))}
+                            {user.roles.length > 2 && (
+                              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                                +{user.roles.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+
+                      {/* 상태 */}
+                      <td className="px-4 py-3">
+                        {user.isDeleted ? (
+                          <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
+                            탈퇴
+                          </span>
+                        ) : (
+                          <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                            활성
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 가입일 */}
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-600">
+                          {formatDate(user.createdAt)}
+                        </span>
+                      </td>
+
+                      {/* 관리 버튼 */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowRoleModal(true);
+                            }}
+                            className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                          >
+                            역할
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600"
+                          >
+                            탈퇴
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+              <p className="text-sm text-gray-600">
+                총 {totalItems.toLocaleString()}명 중{' '}
+                <span className="font-medium">
+                  {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, totalItems)}
+                </span>
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
+                >
+                  처음
+                </button>
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="px-4 text-sm text-gray-600">
-                  {currentPage} / {totalPages}
-                </span>
+
+                {getPageNumbers().map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
+                >
+                  마지막
                 </button>
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </div>
 
+        {/* 역할 관리 모달 */}
         {showRoleModal && selectedUser && (
           <UserRoleModal
             user={selectedUser}
             allRoles={roles}
             onClose={() => setShowRoleModal(false)}
-            onRoleChange={handleRoleChange}
+            onSave={(newRoles) => handleRoleChange(selectedUser.id, newRoles)}
           />
         )}
       </div>
@@ -312,88 +365,109 @@ function UserRoleModal({
   user,
   allRoles,
   onClose,
-  onRoleChange,
+  onSave,
 }: {
   user: AdminUserResponse;
   allRoles: RoleResponse[];
   onClose: () => void;
-  onRoleChange: (userId: number, roleId: number, action: 'add' | 'remove') => void;
+  onSave: (roles: string[]) => void;
 }) {
-  const userRoleIds = user.roles.map((r) => r.id);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([...user.roles]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const toggleRole = (roleName: string) => {
+    setSelectedRoles((prev) =>
+      prev.includes(roleName)
+        ? prev.filter((r) => r !== roleName)
+        : [...prev, roleName]
+    );
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSave(selectedRoles);
+    setIsSaving(false);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">역할 관리</h2>
-            <p className="text-sm text-gray-500">
-              {user.name}님의 역할을 관리하세요
-            </p>
+            <h2 className="font-semibold text-gray-900">역할 관리</h2>
+            <p className="text-sm text-gray-500">{user.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mb-4 text-sm text-gray-600">
-          현재 역할:{' '}
-          <span className="font-semibold text-gray-900">{user.roles.length}</span>개
-        </div>
-
-        <div className="space-y-3">
-          {allRoles.map((role) => {
-            const hasRole = userRoleIds.includes(role.id);
-            return (
-              <div
-                key={role.id}
-                className={`flex items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                  hasRole ? 'border-gray-900 bg-gray-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{role.name}</span>
-                    {hasRole && <CheckCircle2 className="h-4 w-4 text-gray-900" />}
-                  </div>
-                  <p className="text-sm text-gray-600">{role.description}</p>
-                  {role.policies.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {role.policies.map((policy) => (
-                        <span
-                          key={policy.id}
-                          className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600"
-                        >
-                          {policy.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => onRoleChange(user.id, role.id, hasRole ? 'remove' : 'add')}
-                  className={`ml-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+        {/* 역할 목록 */}
+        <div className="max-h-[60vh] overflow-y-auto p-5">
+          <div className="space-y-2">
+            {allRoles.map((role, index) => {
+              const hasRole = selectedRoles.includes(role.name);
+              return (
+                <label
+                  key={role.id ?? role.name ?? index}
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all ${
                     hasRole
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                      ? 'border-gray-900 bg-gray-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  {hasRole ? '해제' : '부여'}
-                </button>
-              </div>
-            );
-          })}
+                  <input
+                    type="checkbox"
+                    checked={hasRole}
+                    onChange={() => toggleRole(role.name)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${
+                      hasRole
+                        ? 'border-gray-900 bg-gray-900'
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    {hasRole && <CheckCircle2 className="h-3 w-3 text-white" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">{role.name}</div>
+                    {role.description && (
+                      <div className="text-xs text-gray-500">{role.description}</div>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        {/* 푸터 */}
+        <div className="flex gap-2 border-t border-gray-200 px-5 py-4">
           <button
             onClick={onClose}
-            className="rounded-xl border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
-            닫기
+            취소
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-900 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                저장 중...
+              </>
+            ) : (
+              '저장'
+            )}
           </button>
         </div>
       </div>

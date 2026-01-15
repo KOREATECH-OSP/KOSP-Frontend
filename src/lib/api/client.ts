@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './config';
 import { toast } from '@/lib/toast';
+import { signOut } from 'next-auth/react';
 
 export interface ApiError {
   status: number;
@@ -115,11 +116,12 @@ export async function clientApiClient<T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    
+
     if (response.status === 401) {
       toast.error('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
+      signOut({ callbackUrl: '/login' });
     }
-    
+
     throw new ApiException(
       response.status,
       parseErrorMessage(errorText, response.status)

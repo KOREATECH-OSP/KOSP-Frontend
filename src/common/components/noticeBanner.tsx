@@ -4,8 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Volume2, X } from 'lucide-react';
 import { suitFont } from '../../style/font';
+import { getArticles } from '@/lib/api/article';
 
 const STORAGE_KEY = 'notice-banner-hidden-until';
+const NOTICE_BOARD_ID = 3;
+
+interface NoticeData {
+  id: number;
+  title: string;
+}
 
 function getInitialVisibility(): boolean {
   if (typeof window === 'undefined') return false;
@@ -25,22 +32,46 @@ function getInitialVisibility(): boolean {
 }
 
 function NoticeBanner() {
+  const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [notice, setNotice] = useState<NoticeData | null>(null);
 
   useEffect(() => {
-    // localStorage 접근은 클라이언트에서만 가능하므로 useEffect 사용 필수
+    // SSR hydration mismatch 방지를 위해 클라이언트에서만 마운트 상태 설정
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsVisible(getInitialVisibility());
-    setIsLoaded(true);
+    setMounted(true);
+    const shouldShow = getInitialVisibility();
+    if (shouldShow) {
+      setIsVisible(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    async function fetchLatestNotice() {
+      try {
+        const response = await getArticles(NOTICE_BOARD_ID, { page: 1, size: 1 });
+        if (response.posts && response.posts.length > 0) {
+          const latestNotice = response.posts[0];
+          setNotice({
+            id: latestNotice.id,
+            title: latestNotice.title,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch notice:', error);
+      }
+    }
+
+    fetchLatestNotice();
+  }, [isVisible]);
 
   const handleClose = () => {
     setIsVisible(false);
   };
 
   const handleHideForDay = () => {
-    // 24시간 후 날짜 계산
     const tomorrow = new Date();
     tomorrow.setHours(tomorrow.getHours() + 24);
 
@@ -48,9 +79,9 @@ function NoticeBanner() {
     setIsVisible(false);
   };
 
-  // 로딩 전에는 아무것도 렌더링하지 않음 (깜빡임 방지)
-  if (!isLoaded) return null;
+  if (!mounted) return null;
   if (!isVisible) return null;
+  if (!notice) return null;
 
   return (
     <div
@@ -60,12 +91,12 @@ function NoticeBanner() {
       <div className="max-w-7xl mx-auto flex items-stretch">
         {/* 공지 내용 */}
         <Link
-          href="#"
+          href={`/community/${notice.id}`}
           className="flex items-center gap-2 sm:gap-3 text-white hover:opacity-90 transition-opacity min-w-0 flex-1 py-2.5 px-4"
         >
           <Volume2 className="w-4 h-4 shrink-0" />
           <span className="text-xs sm:text-sm font-medium truncate">
-            2025학년도 1학기 오픈소스 프로젝트 참가자 모집 안내
+            {notice.title}
           </span>
         </Link>
 
