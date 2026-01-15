@@ -204,15 +204,23 @@ export default function NoticesPage() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedNotice(notice);
-                            setShowDeleteModal(true);
-                          }}
-                          className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600"
-                        >
-                          삭제
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => router.push(`/admin/contents/notices/edit/${notice.id}`)}
+                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedNotice(notice);
+                              setShowDeleteModal(true);
+                            }}
+                            className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600"
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

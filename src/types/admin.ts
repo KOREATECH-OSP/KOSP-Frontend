@@ -228,7 +228,7 @@ export interface AdminReportResponse {
   targetId: number;
   reason: string;
   description?: string;
-  status: 'PENDING' | 'PROCESSED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED';
   createdAt: string;
   processedAt?: string;
 }

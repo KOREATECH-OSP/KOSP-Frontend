@@ -18,7 +18,7 @@ import {
   LogOut,
   Trophy,
   Bell,
-  FolderOpen,
+  Flag,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
@@ -37,9 +37,38 @@ const navigation: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    name: '회원 관리',
+    name: '챌린지 관리',
+    href: '/admin/challenges',
+    icon: Trophy,
+    children: [
+      { name: '챌린지 목록', href: '/admin/challenges/list', icon: Trophy },
+      { name: '챌린지 생성', href: '/admin/challenges/create', icon: Trophy },
+    ],
+  },
+  {
+    name: '콘텐츠 관리',
+    href: '/admin/contents',
+    icon: FileText,
+    children: [
+      { name: '공지사항', href: '/admin/contents/notices', icon: Bell },
+      { name: '게시글', href: '/admin/contents/articles', icon: FileText },
+    ],
+  },
+  {
+    name: '신고 관리',
+    href: '/admin/reports',
+    icon: Flag,
+    children: [
+      { name: '신고 목록', href: '/admin/reports/list', icon: Flag },
+    ],
+  },
+  {
+    name: '사용자 관리',
     href: '/admin/users',
     icon: Users,
+    children: [
+      { name: '사용자 목록', href: '/admin/users/list', icon: Users },
+    ],
   },
   {
     name: '권한 시스템',
@@ -51,19 +80,6 @@ const navigation: NavItem[] = [
       { name: 'Roles', href: '/admin/roles', icon: Shield },
     ],
   },
-  {
-    name: '챌린지 관리',
-    href: '/admin/challenges/list',
-    icon: Trophy,
-  },
-  {
-    name: '콘텐츠 관리',
-    href: '/admin/contents',
-    icon: FolderOpen,
-    children: [
-      { name: '공지사항', href: '/admin/contents/notices', icon: Bell },
-    ],
-  },
 ];
 
 export default function AdminLayout({
@@ -72,7 +88,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['권한 시스템']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const pathname = usePathname();
   const { data: session } = useSession();
 
