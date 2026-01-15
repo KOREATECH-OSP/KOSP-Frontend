@@ -87,10 +87,26 @@ export default function AdminPoliciesPage() {
         await detachPermissionFromPolicy(policyName, permissionName, { accessToken: session.accessToken });
         toast.success('권한이 제거되었습니다.');
       }
-      fetchData();
-    } catch (err) {
+
+      // 데이터 다시 불러오기
+      const [policiesData, permissionsData] = await Promise.all([
+        getPolicies({ accessToken: session.accessToken }).catch(() => ({ policies: [] })),
+        getPermissions({ accessToken: session.accessToken }).catch(() => ({ permissions: [] })),
+      ]);
+      setPolicies(policiesData.policies || []);
+      setPermissions(permissionsData.permissions || []);
+
+      // 선택된 정책 업데이트
+      if (selectedPolicy) {
+        const updatedPolicy = (policiesData.policies || []).find((p: PolicyResponse) => p.name === selectedPolicy.name);
+        if (updatedPolicy) {
+          setSelectedPolicy(updatedPolicy);
+        }
+      }
+    } catch (err: unknown) {
       console.error('Failed to toggle permission:', err);
-      toast.error('권한 변경에 실패했습니다.');
+      const errorMessage = err instanceof Error ? err.message : '권한 변경에 실패했습니다.';
+      toast.error(errorMessage);
     }
   };
 
@@ -370,9 +386,10 @@ function PermissionManageModal({
   policy: PolicyResponse;
   allPermissions: PermissionResponse[];
   onClose: () => void;
-  onToggle: (policyName: string, permissionName: string, action: 'add' | 'remove') => void;
+  onToggle: (policyName: string, permissionName: string, action: 'add' | 'remove') => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [loadingPermission, setLoadingPermission] = useState<string | null>(null);
   const policyPermissionNames = (policy.permissions || []).map((p) => p.name);
   const assignedCount = policyPermissionNames.length;
 
@@ -462,14 +479,21 @@ function PermissionManageModal({
                       </td>
                       <td className="whitespace-nowrap px-6 py-3 text-right">
                         <button
-                          onClick={() => onToggle(policy.name, perm.name, hasPermission ? 'remove' : 'add')}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                          onClick={async () => {
+                            setLoadingPermission(perm.name);
+                            await onToggle(policy.name, perm.name, hasPermission ? 'remove' : 'add');
+                            setLoadingPermission(null);
+                          }}
+                          disabled={loadingPermission !== null}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
                             hasPermission
                               ? 'bg-red-50 text-red-600 hover:bg-red-100'
                               : 'bg-gray-900 text-white hover:bg-gray-800'
                           }`}
                         >
-                          {hasPermission ? '제거' : '추가'}
+                          {loadingPermission === perm.name ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : hasPermission ? '제거' : '추가'}
                         </button>
                       </td>
                     </tr>

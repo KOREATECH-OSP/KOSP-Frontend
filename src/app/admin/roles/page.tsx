@@ -87,10 +87,26 @@ export default function AdminRolesPage() {
         await detachPolicyFromRole(roleName, policyName, { accessToken: session.accessToken });
         toast.success('정책이 제거되었습니다.');
       }
-      fetchData();
-    } catch (err) {
+
+      // 데이터 다시 불러오기
+      const [rolesData, policiesData] = await Promise.all([
+        getRoles({ accessToken: session.accessToken }).catch(() => ({ roles: [] })),
+        getPolicies({ accessToken: session.accessToken }).catch(() => ({ policies: [] })),
+      ]);
+      setRoles(rolesData.roles || []);
+      setPolicies(policiesData.policies || []);
+
+      // 선택된 역할 업데이트
+      if (selectedRole) {
+        const updatedRole = (rolesData.roles || []).find((r: RoleResponse) => r.name === selectedRole.name);
+        if (updatedRole) {
+          setSelectedRole(updatedRole);
+        }
+      }
+    } catch (err: unknown) {
       console.error('Failed to toggle policy:', err);
-      toast.error('정책 변경에 실패했습니다.');
+      const errorMessage = err instanceof Error ? err.message : '정책 변경에 실패했습니다.';
+      toast.error(errorMessage);
     }
   };
 
@@ -370,9 +386,10 @@ function PolicyManageModal({
   role: RoleResponse;
   allPolicies: PolicyResponse[];
   onClose: () => void;
-  onToggle: (roleName: string, policyName: string, action: 'add' | 'remove') => void;
+  onToggle: (roleName: string, policyName: string, action: 'add' | 'remove') => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [loadingPolicy, setLoadingPolicy] = useState<string | null>(null);
   const rolePolicyNames = (role.policies || []).map((p) => p.name);
   const assignedCount = rolePolicyNames.length;
 
@@ -462,14 +479,21 @@ function PolicyManageModal({
                       </td>
                       <td className="whitespace-nowrap px-6 py-3 text-right">
                         <button
-                          onClick={() => onToggle(role.name, policy.name, hasPolicy ? 'remove' : 'add')}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                          onClick={async () => {
+                            setLoadingPolicy(policy.name);
+                            await onToggle(role.name, policy.name, hasPolicy ? 'remove' : 'add');
+                            setLoadingPolicy(null);
+                          }}
+                          disabled={loadingPolicy !== null}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
                             hasPolicy
                               ? 'bg-red-50 text-red-600 hover:bg-red-100'
                               : 'bg-gray-900 text-white hover:bg-gray-800'
                           }`}
                         >
-                          {hasPolicy ? '제거' : '추가'}
+                          {loadingPolicy === policy.name ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : hasPolicy ? '제거' : '추가'}
                         </button>
                       </td>
                     </tr>
