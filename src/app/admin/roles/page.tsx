@@ -187,10 +187,7 @@ export default function AdminRolesPage() {
                   {filteredRoles.map((role) => (
                     <tr key={role.id} className="transition-colors hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
-                        <div>
-                          <div className="font-semibold text-gray-900">{role.name}</div>
-                          <div className="text-xs text-gray-400">ID: {role.id}</div>
-                        </div>
+                        <span className="font-semibold text-gray-900">{role.name}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-gray-600">{role.description || '-'}</span>
