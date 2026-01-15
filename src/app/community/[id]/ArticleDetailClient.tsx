@@ -3,15 +3,14 @@
 import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import DOMPurify from 'isomorphic-dompurify';
 import {
   ArrowLeft,
-  ThumbsUp,
+  Heart,
   Eye,
-  MessageSquare,
-  Share2,
-  Bookmark,
+  Link2,
+  Star,
   Loader2,
   Trash2,
   AlertTriangle,
@@ -52,6 +51,11 @@ export default function ArticleDetailClient({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isMine = currentUserId === article.author.id;
+
+  const handleUnauthorized = () => {
+    toast.error('로그인이 만료되었습니다. 다시 로그인해주세요.');
+    signOut({ callbackUrl: '/login' });
+  };
 
   // XSS 방어를 위한 HTML sanitization
   const sanitizedContent = useMemo(() => {
@@ -116,18 +120,32 @@ export default function ArticleDetailClient({
 
     setIsSubmitting(true);
     try {
-      await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`, {
+      const postRes = await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
         body: JSON.stringify({ content: newComment }),
       });
+      if (postRes.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      if (!postRes.ok) throw new Error('댓글 작성에 실패했습니다.');
       setNewComment('');
       router.refresh();
-      const res = await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`);
+      const res = await fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       const data = await res.json();
       setComments(data.comments);
     } catch (error) {
@@ -149,13 +167,18 @@ export default function ArticleDetailClient({
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}`, {
         method: 'DELETE',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
       })
-        .then(() => {
+        .then((res) => {
+          if (res.status === 401) {
+            handleUnauthorized();
+            return;
+          }
+          if (!res.ok) throw new Error('댓글 삭제에 실패했습니다.');
           setComments((prev) => prev.filter((c) => c.id !== commentId));
         })
         .catch((error) => {
@@ -174,14 +197,21 @@ export default function ArticleDetailClient({
     startTransition(() => {
       fetch(`${API_BASE_URL}/v1/community/articles/${article.id}/comments/${commentId}/likes`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
       })
-        .then((res) => res.json())
-        .then((response: { isLiked: boolean }) => {
+        .then((res) => {
+          if (res.status === 401) {
+            handleUnauthorized();
+            return null;
+          }
+          return res.json();
+        })
+        .then((response: { isLiked: boolean } | null) => {
+          if (!response) return;
           setComments((prev) =>
             prev.map((c) =>
               c.id === commentId
@@ -281,7 +311,7 @@ export default function ArticleDetailClient({
               </button>
               
               {showMenu && (
-                <div className="absolute right-0 top-8 z-10 w-32 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="absolute right-0 top-8 z-10 w-32 origin-top-right rounded-lg bg-white py-1 shadow-lg focus:outline-none">
                   {isMine ? (
                     <>
                       <Link
@@ -325,95 +355,89 @@ export default function ArticleDetailClient({
                 {article.author.name}
               </Link>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 text-gray-400">
               <span className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4" strokeWidth={1.5} />
                 {article.views}
               </span>
               <span className="flex items-center gap-1">
-                <ThumbsUp className="h-4 w-4" />
+                <Heart className="h-4 w-4" strokeWidth={1.5} />
                 {likeCount}
               </span>
             </div>
           </div>
         </div>
 
-        {/* 구분선 */}
-        <div className="mx-5 border-t border-gray-100 sm:mx-6" />
-
-        {/* 본문 */}
-        <div className="px-5 py-6 sm:px-6">
+        {/* 본문 - sanitizedContent는 DOMPurify로 XSS 방어 처리됨 */}
+        <div className="px-5 py-8 sm:px-6">
           <div
-            className="prose prose-sm max-w-none text-gray-700"
+            className="prose prose-gray max-w-none prose-p:text-gray-700 prose-p:leading-relaxed prose-headings:text-gray-900"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         </div>
 
         {/* 액션 버튼 */}
-        <div className="flex items-center justify-center gap-3 border-t border-gray-100 px-5 py-4 sm:px-6">
-          <button
-            onClick={handleLike}
-            disabled={isPending}
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
-              liked
-                ? 'bg-blue-50 text-blue-600'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <ThumbsUp className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
-            추천 {likeCount}
-          </button>
-          <button
-            onClick={handleBookmark}
-            disabled={isPending}
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
-              bookmarked
-                ? 'bg-amber-50 text-amber-600'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Bookmark className={`h-4 w-4 ${bookmarked ? 'fill-current' : ''}`} />
-            저장
-          </button>
+        <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3 sm:px-6">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleLike}
+              disabled={isPending}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+                liked
+                  ? 'text-rose-500'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} strokeWidth={1.5} />
+              {likeCount}
+            </button>
+            <button
+              onClick={handleBookmark}
+              disabled={isPending}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+                bookmarked
+                  ? 'text-amber-500'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Star className={`h-4 w-4 ${bookmarked ? 'fill-current' : ''}`} strokeWidth={1.5} />
+            </button>
+          </div>
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-400 transition-colors hover:text-gray-600"
           >
-            <Share2 className="h-4 w-4" />
+            <Link2 className="h-4 w-4" strokeWidth={1.5} />
             공유
           </button>
         </div>
       </article>
 
       {/* 댓글 섹션 */}
-      <section className="mt-4 rounded-2xl border border-gray-200/70 bg-white">
+      <section className="mt-6">
         {/* 댓글 헤더 */}
-        <div className="px-5 py-4 sm:px-6">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
-            <MessageSquare className="h-5 w-5" />
-            댓글 {comments.length}
+        <div className="mb-4">
+          <h2 className="text-sm font-medium text-gray-900">
+            댓글 {comments.length}개
           </h2>
         </div>
 
         {/* 댓글 입력 */}
-        <form
-          onSubmit={handleCommentSubmit}
-          className="border-t border-gray-100 px-5 py-4 sm:px-6"
-        >
+        <form onSubmit={handleCommentSubmit} className="mb-6">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="댓글을 입력하세요"
-            rows={3}
-            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-300 focus:outline-none"
+            rows={2}
+            className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm placeholder:text-gray-400 focus:border-gray-300 focus:bg-white focus:outline-none"
           />
-          <div className="mt-3 flex justify-end">
+          <div className="mt-2 flex justify-end">
             <button
               type="submit"
               disabled={!newComment.trim() || isSubmitting}
-              className="flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400"
+              className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400"
             >
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               등록
             </button>
           </div>
@@ -421,15 +445,10 @@ export default function ArticleDetailClient({
 
         {/* 댓글 목록 */}
         {comments.length > 0 && (
-          <div className="border-t border-gray-100">
-            {comments.map((comment, index) => (
-              <div
-                key={comment.id}
-                className={`px-5 py-4 sm:px-6 ${
-                  index !== comments.length - 1 ? 'border-b border-gray-100' : ''
-                }`}
-              >
-                <div className="mb-2 flex items-center justify-between">
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <div key={comment.id} className="group">
+                <div className="mb-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">
                     <Link
                       href={`/user/${comment.author.id}`}
@@ -437,22 +456,23 @@ export default function ArticleDetailClient({
                     >
                       {comment.author.name}
                     </Link>
-                    <span className="text-gray-400">
+                    <span className="text-xs text-gray-400">
                       {formatDate(comment.createdAt)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={() => handleCommentLike(comment.id)}
                       disabled={isPending}
-                      className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+                      className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors disabled:opacity-50 ${
                         comment.isLiked
-                          ? 'text-blue-600'
-                          : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                          ? 'text-rose-500 opacity-100'
+                          : 'text-gray-400 hover:text-gray-600'
                       }`}
                     >
-                      <ThumbsUp
-                        className={`h-3.5 w-3.5 ${comment.isLiked ? 'fill-current' : ''}`}
+                      <Heart
+                        className={`h-3 w-3 ${comment.isLiked ? 'fill-current' : ''}`}
+                        strokeWidth={1.5}
                       />
                       {comment.likes > 0 && <span>{comment.likes}</span>}
                     </button>
@@ -460,14 +480,14 @@ export default function ArticleDetailClient({
                       <button
                         onClick={() => handleCommentDelete(comment.id)}
                         disabled={isPending}
-                        className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:opacity-50"
+                        className="rounded p-0.5 text-gray-400 transition-colors hover:text-red-500 disabled:opacity-50"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     )}
                   </div>
                 </div>
-                <p className="text-sm leading-relaxed text-gray-700">
+                <p className="text-sm leading-relaxed text-gray-600">
                   {comment.content}
                 </p>
               </div>

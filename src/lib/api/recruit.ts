@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, clientApiClient } from './client';
 import type {
   RecruitRequest,
   RecruitApplyRequest,
@@ -95,14 +95,14 @@ export async function updateRecruitStatus(
 }
 
 /**
- * 모집 공고 지원
+ * 모집 공고 지원 (클라이언트용)
  */
 export async function applyRecruit(
   recruitId: number,
   data: RecruitApplyRequest,
   auth: AuthOptions
 ): Promise<void> {
-  await apiClient<void>(`/v1/community/recruits/${recruitId}/apply`, {
+  await clientApiClient<void>(`/v1/community/recruits/${recruitId}/apply`, {
     method: 'POST',
     body: data,
     accessToken: auth.accessToken,

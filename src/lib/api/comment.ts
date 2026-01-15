@@ -7,12 +7,14 @@ import type {
 
 /**
  * 댓글 목록 조회
+ * accessToken이 있으면 isLiked 상태도 함께 반환
  */
-export async function getComments(articleId: number): Promise<CommentListResponse> {
+export async function getComments(articleId: number, accessToken?: string): Promise<CommentListResponse> {
   return apiClient<CommentListResponse>(
     `/v1/community/articles/${articleId}/comments`,
     {
       cache: 'no-store',
+      accessToken,
     }
   );
 }

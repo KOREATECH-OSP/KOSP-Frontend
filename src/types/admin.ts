@@ -35,12 +35,10 @@ export interface PolicyListResponse {
 export interface PolicyCreateRequest {
   name: string;
   description: string;
-  permissionIds?: number[];
 }
 
 export interface PolicyUpdateRequest {
-  name?: string;
-  description?: string;
+  description: string;
 }
 
 // ============================================
@@ -63,12 +61,10 @@ export interface RoleListResponse {
 export interface RoleCreateRequest {
   name: string;
   description: string;
-  policyIds?: number[];
 }
 
 export interface RoleUpdateRequest {
-  name?: string;
-  description?: string;
+  description: string;
 }
 
 // ============================================
@@ -78,45 +74,31 @@ export interface RoleUpdateRequest {
 export interface AdminUserResponse {
   id: number;
   name: string;
-  email: string;
+  kutEmail: string;
   kutId: string;
-  profileImage: string | null;
-  roles: RoleResponse[];
-  status: 'ACTIVE' | 'SUSPENDED' | 'DELETED';
-  lastLoginAt: string | null;
+  profileImageUrl: string | null;
+  introduction: string | null;
+  roles: string[];
+  isDeleted: boolean;
   createdAt: string;
 }
 
 export interface AdminUserListResponse {
   users: AdminUserResponse[];
-  pagination: PageMeta;
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
 }
 
-// ============================================
-// Dashboard Types
-// ============================================
-
-export interface AdminStatsResponse {
-  totalUsers: number;
-  totalRoles: number;
-  totalPolicies: number;
-  totalPermissions: number;
-  activeUsersToday: number;
-  newUsersThisWeek: number;
-  newUsersThisMonth: number;
+export interface AdminUserUpdateRequest {
+  name?: string;
+  introduction?: string;
+  profileImageUrl?: string;
 }
 
-export interface AdminActivityItem {
-  id: number;
-  type: 'USER_JOINED' | 'ROLE_ASSIGNED' | 'ARTICLE_CREATED' | 'TEAM_CREATED' | 'CHALLENGE_COMPLETED';
-  userId: number;
-  userName: string;
-  description: string;
-  createdAt: string;
-}
-
-export interface AdminActivityResponse {
-  activities: AdminActivityItem[];
+export interface UserRoleUpdateRequest {
+  roles: string[];
 }
 
 // ============================================
@@ -197,6 +179,75 @@ export interface AdminNoticeCreateRequest {
   content: string;
   isPinned: boolean;
   tags: string[];
+}
+
+export interface AdminNoticeUpdateRequest {
+  title: string;
+  content: string;
+  isPinned: boolean;
+  tags: string[];
+}
+
+// ============================================
+// Admin Article Types
+// ============================================
+
+export interface AdminArticleResponse {
+  id: number;
+  title: string;
+  content: string;
+  boardId: number;
+  boardName?: string;
+  author: {
+    id: number;
+    name: string;
+    profileImage?: string;
+  };
+  tags: string[];
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminArticleListResponse {
+  articles: AdminArticleResponse[];
+  pagination: PageMeta;
+}
+
+// ============================================
+// Admin Report Types
+// ============================================
+
+export interface AdminReportResponse {
+  id: number;
+  reporterId: number;
+  reporterName: string;
+  targetType: 'ARTICLE' | 'COMMENT' | 'USER';
+  targetId: number;
+  reason: string;
+  description?: string;
+  status: 'PENDING' | 'PROCESSED' | 'REJECTED';
+  createdAt: string;
+  processedAt?: string;
+}
+
+export interface AdminReportListResponse {
+  reports: AdminReportResponse[];
+}
+
+export interface ReportProcessRequest {
+  action: 'DELETE_CONTENT' | 'REJECT';
+}
+
+// ============================================
+// Admin Search Types
+// ============================================
+
+export interface AdminSearchResponse {
+  users?: AdminUserResponse[];
+  articles?: AdminArticleResponse[];
 }
 
 // ============================================

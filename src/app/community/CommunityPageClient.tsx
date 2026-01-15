@@ -65,6 +65,7 @@ export default function CommunityPageClient({
   };
 
   const activeBoardName = initialBoards.find((b) => b.id === activeBoard)?.name;
+  const isNoticeBoard = activeBoardName === '공지사항';
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -76,7 +77,7 @@ export default function CommunityPageClient({
             개발자들과 소통하고 정보를 나눠보세요
           </p>
         </div>
-        {session && (
+        {session && !isNoticeBoard && (
           <Link
             href="/community/write"
             className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
