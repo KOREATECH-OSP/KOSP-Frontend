@@ -167,7 +167,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">최근 가입한 사용자</h2>
-              <p className="text-sm text-gray-500">최근 5명</p>
+              <p className="text-sm text-gray-500">최근 {recentUsers.length}명</p>
             </div>
             <button
               onClick={() => router.push('/admin/users')}

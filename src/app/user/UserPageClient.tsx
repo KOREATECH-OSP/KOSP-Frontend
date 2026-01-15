@@ -371,10 +371,12 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {/* 오버레이 메시지 */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="rounded-xl bg-white/95 px-6 py-4 shadow-lg">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                      <div className="text-center">
                         <p className="text-sm font-medium text-gray-700">
                           GitHub 통계를 수집 중입니다.
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          이 작업은 오래 걸립니다. 나중에 다시 방문하여 확인해주세요.
                         </p>
                       </div>
                     </div>

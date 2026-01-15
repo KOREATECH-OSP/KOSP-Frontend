@@ -61,11 +61,16 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchUsers();
-  };
+  // 클라이언트 측 검색 필터링
+  const filteredUsers = users.filter((user) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      user.name?.toLowerCase().includes(query) ||
+      user.kutEmail?.toLowerCase().includes(query) ||
+      user.kutId?.toLowerCase().includes(query)
+    );
+  });
 
   const handleDeleteUser = async (user: AdminUserResponse) => {
     if (!session?.accessToken) return;
@@ -127,7 +132,7 @@ export default function AdminUsersPage() {
           </div>
 
           {/* 검색 */}
-          <form onSubmit={handleSearch} className="w-full sm:w-72">
+          <div className="w-full sm:w-72">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
@@ -138,7 +143,7 @@ export default function AdminUsersPage() {
                 className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm transition-colors focus:border-gray-400 focus:outline-none"
               />
             </div>
-          </form>
+          </div>
         </div>
 
         {/* 테이블 */}
@@ -175,15 +180,17 @@ export default function AdminUsersPage() {
                       <p className="mt-2 text-sm text-gray-500">불러오는 중...</p>
                     </td>
                   </tr>
-                ) : users.length === 0 ? (
+                ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-16 text-center">
                       <Users className="mx-auto h-8 w-8 text-gray-300" />
-                      <p className="mt-2 text-sm text-gray-500">회원이 없습니다</p>
+                      <p className="mt-2 text-sm text-gray-500">
+                        {searchQuery ? '검색 결과가 없습니다' : '회원이 없습니다'}
+                      </p>
                     </td>
                   </tr>
                 ) : (
-                  users.map((user) => (
+                  filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
                       {/* 회원 정보 */}
                       <td className="px-4 py-3">

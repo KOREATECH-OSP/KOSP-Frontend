@@ -182,9 +182,9 @@ export default function AdminRolesPage() {
                       <td className="px-6 py-4">
                         {role.policies && role.policies.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {role.policies.slice(0, 3).map((policy, index) => (
+                            {role.policies.slice(0, 3).map((policy, idx) => (
                               <span
-                                key={policy.id ?? policy.name ?? index}
+                                key={`role-${role.id}-policy-${idx}`}
                                 className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
                               >
                                 {policy.name}
@@ -320,9 +320,9 @@ function RoleFormModal({
               정책 선택 ({selectedPolicies.length}개)
             </label>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-gray-200 p-3">
-              {policies.map((policy, index) => (
+              {policies.map((policy, idx) => (
                 <label
-                  key={policy.id ?? policy.name ?? index}
+                  key={`create-policy-${idx}`}
                   className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                 >
                   <input
@@ -438,10 +438,10 @@ function PolicyManageModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredPolicies.map((policy, index) => {
+                {filteredPolicies.map((policy, idx) => {
                   const hasPolicy = rolePolicyNames.includes(policy.name);
                   return (
-                    <tr key={policy.id ?? policy.name ?? index} className={`transition-colors ${hasPolicy ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
+                    <tr key={`manage-policy-${idx}`} className={`transition-colors ${hasPolicy ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
                       <td className="whitespace-nowrap px-6 py-3">
                         {hasPolicy ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">

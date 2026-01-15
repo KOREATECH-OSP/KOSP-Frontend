@@ -89,6 +89,11 @@ export default function AdminLayout({
     return pathname.startsWith(href);
   };
 
+  const isParentActive = (item: NavItem) => {
+    if (!item.children) return isActive(item.href);
+    return item.children.some((child) => pathname === child.href || pathname.startsWith(child.href + '/'));
+  };
+
   const handleLogout = () => {
     signOut({ callbackUrl: '/' });
   };
@@ -135,7 +140,7 @@ export default function AdminLayout({
                     <button
                       onClick={() => toggleMenu(item.name)}
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                        isActive(item.href)
+                        isParentActive(item)
                           ? 'bg-gray-900 text-white'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
