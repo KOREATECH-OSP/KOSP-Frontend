@@ -115,6 +115,23 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
     setActiveRecruitMenu(null);
   };
 
+  const getDaysLeft = (endDate: string | null) => {
+    if (!endDate) return null;
+    const now = new Date();
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    const diffTime = end.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const formatDday = (endDate: string | null) => {
+    const daysLeft = getDaysLeft(endDate);
+    if (daysLeft === null) return '상시모집';
+    if (daysLeft < 0) return '마감됨';
+    if (daysLeft === 0) return 'D-Day';
+    return `D-${daysLeft}`;
+  };
+
   const leader = team.members?.find((m) => m.role === 'LEADER');
   const members = team.members ?? [];
 
@@ -325,9 +342,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                         </span>
                         <span className="h-2.5 w-px bg-gray-200"></span>
                         <span>
-                          {recruit.endDate
-                            ? `~${new Date(recruit.endDate).toLocaleDateString()} 마감`
-                            : '상시모집'}
+                          {formatDday(recruit.endDate)}
                         </span>
                       </div>
                     </div>
