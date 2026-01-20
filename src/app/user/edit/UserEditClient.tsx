@@ -450,30 +450,24 @@ export default function UserEditClient() {
         </div>
       </div>
 
-      {/* 하단 고정 저장 바 */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          {hasChanges ? (
+      {/* 하단 고정 저장 바 - 변경사항 있을 때만 표시 */}
+      {hasChanges && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <p className="hidden text-sm font-medium text-amber-600 sm:block">
               변경사항이 있습니다. 저장해주세요.
             </p>
-          ) : (
-            <p className="hidden text-sm text-gray-400 sm:block">
-              변경사항이 없습니다
-            </p>
-          )}
-          <div className="flex flex-1 gap-3 sm:flex-initial">
-            <button
-              onClick={() => router.back()}
-              className="flex-1 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:flex-initial"
-            >
-              취소
-            </button>
-            <div className="group relative flex-1 sm:flex-initial">
+            <div className="flex flex-1 gap-3 sm:flex-initial">
+              <button
+                onClick={() => router.back()}
+                className="flex-1 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:flex-initial"
+              >
+                취소
+              </button>
               <button
                 onClick={handleSave}
-                disabled={isSaving || !hasChanges}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-gray-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-gray-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 sm:flex-initial"
               >
                 {isSaving ? (
                   <>
@@ -487,19 +481,13 @@ export default function UserEditClient() {
                   </>
                 )}
               </button>
-              {hasChanges && !isSaving && (
-                <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                  변경사항을 저장하세요
-                  <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900" />
-                </div>
-              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 하단 여백 (고정 바 높이만큼) */}
-      <div className="h-24" />
+      {hasChanges && <div className="h-24" />}
 
       {/* 회원 탈퇴 확인 모달 */}
       {showDeleteModal && (
