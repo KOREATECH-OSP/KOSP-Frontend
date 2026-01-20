@@ -6,6 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://dev.api.sw
 
 type JwtPayload = {
   exp?: number | string;
+  iat?: number | string;
 };
 
 function decodeJwtPayload(token: string): JwtPayload | null {
@@ -41,11 +42,23 @@ function getTokenExpiry(token: string): number | null {
   return normalizeJwtExp(exp);
 }
 
+function getTokenIssuedAt(token: string): number | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.iat) return null;
+
+  const iat = typeof payload.iat === 'string' ? Number(payload.iat) : payload.iat;
+  if (!Number.isFinite(iat)) return null;
+
+  return normalizeJwtExp(iat);
+}
+
 // 토큰 갱신 함수
 async function refreshAccessToken(refreshToken: string): Promise<{
   accessToken: string;
   refreshToken: string;
   accessTokenExpires: number;
+  accessTokenIssuedAt?: number;
+  accessTokenTtl?: number;
 } | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/v1/auth/reissue`, {
@@ -63,6 +76,11 @@ async function refreshAccessToken(refreshToken: string): Promise<{
 
     const tokens = await response.json();
     const accessTokenExpires = getTokenExpiry(tokens.accessToken) || Date.now() + 30 * 60 * 1000;
+    const accessTokenIssuedAt = getTokenIssuedAt(tokens.accessToken) ?? undefined;
+    const accessTokenTtl =
+      accessTokenIssuedAt && accessTokenExpires > accessTokenIssuedAt
+        ? accessTokenExpires - accessTokenIssuedAt
+        : undefined;
 
     console.log('[Auth] Token refreshed successfully, expires at:', new Date(accessTokenExpires).toISOString());
 
@@ -70,6 +88,8 @@ async function refreshAccessToken(refreshToken: string): Promise<{
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       accessTokenExpires,
+      accessTokenIssuedAt,
+      accessTokenTtl,
     };
   } catch (error) {
     console.error('[Auth] Error refreshing token:', error);
@@ -230,12 +250,19 @@ export const authConfig: NextAuthConfig = {
         const accessToken = (user as { accessToken: string }).accessToken;
         const refreshToken = (user as { refreshToken: string }).refreshToken;
         const accessTokenExpires = getTokenExpiry(accessToken) || Date.now() + 30 * 60 * 1000;
+        const accessTokenIssuedAt = getTokenIssuedAt(accessToken) ?? undefined;
+        const accessTokenTtl =
+          accessTokenIssuedAt && accessTokenExpires > accessTokenIssuedAt
+            ? accessTokenExpires - accessTokenIssuedAt
+            : undefined;
 
         return {
           ...token,
           accessToken,
           refreshToken,
           accessTokenExpires,
+          accessTokenIssuedAt,
+          accessTokenTtl,
           id: user.id,
           email: user.email,
           name: user.name,
@@ -244,10 +271,19 @@ export const authConfig: NextAuthConfig = {
         };
       }
 
+      // 갱신 실패 상태면 반복 시도하지 않음
+      if (token.error === 'RefreshTokenExpired' || token.error === 'RefreshTokenMissing') {
+        return token;
+      }
+
       // 토큰이 아직 유효한 경우 그대로 반환
       const accessTokenExpires = token.accessTokenExpires as number | undefined;
-      if (accessTokenExpires && Date.now() < accessTokenExpires - 5 * 60 * 1000) {
-        // 만료 5분 전까지는 유효 (더 넉넉한 버퍼)
+      const accessTokenTtl = token.accessTokenTtl as number | undefined;
+      const refreshBufferMs = accessTokenTtl
+        ? Math.min(60 * 1000, Math.floor(accessTokenTtl * 0.1))
+        : 60 * 1000;
+      if (accessTokenExpires && Date.now() < accessTokenExpires - refreshBufferMs) {
+        // 만료 직전에는 갱신 시도, 그 전에는 유지
         return token;
       }
 
@@ -269,6 +305,8 @@ export const authConfig: NextAuthConfig = {
         accessToken: refreshedTokens.accessToken,
         refreshToken: refreshedTokens.refreshToken,
         accessTokenExpires: refreshedTokens.accessTokenExpires,
+        accessTokenIssuedAt: refreshedTokens.accessTokenIssuedAt ?? token.accessTokenIssuedAt,
+        accessTokenTtl: refreshedTokens.accessTokenTtl ?? token.accessTokenTtl,
         error: undefined,
       };
     },
