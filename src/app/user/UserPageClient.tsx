@@ -632,11 +632,15 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex gap-2">
                     <span className="text-gray-400">•</span>
-                    <span>포인트는 챌린지를 통해 얻을 수도 있으며 소프트웨어중심대학에서 진행하는 행사로 지급받을 수 있습니다. 부적절한 방법으로 포인트가 적립될 경우 회수될 수 있습니다.</span>
+                    <span>포인트는 챌린지 또는 소프트웨어중심대학에서 진행하는 행사를 통해 얻을 수 있습니다.</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-gray-400">•</span>
                     <span>포인트 내역은 모두 투명하게 기록됩니다.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-gray-400">•</span>
+                    <span>부적절한 방법으로 포인트가 적립될 경우 회수될 수 있습니다.</span>
                   </li>
                 </ul>
               </div>
