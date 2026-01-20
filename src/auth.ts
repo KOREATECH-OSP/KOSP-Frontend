@@ -53,6 +53,8 @@ function getTokenIssuedAt(token: string): number | null {
 }
 
 // 토큰 갱신 함수
+// 주의: 서버리스 환경에서는 모듈 레벨 변수가 요청 간 공유되지 않으므로
+// 락 메커니즘 대신 JWT 만료 시간 기반으로 갱신 여부를 결정합니다.
 async function refreshAccessToken(refreshToken: string): Promise<{
   accessToken: string;
   refreshToken: string;

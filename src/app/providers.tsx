@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const isWritePage = pathname === '/community/write';
 
   return (
-    <SessionProvider refetchInterval={60} refetchOnWindowFocus={true}>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
       <AuthErrorHandler>
         {!isWritePage && <NoticeBanner />}
         {children}
