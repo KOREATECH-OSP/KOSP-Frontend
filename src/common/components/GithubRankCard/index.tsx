@@ -384,16 +384,15 @@ export default function GithubRankCard({
         >
           {/* 백드롭 */}
           <div
-            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-out ${
-              isClosing ? 'opacity-0' : 'opacity-100'
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm ${
+              isClosing ? 'backdrop-fade-out' : 'backdrop-fade-in'
             }`}
-            style={{ animation: isClosing ? 'none' : 'backdrop-fade-in 0.3s ease-out' }}
           />
 
           {/* 모달 콘텐츠 */}
           <div
             className={`relative w-full max-w-md rounded-t-2xl bg-slate-900 p-6 shadow-2xl sm:rounded-2xl ${
-              isClosing ? 'modal-slide-down' : 'modal-slide-up'
+              isClosing ? 'modal-closing' : 'modal-opening'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -477,21 +476,48 @@ export default function GithubRankCard({
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        @keyframes backdrop-fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
         @keyframes slide-up {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from { transform: translateY(100%); opacity: 1; }
+          to { transform: translateY(0); opacity: 1; }
         }
         @keyframes slide-down {
-          from { transform: translateY(0); }
-          to { transform: translateY(100%); }
+          from { transform: translateY(0); opacity: 1; }
+          to { transform: translateY(100%); opacity: 1; }
+        }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
         }
 
-        /* 모바일에서만 슬라이드 애니메이션 적용 */
+        .backdrop-fade-in {
+          animation: backdrop-fade-in 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        }
+        .backdrop-fade-out {
+          animation: backdrop-fade-out 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        }
+
+        /* PC: 페이드 애니메이션 */
+        .modal-opening {
+          animation: fade-in 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        }
+        .modal-closing {
+          animation: fade-out 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        }
+
+        /* 모바일: 슬라이드 애니메이션으로 오버라이드 */
         @media (max-width: 639px) {
-          .modal-slide-up {
-            animation: slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+          .modal-opening {
+            animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
           }
-          .modal-slide-down {
+          .modal-closing {
             animation: slide-down 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
           }
         }
