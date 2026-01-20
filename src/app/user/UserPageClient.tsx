@@ -196,13 +196,13 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     );
   }
 
-  const tabs: { key: TabType; label: string }[] = [
-    { key: '활동', label: '활동' },
-    { key: '포인트', label: '포인트' },
-    { key: '지원내역', label: '지원내역' },
-    { key: '작성글', label: '작성한 글' },
-    { key: '댓글', label: '작성한 댓글' },
-    { key: '즐겨찾기', label: '즐겨찾기' },
+  const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
+    { key: '활동', label: '활동', icon: <Activity className="h-4 w-4" /> },
+    { key: '포인트', label: '포인트', icon: <Star className="h-4 w-4" /> },
+    { key: '지원내역', label: '지원내역', icon: <FileText className="h-4 w-4" /> },
+    { key: '작성글', label: '작성글', icon: <Edit className="h-4 w-4" /> },
+    { key: '댓글', label: '댓글', icon: <MessageCircle className="h-4 w-4" /> },
+    { key: '즐겨찾기', label: '즐겨찾기', icon: <Bookmark className="h-4 w-4" /> },
   ];
 
   return (
@@ -273,17 +273,23 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         <div className="lg:col-span-2">
           {/* 탭 필터 */}
           <div className="-mx-4 mb-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-1">
-              {tabs.map((tab) => (
+            <div className="flex">
+              {tabs.map((tab, index) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all ${
                     activeTab === tab.key
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                  }`}
+                      ? 'text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                  style={
+                    activeTab === tab.key
+                      ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
+                      : undefined
+                  }
                 >
+                  {tab.icon}
                   {tab.label}
                 </button>
               ))}
