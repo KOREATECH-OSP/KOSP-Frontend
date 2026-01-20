@@ -51,7 +51,7 @@ interface UserPageClientProps {
   session: Session | null;
 }
 
-type TabType = '활동' | '작성글' | '댓글' | '즐겨찾기';
+type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기';
 
 export default function UserPageClient({ session }: UserPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('활동');
@@ -179,6 +179,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
   const tabs: { key: TabType; label: string }[] = [
     { key: '활동', label: '활동' },
+    { key: '포인트', label: '포인트' },
+    { key: '지원내역', label: '지원내역' },
     { key: '작성글', label: '작성한 글' },
     { key: '댓글', label: '작성한 댓글' },
     { key: '즐겨찾기', label: '즐겨찾기' },
@@ -583,6 +585,32 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* 포인트 탭 */}
+          {activeTab === '포인트' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">포인트</h2>
+              </div>
+              <div className="flex flex-col items-center justify-center py-16">
+                <Star className="mb-3 h-12 w-12 text-gray-200" />
+                <p className="text-gray-500">포인트 기능 준비 중입니다.</p>
+              </div>
+            </div>
+          )}
+
+          {/* 지원내역 탭 */}
+          {activeTab === '지원내역' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">지원내역</h2>
+              </div>
+              <div className="flex flex-col items-center justify-center py-16">
+                <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                <p className="text-gray-500">지원내역 기능 준비 중입니다.</p>
               </div>
             </div>
           )}
