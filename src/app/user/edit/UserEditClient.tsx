@@ -201,7 +201,7 @@ export default function UserEditClient() {
   // 프로필 로딩 중
   if (isLoadingProfile) {
     return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-4xl items-center justify-center px-4 py-20">
+      <div className="mx-auto flex min-h-[60vh] w-full max-w-7xl items-center justify-center px-4 py-20">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900" />
@@ -214,7 +214,7 @@ export default function UserEditClient() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:py-12">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
       {/* 헤더 네비게이션 */}
       <div className="mb-8">
         <button
@@ -490,7 +490,7 @@ export default function UserEditClient() {
 
       {/* 하단 고정 저장 바 */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <p className="hidden text-sm text-gray-500 sm:block">
             변경사항을 저장하려면 저장 버튼을 클릭하세요
           </p>
