@@ -65,9 +65,9 @@ export default function ApplicationsClient({ team, recruit }: ApplicationsClient
     switch (appStatus) {
       case 'PENDING':
         return <span className="rounded-sm bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600 border border-amber-100">대기중</span>;
-      case 'ACCEPT':
+      case 'ACCEPTED':
         return <span className="rounded-sm bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600 border border-emerald-100">수락됨</span>;
-      case 'REJECT':
+      case 'REJECTED':
         return <span className="rounded-sm bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 border border-red-100">거절됨</span>;
       default:
         return null;
@@ -91,7 +91,7 @@ export default function ApplicationsClient({ team, recruit }: ApplicationsClient
         )
       );
 
-      toast.success(newStatus === 'ACCEPT' ? '지원을 수락했습니다.' : '지원을 거절했습니다.');
+      toast.success(newStatus === 'ACCEPTED' ? '지원을 수락했습니다.' : '지원을 거절했습니다.');
     } catch (error) {
       console.error('지원 처리 실패:', error);
       toast.error('지원 처리에 실패했습니다.');
@@ -218,7 +218,7 @@ export default function ApplicationsClient({ team, recruit }: ApplicationsClient
                       {application.status === 'PENDING' && (
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleDecision(application.id, 'ACCEPT')}
+                            onClick={() => handleDecision(application.id, 'ACCEPTED')}
                             disabled={processingId === application.id}
                             className="inline-flex items-center gap-1.5 rounded-sm bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -230,7 +230,7 @@ export default function ApplicationsClient({ team, recruit }: ApplicationsClient
                             수락
                           </button>
                           <button
-                            onClick={() => handleDecision(application.id, 'REJECT')}
+                            onClick={() => handleDecision(application.id, 'REJECTED')}
                             disabled={processingId === application.id}
                             className="inline-flex items-center gap-1.5 rounded-sm bg-white border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           >

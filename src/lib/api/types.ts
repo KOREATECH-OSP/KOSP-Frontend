@@ -420,7 +420,7 @@ export interface RecruitListResponse {
   pagination: PageMeta;
 }
 
-export type RecruitApplicationStatus = 'PENDING' | 'ACCEPT' | 'REJECT';
+export type RecruitApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
 export interface RecruitApplyResponse {
   id: number;
