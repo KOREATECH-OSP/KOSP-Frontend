@@ -13,13 +13,9 @@ import {
   Camera,
   Save,
   AlertTriangle,
-  Lock,
   X,
   ExternalLink,
   Sparkles,
-  Shield,
-  ImageIcon,
-  FileText,
   Check,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -297,14 +293,9 @@ export default function UserEditClient() {
         <div className="space-y-6 lg:col-span-2">
           {/* 프로필 이미지 업로드 섹션 */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-            <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-6 py-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm">
-                <ImageIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-gray-900">프로필 이미지</h2>
-                <p className="text-xs text-gray-500">나를 표현하는 이미지를 업로드하세요</p>
-              </div>
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="font-semibold text-gray-900">프로필 이미지</h2>
+              <p className="text-xs text-gray-500">나를 표현하는 이미지를 업로드하세요</p>
             </div>
 
             <div className="p-6">
@@ -371,14 +362,9 @@ export default function UserEditClient() {
 
           {/* 자기소개 섹션 */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-            <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-6 py-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-sm">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-gray-900">자기소개</h2>
-                <p className="text-xs text-gray-500">다른 사용자에게 보여질 소개글입니다</p>
-              </div>
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="font-semibold text-gray-900">자기소개</h2>
+              <p className="text-xs text-gray-500">다른 사용자에게 보여질 소개글입니다</p>
             </div>
 
             <div className="p-6">
@@ -408,10 +394,7 @@ export default function UserEditClient() {
         <div className="space-y-6">
           {/* 계정 정보 (읽기 전용) */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-5 py-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
-                <Shield className="h-4 w-4 text-gray-600" />
-              </div>
+            <div className="border-b border-gray-100 px-5 py-4">
               <h3 className="font-semibold text-gray-900">계정 정보</h3>
             </div>
 
@@ -444,10 +427,7 @@ export default function UserEditClient() {
 
           {/* 비밀번호 변경 */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-5 py-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
-                <Lock className="h-4 w-4 text-gray-600" />
-              </div>
+            <div className="border-b border-gray-100 px-5 py-4">
               <h3 className="font-semibold text-gray-900">보안</h3>
             </div>
 
@@ -468,12 +448,7 @@ export default function UserEditClient() {
           {/* 계정 삭제 */}
           <div className="overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-orange-50/50 shadow-sm">
             <div className="p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                </div>
-                <h3 className="font-semibold text-red-900">위험 구역</h3>
-              </div>
+              <h3 className="mb-3 font-semibold text-red-900">위험 구역</h3>
               <p className="mb-4 text-sm text-red-700/80">
                 계정 삭제 시 모든 데이터가 영구 삭제됩니다.
               </p>
