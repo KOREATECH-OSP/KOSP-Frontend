@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Users } from 'lucide-react';
+import { Users, Search } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
 
 import TeamRecruitTab from './components/TeamRecruitTab';
@@ -51,12 +51,19 @@ export default function TeamPageClient({
   return (
     <div className="mx-auto w-full max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8">
       {/* 헤더 */}
+      {/* 헤더 */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">팀 찾기</h1>
+          <p className="mt-2 text-sm text-gray-500">
+            프로젝트를 함께할 팀을 찾거나 새로운 팀을 만들어보세요.
+          </p>
+        </div>
 
         {session && (
           <Link
             href="/team/create"
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="inline-flex shrink-0 items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
           >
             <Users className="mr-2 h-4 w-4" />
             새로운 팀 만들기
@@ -68,22 +75,17 @@ export default function TeamPageClient({
       <div className="mb-8 space-y-6">
         {/* 검색바 */}
         <div className="w-full">
-          <div className="flex w-full items-center overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm ring-1 ring-black/5 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900">
+          <div className="relative flex w-full items-center">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="프로젝트, 팀, 기술스택 검색"
-              className="flex-1 border-none bg-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none sm:text-base"
+              className="block w-full rounded-md border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 sm:text-base"
             />
-            <div className="border-l border-gray-100 pl-2">
-              <button
-                type="button"
-                className="m-1 inline-flex items-center justify-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-              >
-                검색
-              </button>
-            </div>
           </div>
         </div>
 

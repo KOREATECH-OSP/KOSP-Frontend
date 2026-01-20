@@ -11,7 +11,7 @@ export default function TeamCard({ team }: TeamCardProps) {
     return (
         <Link
             href={`/team/${team.id}`}
-            className="group flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            className="group flex flex-col overflow-hidden rounded-md border border-gray-200 bg-white transition-all hover:-translate-y-1 hover:border-gray-300"
         >
             <div className="relative h-48 w-full bg-gray-100">
                 {team.imageUrl ? (

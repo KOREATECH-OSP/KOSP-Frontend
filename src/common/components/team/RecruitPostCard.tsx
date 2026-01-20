@@ -45,7 +45,7 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
     return (
         <Link
             href={`/recruit/${recruit.id}`}
-            className="group relative flex flex-col justify-between gap-3 rounded-lg bg-white p-5 transition-all duration-200 hover:shadow-md hover:border-blue-200 border border-gray-200"
+            className="group relative flex flex-col justify-between gap-3 rounded-md bg-white p-5 transition-all duration-200 hover:border-blue-500 border border-gray-200"
         >
             {/* Top Row: Status & D-Day */}
             <div className="flex items-start justify-between">

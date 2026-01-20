@@ -82,7 +82,7 @@ export default function MyTeamListTab() {
         <p className="text-gray-500">로그인이 필요합니다.</p>
         <Link
           href="/login"
-          className="mt-3 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          className="mt-3 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
         >
           로그인하기
         </Link>
@@ -128,11 +128,10 @@ function MyTeamCard({ team }: { team: MyTeam }) {
     >
       {/* 팀 아이콘 */}
       <div
-        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
-          team.isLeader
-            ? 'bg-amber-50 text-amber-600'
-            : 'bg-gray-100 text-gray-500'
-        }`}
+        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md ${team.isLeader
+          ? 'bg-amber-50 text-amber-600'
+          : 'bg-gray-100 text-gray-500'
+          }`}
       >
         {team.isLeader ? (
           <Crown className="h-5 w-5" />
