@@ -4,15 +4,41 @@ import Credentials from 'next-auth/providers/credentials';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://dev.api.swkoreatech.io';
 
-// JWT에서 만료 시간 추출
-function getTokenExpiry(token: string): number | null {
+type JwtPayload = {
+  exp?: number | string;
+};
+
+function decodeJwtPayload(token: string): JwtPayload | null {
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+
+  const payload = parts[1];
   try {
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
-    return decoded.exp ? decoded.exp * 1000 : null; // milliseconds로 변환
+    const base64 = payload
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const decoded = Buffer.from(base64, 'base64').toString('utf8');
+    return JSON.parse(decoded) as JwtPayload;
   } catch {
     return null;
   }
+}
+
+function normalizeJwtExp(exp: number): number {
+  // exp는 초 또는 ms 단위일 수 있음
+  return exp > 10_000_000_000 ? exp : exp * 1000;
+}
+
+// JWT에서 만료 시간 추출
+function getTokenExpiry(token: string): number | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return null;
+
+  const exp = typeof payload.exp === 'string' ? Number(payload.exp) : payload.exp;
+  if (!Number.isFinite(exp)) return null;
+
+  return normalizeJwtExp(exp);
 }
 
 // 토큰 갱신 함수
@@ -25,18 +51,20 @@ async function refreshAccessToken(refreshToken: string): Promise<{
     const response = await fetch(`${API_BASE_URL}/v1/auth/reissue`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'X-Refresh-Token': refreshToken,
       },
     });
 
     if (!response.ok) {
-      console.error('[Auth] Failed to refresh token:', response.status);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('[Auth] Failed to refresh token:', response.status, errorText);
       return null;
     }
 
     const tokens = await response.json();
     const accessTokenExpires = getTokenExpiry(tokens.accessToken) || Date.now() + 30 * 60 * 1000;
+
+    console.log('[Auth] Token refreshed successfully, expires at:', new Date(accessTokenExpires).toISOString());
 
     return {
       accessToken: tokens.accessToken,
@@ -218,8 +246,8 @@ export const authConfig: NextAuthConfig = {
 
       // 토큰이 아직 유효한 경우 그대로 반환
       const accessTokenExpires = token.accessTokenExpires as number | undefined;
-      if (accessTokenExpires && Date.now() < accessTokenExpires - 60 * 1000) {
-        // 만료 1분 전까지는 유효
+      if (accessTokenExpires && Date.now() < accessTokenExpires - 5 * 60 * 1000) {
+        // 만료 5분 전까지는 유효 (더 넉넉한 버퍼)
         return token;
       }
 

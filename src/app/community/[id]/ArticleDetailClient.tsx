@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import DOMPurify from 'isomorphic-dompurify';
 import {
   ArrowLeft,
@@ -22,6 +22,7 @@ import ReportModal from '@/common/components/ReportModal';
 import { deleteArticle, toggleArticleLike, toggleArticleBookmark } from '@/lib/api/article';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
+import { signOutOnce } from '@/lib/auth/signout';
 
 interface ArticleDetailClientProps {
   article: ArticleResponse;
@@ -53,8 +54,10 @@ export default function ArticleDetailClient({
   const isMine = currentUserId === article.author.id;
 
   const handleUnauthorized = () => {
-    toast.error('로그인이 만료되었습니다. 다시 로그인해주세요.');
-    signOut({ callbackUrl: '/login' });
+    signOutOnce({
+      callbackUrl: '/login',
+      toastMessage: '로그인이 만료되었습니다. 다시 로그인해주세요.',
+    });
   };
 
   // XSS 방어를 위한 HTML sanitization
