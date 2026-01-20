@@ -14,7 +14,12 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
   return (
     <Link
       href={`/community/${post.id}`}
-      className="group relative flex flex-col gap-2 rounded-xl bg-white p-4 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-100"
+      className="group relative flex flex-col gap-2 rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-100"
+      style={{
+        background: post.isPinned
+          ? 'linear-gradient(to right, white, rgba(59, 130, 246, 0.10))'
+          : 'white',
+      }}
     >
       {/* Top Row: Title & Board */}
       <div className="flex items-start justify-between gap-4">
