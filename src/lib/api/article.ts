@@ -15,6 +15,7 @@ interface AuthOptions {
 interface GetArticlesOptions {
   page?: number;
   size?: number;
+  pinned?: boolean;
 }
 
 /**
@@ -24,12 +25,15 @@ export async function getArticles(
   boardId: number,
   options: GetArticlesOptions = {}
 ): Promise<ArticleListResponse> {
-  const { page = 1, size = 10 } = options;
+  const { page = 1, size = 10, pinned } = options;
   const params = new URLSearchParams({
     boardId: String(boardId),
     page: String(page - 1),
     size: String(size),
   });
+  if (pinned !== undefined) {
+    params.set('pinned', String(pinned));
+  }
   return apiClient<ArticleListResponse>(`/v1/community/articles?${params}`, {
     cache: 'no-store',
   });

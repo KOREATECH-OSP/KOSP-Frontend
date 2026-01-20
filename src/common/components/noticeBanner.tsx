@@ -3,11 +3,22 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Volume2, X } from 'lucide-react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getArticles } from '@/lib/api/article';
 
 const STORAGE_KEY = 'notice-banner-hidden-until';
 const NOTICE_BOARD_ID = 3;
+const SLIDE_INTERVAL = 3000;
+
+const slideKeyframes = `
+  @keyframes slideOutUp {
+    from { transform: translateY(0); }
+    to { transform: translateY(-100%); }
+  }
+  @keyframes slideInUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+`;
 
 interface NoticeData {
   id: number;
@@ -34,11 +45,11 @@ function getInitialVisibility(): boolean {
 function NoticeBanner() {
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [notice, setNotice] = useState<NoticeData | null>(null);
+  const [notices, setNotices] = useState<NoticeData[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // SSR hydration mismatch 방지를 위해 클라이언트에서만 마운트 상태 설정
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     const shouldShow = getInitialVisibility();
     if (shouldShow) {
@@ -49,23 +60,45 @@ function NoticeBanner() {
   useEffect(() => {
     if (!isVisible) return;
 
-    async function fetchLatestNotice() {
+    async function fetchNotices() {
       try {
-        const response = await getArticles(NOTICE_BOARD_ID, { page: 1, size: 1 });
+        const response = await getArticles(NOTICE_BOARD_ID, { page: 1, size: 5, pinned: true });
         if (response.posts && response.posts.length > 0) {
-          const latestNotice = response.posts[0];
-          setNotice({
-            id: latestNotice.id,
-            title: latestNotice.title,
-          });
+          setNotices(
+            response.posts.map((post) => ({
+              id: post.id,
+              title: post.title,
+            }))
+          );
         }
       } catch (error) {
-        console.error('Failed to fetch notice:', error);
+        console.error('Failed to fetch notices:', error);
       }
     }
 
-    fetchLatestNotice();
+    fetchNotices();
   }, [isVisible]);
+
+  useEffect(() => {
+    if (notices.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setIsAnimating(true);
+    }, SLIDE_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [notices.length]);
+
+  useEffect(() => {
+    if (!isAnimating) return;
+
+    const timeout = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % notices.length);
+      setIsAnimating(false);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [isAnimating, notices.length]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -81,24 +114,48 @@ function NoticeBanner() {
 
   if (!mounted) return null;
   if (!isVisible) return null;
-  if (!notice) return null;
+  if (notices.length === 0) return null;
+
+  const currentNotice = notices[currentIndex];
+  const nextIndex = (currentIndex + 1) % notices.length;
+  const nextNotice = notices[nextIndex];
 
   return (
-    <div
-      className="w-full overflow-hidden"
-      style={{ background: 'linear-gradient(272deg, #233786 23.38%, #236286 71.16%)' }}
-    >
-      <div className="max-w-7xl mx-auto flex items-stretch">
-        {/* 공지 내용 */}
-        <Link
-          href={`/community/${notice.id}`}
-          className="flex items-center gap-2 sm:gap-3 text-white hover:opacity-90 transition-opacity min-w-0 flex-1 py-2.5 px-4"
-        >
-          <Volume2 className="w-4 h-4 shrink-0" />
-          <span className="text-xs sm:text-sm font-medium truncate">
-            {notice.title}
-          </span>
-        </Link>
+    <>
+      <style>{slideKeyframes}</style>
+      <div
+        className="w-full overflow-hidden"
+        style={{ background: 'linear-gradient(272deg, #233786 23.38%, #236286 71.16%)' }}
+      >
+        <div className="max-w-7xl mx-auto flex items-stretch">
+          {/* 공지 내용 */}
+          <div className="flex items-center gap-2 sm:gap-3 text-white min-w-0 flex-1 py-2.5 px-4 overflow-hidden">
+            <Volume2 className="w-4 h-4 shrink-0" />
+            <div className="relative h-5 flex-1 overflow-hidden">
+              {/* 현재 공지 */}
+              <Link
+                href={`/community/${currentNotice.id}`}
+                className="absolute inset-0 flex items-center text-xs sm:text-sm font-medium truncate hover:opacity-80"
+                style={{
+                  animation: isAnimating ? 'slideOutUp 0.3s ease-in-out forwards' : 'none',
+                }}
+              >
+                {currentNotice.title}
+              </Link>
+              {/* 다음 공지 - 애니메이션 중에만 표시 */}
+              {isAnimating && notices.length > 1 && (
+                <Link
+                  href={`/community/${nextNotice.id}`}
+                  className="absolute inset-0 flex items-center text-xs sm:text-sm font-medium truncate hover:opacity-80"
+                  style={{
+                    animation: 'slideInUp 0.3s ease-in-out forwards',
+                  }}
+                >
+                  {nextNotice.title}
+                </Link>
+              )}
+            </div>
+          </div>
 
         {/* 모바일 버튼 */}
         <button
@@ -111,6 +168,14 @@ function NoticeBanner() {
 
         {/* 데스크탑 버튼 영역 */}
         <div className="hidden sm:flex items-center gap-3 shrink-0 py-2.5 pr-4">
+          {notices.length > 1 && (
+            <>
+              <span className="text-xs text-white/70">
+                {currentIndex + 1}/{notices.length}
+              </span>
+              <span className="w-px h-3 bg-white/30" />
+            </>
+          )}
           <button
             onClick={handleHideForDay}
             className="text-xs text-white/70 hover:text-white transition-colors whitespace-nowrap"
@@ -127,7 +192,8 @@ function NoticeBanner() {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
