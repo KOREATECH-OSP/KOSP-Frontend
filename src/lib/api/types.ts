@@ -140,6 +140,7 @@ export interface GithubOverallHistoryResponse {
  * 최근 기여 활동 - /v1/users/{userId}/github/recent-activity
  */
 export interface GithubRecentActivityResponse {
+  repoOwner: string;
   repositoryName: string;
   description: string | null;
   stargazersCount: number;

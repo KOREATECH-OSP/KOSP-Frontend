@@ -419,7 +419,7 @@ export default function UserProfileClient({
                         {recentActivity.map((repo, idx) => (
                           <a
                             key={idx}
-                            href={`https://github.com/${repo.repositoryName}`}
+                            href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
@@ -427,7 +427,7 @@ export default function UserProfileClient({
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="truncate font-medium text-gray-900">
-                                  {repo.repositoryName}
+                                  {repo.repoOwner}/{repo.repositoryName}
                                 </span>
                                 <ExternalLink className="h-3 w-3 flex-shrink-0 text-gray-400" />
                               </div>

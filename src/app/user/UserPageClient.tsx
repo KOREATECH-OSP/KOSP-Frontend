@@ -15,6 +15,8 @@ import {
   Eye,
   FileText,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Star,
   AlertCircle,
   Loader2,
@@ -65,6 +67,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
   const [counts, setCounts] = useState({ posts: 0, comments: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [showAllRepos, setShowAllRepos] = useState(false);
 
   const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
 
@@ -476,15 +479,20 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {/* Recent Contributions */}
                   {recentActivity.length > 0 && (
                     <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-                      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
-                        <FolderGit className="h-4 w-4" />
-                        Recent Contributions
+                      <h2 className="mb-3 flex items-center justify-between text-sm font-bold text-gray-900 sm:mb-4">
+                        <span className="flex items-center gap-2">
+                          <FolderGit className="h-4 w-4" />
+                          Recent Contributions
+                        </span>
+                        <span className="text-xs font-normal text-gray-400">
+                          {recentActivity.length}개
+                        </span>
                       </h2>
                       <div className="space-y-3">
-                        {recentActivity.map((repo, idx) => (
+                        {(showAllRepos ? recentActivity : recentActivity.slice(0, 5)).map((repo, idx) => (
                           <a
                             key={idx}
-                            href={`https://github.com/${repo.repositoryName}`}
+                            href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
@@ -492,7 +500,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="truncate font-medium text-gray-900">
-                                  {repo.repositoryName}
+                                  {repo.repoOwner}/{repo.repositoryName}
                                 </span>
                                 <ExternalLink className="h-3 w-3 flex-shrink-0 text-gray-400" />
                               </div>
@@ -517,6 +525,24 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                           </a>
                         ))}
                       </div>
+                      {recentActivity.length > 5 && (
+                        <button
+                          onClick={() => setShowAllRepos(!showAllRepos)}
+                          className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                        >
+                          {showAllRepos ? (
+                            <>
+                              접기
+                              <ChevronUp className="h-4 w-4" />
+                            </>
+                          ) : (
+                            <>
+                              더보기 ({recentActivity.length - 5}개)
+                              <ChevronDown className="h-4 w-4" />
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </>
