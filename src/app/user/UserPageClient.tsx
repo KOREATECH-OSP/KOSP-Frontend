@@ -627,6 +627,17 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </div>
               </div>
 
+              {/* 포인트 안내 */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm text-gray-600">
+                  포인트는 챌린지를 통해 얻을 수도 있으며 소프트웨어중심대학에서 진행하는 행사로 지급받을 수 있습니다.
+                  부적절한 방법으로 포인트가 적립될 경우 회수될 수 있습니다.
+                </p>
+                <p className="mt-2 text-xs text-gray-500">
+                  포인트 내역은 모두 투명하게 기록됩니다.
+                </p>
+              </div>
+
               {/* 포인트 내역 */}
               <div className="rounded-xl border border-gray-200 bg-white">
                 <div className="border-b border-gray-100 px-6 py-4">
