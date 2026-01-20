@@ -10,7 +10,6 @@ import {
   Upload,
   User as UserIcon,
   Trash2,
-  Camera,
   Save,
   AlertTriangle,
   X,
@@ -237,29 +236,19 @@ export default function UserEditClient() {
 
         <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:items-start">
           {/* 프로필 이미지 미리보기 */}
-          <div className="group relative">
-            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-75 blur transition-all group-hover:opacity-100" />
-            <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white/20 bg-gray-800 shadow-xl sm:h-32 sm:w-32">
-              {previewImage ? (
-                <Image
-                  src={previewImage}
-                  alt="프로필 미리보기"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
-                  <UserIcon className="h-12 w-12 text-gray-400" />
-                </div>
-              )}
-            </div>
-            {/* 플로팅 편집 버튼 */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-800 bg-white text-gray-700 shadow-lg transition-all hover:scale-110 hover:bg-gray-50"
-            >
-              <Camera className="h-5 w-5" />
-            </button>
+          <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white/20 bg-gray-800 sm:h-32 sm:w-32">
+            {previewImage ? (
+              <Image
+                src={previewImage}
+                alt="프로필 미리보기"
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gray-800">
+                <UserIcon className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
           </div>
 
           {/* 프로필 정보 미리보기 */}
