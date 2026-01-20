@@ -43,6 +43,7 @@ import type {
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
 } from '@/lib/api/types';
+import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 
 interface UserPageClientProps {
   session: Session | null;
@@ -148,13 +149,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     });
   };
 
-  const getScoreGrade = (score: number) => {
-    if (score >= 80) return { grade: 'S', color: 'from-amber-400 to-yellow-500', label: 'Legendary' };
-    if (score >= 60) return { grade: 'A', color: 'from-purple-500 to-purple-600', label: 'Expert' };
-    if (score >= 40) return { grade: 'B', color: 'from-blue-500 to-blue-600', label: 'Advanced' };
-    if (score >= 20) return { grade: 'C', color: 'from-emerald-500 to-emerald-600', label: 'Intermediate' };
-    return { grade: 'D', color: 'from-gray-400 to-gray-500', label: 'Beginner' };
-  };
 
   if (!session || !userId) {
     return (
@@ -186,8 +180,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     { key: '댓글', label: '작성한 댓글' },
     { key: '즐겨찾기', label: '즐겨찾기' },
   ];
-
-  const scoreGrade = contributionScore ? getScoreGrade(contributionScore.totalScore) : null;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -384,41 +376,20 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </div>
               ) : (
                 <>
-                  {/* 기여 점수 카드 */}
-                  {contributionScore && scoreGrade && (
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-slate-50 to-gray-100">
-                      <div className="border-b border-gray-200/50 bg-white/60 px-6 py-4 backdrop-blur-sm">
-                        <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                          <TrendingUp className="h-4 w-4 text-blue-500" />
-                          Contribution Score
-                        </h2>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 sm:p-6">
-                        <div
-                          className={`mb-2 bg-gradient-to-r ${scoreGrade.color} bg-clip-text text-4xl font-black text-transparent`}
-                        >
-                          {scoreGrade.grade}
-                        </div>
-                        <div className="mb-2 flex gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-5 w-5 ${
-                                i < Math.ceil(contributionScore.totalScore / 20)
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'fill-gray-200 text-gray-200'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm font-bold uppercase tracking-wide text-gray-700">
-                          {scoreGrade.label}
-                        </span>
-                        <div className="mt-4 text-2xl font-bold text-gray-900">
-                          {contributionScore.totalScore.toFixed(1)}
-                        </div>
-                      </div>
-                    </div>
+                  {/* GitHub Rank Card */}
+                  {contributionScore && overallHistory && (
+                    <GithubRankCard
+                      name={profile?.name || '사용자'}
+                      profileImage={profile?.profileImage}
+                      rank={getRankFromScore(contributionScore.totalScore)}
+                      totalScore={contributionScore.totalScore}
+                      stats={{
+                        commits: overallHistory.totalCommitCount,
+                        pullRequests: overallHistory.totalPrCount,
+                        issues: overallHistory.totalIssueCount,
+                        repositories: overallHistory.contributedRepoCount,
+                      }}
+                    />
                   )}
 
                   {/* 점수 상세 */}
