@@ -1,4 +1,3 @@
-import { useRouter } from 'next/navigation';
 import { Users } from 'lucide-react';
 import type { RecruitResponse } from '@/lib/api/types';
 import RecruitPostCard from '@/common/components/team/RecruitPostCard';
@@ -8,7 +7,6 @@ interface TeamRecruitTabProps {
 }
 
 export default function TeamRecruitTab({ recruits }: TeamRecruitTabProps) {
-  const router = useRouter();
   const openRecruits = recruits.filter((r) => r.status === 'OPEN');
 
   if (openRecruits.length === 0) {

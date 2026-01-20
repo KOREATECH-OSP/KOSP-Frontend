@@ -50,6 +50,7 @@ function NoticeBanner() {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration을 위한 마운트 상태 초기화
     setMounted(true);
     const shouldShow = getInitialVisibility();
     if (shouldShow) {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 import { ArrowLeft, Trophy, Lightbulb, Save } from 'lucide-react';
 import { getAdminChallenge, updateAdminChallenge } from '@/lib/api/admin';
 import type { AdminChallengeUpdateRequest } from '@/types/admin';
@@ -192,10 +193,13 @@ export default function EditChallengePage() {
                 {formData.imageUrl && (
                   <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-xs text-gray-500 mb-2">미리보기:</p>
-                    <img
+                    <Image
                       src={formData.imageUrl}
                       alt="Preview"
+                      width={128}
+                      height={128}
                       className="w-32 h-32 object-cover rounded-lg"
+                      unoptimized
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}

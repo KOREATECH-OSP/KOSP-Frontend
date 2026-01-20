@@ -1,4 +1,3 @@
-import { useRouter } from 'next/navigation';
 import { Users, Megaphone, ArrowRight } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
 import RecruitPostCard from '@/common/components/team/RecruitPostCard';
@@ -11,7 +10,6 @@ interface TeamListTabProps {
 }
 
 export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }: TeamListTabProps) {
-  const router = useRouter();
   const openRecruits = recruits.filter((r) => r.status === 'OPEN');
 
   if (teams.length === 0 && openRecruits.length === 0) {

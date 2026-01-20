@@ -17,17 +17,20 @@ export default async function ApplicationsPage({ params }: PageProps) {
     notFound();
   }
 
+  let team;
+  let recruit;
+
   try {
-    const [team, recruit] = await Promise.all([
+    [team, recruit] = await Promise.all([
       getTeam(teamId),
       getRecruit(recruitIdNum),
     ]);
-
-    return <ApplicationsClient team={team} recruit={recruit} />;
   } catch (error) {
     if (error instanceof ApiException && error.status === 404) {
       notFound();
     }
     throw error;
   }
+
+  return <ApplicationsClient team={team} recruit={recruit} />;
 }

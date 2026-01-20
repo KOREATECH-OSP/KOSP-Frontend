@@ -13,7 +13,6 @@ import {
   User,
   Loader2,
   Calendar,
-  Clock,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
@@ -41,12 +40,10 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
   const [applyReason, setApplyReason] = useState('');
   const [team, setTeam] = useState<TeamDetailResponse | null>(null);
   const [isTeamLoading, setIsTeamLoading] = useState(true);
-  const [isTeamError, setIsTeamError] = useState(false);
 
   useEffect(() => {
     let isActive = true;
     setIsTeamLoading(true);
-    setIsTeamError(false);
 
     getTeam(recruit.teamId)
       .then((data) => {
@@ -55,8 +52,6 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
       })
       .catch((error) => {
         console.error('팀 정보 조회 실패:', error);
-        if (!isActive) return;
-        setIsTeamError(true);
       })
       .finally(() => {
         if (!isActive) return;

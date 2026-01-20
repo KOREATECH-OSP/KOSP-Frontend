@@ -13,6 +13,7 @@ import {
 import { getChallenges } from '@/lib/api/challenge';
 import type { ChallengeResponse } from '@/lib/api/types';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type CategoryFilter = 'all' | string;
 
@@ -246,10 +247,13 @@ export default function ChallengePage() {
                     }`}
                   >
                     {challenge.imageUrl ? (
-                      <img
+                      <Image
                         src={challenge.imageUrl}
                         alt={challenge.title}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <Trophy className={`w-5 h-5 sm:w-6 sm:h-6 ${isCompleted ? 'text-[#00897b]' : 'text-[#6b7684]'}`} />

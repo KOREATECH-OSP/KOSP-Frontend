@@ -24,6 +24,27 @@ import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import { signOutOnce } from '@/lib/auth/signout';
 
+function decodeHtmlEntities(value: string): string {
+  if (typeof document === 'undefined') return value;
+  const textarea = document.createElement('textarea');
+  textarea.textContent = value;
+  const decoded = textarea.textContent || value;
+  return decoded;
+}
+
+function normalizeHtmlContent(value: string): string {
+  let normalized = value ?? '';
+  for (let i = 0; i < 2; i += 1) {
+    const looksEscaped =
+      !normalized.includes('<') && /&(?:lt|gt|amp|quot|#\d+);/i.test(normalized);
+    if (!looksEscaped) break;
+    const decoded = decodeHtmlEntities(normalized);
+    if (decoded === normalized) break;
+    normalized = decoded;
+  }
+  return normalized;
+}
+
 interface ArticleDetailClientProps {
   article: ArticleResponse;
   initialComments: CommentResponse[];
@@ -58,28 +79,6 @@ export default function ArticleDetailClient({
       callbackUrl: '/login',
       toastMessage: '로그인이 만료되었습니다. 다시 로그인해주세요.',
     });
-  };
-
-  const decodeHtmlEntities = (value: string) => {
-    if (typeof document === 'undefined') return value;
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    const decoded = textarea.value;
-    textarea.remove();
-    return decoded;
-  };
-
-  const normalizeHtmlContent = (value: string) => {
-    let normalized = value ?? '';
-    for (let i = 0; i < 2; i += 1) {
-      const looksEscaped =
-        !normalized.includes('<') && /&(?:lt|gt|amp|quot|#\d+);/i.test(normalized);
-      if (!looksEscaped) break;
-      const decoded = decodeHtmlEntities(normalized);
-      if (decoded === normalized) break;
-      normalized = decoded;
-    }
-    return normalized;
   };
 
   // XSS 방어를 위한 HTML sanitization
