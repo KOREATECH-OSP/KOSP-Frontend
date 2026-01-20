@@ -99,8 +99,9 @@ export default function UserEditClient() {
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('이미지 파일만 업로드 가능합니다');
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('JPG, JPEG, PNG 형식만 업로드 가능합니다');
       return;
     }
 
@@ -332,7 +333,7 @@ export default function UserEditClient() {
                     )}
                   </div>
                   <p className="text-xs text-gray-400">
-                    JPG, PNG, GIF 형식 · 최대 5MB
+                    JPG, JPEG, PNG 형식 · 최대 5MB
                   </p>
                 </div>
               </div>
@@ -340,7 +341,7 @@ export default function UserEditClient() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,.png"
                 onChange={handleImageChange}
                 className="hidden"
               />
