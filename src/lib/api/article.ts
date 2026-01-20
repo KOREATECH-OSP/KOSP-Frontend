@@ -16,16 +16,18 @@ interface GetArticlesOptions {
   page?: number;
   size?: number;
   pinned?: boolean;
+  accessToken?: string;
 }
 
 /**
  * 게시글 목록 조회
+ * accessToken이 있으면 isLiked 상태도 함께 반환
  */
 export async function getArticles(
   boardId: number,
   options: GetArticlesOptions = {}
 ): Promise<ArticleListResponse> {
-  const { page = 1, size = 10, pinned } = options;
+  const { page = 1, size = 10, pinned, accessToken } = options;
   const params = new URLSearchParams({
     boardId: String(boardId),
     page: String(page - 1),
@@ -36,6 +38,7 @@ export async function getArticles(
   }
   return apiClient<ArticleListResponse>(`/v1/community/articles?${params}`, {
     cache: 'no-store',
+    accessToken,
   });
 }
 

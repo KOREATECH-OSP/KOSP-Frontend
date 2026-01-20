@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Eye, MessageSquare, Heart } from 'lucide-react';
+import { Eye, MessageSquare, Heart, Pin, Bookmark } from 'lucide-react';
 import type { ArticleResponse } from '@/lib/api/types';
 
 interface CommunityPostCardProps {
@@ -23,6 +23,9 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
             <span className="flex-shrink-0 rounded-md bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
               {boardName}
             </span>
+          )}
+          {post.isPinned && (
+            <Pin className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
           )}
           <h3 className="truncate text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
             {post.title}
@@ -54,9 +57,30 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
 
         {/* Stats */}
         <div className="flex items-center gap-3 text-gray-400 font-medium flex-shrink-0">
-          <span className="flex items-center gap-1 group-hover:text-pink-500 transition-colors">
-            <Heart className="h-3.5 w-3.5" />
+          <span
+            className={`relative flex items-center group/bookmark ${
+              post.isBookmarked ? 'text-yellow-500' : ''
+            }`}
+          >
+            <Bookmark className={`h-3.5 w-3.5 ${post.isBookmarked ? 'fill-current' : ''}`} />
+            {post.isBookmarked && (
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[10px] font-medium text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover/bookmark:opacity-100 transition-opacity pointer-events-none">
+                내가 저장한 게시물
+              </span>
+            )}
+          </span>
+          <span
+            className={`relative flex items-center gap-1 transition-colors group/heart ${
+              post.isLiked ? 'text-red-500' : 'group-hover:text-pink-500'
+            }`}
+          >
+            <Heart className={`h-3.5 w-3.5 ${post.isLiked ? 'fill-current' : ''}`} />
             {post.likes}
+            {post.isLiked && (
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[10px] font-medium text-white bg-gray-900 rounded whitespace-nowrap opacity-0 group-hover/heart:opacity-100 transition-opacity pointer-events-none">
+                내가 좋아요한 게시물
+              </span>
+            )}
           </span>
           <span className="flex items-center gap-1 group-hover:text-blue-500 transition-colors">
             <MessageSquare className="h-3.5 w-3.5" />

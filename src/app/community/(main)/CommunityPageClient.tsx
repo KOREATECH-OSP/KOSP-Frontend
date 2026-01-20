@@ -23,22 +23,35 @@ export default function CommunityPageClient({
   const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
   const [activeBoard, setActiveBoard] = useState<number | null>(1);
-  const [articles, setArticles] = useState<ArticleResponse[]>(initialArticles);
+
+  const sortByPinned = (posts: ArticleResponse[]) => {
+    return [...posts].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
+  };
+
+  const [articles, setArticles] = useState<ArticleResponse[]>(sortByPinned(initialArticles));
   // Pagination state
   const [currentPage, setCurrentPage] = useState(initialPagination.currentPage);
   const [totalPages, setTotalPages] = useState(initialPagination.totalPages);
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // If initialArticles is empty but totalItems > 0 (unlikely for page 1), or if we just want to ensure sync
-
   const fetchArticles = (boardId: number, page: number) => {
     setIsLoading(true);
+    const headers: HeadersInit = {};
+    if (session?.accessToken) {
+      headers['Authorization'] = `Bearer ${session.accessToken}`;
+    }
     startTransition(() => {
-      fetch(`${API_BASE_URL}/v1/community/articles?boardId=${boardId}&page=${page - 1}&size=10`)
+      fetch(`${API_BASE_URL}/v1/community/articles?boardId=${boardId}&page=${page - 1}&size=10`, {
+        headers,
+      })
         .then((res) => res.json())
         .then((data: ArticleListResponse) => {
-          setArticles(data.posts);
+          setArticles(sortByPinned(data.posts));
           setTotalPages(data.pagination.totalPages);
           setCurrentPage(data.pagination.currentPage);
         })

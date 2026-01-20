@@ -283,6 +283,7 @@ export interface ArticleResponse {
   tags: string[];
   isLiked: boolean;
   isBookmarked: boolean;
+  isPinned?: boolean;
 }
 
 export interface ArticleListResponse {

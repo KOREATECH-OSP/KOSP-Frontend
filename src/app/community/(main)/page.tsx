@@ -1,16 +1,17 @@
 import { Suspense } from 'react';
 import { getBoards, getArticles } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
+import { auth } from '@/auth';
 import CommunityPageClient from './CommunityPageClient';
 import Link from 'next/link';
 
-async function fetchCommunityData() {
+async function fetchCommunityData(accessToken?: string) {
   try {
     const boardsResponse = await getBoards();
     const boards = boardsResponse.boards.filter((board) => !board.isRecruitAllowed);
 
     const defaultBoardId = 1;
-    const articlesResponse = await getArticles(defaultBoardId);
+    const articlesResponse = await getArticles(defaultBoardId, { accessToken });
 
     return { boards, articlesResponse, error: null };
   } catch (error) {
@@ -22,7 +23,8 @@ async function fetchCommunityData() {
 }
 
 export default async function CommunityPage() {
-  const { boards, articlesResponse, error } = await fetchCommunityData();
+  const session = await auth();
+  const { boards, articlesResponse, error } = await fetchCommunityData(session?.accessToken);
 
   if (error === 'unauthorized') {
     return (
