@@ -13,7 +13,6 @@ import {
   Camera,
   Save,
   AlertTriangle,
-  Mail,
   Lock,
   X,
   ExternalLink,
@@ -420,8 +419,7 @@ export default function UserEditClient() {
               {/* 이메일 */}
               {session.user?.email && (
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-500">
-                    <Mail className="h-3.5 w-3.5" />
+                  <label className="mb-1.5 text-xs font-medium text-gray-500">
                     이메일
                   </label>
                   <div className="rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">
@@ -433,8 +431,7 @@ export default function UserEditClient() {
               {/* 이름 */}
               {session.user?.name && (
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-500">
-                    <UserIcon className="h-3.5 w-3.5" />
+                  <label className="mb-1.5 text-xs font-medium text-gray-500">
                     이름
                   </label>
                   <div className="rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">
@@ -442,10 +439,6 @@ export default function UserEditClient() {
                   </div>
                 </div>
               )}
-
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                계정 정보는 GitHub 연동 정보를 기반으로 하며 직접 변경할 수 없습니다.
-              </p>
             </div>
           </div>
 
