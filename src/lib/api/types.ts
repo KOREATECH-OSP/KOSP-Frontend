@@ -104,6 +104,51 @@ export interface UserProfileResponse {
 }
 
 // ============================================
+// User Point Types
+// ============================================
+
+export interface PointTransaction {
+  id: number;
+  amount: number;
+  type: string;
+  reason: string;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface MyPointHistoryResponse {
+  currentBalance: number;
+  transactions: PointTransaction[];
+  meta: PageMeta;
+}
+
+// ============================================
+// User Application Types
+// ============================================
+
+export interface RecruitSummary {
+  id: number;
+  title: string;
+  teamName: string;
+  status: string;
+  endDate: string;
+}
+
+export interface MyApplicationResponse {
+  applicationId: number;
+  status: string;
+  reason: string;
+  portfolioUrl: string;
+  appliedAt: string;
+  recruit: RecruitSummary;
+}
+
+export interface MyApplicationListResponse {
+  applications: MyApplicationResponse[];
+  meta: PageMeta;
+}
+
+// ============================================
 // User Activity Types
 // ============================================
 

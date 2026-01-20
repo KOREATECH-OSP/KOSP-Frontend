@@ -15,6 +15,8 @@ import type {
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
   AuthTokenResponse,
+  MyPointHistoryResponse,
+  MyApplicationListResponse,
 } from './types';
 
 interface AuthOptions {
@@ -197,5 +199,45 @@ export async function getUserGithubContributionScore(
   return apiClient<GithubContributionScoreResponse>(
     `/v1/users/${userId}/github/contribution-score`,
     { cache: 'no-store' }
+  );
+}
+
+// ============================================
+// My Page APIs (본인 정보)
+// ============================================
+
+/**
+ * 본인 포인트 내역 조회
+ */
+export async function getMyPointHistory(
+  auth: AuthOptions,
+  page: number = 1,
+  size: number = 10
+): Promise<MyPointHistoryResponse> {
+  return clientApiClient<MyPointHistoryResponse>(
+    `/v1/users/me/points?page=${page}&size=${size}`,
+    {
+      headers: {
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+    }
+  );
+}
+
+/**
+ * 본인 지원 내역 조회
+ */
+export async function getMyApplications(
+  auth: AuthOptions,
+  page: number = 1,
+  size: number = 10
+): Promise<MyApplicationListResponse> {
+  return clientApiClient<MyApplicationListResponse>(
+    `/v1/users/me/applications?page=${page}&size=${size}`,
+    {
+      headers: {
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+    }
   );
 }

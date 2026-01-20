@@ -36,6 +36,8 @@ import {
   getUserGithubOverallHistory,
   getUserGithubRecentActivity,
   getUserGithubContributionScore,
+  getMyPointHistory,
+  getMyApplications,
 } from '@/lib/api/user';
 import type {
   ArticleResponse,
@@ -44,6 +46,8 @@ import type {
   GithubOverallHistoryResponse,
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
+  MyPointHistoryResponse,
+  MyApplicationResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 
@@ -65,11 +69,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [recentActivity, setRecentActivity] = useState<GithubRecentActivityResponse[]>([]);
   const [contributionScore, setContributionScore] = useState<GithubContributionScoreResponse | null>(null);
 
+  // 포인트 & 지원내역 데이터
+  const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
+  const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
+
   const [counts, setCounts] = useState({ posts: 0, comments: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [showAllRepos, setShowAllRepos] = useState(false);
 
   const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
+  const accessToken = session?.accessToken as string | undefined;
 
   const fetchGithubData = useCallback(async () => {
     if (!userId) return;
@@ -123,6 +132,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
       try {
         if (activeTab === '활동') {
           await fetchGithubData();
+        } else if (activeTab === '포인트') {
+          if (accessToken) {
+            const res = await getMyPointHistory({ accessToken });
+            setPointHistory(res);
+          }
+        } else if (activeTab === '지원내역') {
+          if (accessToken) {
+            const res = await getMyApplications({ accessToken });
+            setApplications(res.applications);
+          }
         } else if (activeTab === '작성글') {
           const res = await getUserPosts(userId);
           setPosts(res.posts);
@@ -141,7 +160,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     };
 
     fetchTabData();
-  }, [activeTab, userId, fetchGithubData]);
+  }, [activeTab, userId, accessToken, fetchGithubData]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -591,13 +610,52 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
           {/* 포인트 탭 */}
           {activeTab === '포인트' && (
-            <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-100 px-6 py-4">
-                <h2 className="text-sm font-bold text-gray-900">포인트</h2>
+            <div className="space-y-6">
+              {/* 현재 포인트 */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">보유 포인트</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {pointHistory?.currentBalance?.toLocaleString() ?? 0}
+                      <span className="ml-1 text-lg font-medium text-gray-500">P</span>
+                    </p>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                    <Star className="h-6 w-6 text-amber-500" />
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col items-center justify-center py-16">
-                <Star className="mb-3 h-12 w-12 text-gray-200" />
-                <p className="text-gray-500">포인트 기능 준비 중입니다.</p>
+
+              {/* 포인트 내역 */}
+              <div className="rounded-xl border border-gray-200 bg-white">
+                <div className="border-b border-gray-100 px-6 py-4">
+                  <h2 className="text-sm font-bold text-gray-900">포인트 내역</h2>
+                </div>
+
+                {!pointHistory?.transactions || pointHistory.transactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Star className="mb-3 h-12 w-12 text-gray-200" />
+                    <p className="text-gray-500">포인트 내역이 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {pointHistory.transactions.map((tx) => (
+                      <div key={tx.id} className="flex items-center justify-between px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{tx.reason}</p>
+                          <p className="text-xs text-gray-400">{formatDate(tx.createdAt)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-semibold ${tx.amount > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}P
+                          </p>
+                          <p className="text-xs text-gray-400">{tx.balanceAfter.toLocaleString()}P</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -606,12 +664,48 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           {activeTab === '지원내역' && (
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-6 py-4">
-                <h2 className="text-sm font-bold text-gray-900">지원내역</h2>
+                <h2 className="text-sm font-bold text-gray-900">지원내역 ({applications.length})</h2>
               </div>
-              <div className="flex flex-col items-center justify-center py-16">
-                <FileText className="mb-3 h-12 w-12 text-gray-200" />
-                <p className="text-gray-500">지원내역 기능 준비 중입니다.</p>
-              </div>
+
+              {applications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">지원내역이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {applications.map((app) => (
+                    <Link
+                      key={app.applicationId}
+                      href={`/recruit/${app.recruit.id}`}
+                      className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                            {app.recruit.title}
+                          </p>
+                          <p className="text-xs text-gray-500">{app.recruit.teamName}</p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            지원일: {formatDate(app.appliedAt)}
+                          </p>
+                        </div>
+                        <div className="ml-4 flex-shrink-0">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            app.status === 'ACCEPTED'
+                              ? 'bg-green-100 text-green-700'
+                              : app.status === 'REJECTED'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {app.status === 'ACCEPTED' ? '승인' : app.status === 'REJECTED' ? '거절' : '대기중'}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
