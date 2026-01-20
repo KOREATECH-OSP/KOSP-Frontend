@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useEditor, EditorContent, AnyExtension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -114,6 +115,30 @@ export default function TiptapEditor({
       },
     },
   });
+
+  // 외부에서 content가 변경될 때 에디터 내용 업데이트
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (editor && content !== undefined) {
+      // 초기 마운트 시에는 무시 (useEditor가 이미 content를 설정함)
+      if (isInitialMount.current) {
+        isInitialMount.current = false;
+        // 하지만 초기 content가 비어있고 나중에 데이터가 로드되는 경우 처리
+        if (!editor.getHTML() || editor.getHTML() === '<p></p>') {
+          if (content && content !== '<p></p>') {
+            editor.commands.setContent(content);
+          }
+        }
+        return;
+      }
+
+      // 에디터 내용과 새 content가 다를 때만 업데이트
+      const currentContent = editor.getHTML();
+      if (currentContent !== content) {
+        editor.commands.setContent(content);
+      }
+    }
+  }, [editor, content]);
 
   const characterCount = editor?.storage.characterCount?.characters() ?? 0;
 

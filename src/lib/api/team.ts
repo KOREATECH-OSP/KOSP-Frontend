@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 import type {
   TeamCreateRequest,
+  TeamUpdateRequest,
   TeamListResponse,
   TeamDetailResponse,
 } from './types';
@@ -40,6 +41,21 @@ export async function createTeam(data: TeamCreateRequest): Promise<void> {
 export async function getMyTeam(accessToken: string): Promise<TeamDetailResponse> {
   return apiClient<TeamDetailResponse>('/v1/teams/me', {
     cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
+ * 팀 정보 수정
+ */
+export async function updateTeam(
+  teamId: number,
+  data: TeamUpdateRequest,
+  accessToken: string
+): Promise<void> {
+  await apiClient<void>(`/v1/teams/${teamId}`, {
+    method: 'PUT',
+    body: data,
     accessToken,
   });
 }

@@ -21,7 +21,6 @@ import {
   XCircle,
   Calendar,
 } from 'lucide-react';
-import TeamSettingsModal from '@/common/components/team/TeamSettingsModal';
 import { toast } from '@/lib/toast';
 import { updateRecruitStatus, deleteRecruit } from '@/lib/api/recruit';
 import { inviteTeamMember } from '@/lib/api/team';
@@ -39,7 +38,6 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
   const { data: session } = useSession();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmailId, setInviteEmailId] = useState('');
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const [team] = useState(initialTeam);
   const [recruits, setRecruits] = useState(initialRecruits);
@@ -84,11 +82,6 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
 
   const handleRemoveMember = () => {
     toast.info('아직 준비 중인 기능입니다.');
-  };
-
-  const handleSaveSettings = () => {
-    toast.info('아직 준비 중인 기능입니다.');
-    setIsSettingsModalOpen(false);
   };
 
   const handleToggleRecruitStatus = async (recruitId: number, currentStatus: RecruitStatus) => {
@@ -207,13 +200,13 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                   </div>
                 </div>
                 {canEditTeam() && (
-                  <button
-                    onClick={() => setIsSettingsModalOpen(true)}
+                  <Link
+                    href={`/team/${team.id}/settings`}
                     className="rounded-sm border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
-                    title="팀 설정"
+                    title="팀 정보 수정"
                   >
                     <Settings className="h-5 w-5" />
-                  </button>
+                  </Link>
                 )}
               </div>
 
@@ -498,20 +491,20 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                         </div>
                       </div>
                     </Link>
-                    <button
-                      onClick={() => setIsSettingsModalOpen(true)}
-                      className="group w-full rounded-sm border border-gray-200 bg-white p-4 text-left transition-all hover:border-gray-300"
+                    <Link
+                      href={`/team/${team.id}/settings`}
+                      className="group block rounded-sm border border-gray-200 bg-white p-4 transition-all hover:border-gray-300"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600 transition-colors">
                           <Settings className="h-5 w-5" />
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900 group-hover:underline">팀 설정</h4>
-                          <p className="text-xs text-gray-500">팀 정보를 수정하세요</p>
+                          <h4 className="font-medium text-gray-900 group-hover:underline">팀 정보 수정</h4>
+                          <p className="text-xs text-gray-500">팀 이름, 소개 등을 수정하세요</p>
                         </div>
                       </div>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )}
@@ -568,18 +561,6 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
             </div>
           </div>
         )}
-
-        <TeamSettingsModal
-          isOpen={isSettingsModalOpen}
-          initialSettings={{
-            name: team.name,
-            description: team.description,
-            imageUrl: team.imageUrl ?? '',
-            positions: [],
-          }}
-          onClose={() => setIsSettingsModalOpen(false)}
-          onSave={handleSaveSettings}
-        />
       </div>
     </div>
   );

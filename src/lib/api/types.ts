@@ -337,6 +337,12 @@ export interface TeamCreateRequest {
   imageUrl?: string;
 }
 
+export interface TeamUpdateRequest {
+  name: string;
+  description: string;
+  imageUrl?: string;
+}
+
 export interface TeamResponse {
   id: number;
   name: string;
