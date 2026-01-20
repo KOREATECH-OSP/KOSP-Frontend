@@ -6,8 +6,14 @@ import {
   X,
   Upload,
   FileText,
-  Tag,
   Loader2,
+  Sparkles,
+  Calendar,
+  Hash,
+  Type,
+  FileUp,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -29,11 +35,17 @@ interface RecruitFormData {
 }
 
 function stripHtml(html: string): string {
-  if (typeof document === 'undefined') return html;
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || '';
+  // Remove HTML tags using regex - safe for validation purposes only
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
+
+const formSections = [
+  { id: 'title', label: '제목', icon: Type },
+  { id: 'period', label: '모집 기간', icon: Calendar },
+  { id: 'tags', label: '기술 스택', icon: Hash },
+  { id: 'content', label: '상세 내용', icon: Sparkles },
+  { id: 'files', label: '첨부파일', icon: FileUp },
+];
 
 export default function CreateRecruitPage() {
   const router = useRouter();
@@ -62,6 +74,8 @@ export default function CreateRecruitPage() {
     files: [],
   });
 
+  const [activeSection, setActiveSection] = useState('title');
+
   useEffect(() => {
     if (isEditMode && editId && session?.accessToken) {
       getRecruit(Number(editId), session.accessToken)
@@ -72,7 +86,7 @@ export default function CreateRecruitPage() {
             tags: recruit.tags || [],
             startDate: recruit.startDate.split('T')[0],
             endDate: recruit.endDate ? recruit.endDate.split('T')[0] : '',
-            files: [], // Files handling is tricky, might need separate logic or assume empty for now as API might not return file objects easily
+            files: [],
           });
         })
         .catch((err) => {
@@ -83,22 +97,18 @@ export default function CreateRecruitPage() {
     }
   }, [isEditMode, editId, session?.accessToken, router]);
 
-  // Draft Persistence Logic
   const DRAFT_KEY = `recruit-draft-${teamId}`;
 
   useEffect(() => {
-    // Only load draft if NOT in edit mode
     if (!isEditMode && typeof window !== 'undefined') {
       const savedDraft = localStorage.getItem(DRAFT_KEY);
       if (savedDraft) {
         try {
           const parsed = JSON.parse(savedDraft);
-          // Confirm with user if they want to restore (optional, but good UX)
-          // For now, let's auto-restore for seamlessness, or maybe add a toast saying "Draft restored"
           setFormData((prev) => ({
             ...prev,
             ...parsed,
-            files: [], // Files cannot be restored from localStorage
+            files: [],
           }));
           toast.success('작성 중인 내용을 불러왔습니다.');
         } catch (e) {
@@ -109,9 +119,8 @@ export default function CreateRecruitPage() {
     }
   }, [isEditMode, teamId, DRAFT_KEY]);
 
-  // Save draft on change (Debounced 1s)
   useEffect(() => {
-    if (isEditMode) return; // Don't overwrite draft with edit data
+    if (isEditMode) return;
 
     const timeoutId = setTimeout(() => {
       const draftData = {
@@ -133,6 +142,26 @@ export default function CreateRecruitPage() {
     Partial<Record<keyof RecruitFormData, string>>
   >({});
   const isComposingRef = useRef(false);
+
+  const getSectionStatus = (sectionId: string): 'empty' | 'filled' | 'error' => {
+    switch (sectionId) {
+      case 'title':
+        if (errors.title) return 'error';
+        return formData.title.trim() ? 'filled' : 'empty';
+      case 'period':
+        if (errors.startDate || errors.endDate) return 'error';
+        return formData.startDate ? 'filled' : 'empty';
+      case 'tags':
+        return formData.tags.length > 0 ? 'filled' : 'empty';
+      case 'content':
+        if (errors.content) return 'error';
+        return stripHtml(formData.content) ? 'filled' : 'empty';
+      case 'files':
+        return formData.files.length > 0 ? 'filled' : 'empty';
+      default:
+        return 'empty';
+    }
+  };
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -159,7 +188,7 @@ export default function CreateRecruitPage() {
       return;
     }
     if (formData.tags.length >= 5) {
-      alert('태그는 최대 5개까지 추가할 수 있습니다.');
+      toast.error('태그는 최대 5개까지 추가할 수 있습니다.');
       return;
     }
     setFormData((prev) => ({ ...prev, tags: [...prev.tags, trimmed] }));
@@ -177,7 +206,7 @@ export default function CreateRecruitPage() {
     const files = Array.from(e.target.files || []);
 
     if (formData.files.length + files.length > 5) {
-      alert('파일은 최대 5개까지 업로드 가능합니다.');
+      toast.error('파일은 최대 5개까지 업로드 가능합니다.');
       return;
     }
 
@@ -185,7 +214,7 @@ export default function CreateRecruitPage() {
     const oversizedFiles = files.filter((file) => file.size > maxSize);
 
     if (oversizedFiles.length > 0) {
-      alert('각 파일의 크기는 10MB를 초과할 수 없습니다.');
+      toast.error('각 파일의 크기는 10MB를 초과할 수 없습니다.');
       return;
     }
 
@@ -213,7 +242,7 @@ export default function CreateRecruitPage() {
     if (!formData.title.trim()) {
       newErrors.title = '제목을 입력해주세요';
     }
-    const contentText = stripHtml(formData.content).trim();
+    const contentText = stripHtml(formData.content);
     if (!contentText) {
       newErrors.content = '내용을 입력해주세요';
     }
@@ -250,7 +279,6 @@ export default function CreateRecruitPage() {
 
     setIsSubmitting(true);
     try {
-      // 첨부파일 업로드
       const attachmentIds: number[] = [];
       if (formData.files.length > 0) {
         for (const file of formData.files) {
@@ -276,9 +304,6 @@ export default function CreateRecruitPage() {
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
       };
 
-
-
-      // Board ID finding logic (needed for both create and update if update requires it)
       const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -316,10 +341,9 @@ export default function CreateRecruitPage() {
         toast.success('팀원 모집글이 등록되었습니다.');
       }
 
-      // Clear draft
       localStorage.removeItem(DRAFT_KEY);
 
-      router.refresh(); // Force refresh to update server components (invalidate cache)
+      router.refresh();
       router.back();
     } catch (error) {
       console.error('모집공고 저장 실패:', error);
@@ -330,220 +354,464 @@ export default function CreateRecruitPage() {
     }
   };
 
+  const completedCount = formSections.filter(s => getSectionStatus(s.id) === 'filled').length;
+  const requiredCount = 3; // title, period, content
+
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6">
-      {/* Header */}
-      <div className="mb-8">
-        <button
-          onClick={() => router.back()}
-          className="group mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900"
-        >
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          목록으로
-        </button>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-          {isEditMode ? '모집 공고 수정' : '새 모집 공고 작성'}
-        </h1>
-        <p className="mt-2 text-gray-500">
-          팀원을 모집하기 위한 상세한 내용을 작성해주세요.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Top Navigation */}
+      <div className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <button
+            onClick={() => router.back()}
+            className="group flex items-center gap-2.5 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            <span>돌아가기</span>
+          </button>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Title Section */}
-          <div className="space-y-4">
-            <label className="block text-sm font-bold text-gray-900">
-              전체 제목 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="모집 공고 제목을 입력하세요 (ex. 프론트엔드 개발자 구합니다)"
-              className={`w-full rounded-lg border px-4 py-3 text-sm transition-all focus:outline-none focus:ring-1 ${errors.title
-                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50/50'
-                  : 'border-gray-200 focus:border-gray-900 focus:ring-gray-900 bg-white placeholder:text-gray-400'
-                }`}
-            />
-            {errors.title && (
-              <p className="flex items-center gap-1 text-sm text-red-500 font-medium">
-                <Loader2 className="h-4 w-4 animate-spin hidden" /> {/* Just to import Icon if needed, using AlertCircle instead if imported */}
-                <span className="text-red-500 text-xs">{errors.title}</span>
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            {/* Date Section */}
-            <div className="space-y-4">
-              <label className="block text-sm font-bold text-gray-900">
-                모집 기간 <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <div className="text-xs font-medium text-gray-500">시작일</div>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    className={`w-full rounded-lg border px-3 py-2.5 text-sm transition-all focus:outline-none focus:ring-1 ${errors.startDate
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-200 focus:border-gray-900 focus:ring-gray-900'
-                      }`}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="text-xs font-medium text-gray-500">마감일 (선택)</div>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm transition-all focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  />
-                </div>
-              </div>
-              {errors.startDate && <p className="text-xs text-red-500 font-medium">{errors.startDate}</p>}
-              {errors.endDate && <p className="text-xs text-red-500 font-medium">{errors.endDate}</p>}
-            </div>
-
-            {/* Tags Section */}
-            <div className="space-y-4">
-              <label className="block text-sm font-bold text-gray-900">
-                태그 / 기술 스택
-              </label>
-              <div className="min-h-[82px] rounded-lg border border-gray-200 p-3 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition-all bg-white">
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700"
-                    >
-                      #{tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-gray-200 hover:text-red-500"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                  {formData.tags.length < 5 && (
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.nativeEvent.isComposing || isComposingRef.current) return;
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddTag();
-                        }
-                      }}
-                      onCompositionStart={() => { isComposingRef.current = true; }}
-                      onCompositionEnd={() => { isComposingRef.current = false; }}
-                      placeholder={formData.tags.length === 0 ? "태그 입력 + Enter" : "추가..."}
-                      className="min-w-[100px] flex-1 border-none bg-transparent p-1 text-sm placeholder-gray-400 focus:outline-none focus:ring-0"
-                    />
-                  )}
-                </div>
-              </div>
-              <p className="text-xs text-gray-400">최대 5개까지 등록 가능합니다.</p>
-            </div>
-          </div>
-
-          {/* Content Editor */}
-          <div className="space-y-4">
-            <label className="block text-sm font-bold text-gray-900">
-              상세 내용 <span className="text-red-500">*</span>
-            </label>
-            <div className={`rounded-lg border overflow-hidden transition-all ${errors.content ? 'border-red-300 ring-1 ring-red-300' : 'border-gray-200 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900'
-              }`}>
-              <TiptapEditor
-                content={formData.content}
-                onChange={handleContentChange}
-                placeholder="팀 소개, 모집 배경, 활동 내용 등을 자유롭게 작성해주세요..."
-                minHeight={400}
-                maxCharacters={5000}
-                showCharacterCount
-                onImageUpload={uploadImage}
-                error={!!errors.content}
-              />
-            </div>
-            {errors.content && (
-              <p className="text-xs text-red-500 font-medium">{errors.content}</p>
-            )}
-          </div>
-
-          {/* Files Section */}
-          <div className="space-y-4">
-            <label className="block text-sm font-bold text-gray-900">
-              파일 첨부
-            </label>
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap gap-3">
-                {formData.files.map((file, index) => (
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2 sm:flex">
+              <div className="flex items-center gap-1.5">
+                {[...Array(requiredCount)].map((_, i) => (
                   <div
-                    key={index}
-                    className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
-                  >
-                    <FileText className="h-4 w-4 text-gray-400" />
-                    <span className="truncate max-w-[200px]">{file.name}</span>
-                    <span className="text-xs text-gray-400">({formatFileSize(file.size)})</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(index)}
-                      className="ml-1 rounded p-0.5 hover:bg-gray-200"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                    key={i}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      i < Math.min(completedCount, requiredCount)
+                        ? 'bg-emerald-500'
+                        : 'bg-slate-300'
+                    }`}
+                  />
                 ))}
               </div>
+              <span className="text-xs font-medium text-slate-600">
+                {Math.min(completedCount, requiredCount)}/{requiredCount} 필수 항목
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <label className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 py-8 text-center transition hover:border-gray-400 hover:bg-gray-100">
-                <Upload className="mb-2 h-6 w-6 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600">클릭하여 파일 업로드</span>
-                <span className="mt-1 text-xs text-gray-400">최대 5개, 각 10MB 이하 (이미지, 문서, 압축파일)</span>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
-                />
-              </label>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Left Sidebar - Progress Tracker */}
+          <div className="hidden lg:col-span-3 lg:block">
+            <div className="sticky top-24">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-slate-900">작성 진행 상황</h3>
+                  <p className="mt-1 text-xs text-slate-500">섹션을 클릭하여 이동하세요</p>
+                </div>
+
+                <nav className="space-y-1">
+                  {formSections.map((section, index) => {
+                    const Icon = section.icon;
+                    const sectionStatus = getSectionStatus(section.id);
+                    const isActive = activeSection === section.id;
+
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => {
+                          setActiveSection(section.id);
+                          document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ${
+                          isActive
+                            ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-white/20'
+                            : sectionStatus === 'filled'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : sectionStatus === 'error'
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                        }`}>
+                          {sectionStatus === 'filled' && !isActive ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : sectionStatus === 'error' && !isActive ? (
+                            <AlertCircle className="h-4 w-4" />
+                          ) : (
+                            <Icon className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className={`text-sm font-medium ${isActive ? 'text-white' : ''}`}>
+                            {section.label}
+                          </div>
+                          {sectionStatus === 'filled' && !isActive && (
+                            <div className="text-xs text-emerald-600">완료</div>
+                          )}
+                        </div>
+                        <div className={`text-xs font-medium ${isActive ? 'text-white/60' : 'text-slate-400'}`}>
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-6 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-white">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    PRO TIP
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                    구체적인 역할과 기술 스택을 명시하면 지원율이 <span className="font-semibold text-white">2배</span> 높아집니다.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="pt-6 flex items-center justify-end gap-3 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-8 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  처리 중...
-                </>
-              ) : (
-                isEditMode ? '수정 완료' : '등록하기'
-              )}
-            </button>
+          {/* Main Form Area */}
+          <div className="lg:col-span-9">
+            {/* Header */}
+            <div className="mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white">
+                <Sparkles className="h-3.5 w-3.5" />
+                {isEditMode ? '공고 수정' : '새 공고 작성'}
+              </div>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                {isEditMode ? '모집 공고 수정하기' : '팀원을 모집해보세요'}
+              </h1>
+              <p className="mt-3 text-lg text-slate-600">
+                매력적인 공고로 최고의 팀원을 찾아보세요.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title Section */}
+              <section
+                id="title"
+                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
+                  activeSection === 'title' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                }`}
+                onFocus={() => setActiveSection('title')}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    getSectionStatus('title') === 'filled'
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : getSectionStatus('title') === 'error'
+                      ? 'bg-red-100 text-red-600'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    <Type className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">공고 제목</h2>
+                    <p className="text-sm text-slate-500">한눈에 들어오는 매력적인 제목을 작성하세요</p>
+                  </div>
+                </div>
+
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  onFocus={() => setActiveSection('title')}
+                  placeholder="예: React 프론트엔드 개발자를 찾습니다!"
+                  className={`w-full rounded-xl border-2 bg-slate-50 px-5 py-4 text-lg font-medium transition-all placeholder:text-slate-400 focus:bg-white focus:outline-none ${
+                    errors.title
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-transparent focus:border-slate-900'
+                  }`}
+                />
+                {errors.title && (
+                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.title}
+                  </div>
+                )}
+              </section>
+
+              {/* Period Section */}
+              <section
+                id="period"
+                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
+                  activeSection === 'period' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                }`}
+                onFocus={() => setActiveSection('period')}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    getSectionStatus('period') === 'filled'
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : getSectionStatus('period') === 'error'
+                      ? 'bg-red-100 text-red-600'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">모집 기간</h2>
+                    <p className="text-sm text-slate-500">모집 시작일과 마감일을 설정하세요</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      시작일 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleInputChange}
+                      onFocus={() => setActiveSection('period')}
+                      className={`w-full rounded-xl border-2 bg-slate-50 px-4 py-3.5 text-sm font-medium transition-all focus:bg-white focus:outline-none ${
+                        errors.startDate
+                          ? 'border-red-300 focus:border-red-500'
+                          : 'border-transparent focus:border-slate-900'
+                      }`}
+                    />
+                    {errors.startDate && (
+                      <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.startDate}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      마감일 <span className="text-slate-400">(선택)</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={formData.endDate}
+                      onChange={handleInputChange}
+                      onFocus={() => setActiveSection('period')}
+                      className="w-full rounded-xl border-2 border-transparent bg-slate-50 px-4 py-3.5 text-sm font-medium transition-all focus:border-slate-900 focus:bg-white focus:outline-none"
+                    />
+                    {errors.endDate && (
+                      <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {errors.endDate}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* Tags Section */}
+              <section
+                id="tags"
+                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
+                  activeSection === 'tags' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                }`}
+                onFocus={() => setActiveSection('tags')}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    getSectionStatus('tags') === 'filled'
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    <Hash className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">기술 스택 & 태그</h2>
+                    <p className="text-sm text-slate-500">필요한 기술이나 역할을 태그로 추가하세요</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border-2 border-transparent bg-slate-50 p-4 transition-all focus-within:border-slate-900 focus-within:bg-white">
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white"
+                      >
+                        <Hash className="h-3 w-3" />
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-white/20"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                    {formData.tags.length < 5 && (
+                      <input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onFocus={() => setActiveSection('tags')}
+                        onKeyDown={(e) => {
+                          if (e.nativeEvent.isComposing || isComposingRef.current) return;
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddTag();
+                          }
+                        }}
+                        onCompositionStart={() => { isComposingRef.current = true; }}
+                        onCompositionEnd={() => { isComposingRef.current = false; }}
+                        placeholder={formData.tags.length === 0 ? "React, TypeScript, Node.js 등..." : "태그 추가..."}
+                        className="min-w-[150px] flex-1 bg-transparent px-2 py-1.5 text-sm font-medium placeholder-slate-400 focus:outline-none"
+                      />
+                    )}
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">Enter를 눌러 태그를 추가하세요. 최대 5개까지 등록 가능합니다.</p>
+              </section>
+
+              {/* Content Editor Section */}
+              <section
+                id="content"
+                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
+                  activeSection === 'content' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                }`}
+                onFocus={() => setActiveSection('content')}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    getSectionStatus('content') === 'filled'
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : getSectionStatus('content') === 'error'
+                      ? 'bg-red-100 text-red-600'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">상세 내용</h2>
+                    <p className="text-sm text-slate-500">팀과 프로젝트에 대해 자세히 설명해주세요</p>
+                  </div>
+                </div>
+
+                <div className={`rounded-xl border-2 overflow-hidden transition-all ${
+                  errors.content ? 'border-red-300' : 'border-transparent focus-within:border-slate-900'
+                }`}>
+                  <TiptapEditor
+                    content={formData.content}
+                    onChange={handleContentChange}
+                    placeholder="팀 소개, 프로젝트 목표, 필요한 역할, 활동 일정 등을 자유롭게 작성해주세요..."
+                    minHeight={400}
+                    maxCharacters={5000}
+                    showCharacterCount
+                    onImageUpload={uploadImage}
+                    error={!!errors.content}
+                  />
+                </div>
+                {errors.content && (
+                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.content}
+                  </div>
+                )}
+              </section>
+
+              {/* Files Section */}
+              <section
+                id="files"
+                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
+                  activeSection === 'files' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                }`}
+                onFocus={() => setActiveSection('files')}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    getSectionStatus('files') === 'filled'
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    <FileUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">첨부파일</h2>
+                    <p className="text-sm text-slate-500">관련 문서나 이미지를 첨부하세요</p>
+                  </div>
+                </div>
+
+                {formData.files.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    {formData.files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
+                          <FileText className="h-5 w-5 text-slate-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
+                          <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile(index)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-200 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-10 transition-all hover:border-slate-400 hover:bg-slate-100">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
+                    <Upload className="h-6 w-6 text-slate-600" />
+                  </div>
+                  <span className="mt-4 text-sm font-semibold text-slate-700">파일을 드래그하거나 클릭하여 업로드</span>
+                  <span className="mt-1 text-xs text-slate-500">PNG, JPG, PDF, DOC, ZIP (최대 5개, 각 10MB)</span>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
+                  />
+                </label>
+              </section>
+
+              {/* Submit Section */}
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-slate-800 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+                <div className="text-white">
+                  <h3 className="text-lg font-semibold">모든 준비가 완료되었나요?</h3>
+                  <p className="mt-1 text-sm text-slate-300">
+                    작성 완료 후 공고가 즉시 게시됩니다
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 text-sm font-bold text-slate-900 shadow-lg transition-all hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        처리 중...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        {isEditMode ? '수정 완료' : '공고 등록하기'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

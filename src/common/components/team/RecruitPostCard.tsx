@@ -64,55 +64,57 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
                 <h3 className="line-clamp-1 text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                     {recruit.title}
                 </h3>
-                <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                    <div className="flex items-center gap-1.5">
-                        <div className="relative h-5 w-5 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
-                            {recruit.author.profileImage ? (
-                                <Image
-                                    src={recruit.author.profileImage}
-                                    alt={recruit.author.name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                    <User className="h-3 w-3 text-gray-400" />
-                                </div>
-                            )}
-                        </div>
-                        <span className="font-medium text-gray-700">{recruit.author.name}</span>
-                    </div>
-                    <span className="text-gray-300">|</span>
-                    <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                            <Heart className="h-3 w-3" />
-                            {recruit.likes}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {recruit.comments}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            {recruit.views}
-                        </span>
-                    </div>
-                </div>
             </div>
 
-            {/* Tags - Cleaner look */}
-            {recruit.tags && recruit.tags.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                    {recruit.tags.slice(0, 3).map((tag) => (
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+                {recruit.tags && recruit.tags.length > 0 ? (
+                    recruit.tags.slice(0, 3).map((tag) => (
                         <span
                             key={tag}
                             className="inline-flex items-center rounded bg-gray-50 px-2 py-1 text-xs font-medium text-gray-500"
                         >
                             #{tag}
                         </span>
-                    ))}
+                    ))
+                ) : null}
+            </div>
+
+            {/* Author & Stats */}
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-1.5">
+                    <div className="relative h-5 w-5 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
+                        {recruit.author.profileImage ? (
+                            <Image
+                                src={recruit.author.profileImage}
+                                alt={recruit.author.name}
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                                <User className="h-3 w-3 text-gray-400" />
+                            </div>
+                        )}
+                    </div>
+                    <span className="font-medium text-gray-700">{recruit.author.name}</span>
                 </div>
-            )}
+                <span className="text-gray-300">|</span>
+                <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {recruit.likes}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        {recruit.comments}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {recruit.views}
+                    </span>
+                </div>
+            </div>
         </Link>
     );
 }
