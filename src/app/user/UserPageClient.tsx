@@ -202,7 +202,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     { key: '지원내역', label: '지원내역', icon: <FileText className="h-4 w-4" /> },
     { key: '작성글', label: '작성글', icon: <Edit className="h-4 w-4" /> },
     { key: '댓글', label: '댓글', icon: <MessageCircle className="h-4 w-4" /> },
-    { key: '즐겨찾기', label: '즐겨찾기', icon: <Bookmark className="h-4 w-4" /> },
+    { key: '즐겨찾기', label: '저장', icon: <Bookmark className="h-4 w-4" /> },
   ];
 
   return (
