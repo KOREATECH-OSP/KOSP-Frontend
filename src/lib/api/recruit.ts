@@ -5,6 +5,8 @@ import type {
   RecruitStatusRequest,
   RecruitResponse,
   RecruitListResponse,
+  RecruitApplyListResponse,
+  RecruitApplyDecisionRequest,
 } from './types';
 
 interface GetRecruitsOptions {
@@ -108,4 +110,38 @@ export async function applyRecruit(
     body: data,
     accessToken: auth.accessToken,
   });
+}
+
+/**
+ * 모집 공고 지원자 목록 조회 (팀장 전용)
+ */
+export async function getRecruitApplications(
+  recruitId: number,
+  auth: AuthOptions
+): Promise<RecruitApplyListResponse> {
+  return clientApiClient<RecruitApplyListResponse>(
+    `/v1/community/recruits/${recruitId}/applications`,
+    {
+      method: 'GET',
+      accessToken: auth.accessToken,
+    }
+  );
+}
+
+/**
+ * 지원 수락/거절 (팀장 전용)
+ */
+export async function decideApplication(
+  applicationId: number,
+  data: RecruitApplyDecisionRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(
+    `/v1/community/recruits/applications/${applicationId}`,
+    {
+      method: 'PATCH',
+      body: data,
+      accessToken: auth.accessToken,
+    }
+  );
 }

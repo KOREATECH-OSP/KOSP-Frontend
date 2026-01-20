@@ -420,6 +420,29 @@ export interface RecruitListResponse {
   pagination: PageMeta;
 }
 
+export type RecruitApplicationStatus = 'PENDING' | 'ACCEPT' | 'REJECT';
+
+export interface RecruitApplyResponse {
+  id: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userProfileImage?: string | null;
+  reason: string;
+  portfolioUrl: string | null;
+  status: RecruitApplicationStatus;
+  appliedAt: string;
+}
+
+export interface RecruitApplyListResponse {
+  applications: RecruitApplyResponse[];
+  meta: PageMeta;
+}
+
+export interface RecruitApplyDecisionRequest {
+  status: RecruitApplicationStatus;
+}
+
 // ============================================
 // Challenge Types
 // ============================================

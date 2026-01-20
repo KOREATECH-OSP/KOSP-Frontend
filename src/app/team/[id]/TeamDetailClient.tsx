@@ -20,6 +20,7 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
+  ClipboardList,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { updateRecruitStatus, deleteRecruit } from '@/lib/api/recruit';
@@ -42,6 +43,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
   const [team] = useState(initialTeam);
   const [recruits, setRecruits] = useState(initialRecruits);
   const [activeRecruitMenu, setActiveRecruitMenu] = useState<number | null>(null);
+  const [statusChangeModal, setStatusChangeModal] = useState<{ recruitId: number; currentStatus: RecruitStatus } | null>(null);
 
   const currentUserId = session?.user?.id ? Number(session.user.id) : null;
 
@@ -84,13 +86,20 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
     toast.info('아직 준비 중인 기능입니다.');
   };
 
-  const handleToggleRecruitStatus = async (recruitId: number, currentStatus: RecruitStatus) => {
-    if (!session?.accessToken) {
+  const openStatusChangeModal = (recruitId: number, currentStatus: RecruitStatus) => {
+    setStatusChangeModal({ recruitId, currentStatus });
+    setActiveRecruitMenu(null);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!statusChangeModal || !session?.accessToken) {
       toast.error('로그인이 필요합니다.');
       return;
     }
 
+    const { recruitId, currentStatus } = statusChangeModal;
     const newStatus: RecruitStatus = currentStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
+
     try {
       await updateRecruitStatus(recruitId, { status: newStatus }, { accessToken: session.accessToken });
       setRecruits((prev) =>
@@ -101,7 +110,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
       console.error('모집 상태 변경 실패:', error);
       toast.error('모집 상태 변경에 실패했습니다.');
     }
-    setActiveRecruitMenu(null);
+    setStatusChangeModal(null);
   };
 
   const handleDeleteRecruit = async (recruitId: number) => {
@@ -342,14 +351,21 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2.5">
-                          <span
-                            className={`shrink-0 rounded-sm px-2 py-0.5 text-[10px] font-bold border ${recruit.status === 'OPEN'
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                              : 'bg-gray-100 text-gray-500 border-gray-200'
-                              }`}
-                          >
-                            {recruit.status === 'OPEN' ? '모집중' : '마감'}
-                          </span>
+                          {(() => {
+                            const daysLeft = getDaysLeft(recruit.endDate);
+                            const isExpired = daysLeft !== null && daysLeft < 0;
+                            const isOpen = recruit.status === 'OPEN' && !isExpired;
+                            return (
+                              <span
+                                className={`shrink-0 rounded-sm px-2 py-0.5 text-[10px] font-bold border ${isOpen
+                                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                  : 'bg-gray-100 text-gray-500 border-gray-200'
+                                  }`}
+                              >
+                                {isOpen ? '모집중' : '마감'}
+                              </span>
+                            );
+                          })()}
                           <Link
                             href={`/recruit/${recruit.id}`}
                             className="truncate text-sm font-semibold text-gray-900 hover:underline transition-colors"
@@ -384,6 +400,14 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                           {activeRecruitMenu === recruit.id && (
                             <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-sm border border-gray-200 bg-white py-1 shadow-lg">
                               <Link
+                                href={`/team/${team.id}/recruits/${recruit.id}/applications`}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                              >
+                                <ClipboardList className="h-3.5 w-3.5" />
+                                지원 내역
+                              </Link>
+                              <div className="my-1 h-px bg-gray-100"></div>
+                              <Link
                                 href={`/team/${team.id}/create?edit=${recruit.id}`}
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                               >
@@ -392,7 +416,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                               </Link>
                               <button
                                 onClick={() =>
-                                  handleToggleRecruitStatus(recruit.id, recruit.status)
+                                  openStatusChangeModal(recruit.id, recruit.status)
                                 }
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                               >
@@ -404,7 +428,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                                 ) : (
                                   <>
                                     <CheckCircle className="h-3.5 w-3.5" />
-                                    모집 재개
+                                    다시 모집하기
                                   </>
                                 )}
                               </button>
@@ -457,7 +481,11 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">진행중 모집</span>
                     <span className="font-medium text-emerald-600">
-                      {recruits.filter(r => r.status === 'OPEN').length}개
+                      {recruits.filter(r => {
+                        const daysLeft = getDaysLeft(r.endDate);
+                        const isExpired = daysLeft !== null && daysLeft < 0;
+                        return r.status === 'OPEN' && !isExpired;
+                      }).length}개
                     </span>
                   </div>
                 </div>
@@ -556,6 +584,42 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                   className="flex-1 bg-gray-900 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800"
                 >
                   초대하기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Status Change Confirmation Modal */}
+        {statusChangeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm overflow-hidden border border-gray-200 bg-white shadow-2xl">
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900">
+                  {statusChangeModal.currentStatus === 'OPEN' ? '모집 마감' : '모집 재개'}
+                </h3>
+                <p className="mt-3 text-sm text-gray-600">
+                  {statusChangeModal.currentStatus === 'OPEN'
+                    ? '정말 마감처리 하시겠습니까?'
+                    : '정말 다시 모집하시겠습니까?'}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+                <button
+                  onClick={() => setStatusChangeModal(null)}
+                  className="flex-1 border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={confirmStatusChange}
+                  className={`flex-1 py-2.5 text-sm font-bold text-white transition ${
+                    statusChangeModal.currentStatus === 'OPEN'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                >
+                  {statusChangeModal.currentStatus === 'OPEN' ? '마감하기' : '다시 모집하기'}
                 </button>
               </div>
             </div>
