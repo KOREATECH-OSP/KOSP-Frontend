@@ -43,3 +43,19 @@ export async function getMyTeam(accessToken: string): Promise<TeamDetailResponse
     accessToken,
   });
 }
+
+/**
+ * 팀원 초대 (이메일 아이디로 초대)
+ */
+export async function inviteTeamMember(
+  teamId: number,
+  emailId: string,
+  accessToken: string
+): Promise<void> {
+  const email = `${emailId}@koreatech.ac.kr`;
+  await apiClient<void>(`/v1/teams/${teamId}/invites`, {
+    method: 'POST',
+    body: { email },
+    accessToken,
+  });
+}
