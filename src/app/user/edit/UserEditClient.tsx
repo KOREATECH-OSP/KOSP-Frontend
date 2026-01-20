@@ -15,8 +15,6 @@ import {
   AlertTriangle,
   X,
   ExternalLink,
-  Sparkles,
-  Check,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { updateUser, deleteUser, getUserProfile } from '@/lib/api/user';
@@ -266,10 +264,6 @@ export default function UserEditClient() {
 
           {/* 프로필 정보 미리보기 */}
           <div className="flex-1 text-center sm:text-left">
-            <div className="mb-1 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-sm">
-              <Sparkles className="h-3 w-3" />
-              실시간 미리보기
-            </div>
             <h1 className="mb-1 text-2xl font-bold text-white sm:text-3xl">
               {session.user?.name || '사용자'}
             </h1>
@@ -317,11 +311,6 @@ export default function UserEditClient() {
                       </div>
                     )}
                   </div>
-                  {previewImage && (
-                    <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white shadow-sm">
-                      <Check className="h-3.5 w-3.5" />
-                    </div>
-                  )}
                 </div>
 
                 {/* 업로드 컨트롤 */}
