@@ -38,11 +38,18 @@ export default function UserEditClient() {
     introduction: '',
     githubUrl: '',
   });
+  const [initialProfile, setInitialProfile] = useState<UserProfile>({
+    introduction: '',
+    githubUrl: '',
+  });
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const [previewImage, setPreviewImage] = useState<string | undefined>(
     profile.profileImage
   );
+
+  // 변경사항 여부 확인
+  const hasChanges = profile.introduction !== initialProfile.introduction;
 
   // 회원 탈퇴 모달 상태
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -63,11 +70,13 @@ export default function UserEditClient() {
       try {
         const userId = parseInt(session.user.id, 10);
         const profileData = await getUserProfile(userId);
-        setProfile({
+        const loadedProfile = {
           introduction: profileData.introduction || '',
           profileImage: profileData.profileImage || undefined,
           githubUrl: profileData.githubUrl || '',
-        });
+        };
+        setProfile(loadedProfile);
+        setInitialProfile(loadedProfile);
         if (profileData.profileImage) {
           setPreviewImage(profileData.profileImage);
         }
@@ -444,9 +453,15 @@ export default function UserEditClient() {
       {/* 하단 고정 저장 바 */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <p className="hidden text-sm text-gray-500 sm:block">
-            변경사항을 저장하려면 저장 버튼을 클릭하세요
-          </p>
+          {hasChanges ? (
+            <p className="hidden text-sm font-medium text-amber-600 sm:block">
+              변경사항이 있습니다. 저장해주세요.
+            </p>
+          ) : (
+            <p className="hidden text-sm text-gray-400 sm:block">
+              변경사항이 없습니다
+            </p>
+          )}
           <div className="flex flex-1 gap-3 sm:flex-initial">
             <button
               onClick={() => router.back()}
@@ -454,23 +469,31 @@ export default function UserEditClient() {
             >
               취소
             </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-gray-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 sm:flex-initial"
-            >
-              {isSaving ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  저장 중...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  저장하기
-                </>
+            <div className="group relative flex-1 sm:flex-initial">
+              <button
+                onClick={handleSave}
+                disabled={isSaving || !hasChanges}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-gray-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    저장하기
+                  </>
+                )}
+              </button>
+              {hasChanges && !isSaving && (
+                <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  변경사항을 저장하세요
+                  <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900" />
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </div>
