@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { Search, Users, ChevronLeft, ChevronRight, X, CheckCircle2, Loader2 } from 'lucide-react';
@@ -20,7 +21,8 @@ function formatDate(dateString: string | null): string {
 }
 
 export default function AdminUsersPage() {
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [users, setUsers] = useState<AdminUserResponse[]>([]);
   const [roles, setRoles] = useState<RoleResponse[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +32,8 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AdminUserResponse | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -58,8 +62,15 @@ export default function AdminUsersPage() {
   }, [session?.accessToken, currentPage]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (status === 'authenticated' && session?.accessToken) {
+      fetchUsers();
+      return;
+    }
+
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, session?.accessToken, fetchUsers, router]);
 
   // 클라이언트 측 검색 필터링
   const filteredUsers = users.filter((user) => {
@@ -72,17 +83,36 @@ export default function AdminUsersPage() {
     );
   });
 
-  const handleDeleteUser = async (user: AdminUserResponse) => {
-    if (!session?.accessToken) return;
-    if (!confirm(`${user.name}님을 강제 탈퇴시키겠습니까?`)) return;
+  const handleDeleteClick = (user: AdminUserResponse) => {
+    if (user.isDeleted) {
+      toast.error('이미 탈퇴 처리된 회원입니다.');
+      return;
+    }
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!session?.accessToken || !selectedUser) return;
+    if (selectedUser.isDeleted) {
+      toast.error('이미 탈퇴 처리된 회원입니다.');
+      return;
+    }
 
     try {
-      await deleteAdminUser(user.id, { accessToken: session.accessToken });
+      setIsDeleting(true);
+      await deleteAdminUser(selectedUser.id, { accessToken: session.accessToken });
       toast.success('회원이 탈퇴 처리되었습니다.');
-      fetchUsers();
+      await fetchUsers();
+      setShowDeleteModal(false);
+      setSelectedUser(null);
     } catch (err) {
       console.error('Delete user failed:', err);
-      toast.error('회원 탈퇴 처리에 실패했습니다.');
+      const errorMessage =
+        err instanceof Error ? err.message : '회원 탈퇴 처리에 실패했습니다.';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -282,8 +312,9 @@ export default function AdminUsersPage() {
                             역할
                           </button>
                           <button
-                            onClick={() => handleDeleteUser(user)}
-                            className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600"
+                            onClick={() => handleDeleteClick(user)}
+                            disabled={user.isDeleted || isDeleting}
+                            className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             탈퇴
                           </button>
@@ -362,6 +393,47 @@ export default function AdminUsersPage() {
             onClose={() => setShowRoleModal(false)}
             onSave={(newRoles) => handleRoleChange(selectedUser.id, newRoles)}
           />
+        )}
+
+        {/* 삭제 확인 모달 */}
+        {showDeleteModal && selectedUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+              <h2 className="mb-4 text-xl font-bold text-gray-900">회원 탈퇴</h2>
+              <p className="mb-6 text-gray-600">
+                <span className="font-semibold">{selectedUser.name}</span>님을 강제 탈퇴
+                처리하시겠습니까?
+                <br />
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setSelectedUser(null);
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      탈퇴 처리 중...
+                    </>
+                  ) : (
+                    '탈퇴'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

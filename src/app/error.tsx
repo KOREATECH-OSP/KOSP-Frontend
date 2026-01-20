@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { suitFont } from '@/style/font';
 
 export default function Error({
   error,
@@ -16,7 +15,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className={`flex min-h-[calc(100vh-56px)] items-center justify-center px-5 py-10 ${suitFont.className}`}>
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-white p-4">
       <div className="w-full max-w-md text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#fff0f0]">
           <svg

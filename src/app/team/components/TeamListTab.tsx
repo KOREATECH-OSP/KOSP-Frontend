@@ -1,10 +1,8 @@
-'use client';
-
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Users, User, ChevronRight, Eye, MessageSquare, Megaphone } from 'lucide-react';
+import { Users, Megaphone, ArrowRight } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
+import RecruitPostCard from '@/common/components/team/RecruitPostCard';
+import TeamCard from '@/common/components/team/TeamCard';
 
 interface TeamListTabProps {
   teams: TeamResponse[];
@@ -16,168 +14,68 @@ export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }
   const router = useRouter();
   const openRecruits = recruits.filter((r) => r.status === 'OPEN');
 
-  const handleAuthorClick = (e: React.MouseEvent, authorId: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    router.push(`/user/${authorId}`);
-  };
-
   if (teams.length === 0 && openRecruits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <Users className="mb-3 h-12 w-12 text-gray-200" />
-        <p className="text-gray-500">팀이 없습니다.</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-50 mb-4">
+          <Users className="h-10 w-10 text-gray-300" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900">등록된 팀이 없습니다</h3>
+        <p className="mt-1 text-sm text-gray-500">새로운 팀을 만들고 멤버를 모아보세요!</p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-12">
       {/* 모집공고 섹션 */}
       {openRecruits.length > 0 && (
-        <div className="border-b border-gray-200">
-          <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
-            <Megaphone className="h-4 w-4 text-emerald-600" />
-            <h3 className="text-sm font-bold text-gray-900">모집공고</h3>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-              {openRecruits.length}
-            </span>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {openRecruits.slice(0, 5).map((recruit) => (
-              <Link
-                key={recruit.id}
-                href={`/recruit/${recruit.id}`}
-                className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-gray-50/80"
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-emerald-600" />
+              <h3 className="text-xl font-bold text-gray-900">최근 모집 공고</h3>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                {openRecruits.length}
+              </span>
+            </div>
+            {openRecruits.length > 3 && (
+              <button
+                onClick={onShowMoreRecruits}
+                className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
               >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                  <Megaphone className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                      모집중
-                    </span>
-                    <h3 className="truncate text-[15px] font-medium text-gray-900 group-hover:text-blue-600">
-                      {recruit.title}
-                    </h3>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {recruit.tags && recruit.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {recruit.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-600"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <span className="h-3 w-px bg-gray-200" />
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <button
-                        onClick={(e) => handleAuthorClick(e, recruit.author.id)}
-                        className="flex items-center gap-1 hover:text-gray-700 hover:underline"
-                      >
-                        <User className="h-3.5 w-3.5" />
-                        {recruit.author.name}
-                      </button>
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3.5 w-3.5" />
-                        {recruit.views}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        {recruit.comments}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 flex-shrink-0 text-gray-300 group-hover:text-gray-400" />
-              </Link>
-            ))}
-            {openRecruits.length > 5 && (
-              <div className="px-4 py-3 text-center">
-                <button
-                  onClick={onShowMoreRecruits}
-                  className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-                >
-                  모집공고 더보기 ({openRecruits.length - 5}개 더)
-                </button>
-              </div>
+                더보기
+                <ArrowRight className="h-4 w-4" />
+              </button>
             )}
           </div>
-        </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {openRecruits.slice(0, 3).map((recruit) => (
+              <RecruitPostCard key={recruit.id} recruit={recruit} />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* 팀 목록 섹션 */}
       {teams.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
-            <Users className="h-4 w-4 text-gray-600" />
-            <h3 className="text-sm font-bold text-gray-900">팀</h3>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+        <section>
+          <div className="flex items-center gap-2 mb-6">
+            <Users className="h-5 w-5 text-gray-900" />
+            <h3 className="text-xl font-bold text-gray-900">등록된 팀</h3>
+            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-600">
               {teams.length}
             </span>
           </div>
-          <div className="divide-y divide-gray-100">
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {teams.map((team) => (
               <TeamCard team={team} key={team.id} />
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
-  );
-}
-
-function TeamCard({ team }: { team: TeamResponse }) {
-  return (
-    <Link
-      href={`/team/${team.id}`}
-      className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-gray-50/80"
-    >
-      {/* 팀 아이콘 */}
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
-        {team.imageUrl ? (
-          <Image
-            src={team.imageUrl}
-            alt={team.name}
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-lg object-cover"
-          />
-        ) : (
-          <Users className="h-5 w-5" />
-        )}
-      </div>
-
-      {/* 팀 정보 */}
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex items-center gap-2">
-          <h3 className="truncate text-[15px] font-medium text-gray-900 group-hover:text-blue-600">
-            {team.name}
-          </h3>
-        </div>
-        <p className="mb-2 line-clamp-1 text-sm text-gray-500">
-          {team.description}
-        </p>
-        <div className="flex items-center gap-3 text-xs text-gray-400">
-          <span className="flex items-center gap-1">
-            <User className="h-3.5 w-3.5" />
-            {team.createdBy}
-          </span>
-          <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" />
-            {team.memberCount}명
-          </span>
-        </div>
-      </div>
-
-      {/* 화살표 */}
-      <ChevronRight className="h-5 w-5 flex-shrink-0 text-gray-300 group-hover:text-gray-400" />
-    </Link>
   );
 }

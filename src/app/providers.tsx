@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
 import NoticeBanner from '@/common/components/noticeBanner';
+import { usePathname } from 'next/navigation';
 import { signOutOnce } from '@/lib/auth/signout';
 
 // 토큰 갱신 실패 시 자동 로그아웃 처리
@@ -27,10 +28,13 @@ function AuthErrorHandler({ children }: { children: React.ReactNode }) {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isWritePage = pathname === '/community/write';
+
   return (
     <SessionProvider refetchInterval={60} refetchOnWindowFocus={true}>
       <AuthErrorHandler>
-        <NoticeBanner />
+        {!isWritePage && <NoticeBanner />}
         {children}
       </AuthErrorHandler>
     </SessionProvider>

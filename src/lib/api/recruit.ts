@@ -37,9 +37,10 @@ export async function getRecruits(
 /**
  * 모집 공고 상세 조회
  */
-export async function getRecruit(id: number): Promise<RecruitResponse> {
+export async function getRecruit(id: number, accessToken?: string): Promise<RecruitResponse> {
   return apiClient<RecruitResponse>(`/v1/community/recruits/${id}`, {
     cache: 'no-store',
+    accessToken,
   });
 }
 
@@ -47,7 +48,7 @@ export async function getRecruit(id: number): Promise<RecruitResponse> {
  * 모집 공고 작성
  */
 export async function createRecruit(data: RecruitRequest, auth: AuthOptions): Promise<void> {
-  await apiClient<void>('/v1/community/recruits', {
+  await clientApiClient<void>('/v1/community/recruits', {
     method: 'POST',
     body: data,
     accessToken: auth.accessToken,
@@ -62,7 +63,7 @@ export async function updateRecruit(
   data: RecruitRequest,
   auth: AuthOptions
 ): Promise<void> {
-  await apiClient<void>(`/v1/community/recruits/${id}`, {
+  await clientApiClient<void>(`/v1/community/recruits/${id}`, {
     method: 'PUT',
     body: data,
     accessToken: auth.accessToken,
@@ -73,7 +74,7 @@ export async function updateRecruit(
  * 모집 공고 삭제
  */
 export async function deleteRecruit(id: number, auth: AuthOptions): Promise<void> {
-  await apiClient<void>(`/v1/community/recruits/${id}`, {
+  await clientApiClient<void>(`/v1/community/recruits/${id}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
@@ -87,7 +88,7 @@ export async function updateRecruitStatus(
   data: RecruitStatusRequest,
   auth: AuthOptions
 ): Promise<void> {
-  await apiClient<void>(`/v1/community/recruits/${id}/status`, {
+  await clientApiClient<void>(`/v1/community/recruits/${id}/status`, {
     method: 'PATCH',
     body: data,
     accessToken: auth.accessToken,

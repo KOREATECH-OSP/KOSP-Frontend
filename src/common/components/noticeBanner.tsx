@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Volume2, X } from 'lucide-react';
-import { suitFont } from '../../style/font';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getArticles } from '@/lib/api/article';
 
 const STORAGE_KEY = 'notice-banner-hidden-until';
@@ -85,7 +85,7 @@ function NoticeBanner() {
 
   return (
     <div
-      className={`w-full overflow-hidden ${suitFont.className}`}
+      className="w-full overflow-hidden"
       style={{ background: 'linear-gradient(272deg, #233786 23.38%, #236286 71.16%)' }}
     >
       <div className="max-w-7xl mx-auto flex items-stretch">

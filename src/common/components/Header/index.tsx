@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { signOut } from 'next-auth/react';
 import type { Session } from 'next-auth';
-import { suitFont } from "../../../style/font";
+
 import LogoImage from "../../../assets/images/koreatech_hangeul.png";
 
 export interface HeaderProps {
@@ -38,10 +38,10 @@ function Header({ simple = false, session = null }: HeaderProps) {
   };
   const profileActions = isLoggedIn
     ? [
-        { label: "내 정보", action: handleMyInfo },
-        { label: "알림", action: handleNotification },
-        { label: "로그아웃", action: handleLogout },
-      ]
+      { label: "내 정보", action: handleMyInfo },
+      { label: "알림", action: handleNotification },
+      { label: "로그아웃", action: handleLogout },
+    ]
     : [];
   const navItems = [
     { href: "/community", label: "커뮤니티" },
@@ -50,7 +50,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
   ];
 
   return (
-    <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50 ${suitFont.className}`}>
+    <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-[50px]">
           <div className="flex items-center gap-6 md:gap-10">
@@ -73,15 +73,13 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     <Link
                       key={href}
                       href={href}
-                      className={`relative text-sm font-medium transition-colors duration-200 py-1 ${
-                        isActive ? 'text-gray-900' : 'text-gray-400 hover:text-gray-900'
-                      } group`}
+                      className={`relative text-sm font-medium transition-colors duration-200 py-1 ${isActive ? 'text-gray-900' : 'text-gray-400 hover:text-gray-900'
+                        } group`}
                     >
                       {label}
                       <span
-                        className={`absolute bottom-0 left-0 h-[2px] bg-gray-900 transition-all duration-300 ${
-                          isActive ? 'w-full' : 'w-0 group-hover:w-full group-hover:bg-gray-300'
-                        }`}
+                        className={`absolute bottom-0 left-0 h-[2px] bg-gray-900 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full group-hover:bg-gray-300'
+                          }`}
                       />
                     </Link>
                   );
@@ -129,9 +127,8 @@ function Header({ simple = false, session = null }: HeaderProps) {
                                 {({ active }) => (
                                   <Link
                                     href="/user"
-                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${
-                                      active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                    }`}
+                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                      }`}
                                   >
                                     내 정보
                                   </Link>
@@ -143,9 +140,8 @@ function Header({ simple = false, session = null }: HeaderProps) {
                                     <button
                                       type="button"
                                       onClick={action}
-                                      className={`w-full text-left px-4 py-2 text-sm font-medium ${
-                                        active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                      }`}
+                                      className={`w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                        }`}
                                     >
                                       {label}
                                     </button>

@@ -60,9 +60,32 @@ export default function ArticleDetailClient({
     });
   };
 
+  const decodeHtmlEntities = (value: string) => {
+    if (typeof document === 'undefined') return value;
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = value;
+    const decoded = textarea.value;
+    textarea.remove();
+    return decoded;
+  };
+
+  const normalizeHtmlContent = (value: string) => {
+    let normalized = value ?? '';
+    for (let i = 0; i < 2; i += 1) {
+      const looksEscaped =
+        !normalized.includes('<') && /&(?:lt|gt|amp|quot|#\d+);/i.test(normalized);
+      if (!looksEscaped) break;
+      const decoded = decodeHtmlEntities(normalized);
+      if (decoded === normalized) break;
+      normalized = decoded;
+    }
+    return normalized;
+  };
+
   // XSS 방어를 위한 HTML sanitization
   const sanitizedContent = useMemo(() => {
-    return DOMPurify.sanitize(article.content, {
+    const normalizedContent = normalizeHtmlContent(article.content);
+    return DOMPurify.sanitize(normalizedContent, {
       ALLOWED_TAGS: [
         'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img',

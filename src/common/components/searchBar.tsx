@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { suitFont } from "../../style/font";
+
 import KoriCharacter from "../../assets/images/kori/11-10 B 등교 .png";
 import { ArrowLeft, Search, X, Clock } from 'lucide-react';
 
@@ -64,7 +64,7 @@ function SearchBar() {
       setIsMobileSearchOpen(false);
       setIsDesktopDropdownOpen(false);
       setSelectedIndex(-1);
-      
+
       // Navigate to search page
       router.push(`/search?keyword=${encodeURIComponent(trimmed)}`);
     }
@@ -130,7 +130,7 @@ function SearchBar() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         desktopInputRef.current &&
         !desktopInputRef.current.contains(event.target as Node)
@@ -164,7 +164,7 @@ function SearchBar() {
 
   const renderSearchItem = (term: string, index: number) => {
     const isHighlighted = selectedIndex === index || hoveredIndex === index;
-    
+
     return (
       <div
         key={`recent-${index}`}
@@ -194,7 +194,7 @@ function SearchBar() {
 
   return (
     <>
-      <section className={`bg-trans ${suitFont.className}`}>
+      <section className="bg-trans">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <form onSubmit={handleSearch} className="w-full">
             <div className="flex flex-col items-start gap-3 w-full">
@@ -236,7 +236,7 @@ function SearchBar() {
                   >
                     <div className="flex items-center justify-between px-4 py-2">
                       <span className="text-xs font-medium text-gray-500">최근 검색어</span>
-                      <button 
+                      <button
                         type="button"
                         onClick={handleClearAllRecentSearches}
                         className="text-xs text-gray-400 hover:text-gray-600"
@@ -244,7 +244,7 @@ function SearchBar() {
                         전체 삭제
                       </button>
                     </div>
-                    {recentSearches.map((term, index) => 
+                    {recentSearches.map((term, index) =>
                       renderSearchItem(term, index)
                     )}
                   </div>
@@ -256,7 +256,7 @@ function SearchBar() {
       </section>
 
       {isMobileSearchOpen && (
-        <div className={`fixed inset-0 z-[100] bg-white sm:hidden ${suitFont.className}`}>
+        <div className="fixed inset-0 z-[100] bg-white sm:hidden">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
             <button
               type="button"
@@ -303,7 +303,7 @@ function SearchBar() {
             <div className="py-2">
               <div className="flex items-center justify-between px-4 py-2">
                 <span className="text-xs font-medium text-gray-500">최근 검색어</span>
-                <button 
+                <button
                   onClick={handleClearAllRecentSearches}
                   className="text-xs text-gray-400 hover:text-gray-600"
                 >

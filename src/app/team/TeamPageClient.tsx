@@ -3,14 +3,15 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Users, Search } from 'lucide-react';
+import { Users } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
 
 import TeamRecruitTab from './components/TeamRecruitTab';
 import TeamListTab from './components/TeamListTab';
 import MyTeamListTab from './components/MyTeamListTab';
+import TabNavigation from '@/common/components/TabNavigation';
 
-type TabType = '전체' | '모집중' | '나의팀';
+type TabType = '전체' | '등록팀' | '모집공고' | '나의팀';
 
 interface TeamPageClientProps {
   initialTeams: TeamResponse[];
@@ -24,8 +25,6 @@ export default function TeamPageClient({
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>('전체');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const tabs: TabType[] = ['전체', '모집중', '나의팀'];
 
   const filteredTeams = useMemo(() => {
     if (!searchQuery.trim()) return initialTeams;
@@ -50,67 +49,75 @@ export default function TeamPageClient({
   }, [initialRecruits, searchQuery]);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8">
       {/* 헤더 */}
-      <div className="mb-8 flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">팀 게시판</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            함께 프로젝트를 진행할 팀원을 찾거나 팀을 둘러보세요
-          </p>
-        </div>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
         {session && (
           <Link
             href="/team/create"
-            className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
           >
-            <Users className="mr-1.5 h-4 w-4" />
-            팀 만들기
+            <Users className="mr-2 h-4 w-4" />
+            새로운 팀 만들기
           </Link>
         )}
       </div>
 
-      {/* 검색바 */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="팀 이름, 설명으로 검색..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-          />
+      {/* 검색 및 탭 */}
+      <div className="mb-8 space-y-6">
+        {/* 검색바 */}
+        <div className="w-full">
+          <div className="flex w-full items-center overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm ring-1 ring-black/5 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="프로젝트, 팀, 기술스택 검색"
+              className="flex-1 border-none bg-transparent px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none sm:text-base"
+            />
+            <div className="border-l border-gray-100 pl-2">
+              <button
+                type="button"
+                className="m-1 inline-flex items-center justify-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              >
+                검색
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* 탭 필터 */}
-      <div className="mb-6 flex gap-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeTab === tab
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {/* 탭 네비게이션 */}
+        <TabNavigation
+          tabs={[
+            { id: '전체', label: '전체' },
+            { id: '등록팀', label: '등록된 팀' },
+            { id: '모집공고', label: '모집 공고' },
+            { id: '나의팀', label: '나의 팀' }
+          ]}
+          activeTab={activeTab}
+          onTabChange={(id) => setActiveTab(id as TabType)}
+          className="border-b border-gray-200"
+        />
       </div>
 
       {/* 탭 콘텐츠 */}
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="min-h-[500px]">
         {activeTab === '전체' && (
           <TeamListTab
             teams={filteredTeams}
             recruits={filteredRecruits}
-            onShowMoreRecruits={() => setActiveTab('모집중')}
+            onShowMoreRecruits={() => setActiveTab('모집공고')}
           />
         )}
-        {activeTab === '모집중' && <TeamRecruitTab recruits={filteredRecruits} />}
+        {activeTab === '등록팀' && (
+          <TeamListTab
+            teams={filteredTeams}
+            recruits={[]} // Hide recruits section in this tab by passing empty array
+            onShowMoreRecruits={() => { }}
+          />
+        )}
+        {activeTab === '모집공고' && <TeamRecruitTab recruits={filteredRecruits} />}
         {activeTab === '나의팀' && <MyTeamListTab />}
       </div>
     </div>

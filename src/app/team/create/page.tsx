@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Upload, X, ArrowLeft, Loader2, Users } from 'lucide-react';
+import { Upload, X, ArrowLeft, Loader2, Users, AlertCircle, Camera } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/lib/toast';
@@ -177,150 +177,172 @@ export default function CreateTeamPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+    <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
       {/* 헤더 */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-8">
         <button
           onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900"
+          className="group mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900"
         >
-          <ArrowLeft className="h-4 w-4" />
-          돌아가기
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          목록으로
         </button>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">팀 만들기</h1>
+        <p className="mt-2 text-gray-500">
+          프로젝트를 함께할 멋진 팀을 만들어보세요.
+        </p>
       </div>
 
-      <h1 className="mb-6 text-xl font-semibold text-gray-900">팀 만들기</h1>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* 팀 이미지 */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            팀 이미지
-          </label>
-          <div className="flex items-start gap-4">
-            <div className="relative">
-              <div
-                onClick={handleImageClick}
-                className="group relative flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 transition hover:border-gray-400"
-              >
-                {imagePreview ? (
-                  <Image
-                    src={imagePreview}
-                    alt="팀 이미지"
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <Users className="h-8 w-8 text-gray-400" />
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/40">
-                  <Upload className="h-5 w-5 text-white opacity-0 transition group-hover:opacity-100" />
-                </div>
-              </div>
-              {imagePreview && (
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white shadow hover:bg-gray-700"
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* 팀 이미지 */}
+          <div>
+            <label className="mb-4 block text-sm font-bold text-gray-900">
+              팀 대표 이미지
+            </label>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <div className="relative">
+                <div
+                  onClick={handleImageClick}
+                  className="group relative flex h-32 w-32 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-all hover:border-gray-400 hover:bg-gray-100"
                 >
-                  <X className="h-3 w-3" />
-                </button>
+                  {imagePreview ? (
+                    <Image
+                      src={imagePreview}
+                      alt="팀 이미지"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-gray-400">
+                      <Camera className="h-8 w-8" />
+                      <span className="text-xs font-medium">이미지 업로드</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/10">
+                  </div>
+                </div>
+                {imagePreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-gray-500 shadow-md hover:text-red-500 border border-gray-100"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex-1 pt-2">
+                <h4 className="text-sm font-medium text-gray-900">이미지 가이드라인</h4>
+                <ul className="mt-2 space-y-1 text-xs text-gray-500">
+                  <li>• 권장 사이즈: 500x500px 이상</li>
+                  <li>• JPG, PNG, WEBP 형식 지원</li>
+                  <li>• 파일 크기: 최대 5MB</li>
+                </ul>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px w-full bg-gray-100" />
+
+          {/* 팀 이름 */}
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-1.5 block text-sm font-bold text-gray-900"
+              >
+                팀 이름 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="멋진 팀 이름을 입력해주세요"
+                className={`w-full rounded-lg border px-4 py-3 text-sm transition-all focus:outline-none focus:ring-1 ${errors.name
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50/50'
+                    : 'border-gray-200 focus:border-gray-900 focus:ring-gray-900 bg-white placeholder:text-gray-400'
+                  }`}
+              />
+              {errors.name ? (
+                <p className="mt-1.5 flex items-center gap-1 text-sm text-red-500 font-medium">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.name}
+                </p>
+              ) : (
+                <p className="mt-1.5 text-xs text-gray-500">
+                  2자 이상 입력해주세요.
+                </p>
               )}
             </div>
-            <div className="flex-1 pt-1">
-              <p className="text-xs text-gray-500">
-                JPG, PNG 형식 · 최대 5MB
-              </p>
+
+            {/* 팀 설명 */}
+            <div>
+              <label
+                htmlFor="description"
+                className="mb-1.5 block text-sm font-bold text-gray-900"
+              >
+                팀 소개 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="어떤 프로젝트를 진행하는 팀인가요? 팀의 목표나 비전을 자유롭게 소개해주세요."
+                rows={6}
+                className={`w-full resize-none rounded-lg border px-4 py-3 text-sm transition-all focus:outline-none focus:ring-1 ${errors.description
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50/50'
+                    : 'border-gray-200 focus:border-gray-900 focus:ring-gray-900 bg-white placeholder:text-gray-400'
+                  }`}
+              />
+              {errors.description ? (
+                <p className="mt-1.5 flex items-center gap-1 text-sm text-red-500 font-medium">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.description}
+                </p>
+              ) : (
+                <div className="mt-1.5 flex justify-between text-xs text-gray-500">
+                  <span>10자 이상 입력해주세요.</span>
+                  <span>{formData.description.length}자</span>
+                </div>
+              )}
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/jpg,image/webp"
-              onChange={handleImageChange}
-              className="hidden"
-            />
           </div>
-        </div>
 
-        {/* 팀 이름 */}
-        <div>
-          <label
-            htmlFor="name"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            팀 이름
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder="팀 이름을 입력하세요"
-            className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:outline-none ${
-              errors.name
-                ? 'border-red-300 focus:border-red-400'
-                : 'border-gray-200 focus:border-gray-400'
-            }`}
-          />
-          {errors.name && (
-            <p className="mt-1.5 text-sm text-red-500">{errors.name}</p>
-          )}
-        </div>
-
-        {/* 팀 설명 */}
-        <div>
-          <label
-            htmlFor="description"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            팀 설명
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="팀에 대한 설명을 입력하세요"
-            rows={4}
-            className={`w-full resize-none rounded-lg border px-4 py-2.5 text-sm focus:outline-none ${
-              errors.description
-                ? 'border-red-300 focus:border-red-400'
-                : 'border-gray-200 focus:border-gray-400'
-            }`}
-          />
-          {errors.description && (
-            <p className="mt-1.5 text-sm text-red-500">{errors.description}</p>
-          )}
-          <p className="mt-1 text-xs text-gray-400">
-            {formData.description.length} / 500자
-          </p>
-        </div>
-
-        {/* 버튼 */}
-        <div className="flex gap-2 pt-4">
-          <Link
-            href="/team"
-            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
-          >
-            취소
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-300"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                생성 중...
-              </>
-            ) : (
-              '팀 만들기'
-            )}
-          </button>
-        </div>
-      </form>
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+            <Link
+              href="/team"
+              className="rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+            >
+              취소
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-8 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  생성 중...
+                </>
+              ) : (
+                '팀 만들기'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

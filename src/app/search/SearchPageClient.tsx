@@ -8,7 +8,7 @@ import type { GlobalSearchResponse } from '@/lib/api/types';
 import type { Session } from 'next-auth';
 import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
-import { suitFont } from '@/style/font';
+
 
 interface SearchPageClientProps {
   keyword: string;
@@ -32,7 +32,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
 
   if (!keyword) {
     return (
-      <div className={`min-h-screen bg-gray-50 ${suitFont.className}`}>
+      <div className="min-h-screen bg-gray-50">
         <Header session={session} />
         {/* 검색 입력창 */}
         <div className="border-b border-gray-200 bg-white">
@@ -70,7 +70,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
 
   if (!initialData) {
     return (
-      <div className={`min-h-screen bg-gray-50 ${suitFont.className}`}>
+      <div className="min-h-screen bg-gray-50">
         <Header session={session} />
         {/* 검색 입력창 */}
         <div className="border-b border-gray-200 bg-white">
@@ -147,8 +147,8 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
             className="block rounded-xl border border-gray-200 bg-white p-5 transition hover:border-gray-300 hover:shadow-sm"
           >
             <div className="mb-2 flex items-center justify-between">
-               <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">모집중</span>
-               <span className="text-xs text-gray-500">~{new Date(item.endDate).toLocaleDateString()}</span>
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">모집중</span>
+              <span className="text-xs text-gray-500">~{new Date(item.endDate).toLocaleDateString()}</span>
             </div>
             <h3 className="mb-2 text-lg font-bold text-gray-900">{item.title}</h3>
             <div className="text-sm text-gray-500">{item.authorName}</div>
@@ -192,13 +192,13 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
             className="rounded-xl border border-gray-200 bg-white p-5"
           >
             <div className="flex items-start justify-between">
-                <div>
-                    <h3 className="mb-1 text-lg font-bold text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                </div>
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-600">
-                    {item.tier}
-                </span>
+              <div>
+                <h3 className="mb-1 text-lg font-bold text-gray-900">{item.name}</h3>
+                <p className="text-sm text-gray-600">{item.description}</p>
+              </div>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-600">
+                {item.tier}
+              </span>
             </div>
           </div>
         ))
@@ -207,7 +207,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
   );
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${suitFont.className}`}>
+    <div className="min-h-screen bg-gray-50">
       <Header session={session} />
 
       {/* 검색 입력창 */}
@@ -248,11 +248,10 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 border-b-2 pb-3 text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`flex items-center gap-2 border-b-2 pb-3 text-sm font-medium transition-colors ${activeTab === tab.key
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 {tab.label}
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
@@ -268,31 +267,31 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
           {activeTab === 'ALL' && (
             <div className="space-y-8">
               {articles.length > 0 && (
-                  <section>
-                      <h2 className="mb-4 text-lg font-bold text-gray-900">게시글</h2>
-                      {renderArticles()}
-                  </section>
+                <section>
+                  <h2 className="mb-4 text-lg font-bold text-gray-900">게시글</h2>
+                  {renderArticles()}
+                </section>
               )}
               {recruits.length > 0 && (
-                  <section>
-                      <h2 className="mb-4 text-lg font-bold text-gray-900">모집공고</h2>
-                      {renderRecruits()}
-                  </section>
+                <section>
+                  <h2 className="mb-4 text-lg font-bold text-gray-900">모집공고</h2>
+                  {renderRecruits()}
+                </section>
               )}
               {teams.length > 0 && (
-                  <section>
-                      <h2 className="mb-4 text-lg font-bold text-gray-900">팀</h2>
-                      {renderTeams()}
-                  </section>
+                <section>
+                  <h2 className="mb-4 text-lg font-bold text-gray-900">팀</h2>
+                  {renderTeams()}
+                </section>
               )}
               {challenges.length > 0 && (
-                  <section>
-                      <h2 className="mb-4 text-lg font-bold text-gray-900">챌린지</h2>
-                      {renderChallenges()}
-                  </section>
+                <section>
+                  <h2 className="mb-4 text-lg font-bold text-gray-900">챌린지</h2>
+                  {renderChallenges()}
+                </section>
               )}
               {articles.length === 0 && recruits.length === 0 && teams.length === 0 && challenges.length === 0 && (
-                   <p className="py-16 text-center text-gray-500">검색 결과가 없습니다.</p>
+                <p className="py-16 text-center text-gray-500">검색 결과가 없습니다.</p>
               )}
             </div>
           )}
