@@ -230,7 +230,7 @@ export default function UserEditClient() {
       </div>
 
       {/* 프로필 미리보기 히어로 카드 */}
-      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 shadow-2xl sm:p-8">
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 sm:p-8">
         {/* 배경 패턴 */}
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
@@ -285,7 +285,7 @@ export default function UserEditClient() {
         {/* 왼쪽: 메인 편집 영역 */}
         <div className="space-y-6 lg:col-span-2">
           {/* 프로필 이미지 업로드 섹션 */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-6 py-4">
               <h2 className="font-semibold text-gray-900">프로필 이미지</h2>
               <p className="text-xs text-gray-500">나를 표현하는 이미지를 업로드하세요</p>
@@ -295,7 +295,7 @@ export default function UserEditClient() {
               <div className="flex flex-col items-center gap-6 sm:flex-row">
                 {/* 이미지 미리보기 (작은 버전) */}
                 <div className="relative flex-shrink-0">
-                  <div className="h-24 w-24 overflow-hidden rounded-2xl border-2 border-gray-100 bg-gray-50 shadow-inner">
+                  <div className="h-24 w-24 overflow-hidden rounded-2xl border-2 border-gray-100 bg-gray-50">
                     {previewImage ? (
                       <Image
                         src={previewImage}
@@ -349,7 +349,7 @@ export default function UserEditClient() {
           </div>
 
           {/* 자기소개 섹션 */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-6 py-4">
               <h2 className="font-semibold text-gray-900">자기소개</h2>
               <p className="text-xs text-gray-500">다른 사용자에게 보여질 소개글입니다</p>
@@ -381,7 +381,7 @@ export default function UserEditClient() {
         {/* 오른쪽: 사이드바 */}
         <div className="space-y-6">
           {/* 계정 정보 (읽기 전용) */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-5 py-4">
               <h3 className="font-semibold text-gray-900">계정 정보</h3>
             </div>
@@ -414,7 +414,7 @@ export default function UserEditClient() {
           </div>
 
           {/* 비밀번호 변경 */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-5 py-4">
               <h3 className="font-semibold text-gray-900">보안</h3>
             </div>
@@ -434,7 +434,7 @@ export default function UserEditClient() {
           </div>
 
           {/* 계정 삭제 */}
-          <div className="overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-orange-50/50 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-orange-50/50">
             <div className="p-5">
               <h3 className="mb-3 font-semibold text-red-900">위험 구역</h3>
               <p className="mb-4 text-sm text-red-700/80">
