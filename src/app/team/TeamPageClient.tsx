@@ -90,8 +90,8 @@ export default function TeamPageClient({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {tab.label}
@@ -118,8 +118,8 @@ export default function TeamPageClient({
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as TabType)}
                       className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
-                          ? 'bg-gray-100 text-gray-900'
-                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                     >
                       {tab.label}

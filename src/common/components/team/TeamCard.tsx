@@ -5,49 +5,71 @@ import type { TeamResponse } from '@/lib/api/types';
 
 interface TeamCardProps {
     team: TeamResponse;
+    badge?: React.ReactNode;
 }
 
-export default function TeamCard({ team }: TeamCardProps) {
+export default function TeamCard({ team, badge }: TeamCardProps) {
     return (
         <Link
             href={`/team/${team.id}`}
-            className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:shadow-md hover:border-gray-300"
+            className="group flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300"
         >
-            <div className="relative h-48 w-full bg-gray-100">
-                {team.imageUrl ? (
-                    <Image
-                        src={team.imageUrl}
-                        alt={team.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                        <Users className="h-12 w-12 text-gray-300" />
+            <div className="flex items-start gap-4">
+                {/* Team Logo/Icon */}
+                <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
+                    {team.imageUrl ? (
+                        <Image
+                            src={team.imageUrl}
+                            alt={team.name}
+                            fill
+                            className="object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-400">
+                            <Users className="h-7 w-7" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Header Info */}
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <h3 className="truncate text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                {team.name}
+                            </h3>
+                            {badge}
+                        </div>
                     </div>
-                )}
-                <div className="absolute top-4 right-4 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm shadow-sm">
-                    <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {team.memberCount}명
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                        {/* Leader Info with Profile Picture Placeholder */}
+                        <div className="flex items-center gap-1.5">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                <User className="h-3 w-3 text-gray-400" />
+                            </div>
+                            <span className="font-medium text-gray-700">{team.createdBy}</span>
+                        </div>
+                        <span className="text-gray-300">|</span>
+                        <div className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            <span>{team.memberCount}명</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex flex-1 flex-col p-5">
-                <h3 className="mb-2 text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    {team.name}
-                </h3>
-                <p className="mb-4 line-clamp-2 text-sm text-gray-500 flex-1">
+            {/* Description */}
+            <div className="mt-4 flex-1">
+                <p className="line-clamp-2 text-sm text-gray-500 leading-relaxed">
                     {team.description}
                 </p>
+            </div>
 
-                <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-50">
-                        <User className="h-3 w-3 text-gray-500" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-600">{team.createdBy}</span>
-                </div>
+            {/* Footer / Status (Optional decorative element) */}
+            <div className="mt-4 flex items-center justify-end border-t border-gray-50 pt-3">
+                <span className="text-xs font-medium text-blue-600 group-hover:underline">
+                    팀 상세보기 →
+                </span>
             </div>
         </Link>
     );

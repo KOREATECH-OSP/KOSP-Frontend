@@ -36,10 +36,10 @@ export async function createTeam(data: TeamCreateRequest): Promise<void> {
 }
 
 /**
- * 나의 팀 조회
+ * 나의 팀 조회 (배열로 반환)
  */
-export async function getMyTeam(accessToken: string): Promise<TeamDetailResponse> {
-  return apiClient<TeamDetailResponse>('/v1/teams/me', {
+export async function getMyTeam(accessToken: string): Promise<TeamDetailResponse[]> {
+  return apiClient<TeamDetailResponse[]>('/v1/teams/me', {
     cache: 'no-store',
     accessToken,
   });

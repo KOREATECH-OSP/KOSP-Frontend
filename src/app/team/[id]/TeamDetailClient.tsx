@@ -157,25 +157,104 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Navigation */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="group flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span>목록으로</span>
-          </button>
-        </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
+          {/* Left Sidebar */}
+          <aside className="space-y-6">
+            <div className="sticky top-24 space-y-6">
+              {/* Navigation */}
+              <div className="hidden"></div>
+
+              {/* Team Info Card */}
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <h3 className="text-sm font-bold text-gray-900">팀 현황</h3>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {members.length}
+                  </span>
+                  <span className="text-xs font-medium text-gray-500">명의 멤버</span>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">팀장</span>
+                    <div className="flex items-center gap-1.5">
+                      {leader?.profileImage && (
+                        <Image src={leader.profileImage} alt="" width={18} height={18} className="rounded-full" />
+                      )}
+                      <span className="font-medium text-gray-900">{leader?.name ?? '미지정'}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">모집 공고</span>
+                    <span className="font-medium text-gray-900">{recruits.length}개</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">진행중 모집</span>
+                    <span className="font-medium text-emerald-600">
+                      {recruits.filter(r => {
+                        const daysLeft = getDaysLeft(r.endDate);
+                        const isExpired = daysLeft !== null && daysLeft < 0;
+                        return r.status === 'OPEN' && !isExpired;
+                      }).length}개
+                    </span>
+                  </div>
+                </div>
+
+                {canInviteMember() && (
+                  <button
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="mt-5 w-full rounded-lg bg-gray-900 py-2.5 text-xs font-bold text-white transition-all hover:bg-black active:scale-[0.98]"
+                  >
+                    팀원 초대하기
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Actions */}
+              {canEditTeam() && (
+                <div>
+                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400 px-1">빠른 작업</h3>
+                  <div className="space-y-2">
+                    <Link
+                      href={`/team/${team.id}/create`}
+                      className="group block rounded-xl border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-sm"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600 transition-colors">
+                          <Megaphone className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 group-hover:underline">새 모집공고 작성</h4>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link
+                      href={`/team/${team.id}/settings`}
+                      className="group block rounded-xl border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-sm"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600 transition-colors">
+                          <Settings className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 group-hover:underline">팀 정보 수정</h4>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+
           {/* Main Content */}
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Team Header Card */}
-            <div className="rounded-sm border border-gray-200 bg-white p-6 sm:p-8">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-5">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-sm bg-gray-50 border border-gray-100 text-gray-300 overflow-hidden">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-gray-300 overflow-hidden">
                     {team.imageUrl ? (
                       <Image
                         src={team.imageUrl}
@@ -211,7 +290,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 {canEditTeam() && (
                   <Link
                     href={`/team/${team.id}/settings`}
-                    className="rounded-sm border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
+                    className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
                     title="팀 정보 수정"
                   >
                     <Settings className="h-5 w-5" />
@@ -229,7 +308,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
             </div>
 
             {/* Members Section */}
-            <div className="rounded-sm border border-gray-200 bg-white">
+            <div className="rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                 <h2 className="text-sm font-bold text-gray-900">
                   팀원 목록
@@ -237,7 +316,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 {canInviteMember() && (
                   <button
                     onClick={() => setIsInviteModalOpen(true)}
-                    className="inline-flex items-center rounded-sm bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-900"
+                    className="inline-flex items-center rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-900"
                   >
                     <UserPlus className="mr-1.5 h-3.5 w-3.5" />
                     팀원 초대
@@ -286,7 +365,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                               {member.name}
                             </span>
                             {member.role === 'LEADER' && (
-                              <span className="rounded-sm bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-100">
+                              <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-100">
                                 TEAM LEADER
                               </span>
                             )}
@@ -299,7 +378,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                       {canRemoveMember() && member.role !== 'LEADER' && (
                         <button
                           onClick={handleRemoveMember}
-                          className="rounded-sm p-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-600"
                           title="퇴출"
                         >
                           <UserMinus className="h-4 w-4" />
@@ -312,7 +391,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
             </div>
 
             {/* Recruits Section */}
-            <div className="rounded-sm border border-gray-200 bg-white">
+            <div className="rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
                   <Megaphone className="h-4 w-4" />
@@ -321,7 +400,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 {canEditTeam() && (
                   <Link
                     href={`/team/${team.id}/create`}
-                    className="inline-flex items-center rounded-sm bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-gray-800"
+                    className="inline-flex items-center rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-gray-800"
                   >
                     <Plus className="mr-1 h-3.5 w-3.5" />
                     새 공고 작성
@@ -357,7 +436,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                             const isOpen = recruit.status === 'OPEN' && !isExpired;
                             return (
                               <span
-                                className={`shrink-0 rounded-sm px-2 py-0.5 text-[10px] font-bold border ${isOpen
+                                className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold border ${isOpen
                                   ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                   : 'bg-gray-100 text-gray-500 border-gray-200'
                                   }`}
@@ -393,12 +472,12 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                                 activeRecruitMenu === recruit.id ? null : recruit.id
                               )
                             }
-                            className="rounded-sm p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-900"
+                            className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-900"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
                           {activeRecruitMenu === recruit.id && (
-                            <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-sm border border-gray-200 bg-white py-1 shadow-lg">
+                            <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                               <Link
                                 href={`/team/${team.id}/recruits/${recruit.id}/applications`}
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
@@ -450,100 +529,12 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
               )}
             </div>
           </div>
-
-          {/* Right Sidebar */}
-          <div>
-            <div className="sticky top-8 space-y-6">
-              {/* Team Info Card */}
-              <div className="rounded-sm border border-gray-200 bg-white p-6">
-                <h3 className="text-sm font-bold text-gray-900">팀 현황</h3>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {members.length}
-                  </span>
-                  <span className="text-sm font-medium text-gray-500">명의 멤버</span>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">팀장</span>
-                    <div className="flex items-center gap-2">
-                      {leader?.profileImage && (
-                        <Image src={leader.profileImage} alt="" width={20} height={20} className="rounded-full" />
-                      )}
-                      <span className="font-medium text-gray-900">{leader?.name ?? '미지정'}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">모집 공고</span>
-                    <span className="font-medium text-gray-900">{recruits.length}개</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">진행중 모집</span>
-                    <span className="font-medium text-emerald-600">
-                      {recruits.filter(r => {
-                        const daysLeft = getDaysLeft(r.endDate);
-                        const isExpired = daysLeft !== null && daysLeft < 0;
-                        return r.status === 'OPEN' && !isExpired;
-                      }).length}개
-                    </span>
-                  </div>
-                </div>
-
-                {canInviteMember() && (
-                  <button
-                    onClick={() => setIsInviteModalOpen(true)}
-                    className="mt-6 w-full rounded-sm bg-gray-900 py-3 text-sm font-bold text-white transition-all hover:bg-black active:scale-[0.98]"
-                  >
-                    팀원 초대하기
-                  </button>
-                )}
-              </div>
-
-              {/* Quick Actions */}
-              {canEditTeam() && (
-                <div>
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">빠른 작업</h3>
-                  <div className="space-y-2">
-                    <Link
-                      href={`/team/${team.id}/create`}
-                      className="group block rounded-sm border border-gray-200 bg-white p-4 transition-all hover:border-gray-300"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600 transition-colors">
-                          <Megaphone className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 group-hover:underline">새 모집공고 작성</h4>
-                          <p className="text-xs text-gray-500">팀원을 모집해보세요</p>
-                        </div>
-                      </div>
-                    </Link>
-                    <Link
-                      href={`/team/${team.id}/settings`}
-                      className="group block rounded-sm border border-gray-200 bg-white p-4 transition-all hover:border-gray-300"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600 transition-colors">
-                          <Settings className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 group-hover:underline">팀 정보 수정</h4>
-                          <p className="text-xs text-gray-500">팀 이름, 소개 등을 수정하세요</p>
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Invite Modal */}
         {isInviteModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm overflow-hidden border border-gray-200 bg-white shadow-2xl">
+            <div className="w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                 <h3 className="text-lg font-bold text-gray-900">팀원 초대</h3>
               </div>
@@ -554,15 +545,15 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 <div className="space-y-4">
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-gray-700">이메일 아이디</label>
-                    <div className="flex items-center">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
                       <input
                         type="text"
                         placeholder="example"
                         value={inviteEmailId}
                         onChange={(e) => setInviteEmailId(e.target.value)}
-                        className="flex-1 border border-gray-300 px-3 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                        className="flex-1 border border-gray-300 rounded-lg sm:rounded-r-none px-3 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
                       />
-                      <span className="shrink-0 border border-l-0 border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-500">
+                      <span className="shrink-0 border border-gray-300 sm:border-l-0 bg-gray-50 rounded-lg sm:rounded-l-none px-3 py-2.5 text-sm text-gray-500 text-center sm:text-left">
                         @koreatech.ac.kr
                       </span>
                     </div>
@@ -575,13 +566,13 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                     setIsInviteModalOpen(false);
                     setInviteEmailId('');
                   }}
-                  className="flex-1 border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   취소
                 </button>
                 <button
                   onClick={handleInvite}
-                  className="flex-1 bg-gray-900 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800"
+                  className="flex-1 rounded-lg bg-gray-900 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800"
                 >
                   초대하기
                 </button>
@@ -593,7 +584,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
         {/* Status Change Confirmation Modal */}
         {statusChangeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm overflow-hidden border border-gray-200 bg-white shadow-2xl">
+            <div className="w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
               <div className="p-6">
                 <h3 className="text-lg font-bold text-gray-900">
                   {statusChangeModal.currentStatus === 'OPEN' ? '모집 마감' : '모집 재개'}
@@ -607,17 +598,16 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
               <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
                 <button
                   onClick={() => setStatusChangeModal(null)}
-                  className="flex-1 border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  className="flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   취소
                 </button>
                 <button
                   onClick={confirmStatusChange}
-                  className={`flex-1 py-2.5 text-sm font-bold text-white transition ${
-                    statusChangeModal.currentStatus === 'OPEN'
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-emerald-600 hover:bg-emerald-700'
-                  }`}
+                  className={`flex-1 rounded-lg py-2.5 text-sm font-bold text-white transition ${statusChangeModal.currentStatus === 'OPEN'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                    }`}
                 >
                   {statusChangeModal.currentStatus === 'OPEN' ? '마감하기' : '다시 모집하기'}
                 </button>

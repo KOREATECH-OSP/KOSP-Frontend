@@ -8,7 +8,7 @@ import {
   ArrowLeft,
   Eye,
   Heart,
-  Star,
+  Bookmark,
   Users,
   User,
   Loader2,
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from '@/lib/toast';
-import { applyRecruit, deleteRecruit } from '@/lib/api/recruit';
+import { applyRecruit, deleteRecruit, getRecruit } from '@/lib/api/recruit';
 import { getTeam } from '@/lib/api/team';
 import { toggleArticleBookmark, toggleArticleLike } from '@/lib/api/article';
 import type { RecruitResponse, TeamDetailResponse } from '@/lib/api/types';
@@ -70,16 +70,14 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
     }
     if (isLikePending) return;
 
-    const wasLiked = isLiked;
     setIsLikePending(true);
     try {
       const response = await toggleArticleLike(recruit.id, { accessToken: session.accessToken });
-      const nextLiked = response.isLiked;
-      setIsLiked(nextLiked);
-      setLikeCount((prev) => {
-        if (nextLiked === wasLiked) return prev;
-        return nextLiked ? prev + 1 : Math.max(0, prev - 1);
-      });
+      setIsLiked(response.isLiked);
+
+      // 좋아요 수를 서버에서 다시 조회
+      const updatedRecruit = await getRecruit(recruit.id, session.accessToken);
+      setLikeCount(updatedRecruit.likes);
     } catch (error) {
       console.error('좋아요 처리 실패:', error);
       if (!(error && typeof error === 'object' && 'status' in error && error.status === 401)) {
@@ -175,26 +173,115 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Navigation */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="group flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span>목록으로</span>
-          </button>
-        </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
+          {/* Left Sidebar */}
+          <aside className="space-y-6">
+            <div className="sticky top-24 space-y-6">
+              {/* Job Card Style Apply Box */}
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-6">
+                  <h3 className="text-sm font-bold text-gray-900">모집 현황</h3>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className={`text-2xl font-bold ${daysLeft !== null && daysLeft <= 3 && daysLeft >= 0 ? 'text-rose-500' : 'text-gray-900'}`}>
+                      {daysLeft === null
+                        ? '상시'
+                        : daysLeft < 0
+                          ? '마감됨'
+                          : daysLeft === 0
+                            ? 'D-Day'
+                            : `D-${daysLeft}`}
+                    </span>
+                    <span className="text-xs font-medium text-gray-500">
+                      {recruit.endDate ? `~ ${formatDate(recruit.endDate)}` : '기간 미정'}
+                    </span>
+                  </div>
+                </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:gap-8">
+                <div className="space-y-2">
+                  {isOpen ? (
+                    <button
+                      onClick={handleOpenApplyModal}
+                      className="w-full rounded-lg bg-gray-900 py-3 text-sm font-bold text-white transition-all hover:bg-black active:scale-[0.98]"
+                    >
+                      지원하기
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full rounded-lg bg-gray-100 py-3 text-sm font-bold text-gray-400 cursor-not-allowed"
+                    >
+                      모집 마감
+                    </button>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleLike}
+                      disabled={isLikePending}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-semibold transition-colors ${isLiked
+                        ? 'border-pink-200 bg-pink-50 text-pink-600'
+                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                      <Heart className={`h-3.5 w-3.5 ${isLiked ? 'fill-current' : ''}`} />
+                      {likeCount}
+                    </button>
+                    <button
+                      onClick={handleBookmark}
+                      disabled={isBookmarkPending}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-semibold transition-colors ${isBookmarked
+                        ? 'border-yellow-200 bg-yellow-50 text-amber-500'
+                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                      <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
+                      저장
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Info Minimal */}
+              <div>
+                <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400 px-1">팀 정보</h3>
+                <Link href={`/team/${recruit.teamId}`} className="group block rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-gray-300">
+                  <div className="flex items-center gap-3">
+                    {/* Team Logo/Image */}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 border border-gray-100 text-gray-300 overflow-hidden">
+                      {team?.imageUrl ? (
+                        <Image src={team.imageUrl} alt={team.name} width={40} height={40} className="h-full w-full object-cover" />
+                      ) : (
+                        <Users className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 truncate text-sm group-hover:underline">
+                        {isTeamLoading ? 'Loading...' : team?.name || '팀 이름 없음'}
+                      </h4>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          멤버 {team?.members?.length ?? 0}명
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-gray-500 line-clamp-2 leading-relaxed border-t border-gray-50 pt-2.5">
+                    {team?.description || '팀 설명이 없습니다.'}
+                  </p>
+                </Link>
+              </div>
+            </div>
+          </aside>
+
           {/* Main Content */}
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Header Card */}
-            <div className="rounded-sm border border-gray-200 bg-white p-6 sm:p-8">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
               {/* Status & Badge Row */}
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 {isOpen ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-sm bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 border border-emerald-100">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 border border-emerald-100">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
@@ -202,12 +289,12 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                     모집중
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-sm bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 border border-gray-200">
+                  <span className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-500 border border-gray-200">
                     모집마감
                   </span>
                 )}
                 {recruit.tags?.[0] && (
-                  <span className="inline-flex items-center rounded-sm bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-600 border border-blue-100">
+                  <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-600 border border-blue-100">
                     {recruit.tags[0]}
                   </span>
                 )}
@@ -258,7 +345,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/team/${recruit.teamId}/create?edit=${recruit.id}`}
-                      className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                     >
                       수정
                     </Link>
@@ -274,7 +361,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                           toast.error('삭제에 실패했습니다');
                         }
                       }}
-                      className="rounded-sm border border-red-100 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 hover:border-red-200"
+                      className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 hover:border-red-200"
                     >
                       삭제
                     </button>
@@ -284,7 +371,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
             </div>
 
             {/* Content Body Card */}
-            <div className="rounded-sm border border-gray-200 bg-white p-6 sm:p-8">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
               <div className="prose prose-gray max-w-none text-gray-800 text-[15px] leading-relaxed">
                 <div
                   className="whitespace-pre-wrap font-normal"
@@ -301,115 +388,13 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                   {recruit.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center rounded-sm bg-gray-50 px-2.5 py-1 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                      className="inline-flex items-center rounded-lg bg-gray-50 px-2.5 py-1 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
                     >
                       #{tag}
                     </span>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Right Sidebar */}
-          <div>
-            <div className="sticky top-8 space-y-6">
-
-              {/* Job Card Style Apply Box */}
-              <div className="rounded-sm border border-gray-200 bg-white p-6">
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-gray-900">모집 현황</h3>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className={`text-3xl font-bold ${daysLeft !== null && daysLeft <= 3 && daysLeft >= 0 ? 'text-rose-500' : 'text-gray-900'}`}>
-                      {daysLeft === null
-                        ? '상시'
-                        : daysLeft < 0
-                          ? '마감됨'
-                          : daysLeft === 0
-                            ? 'D-Day'
-                            : `D-${daysLeft}`}
-                    </span>
-                    <span className="text-sm font-medium text-gray-500">
-                      {recruit.endDate ? `~ ${formatDate(recruit.endDate)}` : '기간 미정'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {isOpen ? (
-                    <button
-                      onClick={handleOpenApplyModal}
-                      className="w-full rounded-sm bg-gray-900 py-3.5 text-sm font-bold text-white transition-all hover:bg-black active:scale-[0.98]"
-                    >
-                      지원하기
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full rounded-sm bg-gray-100 py-3.5 text-sm font-bold text-gray-400 cursor-not-allowed"
-                    >
-                      모집이 마감되었습니다
-                    </button>
-                  )}
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleLike}
-                      disabled={isLikePending}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-sm border py-3 text-sm font-semibold transition-colors ${isLiked
-                        ? 'border-pink-200 bg-pink-50 text-pink-600'
-                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                        }`}
-                    >
-                      <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-                      {likeCount}
-                    </button>
-                    <button
-                      onClick={handleBookmark}
-                      disabled={isBookmarkPending}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-sm border py-3 text-sm font-semibold transition-colors ${isBookmarked
-                        ? 'border-yellow-200 bg-yellow-50 text-amber-500'
-                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                        }`}
-                    >
-                      <Star className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`} />
-                      저장
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Team Info Minimal */}
-              <div>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">팀 정보</h3>
-                <Link href={`/team/${recruit.teamId}`} className="group block rounded-sm border border-gray-200 bg-white p-5 transition-all hover:border-gray-300">
-                  <div className="flex items-center gap-4">
-                    {/* Team Logo/Image */}
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm bg-gray-50 border border-gray-100 text-gray-300 overflow-hidden">
-                      {team?.imageUrl ? (
-                        <Image src={team.imageUrl} alt={team.name} width={48} height={48} className="h-full w-full object-cover" />
-                      ) : (
-                        <Users className="h-6 w-6" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-gray-900 truncate group-hover:underline">
-                        {isTeamLoading ? 'Loading...' : team?.name || '팀 이름 없음'}
-                      </h4>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          멤버 {team?.members?.length ?? 0}명
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs text-gray-500 line-clamp-2 leading-relaxed border-t border-gray-50 pt-3">
-                    {team?.description || '팀 설명이 없습니다.'}
-                  </p>
-                </Link>
-              </div>
-
             </div>
           </div>
         </div>
