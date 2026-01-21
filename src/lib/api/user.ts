@@ -14,6 +14,8 @@ import type {
   GithubOverallHistoryResponse,
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
+  GithubGlobalStatisticsResponse,
+  GithubContributionComparisonResponse,
   AuthTokenResponse,
   MyPointHistoryResponse,
   MyApplicationListResponse,
@@ -198,6 +200,30 @@ export async function getUserGithubContributionScore(
 ): Promise<GithubContributionScoreResponse> {
   return apiClient<GithubContributionScoreResponse>(
     `/v1/users/${userId}/github/contribution-score`,
+    { cache: 'no-store' }
+  );
+}
+
+/**
+ * 전체 사용자 평균 통계 조회
+ */
+export async function getUserGithubGlobalStatistics(
+  userId: number
+): Promise<GithubGlobalStatisticsResponse> {
+  return apiClient<GithubGlobalStatisticsResponse>(
+    `/v1/users/${userId}/github/global-statistics`,
+    { cache: 'no-store' }
+  );
+}
+
+/**
+ * 사용자 기여 비교 조회 (평균 대비)
+ */
+export async function getUserGithubContributionComparison(
+  userId: number
+): Promise<GithubContributionComparisonResponse> {
+  return apiClient<GithubContributionComparisonResponse>(
+    `/v1/users/${userId}/github/contribution-comparison`,
     { cache: 'no-store' }
   );
 }

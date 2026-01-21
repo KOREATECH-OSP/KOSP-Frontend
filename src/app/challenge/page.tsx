@@ -170,76 +170,72 @@ export default function ChallengePage() {
         {/* Sidebar */}
         <aside className="space-y-8">
           {/* Header (Desktop) */}
-          <div className="hidden lg:block">
-            <h1 className="text-2xl font-bold text-gray-900">챌린지</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              성장을 위한 도전
-            </p>
-          </div>
+          <div className="hidden lg:block sticky top-24">
+            <h2 className="text-base font-bold text-gray-900 mb-4 px-2">챌린지</h2>
 
-          {/* Statistics Card */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-amber-500" />
-              내 현황
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                  <span>완료</span>
-                  <span className="font-medium text-gray-900">{completedChallenges}/{totalChallenges}</span>
-                </div>
-                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 rounded-full"
-                    style={{ width: `${totalChallenges > 0 ? (completedChallenges / totalChallenges) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">달성률</span>
-                <span className="text-xl font-bold text-gray-900">
-                  {totalChallenges > 0 ? Math.round((completedChallenges / totalChallenges) * 100) : 0}%
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <span className="text-sm text-gray-500">포인트</span>
-                <div className="flex items-center gap-1">
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  <span className="text-lg font-bold text-gray-900">{totalPoints.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <h3 className="font-bold text-gray-900 mb-3 px-1">카테고리</h3>
-            <div className="flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-              <button
-                onClick={() => setActiveFilter('all')}
-                className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors ${activeFilter === 'all'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-              >
-                전체 보기
-              </button>
-              {categories.map((category) => (
+            <div className="space-y-8">
+              {/* Categories */}
+              <div className="flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
                 <button
-                  key={category}
-                  onClick={() => setActiveFilter(category)}
-                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors ${activeFilter === category
+                  onClick={() => setActiveFilter('all')}
+                  className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeFilter === 'all'
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
-                  {category}
+                  전체 보기
                 </button>
-              ))}
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setActiveFilter(category)}
+                    className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeFilter === category
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              {/* Statistics Card */}
+              <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  내 현황
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                      <span>완료</span>
+                      <span className="font-medium text-gray-900">{completedChallenges}/{totalChallenges}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full"
+                        style={{ width: `${totalChallenges > 0 ? (completedChallenges / totalChallenges) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">달성률</span>
+                    <span className="text-xl font-bold text-gray-900">
+                      {totalChallenges > 0 ? Math.round((completedChallenges / totalChallenges) * 100) : 0}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <span className="text-sm text-gray-500">포인트</span>
+                    <div className="flex items-center gap-1">
+                      <Zap className="h-4 w-4 text-amber-500" />
+                      <span className="text-lg font-bold text-gray-900">{totalPoints.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </aside>

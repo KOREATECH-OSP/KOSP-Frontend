@@ -204,6 +204,32 @@ export interface GithubContributionScoreResponse {
   totalScore: number;
 }
 
+/**
+ * 전체 사용자 평균 통계 - /v1/users/{userId}/github/global-statistics
+ */
+export interface GithubGlobalStatisticsResponse {
+  avgCommitCount: number;
+  avgStarCount: number;
+  avgPrCount: number;
+  avgIssueCount: number;
+  totalUsers: number;
+  calculatedAt: string;
+}
+
+/**
+ * 사용자 기여 비교 - /v1/users/{userId}/github/contribution-comparison
+ */
+export interface GithubContributionComparisonResponse {
+  avgCommitCount: number;
+  avgStarCount: number;
+  avgPrCount: number;
+  avgIssueCount: number;
+  userCommitCount: number;
+  userStarCount: number;
+  userPrCount: number;
+  userIssueCount: number;
+}
+
 // ============================================
 // Legacy GitHub Types (for backward compatibility)
 // ============================================

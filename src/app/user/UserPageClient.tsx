@@ -36,6 +36,7 @@ import {
   getUserGithubOverallHistory,
   getUserGithubRecentActivity,
   getUserGithubContributionScore,
+  getUserGithubContributionComparison,
   getMyPointHistory,
   getMyApplications,
 } from '@/lib/api/user';
@@ -46,6 +47,7 @@ import type {
   GithubOverallHistoryResponse,
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
+  GithubContributionComparisonResponse,
   MyPointHistoryResponse,
   MyApplicationResponse,
 } from '@/lib/api/types';
@@ -68,6 +70,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [overallHistory, setOverallHistory] = useState<GithubOverallHistoryResponse | null>(null);
   const [recentActivity, setRecentActivity] = useState<GithubRecentActivityResponse[]>([]);
   const [contributionScore, setContributionScore] = useState<GithubContributionScoreResponse | null>(null);
+  const [comparison, setComparison] = useState<GithubContributionComparisonResponse | null>(null);
 
   // 포인트 & 지원내역 데이터
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
@@ -83,15 +86,17 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const fetchGithubData = useCallback(async () => {
     if (!userId) return;
 
-    const [historyRes, activityRes, scoreRes] = await Promise.all([
+    const [historyRes, activityRes, scoreRes, comparisonRes] = await Promise.all([
       getUserGithubOverallHistory(userId).catch(() => null),
       getUserGithubRecentActivity(userId).catch(() => []),
       getUserGithubContributionScore(userId).catch(() => null),
+      getUserGithubContributionComparison(userId).catch(() => null),
     ]);
 
     if (historyRes) setOverallHistory(historyRes);
     if (activityRes) setRecentActivity(activityRes);
     if (scoreRes) setContributionScore(scoreRes);
+    if (comparisonRes) setComparison(comparisonRes);
   }, [userId]);
 
   useEffect(() => {
@@ -463,6 +468,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             {overallHistory.totalCommitCount.toLocaleString()}
                           </div>
                           <div className="text-[10px] text-gray-400 sm:text-xs">Commits</div>
+                          {comparison && (
+                            <div className="mx-auto mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+                              <span className="text-[10px] text-gray-400">
+                                평균 {Math.round(comparison.avgCommitCount).toLocaleString()}
+                              </span>
+                              <span className={`text-[10px] font-semibold ${overallHistory.totalCommitCount >= comparison.avgCommitCount ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {overallHistory.totalCommitCount >= comparison.avgCommitCount ? '▲' : '▼'}{Math.abs(overallHistory.totalCommitCount - comparison.avgCommitCount).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="text-center">
                           <GitPullRequest className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
@@ -470,6 +485,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             {overallHistory.totalPrCount.toLocaleString()}
                           </div>
                           <div className="text-[10px] text-gray-400 sm:text-xs">Pull Requests</div>
+                          {comparison && (
+                            <div className="mx-auto mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+                              <span className="text-[10px] text-gray-400">
+                                평균 {Math.round(comparison.avgPrCount).toLocaleString()}
+                              </span>
+                              <span className={`text-[10px] font-semibold ${overallHistory.totalPrCount >= comparison.avgPrCount ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {overallHistory.totalPrCount >= comparison.avgPrCount ? '▲' : '▼'}{Math.abs(overallHistory.totalPrCount - comparison.avgPrCount).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="text-center">
                           <AlertCircle className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
@@ -477,6 +502,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             {overallHistory.totalIssueCount.toLocaleString()}
                           </div>
                           <div className="text-[10px] text-gray-400 sm:text-xs">Issues</div>
+                          {comparison && (
+                            <div className="mx-auto mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
+                              <span className="text-[10px] text-gray-400">
+                                평균 {Math.round(comparison.avgIssueCount).toLocaleString()}
+                              </span>
+                              <span className={`text-[10px] font-semibold ${overallHistory.totalIssueCount >= comparison.avgIssueCount ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {overallHistory.totalIssueCount >= comparison.avgIssueCount ? '▲' : '▼'}{Math.abs(overallHistory.totalIssueCount - comparison.avgIssueCount).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="text-center">
                           <FolderGit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
