@@ -45,14 +45,14 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
     return (
         <Link
             href={`/recruit/${recruit.id}`}
-            className="group relative flex flex-col justify-between gap-3 rounded-md bg-white p-5 transition-all duration-200 hover:border-blue-500 border border-gray-200"
+            className="group relative flex flex-col justify-between gap-3 rounded-xl bg-white p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-200"
         >
             {/* Top Row: Status & D-Day */}
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                     <StatusTag recruit={{ status: displayStatus }} />
                     {!isClosed && (
-                        <span className={`inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[11px] font-bold ${getDDayStyle()}`}>
+                        <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-bold ${getDDayStyle()}`}>
                             {dday}
                         </span>
                     )}
@@ -72,7 +72,7 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
                     recruit.tags.slice(0, 3).map((tag) => (
                         <span
                             key={tag}
-                            className="inline-flex items-center rounded bg-gray-50 px-2 py-1 text-xs font-medium text-gray-500"
+                            className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-[10px] font-semibold text-gray-500"
                         >
                             #{tag}
                         </span>

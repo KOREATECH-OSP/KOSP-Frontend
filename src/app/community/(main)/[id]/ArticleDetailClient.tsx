@@ -305,7 +305,7 @@ export default function ArticleDetailClient({
       </Link>
 
       {/* 게시글 카드 */}
-      <article className="rounded-2xl border border-gray-200/70 bg-white">
+      <article className="rounded-xl border border-gray-200 bg-white">
         {/* 헤더 */}
         <div className="px-5 py-5 sm:px-6">
           <div className="flex justify-between items-start">
@@ -315,7 +315,7 @@ export default function ArticleDetailClient({
                   {article.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
+                      className="rounded-md bg-gray-50 px-2.5 py-1 text-[10px] font-semibold text-gray-500"
                     >
                       {tag}
                     </span>
@@ -442,7 +442,7 @@ export default function ArticleDetailClient({
       <section className="mt-6">
         {/* 댓글 헤더 */}
         <div className="mb-4">
-          <h2 className="text-sm font-medium text-gray-900">
+          <h2 className="text-base font-bold text-gray-900">
             댓글 {comments.length}개
           </h2>
         </div>

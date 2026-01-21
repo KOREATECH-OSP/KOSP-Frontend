@@ -98,19 +98,17 @@ export default function ChallengePage() {
   // 로그인 안 된 경우
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto w-full max-w-[1080px] px-4 sm:px-5 py-6 sm:py-10">
-          <div className="flex flex-col items-center justify-center py-20">
-            <LogIn className="w-16 h-16 text-gray-300 mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">로그인이 필요합니다</h2>
-            <p className="text-sm text-gray-500 mb-6">챌린지를 확인하려면 로그인해주세요</p>
-            <Link
-              href="/login"
-              className="px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              로그인
-            </Link>
-          </div>
+      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center justify-center text-center px-4">
+          <LogIn className="w-16 h-16 text-gray-300 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">로그인이 필요합니다</h2>
+          <p className="text-sm text-gray-500 mb-6">챌린지를 확인하려면 로그인해주세요</p>
+          <Link
+            href="/login"
+            className="px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors"
+          >
+            로그인
+          </Link>
         </div>
       </div>
     );

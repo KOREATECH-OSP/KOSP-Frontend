@@ -48,8 +48,8 @@ export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {openRecruits.slice(0, 3).map((recruit) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
+            {openRecruits.slice(0, 4).map((recruit) => (
               <RecruitPostCard key={recruit.id} recruit={recruit} />
             ))}
           </div>
@@ -67,7 +67,7 @@ export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }
             </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
             {teams.map((team) => (
               <TeamCard team={team} key={team.id} />
             ))}

@@ -45,7 +45,7 @@ export default function HomePageClient({ articles, recruits, session }: HomePage
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
               {articles.length === 0 ? (
-                <div className="col-span-full rounded-2xl border border-gray-200/70 bg-white px-4 py-8 text-center text-gray-500 sm:px-5">
+                <div className="col-span-full rounded-xl border border-gray-200 bg-white px-4 py-8 text-center text-gray-500 sm:px-5">
                   게시글이 없습니다.
                 </div>
               ) : (
@@ -74,7 +74,7 @@ export default function HomePageClient({ articles, recruits, session }: HomePage
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
               {recruits.length === 0 ? (
-                <div className="col-span-full rounded-2xl border border-gray-200/70 bg-white px-4 py-8 text-center text-gray-500 sm:px-5">
+                <div className="col-span-full rounded-xl border border-gray-200 bg-white px-4 py-8 text-center text-gray-500 sm:px-5">
                   모집 중인 팀이 없습니다.
                 </div>
               ) : (

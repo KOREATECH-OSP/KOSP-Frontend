@@ -25,21 +25,21 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2 min-w-0">
           {boardName && (
-            <span className="flex-shrink-0 rounded-md bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+            <span className="flex-shrink-0 rounded-md bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">
               {boardName}
             </span>
           )}
           {post.isPinned && (
             <Pin className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
           )}
-          <h3 className="truncate text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 className="truncate text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             {post.title}
           </h3>
         </div>
       </div>
 
       {/* Bottom Row: Tags(Left) + Meta(Right) */}
-      <div className="flex items-center justify-between text-xs text-xs mt-1">
+      <div className="flex items-center justify-between text-xs mt-1">
         <div className="flex items-center gap-2 overflow-hidden">
           {/* Author */}
           <span className="text-gray-500 font-medium truncate max-w-[80px]">{post.author.name}</span>

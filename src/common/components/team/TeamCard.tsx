@@ -11,7 +11,7 @@ export default function TeamCard({ team }: TeamCardProps) {
     return (
         <Link
             href={`/team/${team.id}`}
-            className="group flex flex-col overflow-hidden rounded-md border border-gray-200 bg-white transition-all hover:-translate-y-1 hover:border-gray-300"
+            className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:shadow-md hover:border-gray-300"
         >
             <div className="relative h-48 w-full bg-gray-100">
                 {team.imageUrl ? (
@@ -26,7 +26,7 @@ export default function TeamCard({ team }: TeamCardProps) {
                         <Users className="h-12 w-12 text-gray-300" />
                     </div>
                 )}
-                <div className="absolute top-4 right-4 rounded bg-white/90 px-2 py-1 text-xs font-medium text-gray-600 backdrop-blur-sm shadow-sm">
+                <div className="absolute top-4 right-4 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm shadow-sm">
                     <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
                         {team.memberCount}명

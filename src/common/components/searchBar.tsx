@@ -201,9 +201,9 @@ function SearchBar() {
               <div className="w-16 drop-shadow-sm pointer-events-none select-none">
                 <Image src={KoriCharacter} alt="캐릭터" className="w-full h-auto" priority />
               </div>
-              <div className={`relative flex flex-col w-full gap-3 sm:gap-3 sm:flex-row sm:items-center sm:bg-white sm:border sm:border-gray-200/70 sm:rounded-2xl sm:pl-6 sm:pr-2 sm:py-2 ${isDesktopDropdownOpen ? 'sm:shadow-[0_0_0_1px_rgba(156,163,175,0.8)]' : ''}`}>
+              <div className={`relative flex flex-col w-full gap-3 sm:gap-3 sm:flex-row sm:items-center sm:bg-white sm:border sm:border-gray-200 sm:rounded-xl sm:pl-6 sm:pr-2 sm:py-2 ${isDesktopDropdownOpen ? 'sm:shadow-[0_0_0_1px_rgba(156,163,175,0.8)]' : ''}`}>
                 <div
-                  className="flex items-center w-full bg-white border border-gray-200/70 rounded-2xl px-5 py-3.5 text-gray-400 text-base cursor-pointer sm:hidden"
+                  className="flex items-center w-full bg-white border border-gray-200 rounded-xl px-5 py-3.5 text-gray-400 text-base cursor-pointer sm:hidden"
                   onClick={handleMobileInputClick}
                 >
                   <Search className="w-5 h-5 mr-3 text-gray-400" />
@@ -224,7 +224,7 @@ function SearchBar() {
                 />
                 <button
                   type="submit"
-                  className="hidden sm:flex items-center justify-center px-6 py-2.5 rounded-2xl text-white font-medium shadow-sm bg-gradient-to-r from-[#E2AB3C] to-[#D06B2B] hover:opacity-90 cursor-pointer flex-shrink-0"
+                  className="hidden sm:flex items-center justify-center px-6 py-2.5 rounded-xl text-white font-medium shadow-sm bg-gradient-to-r from-[#E2AB3C] to-[#D06B2B] hover:opacity-90 cursor-pointer flex-shrink-0"
                 >
                   Go →
                 </button>

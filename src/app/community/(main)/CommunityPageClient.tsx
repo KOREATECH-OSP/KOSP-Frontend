@@ -127,7 +127,7 @@ export default function CommunityPageClient({
         <aside className="hidden lg:block">
           <div className="sticky top-24 space-y-8">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">게시판</h2>
+              <h2 className="text-base font-bold text-gray-900 mb-4 px-2">커뮤니티</h2>
               <div className="space-y-1">
                 {initialBoards.map((board) => (
                   <button
@@ -160,7 +160,7 @@ export default function CommunityPageClient({
         {/* Main Content Area */}
         <div className="min-w-0">
           <div className="mb-6 hidden lg:flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">{activeBoardName}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{activeBoardName}</h2>
             <span className="text-sm text-gray-500">총 {initialPagination.totalItems}개의 글</span>
           </div>
 
@@ -170,7 +170,7 @@ export default function CommunityPageClient({
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
             ) : articles.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
+              <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
                 <MessageSquare className="mb-3 h-10 w-10 text-gray-300" />
                 <p className="text-gray-500 font-medium">게시글이 없습니다.</p>
                 <p className="mt-1 text-sm text-gray-400">
