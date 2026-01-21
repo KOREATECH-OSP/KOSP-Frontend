@@ -241,7 +241,7 @@ export async function getMyPointHistory(
   size: number = 10
 ): Promise<MyPointHistoryResponse> {
   return clientApiClient<MyPointHistoryResponse>(
-    `/v1/users/me/points?page=${page}&size=${size}`,
+    `/v1/users/me/points?page=${page - 1}&size=${size}`,
     {
       headers: {
         Authorization: `Bearer ${auth.accessToken}`,
@@ -259,7 +259,7 @@ export async function getMyApplications(
   size: number = 10
 ): Promise<MyApplicationListResponse> {
   return clientApiClient<MyApplicationListResponse>(
-    `/v1/users/me/applications?page=${page}&size=${size}`,
+    `/v1/users/me/applications?page=${page - 1}&size=${size}`,
     {
       headers: {
         Authorization: `Bearer ${auth.accessToken}`,

@@ -552,13 +552,8 @@ export interface ArticleSummary {
   createdAt: string;
 }
 
-export interface RecruitSummary {
-  id: number;
-  title: string;
-  authorName: string;
-  createdAt: string;
-  endDate: string;
-}
+// RecruitSummary는 이미 위에서 정의되어 있음 (line 129-135)
+// 검색 API도 동일한 RecruitSummary 구조를 사용함: id, title, teamName, status, endDate
 
 export interface TeamSummary {
   id: number;
