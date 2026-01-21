@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import DOMPurify from 'isomorphic-dompurify';
 import {
-  ArrowLeft,
   Heart,
   Eye,
   Link2,
@@ -15,7 +14,6 @@ import {
   Trash2,
   AlertTriangle,
   Pencil,
-  MoreVertical,
   User
 } from 'lucide-react';
 import type { ArticleResponse, CommentResponse } from '@/lib/api/types';

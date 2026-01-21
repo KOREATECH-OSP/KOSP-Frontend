@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Users, Search, Plus } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
 
 import TeamRecruitTab from './components/TeamRecruitTab';

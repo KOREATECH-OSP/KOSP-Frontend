@@ -4,9 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
   Users,
   UserPlus,
   Crown,
@@ -35,7 +33,6 @@ interface TeamDetailClientProps {
 }
 
 export default function TeamDetailClient({ team: initialTeam, recruits: initialRecruits }: TeamDetailClientProps) {
-  const router = useRouter();
   const { data: session } = useSession();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmailId, setInviteEmailId] = useState('');

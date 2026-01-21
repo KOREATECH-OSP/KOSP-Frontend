@@ -1,4 +1,4 @@
-import { Users, Megaphone, ArrowRight } from 'lucide-react';
+import { Users, ArrowRight } from 'lucide-react';
 import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
 import RecruitPostCard from '@/common/components/team/RecruitPostCard';
 import TeamCard from '@/common/components/team/TeamCard';

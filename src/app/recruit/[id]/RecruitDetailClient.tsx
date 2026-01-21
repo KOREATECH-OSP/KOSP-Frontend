@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
   Eye,
   Heart,
   Bookmark,
@@ -31,26 +30,10 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
   const router = useRouter();
   const { data: session } = useSession();
 
-  // Defensive check for recruit
-  if (!recruit) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900">공고 정보를 불러올 수 없습니다</h2>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-black"
-          >
-            뒤로가기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const [isLiked, setIsLiked] = useState(recruit.isLiked);
-  const [isBookmarked, setIsBookmarked] = useState(recruit.isBookmarked);
-  const [likeCount, setLikeCount] = useState(recruit.likes);
+  // All hooks must be called before any conditional returns
+  const [isLiked, setIsLiked] = useState(recruit?.isLiked ?? false);
+  const [isBookmarked, setIsBookmarked] = useState(recruit?.isBookmarked ?? false);
+  const [likeCount, setLikeCount] = useState(recruit?.likes ?? 0);
   const [isApplying, setIsApplying] = useState(false);
   const [isLikePending, setIsLikePending] = useState(false);
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
@@ -82,6 +65,23 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
       isActive = false;
     };
   }, [recruit?.teamId]);
+
+  // Defensive check for recruit - AFTER all hooks
+  if (!recruit) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-900">공고 정보를 불러올 수 없습니다</h2>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-black"
+          >
+            뒤로가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleLike = async () => {
     if (!session?.accessToken) {
