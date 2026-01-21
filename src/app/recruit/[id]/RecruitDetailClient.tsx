@@ -30,6 +30,24 @@ interface RecruitDetailClientProps {
 export default function RecruitDetailClient({ recruit }: RecruitDetailClientProps) {
   const router = useRouter();
   const { data: session } = useSession();
+
+  // Defensive check for recruit
+  if (!recruit) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-900">공고 정보를 불러올 수 없습니다</h2>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-black"
+          >
+            뒤로가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const [isLiked, setIsLiked] = useState(recruit.isLiked);
   const [isBookmarked, setIsBookmarked] = useState(recruit.isBookmarked);
   const [likeCount, setLikeCount] = useState(recruit.likes);
@@ -42,6 +60,8 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
   const [isTeamLoading, setIsTeamLoading] = useState(true);
 
   useEffect(() => {
+    if (!recruit?.teamId) return;
+
     let isActive = true;
     setIsTeamLoading(true);
 
@@ -61,7 +81,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
     return () => {
       isActive = false;
     };
-  }, [recruit.teamId]);
+  }, [recruit?.teamId]);
 
   const handleLike = async () => {
     if (!session?.accessToken) {
@@ -311,10 +331,10 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                   {/* Author */}
                   <div className="flex items-center gap-2">
                     <div className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
-                      {recruit.author.profileImage ? (
+                      {recruit.author?.profileImage ? (
                         <Image
                           src={recruit.author.profileImage}
-                          alt={recruit.author.name}
+                          alt={recruit.author.name || 'Author'}
                           fill
                           className="object-cover"
                         />
@@ -324,7 +344,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                         </div>
                       )}
                     </div>
-                    <span className="font-medium text-gray-900">{recruit.author.name}</span>
+                    <span className="font-medium text-gray-900">{recruit.author?.name || '알 수 없음'}</span>
                   </div>
 
                   {/* Date */}
@@ -341,7 +361,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                 </div>
 
                 {/* Edit/Delete Buttons */}
-                {Number(session?.user?.id) === recruit.author.id && (
+                {recruit.author?.id && Number(session?.user?.id) === recruit.author.id && (
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/team/${recruit.teamId}/create?edit=${recruit.id}`}
@@ -375,9 +395,9 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
               <div className="prose prose-gray max-w-none text-gray-800 text-[15px] leading-relaxed">
                 <div
                   className="whitespace-pre-wrap font-normal"
-                  dangerouslySetInnerHTML={{ __html: recruit.content }}
+                  dangerouslySetInnerHTML={{ __html: recruit.content || '' }}
                 />
-                {!recruit.content.includes('<') && (
+                {!recruit.content?.includes('<') && (
                   <p className="hidden">{recruit.content}</p>
                 )}
               </div>

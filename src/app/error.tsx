@@ -57,10 +57,26 @@ export default function Error({
           </Link>
         </div>
 
+
         {error.digest && (
           <p className="mt-6 text-[12px] text-[#aeb5bc]">
             오류 코드: {error.digest}
           </p>
+        )}
+
+        {/* Development only: Show error details */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8 w-full max-w-2xl overflow-auto text-left">
+            <div className="rounded-lg bg-red-50 p-4">
+              <h3 className="mb-2 font-bold text-red-800">Error Details</h3>
+              <p className="font-mono text-sm text-red-700">{error.message}</p>
+              {error.stack && (
+                <pre className="mt-4 whitespace-pre-wrap text-xs text-red-600">
+                  {error.stack}
+                </pre>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

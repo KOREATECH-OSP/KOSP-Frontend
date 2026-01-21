@@ -45,7 +45,7 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
                         {/* Leader Info with Profile Picture */}
                         <div className="flex items-center gap-1.5">
                             <div className="relative h-5 w-5 flex-shrink-0 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
-                                {team.createdBy.profileImage ? (
+                                {team.createdBy?.profileImage ? (
                                     <Image
                                         src={team.createdBy.profileImage}
                                         alt={team.createdBy.name}
@@ -58,7 +58,7 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
                                     </div>
                                 )}
                             </div>
-                            <span className="font-medium text-gray-700">{team.createdBy.name}</span>
+                            <span className="font-medium text-gray-700">{team.createdBy?.name || '알 수 없음'}</span>
                         </div>
                         <span className="text-gray-300">|</span>
                         <div className="flex items-center gap-1">
