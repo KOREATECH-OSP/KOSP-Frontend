@@ -39,7 +39,7 @@ export default function TeamPageClient({
       (team) =>
         team.name.toLowerCase().includes(q) ||
         team.description.toLowerCase().includes(q) ||
-        team.createdBy.toLowerCase().includes(q)
+        team.createdBy.name.toLowerCase().includes(q)
     );
   }, [initialTeams, searchQuery]);
 
@@ -177,6 +177,7 @@ export default function TeamPageClient({
                 teams={filteredTeams}
                 recruits={[]} // Hide recruits section in this tab
                 onShowMoreRecruits={() => { }}
+                hideTeamSectionHeader={true}
               />
             )}
             {activeTab === '모집공고' && <TeamRecruitTab recruits={filteredRecruits} />}

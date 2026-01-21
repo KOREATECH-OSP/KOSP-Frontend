@@ -19,7 +19,6 @@ function SearchBar() {
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   // Load from localStorage
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);

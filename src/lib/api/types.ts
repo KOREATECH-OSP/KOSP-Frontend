@@ -396,7 +396,7 @@ export interface TeamResponse {
   description: string;
   imageUrl: string | null;
   memberCount: number;
-  createdBy: string;
+  createdBy: AuthorResponse;
 }
 
 export interface TeamListResponse {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Users, ArrowRight, Loader2 } from 'lucide-react';
 import { getMyTeam } from '@/lib/api';
-import type { TeamDetailResponse, TeamResponse } from '@/lib/api/types';
+import type { TeamDetailResponse, TeamResponse, AuthorResponse } from '@/lib/api/types';
 import TeamCard from '@/common/components/team/TeamCard';
 
 interface MyTeam {
@@ -14,7 +14,7 @@ interface MyTeam {
   description: string;
   imageUrl: string | null;
   memberCount: number;
-  createdBy: string;
+  createdBy: AuthorResponse;
   isLeader: boolean;
 }
 
@@ -51,7 +51,11 @@ export default function MyTeamListTab() {
             description: teamData.description,
             imageUrl: teamData.imageUrl,
             memberCount: teamData.members?.length ?? 0,
-            createdBy: leader?.name ?? '미지정',
+            createdBy: {
+              id: leader?.id ?? 0,
+              name: leader?.name ?? '미지정',
+              profileImage: leader?.profileImage ?? null,
+            },
             isLeader,
           };
         });

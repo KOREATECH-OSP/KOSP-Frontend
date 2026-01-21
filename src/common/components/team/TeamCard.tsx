@@ -42,12 +42,23 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
                         </div>
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                        {/* Leader Info with Profile Picture Placeholder */}
+                        {/* Leader Info with Profile Picture */}
                         <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
-                                <User className="h-3 w-3 text-gray-400" />
+                            <div className="relative h-5 w-5 flex-shrink-0 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
+                                {team.createdBy.profileImage ? (
+                                    <Image
+                                        src={team.createdBy.profileImage}
+                                        alt={team.createdBy.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center">
+                                        <User className="h-3 w-3 text-gray-400" />
+                                    </div>
+                                )}
                             </div>
-                            <span className="font-medium text-gray-700">{team.createdBy}</span>
+                            <span className="font-medium text-gray-700">{team.createdBy.name}</span>
                         </div>
                         <span className="text-gray-300">|</span>
                         <div className="flex items-center gap-1">

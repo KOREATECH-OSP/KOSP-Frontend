@@ -7,9 +7,15 @@ interface TeamListTabProps {
   teams: TeamResponse[];
   recruits?: RecruitResponse[];
   onShowMoreRecruits?: () => void;
+  hideTeamSectionHeader?: boolean;
 }
 
-export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }: TeamListTabProps) {
+export default function TeamListTab({
+  teams,
+  recruits = [],
+  onShowMoreRecruits,
+  hideTeamSectionHeader = false,
+}: TeamListTabProps) {
   const openRecruits = recruits.filter((r) => r.status === 'OPEN');
 
   if (teams.length === 0 && openRecruits.length === 0) {
@@ -31,7 +37,6 @@ export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }
         <section>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5 text-gray-900" />
               <h3 className="text-lg font-bold text-gray-900">최근 모집 공고</h3>
             </div>
             {openRecruits.length > 3 && (
@@ -56,13 +61,11 @@ export default function TeamListTab({ teams, recruits = [], onShowMoreRecruits }
       {/* 팀 목록 섹션 */}
       {teams.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-6">
-            <Users className="h-5 w-5 text-gray-900" />
-            <h3 className="text-lg font-bold text-gray-900">등록된 팀</h3>
-            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-600">
-              {teams.length}
-            </span>
-          </div>
+          {!hideTeamSectionHeader && (
+            <div className="flex items-center gap-2 mb-6">
+              <h3 className="text-lg font-bold text-gray-900">등록된 팀</h3>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
             {teams.map((team) => (

@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Trophy,
-  TrendingUp,
   Zap,
   CheckCircle2,
   Loader2,
-  LogIn,
+  ArrowRight
 } from 'lucide-react';
 import { getChallenges } from '@/lib/api/challenge';
 import type { ChallengeResponse } from '@/lib/api/types';
 import Link from 'next/link';
 import Image from 'next/image';
+import KoriDistImage from '@/assets/images/kori/11-09 F 멀리보기 .png';
 
 type CategoryFilter = 'all' | string;
 
@@ -66,16 +66,16 @@ export default function ChallengePage() {
   const getCategoryStyle = (category: string) => {
     const lowerCategory = category.toLowerCase();
     if (lowerCategory.includes('beginner') || lowerCategory.includes('초급')) {
-      return { bg: 'bg-[#e8f5e9]', text: 'text-[#2e7d32]' };
+      return { bg: 'bg-emerald-50', text: 'text-emerald-700' };
     }
     if (lowerCategory.includes('intermediate') || lowerCategory.includes('중급')) {
-      return { bg: 'bg-[#e3f2fd]', text: 'text-[#1565c0]' };
+      return { bg: 'bg-blue-50', text: 'text-blue-700' };
     }
     if (lowerCategory.includes('advanced') || lowerCategory.includes('고급')) {
-      return { bg: 'bg-[#f3e5f5]', text: 'text-[#7b1fa2]' };
+      return { bg: 'bg-indigo-50', text: 'text-indigo-700' };
     }
     if (lowerCategory.includes('special') || lowerCategory.includes('특별')) {
-      return { bg: 'bg-[#fff3e0]', text: 'text-[#e65100]' };
+      return { bg: 'bg-amber-50', text: 'text-amber-700' };
     }
     return { bg: 'bg-gray-100', text: 'text-gray-600' };
   };
@@ -98,18 +98,28 @@ export default function ChallengePage() {
   // 로그인 안 된 경우
   if (status === 'unauthenticated') {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center justify-center text-center px-4">
-          <LogIn className="w-16 h-16 text-gray-300 mb-4" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">로그인이 필요합니다</h2>
-          <p className="text-sm text-gray-500 mb-6">챌린지를 확인하려면 로그인해주세요</p>
-          <Link
-            href="/login"
-            className="px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors"
-          >
-            로그인
-          </Link>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white">
+        <div className="relative mb-6">
+          <Image
+            src={KoriDistImage}
+            alt="챌린지 로그인 안내"
+            width={80}
+            height={80}
+            className="object-contain"
+            priority
+          />
         </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">코리는 당신을 기다리고 있어요</h2>
+        <p className="text-gray-500 mb-6 text-center max-w-sm">
+          시작하기 버튼을 눌러 로그인하세요
+        </p>
+        <Link
+          href="/login"
+          className="inline-flex items-center rounded-xl bg-gray-900 px-6 py-3 text-sm font-bold text-white hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200"
+        >
+          시작하기
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Link>
       </div>
     );
   }
@@ -117,7 +127,7 @@ export default function ChallengePage() {
   // 로딩 중
   if (loading || status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center py-32">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
@@ -128,13 +138,16 @@ export default function ChallengePage() {
   // 에러
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto w-full max-w-[1080px] px-4 sm:px-5 py-6 sm:py-10">
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-red-500 mb-4">{error}</p>
+      <div className="min-h-screen bg-white">
+        <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-50 mb-4">
+              <Trophy className="h-10 w-10 text-red-300" />
+            </div>
+            <p className="text-gray-900 font-medium mb-4">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800"
+              className="inline-flex items-center rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-gray-800 transition-colors"
             >
               다시 시도
             </button>
@@ -145,175 +158,188 @@ export default function ChallengePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto w-full max-w-[1080px] px-4 sm:px-5 py-6 sm:py-10">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-[22px] sm:text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
-            챌린지
-          </h1>
-          <p className="mt-1.5 sm:mt-2 text-[14px] sm:text-[15px] text-[#8b95a1]">
-            다양한 도전 과제를 완료하고 포인트를 획득하세요
-          </p>
-        </div>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="lg:hidden mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">챌린지</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          다양한 도전 과제를 완료하고 포인트를 획득하세요
+        </p>
+      </div>
 
-        {/* 통계 */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
-          <div className="bg-[#f2f4f6] rounded-xl sm:rounded-2xl p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-[13px] text-[#8b95a1] mb-1 sm:mb-2">
-              <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>완료</span>
-            </div>
-            <div className="flex items-baseline gap-0.5 sm:gap-1">
-              <span className="text-[20px] sm:text-[28px] font-bold text-[#191f28]">{completedChallenges}</span>
-              <span className="text-[12px] sm:text-[15px] text-[#8b95a1]">/{totalChallenges}</span>
-            </div>
+      <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10">
+        {/* Sidebar */}
+        <aside className="space-y-8">
+          {/* Header (Desktop) */}
+          <div className="hidden lg:block">
+            <h1 className="text-2xl font-bold text-gray-900">챌린지</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              성장을 위한 도전
+            </p>
           </div>
 
-          <div className="bg-[#f2f4f6] rounded-xl sm:rounded-2xl p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-[13px] text-[#8b95a1] mb-1 sm:mb-2">
-              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>달성률</span>
-            </div>
-            <div className="flex items-baseline gap-0.5 sm:gap-1">
-              <span className="text-[20px] sm:text-[28px] font-bold text-[#191f28]">
-                {totalChallenges > 0 ? Math.round((completedChallenges / totalChallenges) * 100) : 0}
-              </span>
-              <span className="text-[12px] sm:text-[15px] text-[#8b95a1]">%</span>
-            </div>
-          </div>
+          {/* Statistics Card */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              내 현황
+            </h3>
 
-          <div className="bg-[#f2f4f6] rounded-xl sm:rounded-2xl p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-[13px] text-[#8b95a1] mb-1 sm:mb-2">
-              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>포인트</span>
-            </div>
-            <div className="flex items-baseline gap-0.5 sm:gap-1">
-              <span className="text-[20px] sm:text-[28px] font-bold text-[#191f28]">{totalPoints.toLocaleString()}</span>
-              <span className="text-[12px] sm:text-[15px] text-[#8b95a1]">P</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 필터 */}
-        <div className="flex gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <button
-            onClick={() => setActiveFilter('all')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[13px] sm:text-[14px] font-medium whitespace-nowrap transition-colors ${
-              activeFilter === 'all'
-                ? 'bg-[#191f28] text-white'
-                : 'bg-[#f2f4f6] text-[#6b7684] hover:bg-[#e5e8eb]'
-            }`}
-          >
-            전체
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveFilter(category)}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[13px] sm:text-[14px] font-medium whitespace-nowrap transition-colors ${
-                activeFilter === category
-                  ? 'bg-[#191f28] text-white'
-                  : 'bg-[#f2f4f6] text-[#6b7684] hover:bg-[#e5e8eb]'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {/* 챌린지 목록 */}
-        <div className="space-y-2 sm:space-y-3">
-          {filteredChallenges.map((challenge) => {
-            const isCompleted = challenge.isCompleted;
-            const style = getCategoryStyle(challenge.category);
-            const progress = challenge.total > 0 ? Math.round((challenge.current / challenge.total) * 100) : 0;
-
-            return (
-              <div
-                key={challenge.id}
-                className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl border bg-white transition-colors ${
-                  isCompleted
-                    ? 'border-[#b2dfdb] hover:border-[#80cbc4]'
-                    : 'border-[#e5e8eb] hover:border-[#d1d6db]'
-                }`}
-              >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  {/* 이미지 또는 아이콘 */}
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>완료</span>
+                  <span className="font-medium text-gray-900">{completedChallenges}/{totalChallenges}</span>
+                </div>
+                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center overflow-hidden ${
-                      isCompleted ? 'bg-[#e0f2f1]' : 'bg-[#f2f4f6]'
-                    }`}
-                  >
-                    {challenge.imageUrl ? (
-                      <Image
-                        src={challenge.imageUrl}
-                        alt={challenge.title}
-                        width={48}
-                        height={48}
-                        className="w-full h-full object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <Trophy className={`w-5 h-5 sm:w-6 sm:h-6 ${isCompleted ? 'text-[#00897b]' : 'text-[#6b7684]'}`} />
-                    )}
-                  </div>
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: `${totalChallenges > 0 ? (completedChallenges / totalChallenges) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                      <h3 className="text-[15px] sm:text-[16px] font-semibold text-[#191f28]">{challenge.title}</h3>
-                      <span className={`px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-medium ${style.bg} ${style.text}`}>
-                        {challenge.category || getTierLabel(challenge.tier)}
-                      </span>
-                      {isCompleted && (
-                        <span className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-medium bg-[#e0f2f1] text-[#00897b]">
-                          <CheckCircle2 className="w-3 h-3" />
-                          완료
-                        </span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">달성률</span>
+                <span className="text-xl font-bold text-gray-900">
+                  {totalChallenges > 0 ? Math.round((completedChallenges / totalChallenges) * 100) : 0}%
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <span className="text-sm text-gray-500">포인트</span>
+                <div className="flex items-center gap-1">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <span className="text-lg font-bold text-gray-900">{totalPoints.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div>
+            <h3 className="font-bold text-gray-900 mb-3 px-1">카테고리</h3>
+            <div className="flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors ${activeFilter === 'all'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+              >
+                전체 보기
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveFilter(category)}
+                  className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors ${activeFilter === category
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="min-w-0">
+          {/* Header Info */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-900">
+              {activeFilter === 'all' ? '전체 챌린지' : activeFilter}
+            </h2>
+            <span className="text-sm text-gray-500">총 {filteredChallenges.length}개</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {filteredChallenges.map((challenge) => {
+              const isCompleted = challenge.isCompleted;
+              const style = getCategoryStyle(challenge.category);
+              const progress = challenge.total > 0 ? Math.round((challenge.current / challenge.total) * 100) : 0;
+
+              return (
+                <div
+                  key={challenge.id}
+                  className="group flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300 hover:bg-gray-50"
+                >
+                  <div className="flex items-start gap-4 mb-4">
+                    {/* Icon */}
+                    <div className={`flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                      {challenge.imageUrl ? (
+                        <Image
+                          src={challenge.imageUrl}
+                          alt={challenge.title}
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover rounded-lg"
+                          unoptimized
+                        />
+                      ) : (
+                        <Trophy className="h-6 w-6" />
                       )}
                     </div>
 
-                    <p className="text-[13px] sm:text-[14px] text-[#6b7684] mb-3 line-clamp-2">{challenge.description}</p>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between text-[12px] sm:text-[13px] mb-1.5">
-                          <span className="text-[#8b95a1] truncate mr-2">진행률</span>
-                          <span className="font-medium text-[#191f28] whitespace-nowrap">
-                            {challenge.current.toLocaleString()} / {challenge.total.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="h-2 bg-[#f2f4f6] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              isCompleted ? 'bg-[#26a69a]' : 'bg-[#3182f6]'
-                            }`}
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          />
-                        </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="truncate text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          {challenge.title}
+                        </h3>
+                        {isCompleted && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                        )}
                       </div>
-
-                      <div className="flex items-center gap-1 px-3 py-1.5 bg-[#fff8e1] rounded-xl self-start sm:self-auto">
-                        <Zap className="w-4 h-4 text-[#f9a825]" />
-                        <span className="text-[13px] sm:text-[14px] font-semibold text-[#f57f17]">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${style.bg} ${style.text}`}>
+                          {challenge.category || getTierLabel(challenge.tier)}
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                          <Zap className="h-3 w-3" />
                           +{challenge.point.toLocaleString()}P
                         </span>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {filteredChallenges.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 sm:py-20">
-            <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-[#e5e8eb] mb-3 sm:mb-4" />
-            <p className="text-[14px] sm:text-base text-[#8b95a1]">
-              {challenges.length === 0 ? '등록된 챌린지가 없습니다' : '해당 카테고리의 챌린지가 없습니다'}
-            </p>
+                  <div className="mt-auto">
+                    <p className="line-clamp-2 text-sm text-gray-500 mb-4 h-10">
+                      {challenge.description}
+                    </p>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">진행률</span>
+                        <span className="font-bold text-gray-900">{Math.min(progress, 100)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-emerald-500' : 'bg-blue-600'
+                            }`}
+                          style={{ width: `${Math.min(progress, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
+
+          {filteredChallenges.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+                <Trophy className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">
+                {challenges.length === 0 ? '등록된 챌린지가 없습니다' : '해당 카테고리의 챌린지가 없습니다'}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">다른 카테고리를 선택하거나 나중에 다시 확인해주세요.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
