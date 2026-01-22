@@ -139,6 +139,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setCounts({
           posts: postsRes.pagination.totalItems,
           comments: commentsRes.meta.totalItems,
+          bookmarks: 0,
         });
 
         await fetchGithubData();

@@ -63,7 +63,7 @@ function toPercentageSpel(python: string, variables: string[]): string {
   if (!python.trim()) return '';
 
   // 먼저 기본 SpEL 변환
-  let spel = pythonToSpel(python, variables);
+  const spel = pythonToSpel(python, variables);
 
   // 조건식 패턴 분석
   // 패턴 1: 변수 >= 목표값 → min(변수 * 100 / 목표값, 100)
@@ -74,7 +74,7 @@ function toPercentageSpel(python: string, variables: string[]): string {
   const singleCompareMatch = spel.match(/^(#\w+(?:\['[^']+'\])?)\s*(>=|<=|>|<|==)\s*(\d+(?:\.\d+)?)$/);
 
   if (singleCompareMatch) {
-    const [, variable, operator, targetStr] = singleCompareMatch;
+    const [, variable, , targetStr] = singleCompareMatch;
     const target = parseFloat(targetStr);
 
     if (target > 0) {
