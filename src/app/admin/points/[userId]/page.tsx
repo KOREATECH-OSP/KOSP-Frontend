@@ -318,8 +318,8 @@ export default function AdminPointDetailPage() {
                         </td>
                       </tr>
                     ) : (
-                      pointHistory.transactions.map((tx: PointTransaction) => (
-                        <tr key={tx.id} className="hover:bg-gray-50">
+                      pointHistory.transactions.map((tx: PointTransaction, index: number) => (
+                        <tr key={`${tx.id}-${index}`} className="hover:bg-gray-50">
                           <td className="whitespace-nowrap px-6 py-3 text-sm text-gray-600">
                             {formatDate(tx.createdAt)}
                           </td>
