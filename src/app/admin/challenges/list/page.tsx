@@ -93,22 +93,43 @@ export default function ChallengesListPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  const getCategoryBadgeColor = (category: string) => {
-    const lowerCategory = category?.toLowerCase() || '';
-    if (lowerCategory.includes('contribution') || lowerCategory.includes('기여')) {
-      return 'bg-blue-100 text-blue-700';
+  const getTierStyle = (tier: number) => {
+    switch (tier) {
+      case 1:
+        return 'bg-amber-100 text-amber-800'; // 브론즈
+      case 2:
+        return 'bg-gray-200 text-gray-700'; // 실버
+      case 3:
+        return 'bg-yellow-100 text-yellow-700'; // 골드
+      case 4:
+        return 'bg-emerald-100 text-emerald-700'; // 플래티넘
+      case 5:
+        return 'bg-sky-100 text-sky-700'; // 다이아몬드
+      case 6:
+        return 'bg-rose-100 text-rose-700'; // 루비
+      default:
+        return 'bg-gray-100 text-gray-700';
     }
-    if (lowerCategory.includes('learning') || lowerCategory.includes('학습')) {
-      return 'bg-green-100 text-green-700';
-    }
-    if (lowerCategory.includes('community') || lowerCategory.includes('커뮤니티')) {
-      return 'bg-purple-100 text-purple-700';
-    }
-    return 'bg-gray-100 text-gray-700';
   };
 
-  // 카테고리 목록 추출
-  const categories = Array.from(new Set(challenges.map((c) => c.category).filter(Boolean)));
+  const getTierLabel = (tier: number) => {
+    switch (tier) {
+      case 1:
+        return '브론즈';
+      case 2:
+        return '실버';
+      case 3:
+        return '골드';
+      case 4:
+        return '플래티넘';
+      case 5:
+        return '다이아몬드';
+      case 6:
+        return '루비';
+      default:
+        return `Tier ${tier}`;
+    }
+  };
 
   if (status === 'loading' || loading) {
     return (
@@ -154,28 +175,10 @@ export default function ChallengesListPage() {
 
         {/* 통계 */}
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="mb-1 flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-gray-400" />
-                <span className="text-sm text-gray-500">전체 챌린지</span>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{challenges.length}개</p>
-            </div>
-            {categories.length > 0 && (
-              <div className="flex gap-4">
-                {categories.map((category) => (
-                  <div key={category} className="text-center">
-                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getCategoryBadgeColor(category)}`}>
-                      {category}
-                    </span>
-                    <p className="mt-1 text-lg font-bold text-gray-900">
-                      {challenges.filter((c) => c.category === category).length}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-gray-400" />
+            <span className="text-sm text-gray-500">전체 챌린지</span>
+            <p className="text-2xl font-bold text-gray-900">{challenges.length}개</p>
           </div>
         </div>
 
@@ -244,8 +247,8 @@ export default function ChallengesListPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getCategoryBadgeColor(challenge.category)}`}>
-                          {challenge.category || '-'}
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getTierStyle(challenge.tier)}`}>
+                          {getTierLabel(challenge.tier)}
                         </span>
                         <span className="truncate font-medium text-gray-900">{challenge.name}</span>
                       </div>

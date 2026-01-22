@@ -107,7 +107,7 @@ export default function EditNoticePage() {
   if (loading) {
     return (
       <div className="p-6 md:p-8">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-gray-300 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -121,7 +121,7 @@ export default function EditNoticePage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
           <button

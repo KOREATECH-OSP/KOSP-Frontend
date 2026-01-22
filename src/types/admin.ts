@@ -114,7 +114,6 @@ export interface AdminChallengeResponse {
   name: string;
   description: string;
   condition: string;
-  category: string;
   tier: number;
   imageUrl: string;
   point: number;
@@ -132,7 +131,6 @@ export interface AdminChallengeCreateRequest {
   name: string;
   description: string;
   condition: string;
-  category: string;
   tier: number;
   imageUrl: string;
   point: number;
@@ -144,7 +142,6 @@ export interface AdminChallengeUpdateRequest {
   name: string;
   description: string;
   condition: string;
-  category: string;
   tier: number;
   imageUrl: string;
   point: number;

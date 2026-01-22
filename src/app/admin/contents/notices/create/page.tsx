@@ -81,9 +81,9 @@ export default function CreateNoticePage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
-        <div className="mb-8">
+        <div className="mb-6">
           <button
             onClick={() => router.back()}
             className="mb-4 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900"
@@ -91,8 +91,8 @@ export default function CreateNoticePage() {
             <ArrowLeft className="h-4 w-4" />
             목록으로
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">공지사항 작성</h1>
-          <p className="mt-1 text-sm text-gray-500">새로운 공지사항을 작성합니다</p>
+          <h1 className="text-xl font-bold text-gray-900">공지사항 작성</h1>
+          <p className="mt-0.5 text-sm text-gray-500">새로운 공지사항을 작성합니다</p>
         </div>
 
         {/* 폼 */}

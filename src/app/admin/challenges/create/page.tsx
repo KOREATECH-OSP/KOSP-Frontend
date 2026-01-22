@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Trophy, Loader2, Image as ImageIcon } from 'lucide-react';
-import { createAdminChallenge } from '@/lib/api/admin';
+import { ArrowLeft, Trophy, Loader2, Image as ImageIcon, Code, ChevronDown, ChevronUp } from 'lucide-react';
+import { createAdminChallenge, getSpelVariables, type SpelVariable, type SpelExample } from '@/lib/api/admin';
 import type { AdminChallengeCreateRequest } from '@/types/admin';
 import { toast } from '@/lib/toast';
+import SpelEditor from '@/common/components/SpelEditor';
 
 export default function CreateChallengePage() {
   const router = useRouter();
@@ -16,14 +17,35 @@ export default function CreateChallengePage() {
     name: '',
     description: '',
     condition: '',
-    category: '',
-    tier: 0,
+    tier: 1,
     imageUrl: '',
     point: 0,
     maxProgress: 0,
     progressField: '',
   });
+  const [pythonCode, setPythonCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [spelVariables, setSpelVariables] = useState<SpelVariable[]>([]);
+  const [spelExamples, setSpelExamples] = useState<SpelExample[]>([]);
+  const [showVariables, setShowVariables] = useState(true);
+
+  // SpEL 변수 목록 가져오기
+  const fetchSpelVariables = useCallback(async () => {
+    if (!session?.accessToken) return;
+    try {
+      const data = await getSpelVariables({ accessToken: session.accessToken });
+      setSpelVariables(data.variables || []);
+      setSpelExamples(data.examples || []);
+    } catch (error) {
+      console.error('Failed to fetch SpEL variables:', error);
+    }
+  }, [session?.accessToken]);
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      fetchSpelVariables();
+    }
+  }, [session?.accessToken, fetchSpelVariables]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +56,7 @@ export default function CreateChallengePage() {
       return;
     }
 
-    if (!formData.name || !formData.description || !formData.condition || !formData.category || !formData.progressField) {
+    if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
       toast.error('모든 필수 필드를 입력해주세요.');
       return;
     }
@@ -52,20 +74,46 @@ export default function CreateChallengePage() {
     }
   };
 
-  const insertSpELExample = (example: string) => {
-    setFormData({ ...formData, condition: example });
+  const insertPythonExample = (example: string) => {
+    setPythonCode(example);
   };
 
-  const getTierBadgeColor = (tier: number) => {
-    const colors = [
-      'bg-gray-100 text-gray-700',
-      'bg-green-100 text-green-700',
-      'bg-blue-100 text-blue-700',
-      'bg-purple-100 text-purple-700',
-      'bg-orange-100 text-orange-700',
-      'bg-red-100 text-red-700',
-    ];
-    return colors[tier] || colors[0];
+  const getTierStyle = (tier: number) => {
+    switch (tier) {
+      case 1:
+        return 'bg-amber-100 text-amber-800'; // 브론즈
+      case 2:
+        return 'bg-gray-200 text-gray-700'; // 실버
+      case 3:
+        return 'bg-yellow-100 text-yellow-700'; // 골드
+      case 4:
+        return 'bg-emerald-100 text-emerald-700'; // 플래티넘
+      case 5:
+        return 'bg-sky-100 text-sky-700'; // 다이아몬드
+      case 6:
+        return 'bg-rose-100 text-rose-700'; // 루비
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getTierLabel = (tier: number) => {
+    switch (tier) {
+      case 1:
+        return '브론즈';
+      case 2:
+        return '실버';
+      case 3:
+        return '골드';
+      case 4:
+        return '플래티넘';
+      case 5:
+        return '다이아몬드';
+      case 6:
+        return '루비';
+      default:
+        return `Tier ${tier}`;
+    }
   };
 
   if (status === 'loading') {
@@ -83,9 +131,9 @@ export default function CreateChallengePage() {
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
-        <div className="mb-8">
+        <div className="mb-6">
           <button
             onClick={() => router.back()}
             className="mb-4 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900"
@@ -93,8 +141,8 @@ export default function CreateChallengePage() {
             <ArrowLeft className="h-4 w-4" />
             목록으로
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">챌린지 생성</h1>
-          <p className="mt-1 text-sm text-gray-500">새로운 챌린지를 생성합니다</p>
+          <h1 className="text-xl font-bold text-gray-900">챌린지 생성</h1>
+          <p className="mt-0.5 text-sm text-gray-500">새로운 챌린지를 생성합니다</p>
         </div>
 
         {/* 폼 */}
@@ -132,24 +180,6 @@ export default function CreateChallengePage() {
                   className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}
                 />
-              </div>
-
-              {/* 카테고리 */}
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  카테고리 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                  disabled={submitting}
-                >
-                  <option value="">카테고리 선택</option>
-                  <option value="contribution">기여 (Contribution)</option>
-                  <option value="learning">학습 (Learning)</option>
-                  <option value="community">커뮤니티 (Community)</option>
-                </select>
               </div>
 
               {/* 이미지 URL */}
@@ -194,49 +224,96 @@ export default function CreateChallengePage() {
             <h2 className="mb-5 text-lg font-semibold text-gray-900">달성 조건 (SpEL)</h2>
 
             <div className="space-y-5">
+              {/* SpEL 변수 목록 */}
+              {spelVariables.length > 0 && (
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowVariables(!showVariables)}
+                    className="flex w-full items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">사용 가능한 변수</span>
+                      <span className="rounded-full bg-blue-200 px-2 py-0.5 text-xs font-medium text-blue-700">
+                        {spelVariables.length}개
+                      </span>
+                    </div>
+                    {showVariables ? (
+                      <ChevronUp className="h-4 w-4 text-blue-600" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-blue-600" />
+                    )}
+                  </button>
+                  {showVariables && (
+                    <div className="mt-3 space-y-2">
+                      {spelVariables.map((variable, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 rounded-lg bg-white p-2.5 text-sm"
+                        >
+                          <code className="shrink-0 rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-800">
+                            {variable.path.replace('#', '')}
+                          </code>
+                          <span className="text-gray-600">{variable.description}</span>
+                          <span className="ml-auto shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                            {variable.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* SpEL 표현식 */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
-                  SpEL 표현식 <span className="text-red-500">*</span>
+                  조건식 (Python 스타일, 0~100% 백분율) <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  value={formData.condition}
-                  onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
-                  placeholder="#progressField >= 10"
-                  rows={2}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 font-mono text-sm transition-colors focus:border-gray-400 focus:outline-none"
+                <SpelEditor
+                  value={pythonCode}
+                  onChange={setPythonCode}
+                  onSpelChange={(spel) => setFormData({ ...formData, condition: spel })}
                   disabled={submitting}
+                  variables={spelVariables.map(v => v.path.replace('#', ''))}
                 />
-                <p className="mt-1.5 text-xs text-gray-500">
-                  progressField 변수를 사용하여 조건을 작성하세요
-                </p>
               </div>
 
-              {/* SpEL 예시 */}
+              {/* Python 예시 */}
               <div className="rounded-xl bg-gray-50 p-4">
                 <p className="mb-3 text-xs font-medium text-gray-500">예시 (클릭하여 입력)</p>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => insertSpELExample('#progressField >= 10')}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    #progressField &gt;= 10
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertSpELExample('#progressField == 100')}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    #progressField == 100
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertSpELExample('#progressField >= 7 && #progressField <= 30')}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
-                  >
-                    #progressField &gt;= 7 &amp;&amp; #progressField &lt;= 30
-                  </button>
+                  {spelExamples.length > 0 ? (
+                    spelExamples.map((example, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => insertPythonExample(example.condition.replace(/#/g, '').replace(/&&/g, 'and').replace(/\|\|/g, 'or'))}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                        title={example.description}
+                      >
+                        {example.description}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => insertPythonExample('progressField >= 50')}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                      >
+                        progressField &gt;= 50
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertPythonExample('progressField == 100')}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                      >
+                        progressField == 100
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -292,16 +369,16 @@ export default function CreateChallengePage() {
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                     disabled={submitting}
                   >
-                    {[0, 1, 2, 3, 4, 5].map((tier) => (
+                    {[1, 2, 3, 4, 5, 6].map((tier) => (
                       <option key={tier} value={tier}>
-                        Tier {tier} {tier === 0 ? '(쉬움)' : tier === 5 ? '(매우 어려움)' : ''}
+                        {getTierLabel(tier)}
                       </option>
                     ))}
                   </select>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">선택됨:</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getTierBadgeColor(formData.tier)}`}>
-                      Tier {formData.tier}
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getTierStyle(formData.tier)}`}>
+                      {getTierLabel(formData.tier)}
                     </span>
                   </div>
                 </div>
@@ -317,7 +394,7 @@ export default function CreateChallengePage() {
                   min="0"
                   step="10"
                   value={formData.point}
-                  onChange={(e) => setFormData({ ...formData, point: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, point: Math.max(0, Number(e.target.value)) })}
                   placeholder="100"
                   className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}

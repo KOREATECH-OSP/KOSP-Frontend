@@ -403,6 +403,34 @@ export async function deleteAdminChallenge(
   });
 }
 
+/**
+ * SpEL 변수 목록 조회
+ */
+export interface SpelVariable {
+  path: string;
+  description: string;
+  type: string;
+}
+
+export interface SpelExample {
+  condition: string;
+  description: string;
+}
+
+export interface SpelVariablesResponse {
+  variables: SpelVariable[];
+  examples: SpelExample[];
+}
+
+export async function getSpelVariables(
+  auth: AuthOptions
+): Promise<SpelVariablesResponse> {
+  return clientApiClient<SpelVariablesResponse>('/v1/admin/challenges/spel-variables', {
+    method: 'GET',
+    accessToken: auth.accessToken,
+  });
+}
+
 // ============================================
 // Notice Management APIs
 // ============================================

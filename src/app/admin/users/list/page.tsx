@@ -27,6 +27,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserResponse[]>([]);
   const [roles, setRoles] = useState<RoleResponse[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [excludeDeleted, setExcludeDeleted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -75,6 +76,9 @@ export default function AdminUsersPage() {
 
   // 클라이언트 측 검색 필터링
   const filteredUsers = users.filter((user) => {
+    // 탈퇴 회원 제외 필터
+    if (excludeDeleted && user.isDeleted) return false;
+
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -145,9 +149,18 @@ export default function AdminUsersPage() {
             </p>
           </div>
 
-          {/* 검색 */}
-          <div className="w-full sm:w-72">
-            <div className="relative">
+          {/* 검색 및 필터 */}
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={excludeDeleted}
+                onChange={(e) => setExcludeDeleted(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+              />
+              탈퇴 회원 제외
+            </label>
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"

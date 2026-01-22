@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { ArrowLeft, Trophy, Lightbulb, Save } from 'lucide-react';
-import { getAdminChallenge, updateAdminChallenge } from '@/lib/api/admin';
+import { ArrowLeft, Trophy, Lightbulb, Save, Code, ChevronDown, ChevronUp } from 'lucide-react';
+import { getAdminChallenge, updateAdminChallenge, getSpelVariables, type SpelVariable, type SpelExample } from '@/lib/api/admin';
 import type { AdminChallengeUpdateRequest } from '@/types/admin';
 import { toast } from '@/lib/toast';
+import SpelEditor from '@/common/components/SpelEditor';
 
 export default function EditChallengePage() {
   const router = useRouter();
@@ -17,17 +18,62 @@ export default function EditChallengePage() {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [pythonCode, setPythonCode] = useState('');
+  const [spelVariables, setSpelVariables] = useState<SpelVariable[]>([]);
+  const [spelExamples, setSpelExamples] = useState<SpelExample[]>([]);
+  const [showVariables, setShowVariables] = useState(true);
   const [formData, setFormData] = useState<AdminChallengeUpdateRequest>({
     name: '',
     description: '',
     condition: '',
-    category: '',
     tier: 0,
     imageUrl: '',
     point: 0,
     maxProgress: 0,
     progressField: '',
   });
+
+  // SpEL 변수 목록 가져오기
+  const fetchSpelVariables = useCallback(async () => {
+    if (!session?.accessToken) return;
+    try {
+      const data = await getSpelVariables({ accessToken: session.accessToken });
+      setSpelVariables(data.variables || []);
+      setSpelExamples(data.examples || []);
+    } catch (error) {
+      console.error('Failed to fetch SpEL variables:', error);
+    }
+  }, [session?.accessToken]);
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      fetchSpelVariables();
+    }
+  }, [session?.accessToken, fetchSpelVariables]);
+
+  // SpEL을 Python으로 역변환 (소수를 백분율로)
+  const spelToPython = (spel: string): string => {
+    if (!spel.trim()) return '';
+    let python = spel;
+
+    // #progressField 와 소수 값을 백분율로 변환
+    // #progressField >= 0.5 -> progressField >= 50
+    python = python.replace(/#(progressField)\s*(>=|<=|>|<|==|!=)\s*(0?\.\d+|\d+(?:\.\d+)?)/g, (match, variable, operator, value) => {
+      const floatValue = parseFloat(value);
+      // 1 이하의 소수는 백분율로 변환
+      const percentValue = floatValue <= 1 ? Math.round(floatValue * 100) : floatValue;
+      return `${variable} ${operator} ${percentValue}`;
+    });
+
+    // 나머지 # 제거
+    python = python.replace(/#(activity|user|commits|posts|comments|attendance)/g, '$1');
+    python = python.replace(/&&/g, 'and');
+    python = python.replace(/\|\|/g, 'or');
+    python = python.replace(/!/g, 'not ');
+    python = python.replace(/\btrue\b/g, 'True');
+    python = python.replace(/\bfalse\b/g, 'False');
+    return python;
+  };
 
   const fetchChallenge = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -39,13 +85,14 @@ export default function EditChallengePage() {
         name: data.name,
         description: data.description,
         condition: data.condition,
-        category: data.category || '',
         tier: data.tier,
         imageUrl: data.imageUrl,
         point: data.point,
         maxProgress: data.maxProgress,
         progressField: data.progressField,
       });
+      // SpEL을 Python으로 역변환하여 에디터에 표시
+      setPythonCode(spelToPython(data.condition));
     } catch (error) {
       console.error('Failed to fetch challenge:', error);
       toast.error('챌린지 정보를 불러오는데 실패했습니다.');
@@ -53,7 +100,7 @@ export default function EditChallengePage() {
     } finally {
       setLoading(false);
     }
-  }, [id, session?.accessToken, router]);
+  }, [id, session?.accessToken, router, spelToPython]);
 
   useEffect(() => {
     if (id && session?.accessToken) {
@@ -66,7 +113,7 @@ export default function EditChallengePage() {
 
     if (!session?.accessToken) return;
 
-    if (!formData.name || !formData.description || !formData.condition || !formData.category || !formData.progressField) {
+    if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
       toast.error('모든 필수 항목을 입력해주세요.');
       return;
     }
@@ -85,8 +132,46 @@ export default function EditChallengePage() {
     }
   };
 
-  const handleSpelExample = (example: string) => {
-    setFormData({ ...formData, condition: example });
+  const insertPythonExample = (example: string) => {
+    setPythonCode(example);
+  };
+
+  const getTierStyle = (tier: number) => {
+    switch (tier) {
+      case 1:
+        return 'bg-amber-100 text-amber-800'; // 브론즈
+      case 2:
+        return 'bg-gray-200 text-gray-700'; // 실버
+      case 3:
+        return 'bg-yellow-100 text-yellow-700'; // 골드
+      case 4:
+        return 'bg-emerald-100 text-emerald-700'; // 플래티넘
+      case 5:
+        return 'bg-sky-100 text-sky-700'; // 다이아몬드
+      case 6:
+        return 'bg-rose-100 text-rose-700'; // 루비
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getTierLabel = (tier: number) => {
+    switch (tier) {
+      case 1:
+        return '브론즈';
+      case 2:
+        return '실버';
+      case 3:
+        return '골드';
+      case 4:
+        return '플래티넘';
+      case 5:
+        return '다이아몬드';
+      case 6:
+        return '루비';
+      default:
+        return `Tier ${tier}`;
+    }
   };
 
   if (loading) {
@@ -159,24 +244,6 @@ export default function EditChallengePage() {
                 />
               </div>
 
-              {/* 카테고리 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  카테고리 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
-                  disabled={submitting}
-                >
-                  <option value="">카테고리 선택</option>
-                  <option value="contribution">기여 (Contribution)</option>
-                  <option value="learning">학습 (Learning)</option>
-                  <option value="community">커뮤니티 (Community)</option>
-                </select>
-              </div>
-
               {/* 이미지 URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -217,60 +284,99 @@ export default function EditChallengePage() {
               달성 조건 (SpEL)
             </h2>
             <div className="space-y-4">
-              {/* SpEL 표현식 */}
+              {/* SpEL 변수 목록 */}
+              {spelVariables.length > 0 && (
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowVariables(!showVariables)}
+                    className="flex w-full items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">사용 가능한 변수</span>
+                      <span className="rounded-full bg-blue-200 px-2 py-0.5 text-xs font-medium text-blue-700">
+                        {spelVariables.length}개
+                      </span>
+                    </div>
+                    {showVariables ? (
+                      <ChevronUp className="h-4 w-4 text-blue-600" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-blue-600" />
+                    )}
+                  </button>
+                  {showVariables && (
+                    <div className="mt-3 space-y-2">
+                      {spelVariables.map((variable, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 rounded-lg bg-white p-2.5 text-sm"
+                        >
+                          <code className="shrink-0 rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-800">
+                            {variable.path.replace('#', '')}
+                          </code>
+                          <span className="text-gray-600">{variable.description}</span>
+                          <span className="ml-auto shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                            {variable.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 조건식 (Python) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  SpEL 표현식 <span className="text-red-500">*</span>
+                  조건식 (Python 스타일, 0~100% 백분율) <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.condition}
-                  onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
-                  placeholder="예: #progressField >= 100"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none font-mono"
+                <SpelEditor
+                  value={pythonCode}
+                  onChange={setPythonCode}
+                  onSpelChange={(spel) => setFormData({ ...formData, condition: spel })}
                   disabled={submitting}
+                  variables={spelVariables.map(v => v.path.replace('#', ''))}
                 />
-                <p className="mt-2 text-xs text-gray-500">
-                  #progressField 변수를 사용하여 조건을 작성하세요
-                </p>
               </div>
 
-              {/* SpEL 예시 버튼 */}
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">빠른 입력:</p>
+              {/* Python 예시 버튼 */}
+              <div className="rounded-xl bg-gray-50 p-4">
+                <p className="mb-3 text-xs font-medium text-gray-500">예시 (클릭하여 입력)</p>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSpelExample('#progressField >= 10')}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                    disabled={submitting}
-                  >
-                    10 이상
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSpelExample('#progressField >= 50')}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                    disabled={submitting}
-                  >
-                    50 이상
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSpelExample('#progressField >= 100')}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                    disabled={submitting}
-                  >
-                    100 이상
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSpelExample('#progressField == 100')}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                    disabled={submitting}
-                  >
-                    정확히 100
-                  </button>
+                  {spelExamples.length > 0 ? (
+                    spelExamples.map((example, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => insertPythonExample(example.condition.replace(/#/g, '').replace(/&&/g, 'and').replace(/\|\|/g, 'or'))}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                        title={example.description}
+                        disabled={submitting}
+                      >
+                        {example.description}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => insertPythonExample('progressField >= 50')}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                        disabled={submitting}
+                      >
+                        progressField &gt;= 50
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertPythonExample('progressField == 100')}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                        disabled={submitting}
+                      >
+                        progressField == 100
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -319,19 +425,26 @@ export default function EditChallengePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   난이도 (Tier) <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.tier}
-                  onChange={(e) => setFormData({ ...formData, tier: Number(e.target.value) })}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
-                  disabled={submitting}
-                >
-                  <option value={0}>Tier 0 (가장 쉬움)</option>
-                  <option value={1}>Tier 1</option>
-                  <option value={2}>Tier 2</option>
-                  <option value={3}>Tier 3</option>
-                  <option value={4}>Tier 4</option>
-                  <option value={5}>Tier 5 (가장 어려움)</option>
-                </select>
+                <div className="space-y-2">
+                  <select
+                    value={formData.tier}
+                    onChange={(e) => setFormData({ ...formData, tier: Number(e.target.value) })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
+                    disabled={submitting}
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((tier) => (
+                      <option key={tier} value={tier}>
+                        {getTierLabel(tier)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">선택됨:</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getTierStyle(formData.tier)}`}>
+                      {getTierLabel(formData.tier)}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Point */}
@@ -342,7 +455,7 @@ export default function EditChallengePage() {
                 <input
                   type="number"
                   value={formData.point}
-                  onChange={(e) => setFormData({ ...formData, point: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, point: Math.max(0, Number(e.target.value)) })}
                   placeholder="100"
                   min="0"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
