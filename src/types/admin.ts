@@ -115,10 +115,8 @@ export interface AdminChallengeResponse {
   description: string;
   condition: string;
   tier: number;
-  imageUrl: string;
+  imageUrl?: string;
   point: number;
-  maxProgress: number;
-  progressField: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -132,10 +130,8 @@ export interface AdminChallengeCreateRequest {
   description: string;
   condition: string;
   tier: number;
-  imageUrl: string;
+  imageUrl?: string;
   point: number;
-  maxProgress: number;
-  progressField: string;
 }
 
 export interface AdminChallengeUpdateRequest {
@@ -143,10 +139,8 @@ export interface AdminChallengeUpdateRequest {
   description: string;
   condition: string;
   tier: number;
-  imageUrl: string;
+  imageUrl?: string;
   point: number;
-  maxProgress: number;
-  progressField: string;
 }
 
 // ============================================

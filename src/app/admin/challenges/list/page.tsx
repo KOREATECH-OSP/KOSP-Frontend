@@ -254,7 +254,6 @@ export default function ChallengesListPage() {
                       </div>
                       <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
                         <span>{challenge.point}P</span>
-                        <span>목표: {challenge.maxProgress}</span>
                         <span className="truncate">{challenge.description}</span>
                       </div>
                     </div>

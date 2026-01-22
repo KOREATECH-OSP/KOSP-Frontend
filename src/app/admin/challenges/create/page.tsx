@@ -20,8 +20,6 @@ export default function CreateChallengePage() {
     tier: 1,
     imageUrl: '',
     point: 0,
-    maxProgress: 0,
-    progressField: '',
   });
   const [pythonCode, setPythonCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -56,7 +54,7 @@ export default function CreateChallengePage() {
       return;
     }
 
-    if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
+    if (!formData.name || !formData.description || !formData.condition) {
       toast.error('모든 필수 필드를 입력해주세요.');
       return;
     }
@@ -329,38 +327,6 @@ export default function CreateChallengePage() {
                 </div>
               </div>
 
-              {/* Progress Field & Max Progress */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    진행도 필드명 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.progressField}
-                    onChange={(e) => setFormData({ ...formData, progressField: e.target.value })}
-                    placeholder="attendance_days"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 font-mono text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                    disabled={submitting}
-                  />
-                  <p className="mt-1.5 text-xs text-gray-500">예: attendance_days, post_count</p>
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    최대 진행도 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.maxProgress}
-                    onChange={(e) => setFormData({ ...formData, maxProgress: Number(e.target.value) })}
-                    placeholder="10"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                    disabled={submitting}
-                  />
-                  <p className="mt-1.5 text-xs text-gray-500">목표 값 (진행률 표시용)</p>
-                </div>
-              </div>
             </div>
           </div>
 

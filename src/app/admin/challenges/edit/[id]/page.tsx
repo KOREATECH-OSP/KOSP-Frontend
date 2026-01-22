@@ -29,8 +29,6 @@ export default function EditChallengePage() {
     tier: 1,
     imageUrl: '',
     point: 0,
-    maxProgress: 0,
-    progressField: '',
   });
 
   // SpEL 변수 목록 가져오기
@@ -86,10 +84,8 @@ export default function EditChallengePage() {
         description: data.description,
         condition: data.condition,
         tier: data.tier,
-        imageUrl: data.imageUrl,
+        imageUrl: data.imageUrl || '',
         point: data.point,
-        maxProgress: data.maxProgress,
-        progressField: data.progressField,
       });
       // SpEL을 Python으로 역변환하여 에디터에 표시
       setPythonCode(spelToPython(data.condition));
@@ -117,7 +113,7 @@ export default function EditChallengePage() {
       return;
     }
 
-    if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
+    if (!formData.name || !formData.description || !formData.condition) {
       toast.error('모든 필수 필드를 입력해주세요.');
       return;
     }
@@ -394,38 +390,6 @@ export default function EditChallengePage() {
                 </div>
               </div>
 
-              {/* Progress Field & Max Progress */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    진행도 필드명 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.progressField}
-                    onChange={(e) => setFormData({ ...formData, progressField: e.target.value })}
-                    placeholder="attendance_days"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 font-mono text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                    disabled={submitting}
-                  />
-                  <p className="mt-1.5 text-xs text-gray-500">예: attendance_days, post_count</p>
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    최대 진행도 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.maxProgress}
-                    onChange={(e) => setFormData({ ...formData, maxProgress: Number(e.target.value) })}
-                    placeholder="10"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                    disabled={submitting}
-                  />
-                  <p className="mt-1.5 text-xs text-gray-500">목표 값 (진행률 표시용)</p>
-                </div>
-              </div>
             </div>
           </div>
 
