@@ -71,12 +71,20 @@ export async function checkMemberId(id: string): Promise<CheckMemberIdResponse> 
   return clientApiClient<CheckMemberIdResponse>(`/v1/auth/verify/identity?id=${encodeURIComponent(id)}`);
 }
 
-export async function reissueToken(refreshToken: string): Promise<AuthTokenResponse> {
+export async function reissueToken(
+  refreshToken: string,
+  accessToken?: string
+): Promise<AuthTokenResponse> {
+  const headers: Record<string, string> = {
+    'X-Refresh-Token': refreshToken,
+  };
+  if (accessToken) {
+    headers['X-Access-Token'] = accessToken;
+  }
+
   return clientApiClient<AuthTokenResponse>('/v1/auth/reissue', {
     method: 'POST',
-    headers: {
-      'X-Refresh-Token': refreshToken,
-    },
+    headers,
   });
 }
 

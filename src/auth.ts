@@ -55,7 +55,10 @@ function getTokenIssuedAt(token: string): number | null {
 // 토큰 갱신 함수
 // 주의: 서버리스 환경에서는 모듈 레벨 변수가 요청 간 공유되지 않으므로
 // 락 메커니즘 대신 JWT 만료 시간 기반으로 갱신 여부를 결정합니다.
-async function refreshAccessToken(refreshToken: string): Promise<{
+async function refreshAccessToken(
+  refreshToken: string,
+  accessToken?: string
+): Promise<{
   accessToken: string;
   refreshToken: string;
   accessTokenExpires: number;
@@ -63,11 +66,16 @@ async function refreshAccessToken(refreshToken: string): Promise<{
   accessTokenTtl?: number;
 } | null> {
   try {
+    const headers: Record<string, string> = {
+      'X-Refresh-Token': refreshToken,
+    };
+    if (accessToken) {
+      headers['X-Access-Token'] = accessToken;
+    }
+
     const response = await fetch(`${API_BASE_URL}/v1/auth/reissue`, {
       method: 'POST',
-      headers: {
-        'X-Refresh-Token': refreshToken,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -295,7 +303,8 @@ export const authConfig: NextAuthConfig = {
         return { ...token, error: 'RefreshTokenMissing' };
       }
 
-      const refreshedTokens = await refreshAccessToken(refreshToken);
+      const currentAccessToken = token.accessToken as string | undefined;
+      const refreshedTokens = await refreshAccessToken(refreshToken, currentAccessToken);
       if (!refreshedTokens) {
         // 갱신 실패 - 재로그인 필요
         return { ...token, error: 'RefreshTokenExpired' };

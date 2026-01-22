@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './config';
 import { signOutOnce } from '@/lib/auth/signout';
+import { getSession } from 'next-auth/react';
 
 export interface ApiError {
   status: number;
@@ -92,7 +93,8 @@ export async function apiClient<T>(
 
 export async function clientApiClient<T>(
   endpoint: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
+  isRetry: boolean = false
 ): Promise<T> {
   const { method = 'GET', body, headers = {}, cache, accessToken } = options;
 
@@ -116,7 +118,28 @@ export async function clientApiClient<T>(
   if (!response.ok) {
     const errorText = await response.text();
 
-    if (response.status === 401) {
+    // 401 에러 시 토큰 갱신 후 재시도 (한 번만)
+    if (response.status === 401 && !isRetry) {
+      try {
+        // 세션 갱신 시도 (NextAuth가 JWT callback에서 토큰 갱신)
+        const newSession = await getSession();
+
+        if (newSession?.accessToken && !newSession?.error) {
+          // 갱신된 토큰으로 재시도
+          return clientApiClient<T>(
+            endpoint,
+            {
+              ...options,
+              accessToken: newSession.accessToken,
+            },
+            true
+          );
+        }
+      } catch {
+        // 세션 갱신 실패 시 로그아웃
+      }
+
+      // 갱신 실패 또는 재시도 실패 시 로그아웃
       signOutOnce({
         callbackUrl: '/login',
         toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
