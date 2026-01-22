@@ -104,7 +104,7 @@ export default function ChallengePage() {
   // 로그인 안 된 경우
   if (status === 'unauthenticated') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-gray-50">
         <div className="relative mb-6">
           <Image
             src={KoriDistImage}
