@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { ArrowLeft, Trophy, Lightbulb, Save, Code, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Trophy, Loader2, Image as ImageIcon, Code, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { getAdminChallenge, updateAdminChallenge, getSpelVariables, type SpelVariable, type SpelExample } from '@/lib/api/admin';
 import type { AdminChallengeUpdateRequest } from '@/types/admin';
 import { toast } from '@/lib/toast';
@@ -13,7 +13,7 @@ import SpelEditor from '@/common/components/SpelEditor';
 export default function EditChallengePage() {
   const router = useRouter();
   const params = useParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const id = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,7 @@ export default function EditChallengePage() {
     name: '',
     description: '',
     condition: '',
-    tier: 0,
+    tier: 1,
     imageUrl: '',
     point: 0,
     maxProgress: 0,
@@ -52,7 +52,7 @@ export default function EditChallengePage() {
   }, [session?.accessToken, fetchSpelVariables]);
 
   // SpEL을 Python으로 역변환 (소수를 백분율로)
-  const spelToPython = (spel: string): string => {
+  const spelToPython = useCallback((spel: string): string => {
     if (!spel.trim()) return '';
     let python = spel;
 
@@ -73,7 +73,7 @@ export default function EditChallengePage() {
     python = python.replace(/\btrue\b/g, 'True');
     python = python.replace(/\bfalse\b/g, 'False');
     return python;
-  };
+  }, []);
 
   const fetchChallenge = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -111,10 +111,14 @@ export default function EditChallengePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!session?.accessToken) return;
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
 
     if (!formData.name || !formData.description || !formData.condition || !formData.progressField) {
-      toast.error('모든 필수 항목을 입력해주세요.');
+      toast.error('모든 필수 필드를 입력해주세요.');
       return;
     }
 
@@ -174,32 +178,30 @@ export default function EditChallengePage() {
     }
   };
 
-  if (loading) {
+  if (status === 'loading' || loading) {
     return (
-      <div className="p-6 md:p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-gray-300 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">로딩 중...</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
 
+  if (status === 'unauthenticated') {
+    router.push('/login');
+    return null;
+  }
+
   return (
     <div className="p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
         <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            className="mb-4 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span>뒤로 가기</span>
+            <ArrowLeft className="h-4 w-4" />
+            목록으로
           </button>
           <h1 className="text-xl font-bold text-gray-900">챌린지 수정</h1>
           <p className="mt-0.5 text-sm text-gray-500">챌린지 정보를 수정합니다</p>
@@ -207,83 +209,83 @@ export default function EditChallengePage() {
 
         {/* 폼 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 기본 정보 섹션 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              기본 정보
-            </h2>
-            <div className="space-y-4">
+          {/* 기본 정보 */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-5 text-lg font-semibold text-gray-900">기본 정보</h2>
+
+            <div className="space-y-5">
               {/* 챌린지 이름 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   챌린지 이름 <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="예: 커밋수 100개"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
+                  placeholder="예: 10일 연속 출석"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}
                 />
               </div>
 
               {/* 설명 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   설명 <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="챌린지에 대한 설명을 입력하세요"
+                  placeholder="사용자에게 보여질 챌린지 설명을 입력하세요"
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none resize-none"
+                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}
                 />
               </div>
 
               {/* 이미지 URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  이미지 URL
-                </label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">이미지 URL</label>
                 <input
                   type="url"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.png"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}
                 />
                 {formData.imageUrl && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-xs text-gray-500 mb-2">미리보기:</p>
-                    <Image
-                      src={formData.imageUrl}
-                      alt="Preview"
-                      width={128}
-                      height={128}
-                      className="w-32 h-32 object-cover rounded-lg"
-                      unoptimized
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
+                  <div className="mt-3 overflow-hidden rounded-xl border border-gray-200">
+                    <div className="border-b border-gray-100 bg-gray-50 px-4 py-2">
+                      <span className="text-xs font-medium text-gray-500">미리보기</span>
+                    </div>
+                    <div className="relative h-40 w-full bg-gray-100">
+                      <Image
+                        src={formData.imageUrl}
+                        alt="Preview"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-gray-300" />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* SpEL 조건식 섹션 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Lightbulb className="w-5 h-5" />
-              달성 조건 (SpEL)
-            </h2>
-            <div className="space-y-4">
+          {/* 달성 조건 */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-5 text-lg font-semibold text-gray-900">달성 조건 (SpEL)</h2>
+
+            <div className="space-y-5">
               {/* SpEL 변수 목록 */}
               {spelVariables.length > 0 && (
                 <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
@@ -326,9 +328,21 @@ export default function EditChallengePage() {
                 </div>
               )}
 
-              {/* 조건식 (Python) */}
+              {/* 조건식 안내 */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-2">
+                <p className="flex items-start gap-2">
+                  <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                  <span>한 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">activity['value'] &gt;= 1</code> 처럼 부등호로 작성 시 백분율로 환산되어 진행도가 표기됩니다.</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                  <span>두 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">activity['value1'] &gt; 10 and activity['value2'] &gt; 100</code> 처럼 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">and</code>로 작성하나 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">or</code>도 가능합니다. 둘 중 가장 가까운 것으로 백분율이 계산됩니다.</span>
+                </p>
+              </div>
+
+              {/* SpEL 표현식 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   조건식 (Python 스타일, 0~100% 백분율) <span className="text-red-500">*</span>
                 </label>
                 <SpelEditor
@@ -340,7 +354,7 @@ export default function EditChallengePage() {
                 />
               </div>
 
-              {/* Python 예시 버튼 */}
+              {/* Python 예시 */}
               <div className="rounded-xl bg-gray-50 p-4">
                 <p className="mb-3 text-xs font-medium text-gray-500">예시 (클릭하여 입력)</p>
                 <div className="flex flex-wrap gap-2">
@@ -380,56 +394,56 @@ export default function EditChallengePage() {
                 </div>
               </div>
 
-              {/* Progress Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Progress Field <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.progressField}
-                  onChange={(e) => setFormData({ ...formData, progressField: e.target.value })}
-                  placeholder="예: totalCommits"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none font-mono"
-                  disabled={submitting}
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  진행도를 추적할 필드명을 입력하세요
-                </p>
-              </div>
-
-              {/* Max Progress */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  최대 진행도 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxProgress}
-                  onChange={(e) => setFormData({ ...formData, maxProgress: Number(e.target.value) })}
-                  placeholder="100"
-                  min="0"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
-                  disabled={submitting}
-                />
+              {/* Progress Field & Max Progress */}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    진행도 필드명 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.progressField}
+                    onChange={(e) => setFormData({ ...formData, progressField: e.target.value })}
+                    placeholder="attendance_days"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 font-mono text-sm transition-colors focus:border-gray-400 focus:outline-none"
+                    disabled={submitting}
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500">예: attendance_days, post_count</p>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    최대 진행도 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.maxProgress}
+                    onChange={(e) => setFormData({ ...formData, maxProgress: Number(e.target.value) })}
+                    placeholder="10"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+                    disabled={submitting}
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500">목표 값 (진행률 표시용)</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 보상 설정 섹션 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">보상 설정</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 보상 설정 */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-5 text-lg font-semibold text-gray-900">보상 설정</h2>
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {/* Tier */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   난이도 (Tier) <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
                   <select
                     value={formData.tier}
                     onChange={(e) => setFormData({ ...formData, tier: Number(e.target.value) })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                     disabled={submitting}
                   >
                     {[1, 2, 3, 4, 5, 6].map((tier) => (
@@ -449,18 +463,20 @@ export default function EditChallengePage() {
 
               {/* Point */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   보상 포인트 <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
+                  min="0"
+                  step="10"
                   value={formData.point}
                   onChange={(e) => setFormData({ ...formData, point: Math.max(0, Number(e.target.value)) })}
                   placeholder="100"
-                  min="0"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
                   disabled={submitting}
                 />
+                <p className="mt-1.5 text-xs text-gray-500">달성 시 지급될 포인트</p>
               </div>
             </div>
           </div>
@@ -470,25 +486,25 @@ export default function EditChallengePage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               disabled={submitting}
             >
               취소
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
               disabled={submitting}
             >
               {submitting ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   수정 중...
                 </>
               ) : (
                 <>
-                  <Save className="w-5 h-5" />
-                  수정 완료
+                  <Trophy className="h-4 w-4" />
+                  챌린지 수정
                 </>
               )}
             </button>
