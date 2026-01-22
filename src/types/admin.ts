@@ -23,9 +23,13 @@ export interface PolicyResponse {
   id: number;
   name: string;
   description: string;
+}
+
+export interface PolicyDetailResponse {
+  id: number;
+  name: string;
+  description: string;
   permissions: PermissionResponse[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface PolicyListResponse {
@@ -34,7 +38,7 @@ export interface PolicyListResponse {
 
 export interface PolicyCreateRequest {
   name: string;
-  description: string;
+  description?: string;
 }
 
 export interface PolicyUpdateRequest {
@@ -46,12 +50,10 @@ export interface PolicyUpdateRequest {
 // ============================================
 
 export interface RoleResponse {
-  id: number;
   name: string;
   description: string;
-  policies: PolicyResponse[];
-  createdAt: string;
-  updatedAt: string;
+  canAccessAdmin: boolean;
+  policies: string[]; // 정책 이름 배열
 }
 
 export interface RoleListResponse {
@@ -60,11 +62,13 @@ export interface RoleListResponse {
 
 export interface RoleCreateRequest {
   name: string;
-  description: string;
+  description?: string;
+  canAccessAdmin?: boolean;
 }
 
 export interface RoleUpdateRequest {
   description: string;
+  canAccessAdmin: boolean;
 }
 
 // ============================================
@@ -251,6 +255,36 @@ export interface ReportProcessRequest {
 export interface AdminSearchResponse {
   users?: AdminUserResponse[];
   articles?: AdminArticleResponse[];
+}
+
+// ============================================
+// Point Management Types
+// ============================================
+
+export interface PointTransactionRequest {
+  point: number;
+  reason: string;
+}
+
+export interface PointTransaction {
+  id: number;
+  amount: number;
+  type: string;
+  reason: string;
+  balanceAfter: number;
+  source: string;
+  createdAt: string;
+}
+
+export interface PointHistoryResponse {
+  userId: number;
+  userName: string;
+  currentBalance: number;
+  transactions: PointTransaction[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
 }
 
 // ============================================

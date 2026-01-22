@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
@@ -19,9 +19,12 @@ import {
   Trophy,
   Bell,
   Flag,
+  ShieldX,
+  Coins,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
+import { toast } from '@/lib/toast';
 
 interface NavItem {
   name: string;
@@ -71,6 +74,11 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    name: '포인트 관리',
+    href: '/admin/points',
+    icon: Coins,
+  },
+  {
     name: '권한 시스템',
     href: '/admin/permissions',
     icon: Shield,
@@ -90,7 +98,58 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (status === 'unauthenticated') {
+      toast.error('로그인이 필요합니다');
+      router.replace('/login');
+    }
+  }, [status, router]);
+
+  // 로딩 중
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900 mx-auto" />
+          <p className="mt-4 text-sm text-gray-500">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 로그인 안된 상태 (리다이렉트 중)
+  if (status === 'unauthenticated') {
+    return null;
+  }
+
+  // 어드민 접근 권한 없음
+  if (!session?.canAccessAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <ShieldX className="h-8 w-8 text-red-600" />
+          </div>
+          <h1 className="mt-6 text-2xl font-bold text-gray-900">접근 권한 없음</h1>
+          <p className="mt-2 text-sm text-gray-500">
+            관리자 페이지에 접근할 권한이 없습니다.
+          </p>
+          <p className="mt-1 text-xs text-gray-400">HTTP 403 Forbidden</p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-6 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+          >
+            홈으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const toggleMenu = (menuName: string) => {
     setExpandedMenus((prev) =>

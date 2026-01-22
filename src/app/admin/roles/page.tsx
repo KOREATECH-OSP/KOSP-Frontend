@@ -48,11 +48,25 @@ export default function AdminRolesPage() {
       role.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateRole = async (data: { name: string; description: string; policyIds: number[] }) => {
+  const handleCreateRole = async (data: { name: string; description: string; canAccessAdmin: boolean; policyNames: string[] }) => {
     if (!session?.accessToken) return;
 
     try {
-      await createRole(data, { accessToken: session.accessToken });
+      // 1. 역할 생성
+      await createRole(
+        { name: data.name, description: data.description, canAccessAdmin: data.canAccessAdmin },
+        { accessToken: session.accessToken }
+      );
+
+      // 2. 선택된 정책들을 역할에 할당
+      for (const policyName of data.policyNames) {
+        try {
+          await attachPolicyToRole(data.name, policyName, { accessToken: session.accessToken });
+        } catch (policyErr) {
+          console.error(`Failed to attach policy ${policyName}:`, policyErr);
+        }
+      }
+
       toast.success('역할이 생성되었습니다.');
       setShowCreateModal(false);
       fetchData();
@@ -185,7 +199,7 @@ export default function AdminRolesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredRoles.map((role) => (
-                    <tr key={role.id} className="transition-colors hover:bg-gray-50">
+                    <tr key={role.name} className="transition-colors hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
                         <span className="font-semibold text-gray-900">{role.name}</span>
                       </td>
@@ -195,12 +209,12 @@ export default function AdminRolesPage() {
                       <td className="px-6 py-4">
                         {role.policies && role.policies.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {role.policies.slice(0, 3).map((policy, idx) => (
+                            {role.policies.slice(0, 3).map((policyName, idx) => (
                               <span
-                                key={`role-${role.id}-policy-${idx}`}
+                                key={`role-${role.name}-policy-${idx}`}
                                 className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
                               >
-                                {policy.name}
+                                {policyName}
                               </span>
                             ))}
                             {role.policies.length > 3 && (
@@ -268,24 +282,24 @@ function RoleFormModal({
 }: {
   policies: PolicyResponse[];
   onClose: () => void;
-  onSave: (data: { name: string; description: string; policyIds: number[] }) => void;
+  onSave: (data: { name: string; description: string; canAccessAdmin: boolean; policyNames: string[] }) => void;
 }) {
-  const [formData, setFormData] = useState({ name: '', description: '' });
-  const [selectedPolicies, setSelectedPolicies] = useState<number[]>([]);
+  const [formData, setFormData] = useState({ name: '', description: '', canAccessAdmin: false });
+  const [selectedPolicies, setSelectedPolicies] = useState<string[]>([]);
 
-  const togglePolicy = (id: number) => {
+  const togglePolicy = (policyName: string) => {
     setSelectedPolicies((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(policyName) ? prev.filter((p) => p !== policyName) : [...prev, policyName]
     );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.description) {
-      toast.error('모든 필드를 입력해주세요');
+    if (!formData.name) {
+      toast.error('역할 이름을 입력해주세요');
       return;
     }
-    onSave({ ...formData, policyIds: selectedPolicies });
+    onSave({ ...formData, policyNames: selectedPolicies });
   };
 
   return (
@@ -317,7 +331,7 @@ function RoleFormModal({
 
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
-              설명 <span className="text-red-500">*</span>
+              설명
             </label>
             <textarea
               value={formData.description}
@@ -329,19 +343,34 @@ function RoleFormModal({
           </div>
 
           <div>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={formData.canAccessAdmin}
+                onChange={(e) => setFormData({ ...formData, canAccessAdmin: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-gray-900"
+              />
+              <div>
+                <div className="text-sm font-medium text-gray-900">관리자 페이지 접근 권한</div>
+                <div className="text-xs text-gray-500">이 역할을 가진 사용자가 관리자 페이지에 접근할 수 있습니다</div>
+              </div>
+            </label>
+          </div>
+
+          <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               정책 선택 ({selectedPolicies.length}개)
             </label>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-gray-200 p-3">
-              {policies.map((policy, idx) => (
+              {policies.map((policy) => (
                 <label
-                  key={`create-policy-${idx}`}
+                  key={`create-policy-${policy.name}`}
                   className="flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50"
                 >
                   <input
                     type="checkbox"
-                    checked={selectedPolicies.includes(policy.id)}
-                    onChange={() => togglePolicy(policy.id)}
+                    checked={selectedPolicies.includes(policy.name)}
+                    onChange={() => togglePolicy(policy.name)}
                     className="h-4 w-4 rounded border-gray-300 text-gray-900"
                   />
                   <div>
@@ -387,7 +416,7 @@ function PolicyManageModal({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingPolicy, setLoadingPolicy] = useState<string | null>(null);
-  const rolePolicyNames = (role.policies || []).map((p) => p.name);
+  const rolePolicyNames = role.policies || [];
   const assignedCount = rolePolicyNames.length;
 
   const filteredPolicies = allPolicies.filter(

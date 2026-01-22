@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Loader2,
 } from 'lucide-react';
-import { getAdminNotices, deleteAdminNotice } from '@/lib/api/admin';
+import { getAdminNotices, toggleBanner } from '@/lib/api/admin';
 import type { AdminNoticeResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
 
@@ -22,13 +22,12 @@ export default function NoticesPage() {
   const { data: session, status } = useSession();
   const [notices, setNotices] = useState<AdminNoticeResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedNotice, setSelectedNotice] = useState<AdminNoticeResponse | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [bannerActive, setBannerActive] = useState(false);
+  const [togglingBanner, setTogglingBanner] = useState(false);
 
   const fetchNotices = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -83,21 +82,19 @@ export default function NoticesPage() {
     return pages;
   };
 
-  const handleDelete = async () => {
-    if (!selectedNotice || !session?.accessToken) return;
+  const handleToggleBanner = async () => {
+    if (!session?.accessToken || togglingBanner) return;
 
     try {
-      setDeleting(true);
-      await deleteAdminNotice(selectedNotice.id, { accessToken: session.accessToken });
-      toast.success('공지사항이 삭제되었습니다.');
-      setShowDeleteModal(false);
-      setSelectedNotice(null);
-      await fetchNotices();
+      setTogglingBanner(true);
+      const result = await toggleBanner({ accessToken: session.accessToken });
+      setBannerActive(result.isActive);
+      toast.success(result.isActive ? '배너가 활성화되었습니다.' : '배너가 비활성화되었습니다.');
     } catch (err) {
-      console.error('Failed to delete notice:', err);
-      toast.error('공지사항 삭제에 실패했습니다.');
+      console.error('Failed to toggle banner:', err);
+      toast.error('배너 설정 변경에 실패했습니다.');
     } finally {
-      setDeleting(false);
+      setTogglingBanner(false);
     }
   };
 
@@ -109,7 +106,7 @@ export default function NoticesPage() {
 
   return (
     <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -117,14 +114,13 @@ export default function NoticesPage() {
             <p className="mt-0.5 text-sm text-gray-500">전체 {totalItems.toLocaleString()}개</p>
           </div>
 
-          {/* 검색 및 생성 버튼 */}
           <div className="flex items-center gap-3">
-            <form onSubmit={handleSearch} className="w-full sm:w-64">
+            <form onSubmit={handleSearch} className="w-full sm:w-56">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="제목 또는 내용으로 검색"
+                  placeholder="검색"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm transition-colors focus:border-gray-400 focus:outline-none"
@@ -141,194 +137,114 @@ export default function NoticesPage() {
           </div>
         </div>
 
-        {/* 테이블 */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    제목
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    내용
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    작성일
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    관리
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-16 text-center">
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
-                      <p className="mt-2 text-sm text-gray-500">불러오는 중...</p>
-                    </td>
-                  </tr>
-                ) : filteredNotices.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-16 text-center">
-                      <Bell className="mx-auto h-8 w-8 text-gray-300" />
-                      <p className="mt-2 text-sm text-gray-500">
-                        {searchQuery ? '검색 결과가 없습니다' : '등록된 공지사항이 없습니다'}
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredNotices.map((notice) => (
-                    <tr key={notice.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div>
-                          <div className="font-medium text-gray-900">{notice.title}</div>
-                          <div className="text-xs text-gray-400">ID: {notice.id}</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="line-clamp-2 text-sm text-gray-600">
-                          {notice.content || '-'}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span className="text-sm text-gray-600">
-                          {notice.createdAt
-                            ? new Date(notice.createdAt).toLocaleDateString('ko-KR', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit',
-                              })
-                            : '-'}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => router.push(`/admin/contents/notices/edit/${notice.id}`)}
-                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedNotice(notice);
-                              setShowDeleteModal(true);
-                            }}
-                            className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        {/* 배너 설정 */}
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-gray-900">메인 페이지 배너</p>
+            <p className="text-xs text-gray-500">활성화하면 메인 페이지 상단에 공지사항이 표시됩니다</p>
           </div>
+          <button
+            onClick={handleToggleBanner}
+            disabled={togglingBanner}
+            className={`relative h-6 w-11 rounded-full transition-colors ${
+              bannerActive ? 'bg-blue-600' : 'bg-gray-300'
+            } ${togglingBanner ? 'opacity-50' : ''}`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                bannerActive ? 'left-[22px]' : 'left-0.5'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* 공지사항 목록 */}
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          {isLoading ? (
+            <div className="py-20 text-center">
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
+              <p className="mt-2 text-sm text-gray-500">불러오는 중...</p>
+            </div>
+          ) : filteredNotices.length === 0 ? (
+            <div className="py-20 text-center">
+              <Bell className="mx-auto h-8 w-8 text-gray-300" />
+              <p className="mt-2 text-sm text-gray-500">
+                {searchQuery ? '검색 결과가 없습니다' : '등록된 공지사항이 없습니다'}
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {filteredNotices.map((notice) => (
+                <li key={notice.id}>
+                  <button
+                    onClick={() => router.push(`/admin/contents/notices/${notice.id}`)}
+                    className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors ${
+                      notice.isPinned
+                        ? 'bg-blue-50/50 hover:bg-blue-50'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-medium text-gray-900">
+                          {notice.title}
+                        </span>
+                        {notice.isPinned && (
+                          <span className="shrink-0 text-xs font-medium text-blue-600">
+                            배너 설정됨
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 truncate text-sm text-gray-500">
+                        {notice.content?.replace(/<[^>]*>/g, '').slice(0, 80) || '내용 없음'}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm text-gray-400">
+                      {notice.createdAt
+                        ? new Date(notice.createdAt).toLocaleDateString('ko-KR')
+                        : '-'}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
           {/* 페이지네이션 */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
-              <p className="text-sm text-gray-600">
-                총 {totalItems.toLocaleString()}개 중{' '}
-                <span className="font-medium">
-                  {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, totalItems)}
-                </span>
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                >
-                  처음
-                </button>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
+            <div className="flex items-center justify-center gap-1 border-t border-gray-100 py-4">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
 
-                {getPageNumbers().map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+              {getPageNumbers().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`min-w-[36px] rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    currentPage === page
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
 
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                >
-                  마지막
-                </button>
-              </div>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           )}
         </div>
-
-        {/* 삭제 확인 모달 */}
-        {showDeleteModal && selectedNotice && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-              <div className="border-b border-gray-200 px-5 py-4">
-                <h2 className="font-semibold text-gray-900">공지사항 삭제</h2>
-                <p className="text-sm text-gray-500">{selectedNotice.title}</p>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-sm text-gray-600">
-                  이 공지사항을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                </p>
-              </div>
-              <div className="flex gap-2 border-t border-gray-200 px-5 py-4">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setSelectedNotice(null);
-                  }}
-                  disabled={deleting}
-                  className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
-                >
-                  {deleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      삭제 중...
-                    </>
-                  ) : (
-                    '삭제'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

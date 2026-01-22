@@ -1,13 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Volume2, X } from 'lucide-react';
 import { getArticles } from '@/lib/api/article';
+import { clientApiClient } from '@/lib/api/client';
 
 const STORAGE_KEY = 'notice-banner-hidden-until';
 const NOTICE_BOARD_ID = 3;
 const SLIDE_INTERVAL = 3000;
+
+interface BannerSettingResponse {
+  isActive: boolean;
+}
 
 const slideKeyframes = `
   @keyframes slideOutUp {
@@ -43,20 +49,44 @@ function getInitialVisibility(): boolean {
 }
 
 function NoticeBanner() {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [notices, setNotices] = useState<NoticeData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // 관리자 페이지에서는 배너 숨김
+  const isAdminPage = pathname?.startsWith('/admin');
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration을 위한 마운트 상태 초기화
     setMounted(true);
-    const shouldShow = getInitialVisibility();
-    if (shouldShow) {
-      setIsVisible(true);
+
+    if (isAdminPage) return;
+
+    async function checkBannerStatus() {
+      // 먼저 로컬 설정 확인
+      const localVisible = getInitialVisibility();
+      if (!localVisible) return;
+
+      // 서버에서 배너 활성화 상태 확인
+      try {
+        const response = await clientApiClient<BannerSettingResponse>('/v1/banner', {
+          cache: 'no-store',
+        });
+        if (response.isActive) {
+          setIsVisible(true);
+        }
+      } catch (error) {
+        console.error('Failed to fetch banner status:', error);
+        // API 실패 시에도 배너 표시 (기본 동작 유지)
+        setIsVisible(true);
+      }
     }
-  }, []);
+
+    checkBannerStatus();
+  }, [isAdminPage]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -114,6 +144,7 @@ function NoticeBanner() {
   };
 
   if (!mounted) return null;
+  if (isAdminPage) return null;
   if (!isVisible) return null;
   if (notices.length === 0) return null;
 

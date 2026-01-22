@@ -286,7 +286,7 @@ export default function ArticleDetailClient({
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pb-24 lg:pb-8">
       <ReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
@@ -409,6 +409,26 @@ export default function ArticleDetailClient({
                 {article.title}
               </h1>
 
+              {/* Mobile Author Info */}
+              <div className="mb-4 flex items-center gap-2 lg:hidden">
+                <Link href={`/user/${article.author.id}`} className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-100">
+                  {article.author.profileImage ? (
+                    <img
+                      src={article.author.profileImage}
+                      alt={article.author.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                      <User className="h-4 w-4" />
+                    </div>
+                  )}
+                </Link>
+                <Link href={`/user/${article.author.id}`} className="text-sm font-bold text-gray-900 hover:underline">
+                  {article.author.name}
+                </Link>
+              </div>
+
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5" title="조회수">
@@ -424,36 +444,7 @@ export default function ArticleDetailClient({
               </div>
             </div>
 
-            {/* Mobile Action Bar (Visible only on lg and below) */}
-            <div className="lg:hidden flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-white/50 backdrop-blur-sm sticky top-[57px] z-10">
-              <div className="flex items-center gap-5">
-                <button
-                  onClick={handleLike}
-                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${liked ? 'text-pink-600' : 'text-gray-600 hover:text-pink-600'}`}
-                >
-                  <Heart className={`h-5 w-5 ${liked ? 'fill-current' : ''}`} />
-                  {likeCount}
-                </button>
-                <button
-                  onClick={handleBookmark}
-                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${bookmarked ? 'text-amber-500' : 'text-gray-600 hover:text-amber-500'}`}
-                >
-                  <Bookmark className={`h-5 w-5 ${bookmarked ? 'fill-current' : ''}`} />
-                  저장
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <Link href={`/user/${article.author.id}`} className="flex items-center gap-2">
-                  {article.author.profileImage && (
-                    <img src={article.author.profileImage} alt="" className="w-6 h-6 rounded-full border border-gray-200" />
-                  )}
-                  <span className="text-sm font-bold text-gray-900">{article.author.name}</span>
-                </Link>
-                <button onClick={handleShare} className="text-gray-400 hover:text-blue-600 transition-colors">
-                  <Link2 className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+            {/* Mobile Action Bar Removed */}
 
             {/* Body */}
             <div className="px-6 py-10 sm:px-10">
@@ -485,7 +476,7 @@ export default function ArticleDetailClient({
           </article>
 
           {/* Comments Section */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-10">
+          <section id="comments-section" className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-10">
             <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-2">
               댓글
               <span className="text-sm font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">{comments.length}</span>
@@ -579,7 +570,53 @@ export default function ArticleDetailClient({
             </div>
           </section>
         </div>
+      </div >
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white px-4 py-3 safe-area-bottom lg:hidden">
+        <div className="mx-auto flex max-w-md items-center justify-between px-2">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={handleLike}
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${liked ? 'text-pink-600' : 'text-gray-600 hover:text-pink-600'}`}
+            >
+              <Heart className={`h-6 w-6 ${liked ? 'fill-current' : ''}`} />
+              <span>{likeCount}</span>
+            </button>
+            <button
+              onClick={handleBookmark}
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${bookmarked ? 'text-amber-500' : 'text-gray-600 hover:text-amber-500'}`}
+            >
+              <Bookmark className={`h-6 w-6 ${bookmarked ? 'fill-current' : ''}`} />
+              <span>저장</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => {
+                const commentsSection = document.getElementById('comments-section');
+                commentsSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-gray-600 hover:text-gray-900"
+            >
+              <div className="relative">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                {comments.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                    {comments.length}
+                  </span>
+                )}
+              </div>
+              <span>댓글</span>
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-gray-600 hover:text-gray-900"
+            >
+              <Link2 className="h-6 w-6" />
+              <span>공유</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </div >
   );
 }

@@ -314,6 +314,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => handleDeleteClick(user)}
                             disabled={user.isDeleted || isDeleting}
+                            title={user.isDeleted ? '탈퇴 처리된 회원입니다.' : undefined}
                             className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             탈퇴
@@ -492,7 +493,7 @@ function UserRoleModal({
               const hasRole = selectedRoles.includes(role.name);
               return (
                 <label
-                  key={role.id ?? role.name ?? index}
+                  key={`role-${role.name}-${index}`}
                   className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all ${
                     hasRole
                       ? 'border-gray-900 bg-gray-50'

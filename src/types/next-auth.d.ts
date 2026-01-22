@@ -4,6 +4,7 @@ declare module 'next-auth' {
   interface Session {
     accessToken: string;
     refreshToken: string;
+    canAccessAdmin: boolean;
     error?: string;
     user: {
       id: string;

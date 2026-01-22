@@ -3,6 +3,7 @@ import type {
   PermissionResponse,
   PermissionListResponse,
   PolicyResponse,
+  PolicyDetailResponse,
   PolicyListResponse,
   PolicyCreateRequest,
   PolicyUpdateRequest,
@@ -24,6 +25,8 @@ import type {
   AdminArticleResponse,
   AdminArticleListResponse,
   AdminSearchResponse,
+  PointTransactionRequest,
+  PointHistoryResponse,
 } from '@/types/admin';
 
 interface AuthOptions {
@@ -74,13 +77,13 @@ export async function getPolicies(auth: AuthOptions): Promise<PolicyListResponse
 }
 
 /**
- * 단일 정책 조회 (by name)
+ * 단일 정책 조회 (by name) - 권한 정보 포함
  */
 export async function getPolicy(
   policyName: string,
   auth: AuthOptions
-): Promise<PolicyResponse> {
-  return clientApiClient<PolicyResponse>(`/v1/admin/policies/${encodeURIComponent(policyName)}`, {
+): Promise<PolicyDetailResponse> {
+  return clientApiClient<PolicyDetailResponse>(`/v1/admin/policies/${encodeURIComponent(policyName)}`, {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });
@@ -557,6 +560,24 @@ export async function processAdminReport(
 }
 
 // ============================================
+// Banner API
+// ============================================
+
+export interface BannerSettingResponse {
+  isActive: boolean;
+}
+
+/**
+ * 배너 표시 여부 토글
+ */
+export async function toggleBanner(auth: AuthOptions): Promise<BannerSettingResponse> {
+  return clientApiClient<BannerSettingResponse>('/v1/admin/banner/toggle', {
+    method: 'PATCH',
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
 // Search API
 // ============================================
 
@@ -573,6 +594,48 @@ export async function adminSearch(
   queryParams.append('type', type);
 
   return clientApiClient<AdminSearchResponse>(`/v1/admin/search?${queryParams.toString()}`, {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+}
+
+// ============================================
+// Point Management APIs
+// ============================================
+
+/**
+ * 사용자 포인트 변경 (적립/회수)
+ * @param userId 사용자 ID
+ * @param data point: 양수면 적립, 음수면 회수 / reason: 변경 사유
+ */
+export async function updateUserPoints(
+  userId: number,
+  data: PointTransactionRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/points/users/${userId}`, {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 사용자 포인트 내역 조회
+ */
+export async function getUserPointHistory(
+  userId: number,
+  params: { page?: number; size?: number },
+  auth: AuthOptions
+): Promise<PointHistoryResponse> {
+  const queryParams = new URLSearchParams();
+  if (params.page !== undefined) queryParams.append('page', String(params.page));
+  if (params.size !== undefined) queryParams.append('size', String(params.size));
+
+  const queryString = queryParams.toString();
+  const endpoint = `/v1/admin/points/users/${userId}/history${queryString ? `?${queryString}` : ''}`;
+
+  return clientApiClient<PointHistoryResponse>(endpoint, {
     accessToken: auth.accessToken,
     cache: 'no-store',
   });

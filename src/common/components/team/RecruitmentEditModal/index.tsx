@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { PlateEditor } from '@/common/components/Editor';
 
 interface RecruitmentData {
   title: string;
@@ -138,12 +139,15 @@ export default function RecruitmentEditModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 내용 <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={data.content}
-                onChange={(e) => handleChange('content', e.target.value)}
-                rows={8}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              <PlateEditor
+                content={data.content}
+                onChange={(content) => handleChange('content', content)}
                 placeholder="모집 내용을 입력하세요"
+                minHeight={250}
+                showCharacterCount={false}
+                enableImage={false}
+                enableTable={false}
+                enableCodeBlock={false}
               />
             </div>
 

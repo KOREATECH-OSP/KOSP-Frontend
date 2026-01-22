@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bell, Plus, X, Loader2 } from 'lucide-react';
+import { PlateEditor } from '@/common/components/Editor';
 import { createAdminNotice } from '@/lib/api/admin';
 import type { AdminNoticeCreateRequest } from '@/types/admin';
 import { toast } from '@/lib/toast';
@@ -121,13 +122,16 @@ export default function CreateNoticePage() {
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   내용 <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                <PlateEditor
+                  content={formData.content}
+                  onChange={(content) => setFormData({ ...formData, content })}
                   placeholder="공지사항 내용을 입력하세요"
-                  rows={10}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
-                  disabled={submitting}
+                  minHeight={300}
+                  editable={!submitting}
+                  showCharacterCount={false}
+                  enableImage={false}
+                  enableTable={false}
+                  enableCodeBlock={false}
                 />
               </div>
 

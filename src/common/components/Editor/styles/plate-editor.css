@@ -1,0 +1,316 @@
+/* Plate Editor Styles - Notion-like Design */
+
+.plate-editor-wrapper {
+  width: 100%;
+}
+
+/* Editor Content */
+.plate-editor-content {
+  outline: none;
+  caret-color: #111827;
+}
+
+/* Placeholder */
+.plate-editor-content [data-slate-placeholder="true"] {
+  color: #9ca3af;
+  opacity: 1;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.plate-editor-content:focus-within [data-slate-placeholder="true"] {
+  opacity: 0.6;
+}
+
+/* Empty paragraph placeholder */
+.plate-editor-content [data-slate-node="element"]:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* Headings */
+.plate-editor-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 1.5rem 0 1rem;
+  line-height: 1.2;
+}
+
+.plate-editor-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.75rem;
+  line-height: 1.3;
+}
+
+.plate-editor-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  line-height: 1.4;
+}
+
+/* Paragraph */
+.plate-editor-content p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+/* Blockquote */
+.plate-editor-content blockquote {
+  padding-left: 1rem;
+  border-left: 3px solid #d1d5db;
+  color: #6b7280;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+/* Lists */
+.plate-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.plate-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.plate-editor-content li {
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.plate-editor-content li > p {
+  margin: 0;
+}
+
+/* Link */
+.plate-editor-content a {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.plate-editor-content a:hover {
+  color: #1d4ed8;
+}
+
+/* Image */
+.plate-editor-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 0.5rem;
+}
+
+.plate-editor-content img[data-selected="true"],
+.plate-editor-content img:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Horizontal Rule */
+.plate-editor-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+/* Code Block */
+.plate-editor-content pre {
+  background: #1f2937;
+  color: #f3f4f6;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.plate-editor-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Inline Code */
+.plate-editor-content code {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  color: #ef4444;
+  font-size: 0.875em;
+  padding: 0.2em 0.4em;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Table */
+.plate-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.plate-editor-content table td,
+.plate-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.plate-editor-content table th {
+  font-weight: 600;
+  background-color: #f9fafb;
+}
+
+.plate-editor-content table .selectedCell:after,
+.plate-editor-content table td[data-selected="true"]::after,
+.plate-editor-content table th[data-selected="true"]::after {
+  z-index: 2;
+  position: absolute;
+  content: '';
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.1);
+  pointer-events: none;
+}
+
+/* Marks */
+.plate-editor-content strong,
+.plate-editor-content b {
+  font-weight: 600;
+}
+
+.plate-editor-content em,
+.plate-editor-content i {
+  font-style: italic;
+}
+
+.plate-editor-content u {
+  text-decoration: underline;
+}
+
+.plate-editor-content s,
+.plate-editor-content del,
+.plate-editor-content strike {
+  text-decoration: line-through;
+}
+
+/* Syntax Highlighting for Code Blocks */
+.plate-editor-content pre .token.comment,
+.plate-editor-content pre .token.prolog,
+.plate-editor-content pre .token.doctype,
+.plate-editor-content pre .token.cdata {
+  color: #6b7280;
+}
+
+.plate-editor-content pre .token.punctuation {
+  color: #d1d5db;
+}
+
+.plate-editor-content pre .token.property,
+.plate-editor-content pre .token.tag,
+.plate-editor-content pre .token.boolean,
+.plate-editor-content pre .token.number,
+.plate-editor-content pre .token.constant,
+.plate-editor-content pre .token.symbol,
+.plate-editor-content pre .token.deleted {
+  color: #f87171;
+}
+
+.plate-editor-content pre .token.selector,
+.plate-editor-content pre .token.attr-name,
+.plate-editor-content pre .token.string,
+.plate-editor-content pre .token.char,
+.plate-editor-content pre .token.builtin,
+.plate-editor-content pre .token.inserted {
+  color: #34d399;
+}
+
+.plate-editor-content pre .token.operator,
+.plate-editor-content pre .token.entity,
+.plate-editor-content pre .token.url,
+.plate-editor-content pre .language-css .token.string,
+.plate-editor-content pre .style .token.string {
+  color: #fbbf24;
+}
+
+.plate-editor-content pre .token.atrule,
+.plate-editor-content pre .token.attr-value,
+.plate-editor-content pre .token.keyword {
+  color: #60a5fa;
+}
+
+.plate-editor-content pre .token.function,
+.plate-editor-content pre .token.class-name {
+  color: #f472b6;
+}
+
+.plate-editor-content pre .token.regex,
+.plate-editor-content pre .token.important,
+.plate-editor-content pre .token.variable {
+  color: #fbbf24;
+}
+
+/* Selection */
+.plate-editor-content ::selection {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+/* Focus styles */
+.plate-editor-content:focus {
+  outline: none;
+}
+
+/* Animation for slash menu */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slash-menu-enter {
+  animation: slideIn 0.15s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .plate-editor-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .plate-editor-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .plate-editor-content h3 {
+    font-size: 1.125rem;
+  }
+
+  .plate-editor-content pre {
+    font-size: 0.8rem;
+    padding: 0.75rem;
+  }
+}

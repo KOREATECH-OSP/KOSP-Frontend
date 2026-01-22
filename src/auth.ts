@@ -7,6 +7,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://dev.api.sw
 type JwtPayload = {
   exp?: number | string;
   iat?: number | string;
+  canAccessAdmin?: boolean;
 };
 
 function decodeJwtPayload(token: string): JwtPayload | null {
@@ -50,6 +51,11 @@ function getTokenIssuedAt(token: string): number | null {
   if (!Number.isFinite(iat)) return null;
 
   return normalizeJwtExp(iat);
+}
+
+function getCanAccessAdmin(token: string): boolean {
+  const payload = decodeJwtPayload(token);
+  return payload?.canAccessAdmin === true;
 }
 
 // 토큰 갱신 함수
@@ -273,6 +279,7 @@ export const authConfig: NextAuthConfig = {
           accessTokenExpires,
           accessTokenIssuedAt,
           accessTokenTtl,
+          canAccessAdmin: getCanAccessAdmin(accessToken),
           id: user.id,
           email: user.email,
           name: user.name,
@@ -318,6 +325,7 @@ export const authConfig: NextAuthConfig = {
         accessTokenExpires: refreshedTokens.accessTokenExpires,
         accessTokenIssuedAt: refreshedTokens.accessTokenIssuedAt ?? token.accessTokenIssuedAt,
         accessTokenTtl: refreshedTokens.accessTokenTtl ?? token.accessTokenTtl,
+        canAccessAdmin: getCanAccessAdmin(refreshedTokens.accessToken),
         error: undefined,
       };
     },
@@ -326,6 +334,7 @@ export const authConfig: NextAuthConfig = {
         ...session,
         accessToken: token.accessToken as string,
         refreshToken: token.refreshToken as string,
+        canAccessAdmin: (token.canAccessAdmin as boolean) ?? false,
         error: token.error as string | undefined,
         user: {
           ...session.user,

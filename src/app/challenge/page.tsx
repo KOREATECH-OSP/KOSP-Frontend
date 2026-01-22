@@ -15,14 +15,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import KoriDistImage from '@/assets/images/kori/11-09 F 멀리보기 .png';
 
-type CategoryFilter = 'all' | string;
+type TierFilter = 'all' | number;
+
+const TIERS = [0, 1, 2, 3, 4, 5] as const;
 
 export default function ChallengePage() {
   const { data: session, status } = useSession();
   const [challenges, setChallenges] = useState<ChallengeResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all');
+  const [activeFilter, setActiveFilter] = useState<TierFilter>('all');
 
   useEffect(() => {
     async function fetchChallenges() {
@@ -49,9 +51,6 @@ export default function ChallengePage() {
     }
   }, [session?.accessToken, status]);
 
-  // 카테고리 목록 추출
-  const categories = Array.from(new Set(challenges.map((c) => c.category)));
-
   const totalChallenges = challenges.length;
   const completedChallenges = challenges.filter((c) => c.isCompleted).length;
   const totalPoints = challenges
@@ -61,35 +60,41 @@ export default function ChallengePage() {
   const filteredChallenges =
     activeFilter === 'all'
       ? challenges
-      : challenges.filter((c) => c.category === activeFilter);
+      : challenges.filter((c) => c.tier === activeFilter);
 
-  const getCategoryStyle = (category: string) => {
-    const lowerCategory = category.toLowerCase();
-    if (lowerCategory.includes('beginner') || lowerCategory.includes('초급')) {
-      return { bg: 'bg-emerald-50', text: 'text-emerald-700' };
+  const getTierStyle = (tier: number) => {
+    switch (tier) {
+      case 0:
+        return { bg: 'bg-amber-100', text: 'text-amber-800' }; // 브론즈
+      case 1:
+        return { bg: 'bg-gray-200', text: 'text-gray-700' }; // 실버
+      case 2:
+        return { bg: 'bg-yellow-100', text: 'text-yellow-700' }; // 골드
+      case 3:
+        return { bg: 'bg-cyan-100', text: 'text-cyan-700' }; // 플래티넘
+      case 4:
+        return { bg: 'bg-sky-100', text: 'text-sky-700' }; // 다이아몬드
+      case 5:
+        return { bg: 'bg-rose-100', text: 'text-rose-700' }; // 루비
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-600' };
     }
-    if (lowerCategory.includes('intermediate') || lowerCategory.includes('중급')) {
-      return { bg: 'bg-blue-50', text: 'text-blue-700' };
-    }
-    if (lowerCategory.includes('advanced') || lowerCategory.includes('고급')) {
-      return { bg: 'bg-indigo-50', text: 'text-indigo-700' };
-    }
-    if (lowerCategory.includes('special') || lowerCategory.includes('특별')) {
-      return { bg: 'bg-amber-50', text: 'text-amber-700' };
-    }
-    return { bg: 'bg-gray-100', text: 'text-gray-600' };
   };
 
   const getTierLabel = (tier: number) => {
     switch (tier) {
+      case 0:
+        return '브론즈';
       case 1:
-        return '초급';
+        return '실버';
       case 2:
-        return '중급';
+        return '골드';
       case 3:
-        return '고급';
+        return '플래티넘';
       case 4:
-        return '특별';
+        return '다이아몬드';
+      case 5:
+        return '루비';
       default:
         return `Tier ${tier}`;
     }
@@ -174,7 +179,7 @@ export default function ChallengePage() {
             <h2 className="text-base font-bold text-gray-900 mb-4 px-2">챌린지</h2>
 
             <div className="space-y-8">
-              {/* Categories */}
+              {/* Tiers */}
               <div className="flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
                 <button
                   onClick={() => setActiveFilter('all')}
@@ -185,16 +190,16 @@ export default function ChallengePage() {
                 >
                   전체 보기
                 </button>
-                {categories.map((category) => (
+                {TIERS.map((tier) => (
                   <button
-                    key={category}
-                    onClick={() => setActiveFilter(category)}
-                    className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeFilter === category
+                    key={tier}
+                    onClick={() => setActiveFilter(tier)}
+                    className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeFilter === tier
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                       }`}
                   >
-                    {category}
+                    {getTierLabel(tier)}
                   </button>
                 ))}
               </div>
@@ -245,7 +250,7 @@ export default function ChallengePage() {
           {/* Header Info */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">
-              {activeFilter === 'all' ? '전체 챌린지' : activeFilter}
+              {activeFilter === 'all' ? '전체 챌린지' : getTierLabel(activeFilter)}
             </h2>
             <span className="text-sm text-gray-500">총 {filteredChallenges.length}개</span>
           </div>
@@ -253,7 +258,7 @@ export default function ChallengePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredChallenges.map((challenge) => {
               const isCompleted = challenge.isCompleted;
-              const style = getCategoryStyle(challenge.category);
+              const style = getTierStyle(challenge.tier);
               const progress = challenge.total > 0 ? Math.round((challenge.current / challenge.total) * 100) : 0;
 
               return (
@@ -290,7 +295,7 @@ export default function ChallengePage() {
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${style.bg} ${style.text}`}>
-                          {challenge.category || getTierLabel(challenge.tier)}
+                          {getTierLabel(challenge.tier)}
                         </span>
                         <span className="flex items-center gap-1 text-[11px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
                           <Zap className="h-3 w-3" />
@@ -330,9 +335,9 @@ export default function ChallengePage() {
                 <Trophy className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-bold text-gray-900">
-                {challenges.length === 0 ? '등록된 챌린지가 없습니다' : '해당 카테고리의 챌린지가 없습니다'}
+                {challenges.length === 0 ? '등록된 챌린지가 없습니다' : '해당 티어의 챌린지가 없습니다'}
               </h3>
-              <p className="mt-1 text-sm text-gray-500">다른 카테고리를 선택하거나 나중에 다시 확인해주세요.</p>
+              <p className="mt-1 text-sm text-gray-500">다른 티어를 선택하거나 나중에 다시 확인해주세요.</p>
             </div>
           )}
         </div>

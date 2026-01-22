@@ -151,7 +151,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
               <span className="text-xs text-gray-500">~{new Date(item.endDate).toLocaleDateString()}</span>
             </div>
             <h3 className="mb-2 text-lg font-bold text-gray-900">{item.title}</h3>
-            <div className="text-sm text-gray-500">{item.authorName}</div>
+            <div className="text-sm text-gray-500">{item.teamName}</div>
           </Link>
         ))
       )}
