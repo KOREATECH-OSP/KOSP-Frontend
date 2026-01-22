@@ -10,7 +10,7 @@ import Image from 'next/image';
 import surprisedKori from '@/assets/images/kori/11-09 L 놀람 .png';
 
 const SERVER_TIMEOUT_MS = 10000;
-const RETRY_INTERVAL_MS = 5000;
+const RETRY_INTERVAL_MS = 10000;
 
 // 서버 상태 체크 컴포넌트
 function ServerStatusChecker({ children }: { children: React.ReactNode }) {
