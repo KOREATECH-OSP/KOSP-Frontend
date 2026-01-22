@@ -7,7 +7,8 @@ import {
   Zap,
   CheckCircle2,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  HelpCircle
 } from 'lucide-react';
 import { getChallenges } from '@/lib/api/challenge';
 import type { ChallengeResponse } from '@/lib/api/types';
@@ -233,7 +234,16 @@ export default function ChallengePage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span className="text-sm text-gray-500">포인트</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-gray-500">포인트</span>
+                      <div className="relative group/tooltip">
+                        <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-10">
+                          챌린지로 획득한 포인트만 표시됩니다
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                        </div>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-1">
                       <Zap className="h-4 w-4 text-amber-500" />
                       <span className="text-lg font-bold text-gray-900">{totalPoints.toLocaleString()}</span>

@@ -23,6 +23,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
 
   const isLoggedIn = Boolean(session?.user);
   const displayName = session?.user?.name ?? '';
+  const canAccessAdmin = session?.canAccessAdmin ?? false;
   const handleMyInfo = () => {
     setMobileProfileOpen(false);
     router.push('/user');
@@ -134,6 +135,19 @@ function Header({ simple = false, session = null }: HeaderProps) {
                                   </Link>
                                 )}
                               </Menu.Item>
+                              {canAccessAdmin && (
+                                <Menu.Item key="관리자">
+                                  {({ active }) => (
+                                    <Link
+                                      href="/admin"
+                                      className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                        }`}
+                                    >
+                                      관리자
+                                    </Link>
+                                  )}
+                                </Menu.Item>
+                              )}
                               {profileActions.filter(({ label }) => label !== "내 정보").map(({ label, action }) => (
                                 <Menu.Item key={label}>
                                   {({ active }) => (
@@ -290,6 +304,20 @@ function Header({ simple = false, session = null }: HeaderProps) {
                           >
                             <div className="absolute bottom-full left-0 right-0 mb-3 rounded-2xl border border-gray-100 bg-white shadow-xl">
                               <ul className="py-2">
+                                {canAccessAdmin && (
+                                  <li>
+                                    <Link
+                                      href="/admin"
+                                      onClick={() => {
+                                        setMobileProfileOpen(false);
+                                        setMobileMenuOpen(false);
+                                      }}
+                                      className="block w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                    >
+                                      관리자
+                                    </Link>
+                                  </li>
+                                )}
                                 {profileActions.map(({ label, action }) => (
                                   <li key={label}>
                                     <button
