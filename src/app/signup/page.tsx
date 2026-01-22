@@ -74,6 +74,8 @@ function SignupContent() {
         setSignupToken(signupTokenParam);
         if (stepParam === 'info') {
           setStep('info');
+        } else if (stepParam === 'github') {
+          setStep('github');
         }
       } catch {
         setTokenError('잘못된 접근입니다. 유효하지 않거나 만료된 토큰입니다.');
@@ -308,7 +310,11 @@ function SignupContent() {
         <Funnel step={currentStep}>
           <Funnel.Step name="github">
             <StepIndicator currentStep="github" />
-            <GithubStep onGithubLogin={handleGithubLogin} />
+            <GithubStep
+              onGithubLogin={handleGithubLogin}
+              hasSignupToken={!!signupToken}
+              onNext={() => setStep('info')}
+            />
           </Funnel.Step>
 
           <Funnel.Step name="info">

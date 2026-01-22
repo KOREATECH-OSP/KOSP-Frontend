@@ -5,9 +5,11 @@ import { useState } from "react";
 
 interface GithubStepProps {
   onGithubLogin: () => void;
+  hasSignupToken?: boolean;
+  onNext?: () => void;
 }
 
-export default function GithubStep({ onGithubLogin }: GithubStepProps) {
+export default function GithubStep({ onGithubLogin, hasSignupToken, onNext }: GithubStepProps) {
   const [isChecked, setIsChecked] = useState(false);
 
   return (
@@ -55,18 +57,32 @@ export default function GithubStep({ onGithubLogin }: GithubStepProps) {
         </label>
       </div>
 
-      <button
-        onClick={onGithubLogin}
-        disabled={!isChecked}
-        className={`w-full h-[54px] flex items-center justify-center gap-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 ${
-          isChecked
-            ? 'bg-[#191f28] text-white hover:bg-[#333d4b] active:bg-[#4e5968]'
-            : 'bg-[#e5e8eb] text-[#8b95a1] cursor-not-allowed'
-        }`}
-      >
-        <GithubIcon className="w-5 h-5" />
-        GitHub로 계속하기
-      </button>
+      {hasSignupToken ? (
+        <button
+          onClick={onNext}
+          disabled={!isChecked}
+          className={`w-full h-[54px] flex items-center justify-center gap-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 ${
+            isChecked
+              ? 'bg-[#3182f6] text-white hover:bg-[#1b64da] active:bg-[#1957c2]'
+              : 'bg-[#e5e8eb] text-[#8b95a1] cursor-not-allowed'
+          }`}
+        >
+          다음
+        </button>
+      ) : (
+        <button
+          onClick={onGithubLogin}
+          disabled={!isChecked}
+          className={`w-full h-[54px] flex items-center justify-center gap-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 ${
+            isChecked
+              ? 'bg-[#191f28] text-white hover:bg-[#333d4b] active:bg-[#4e5968]'
+              : 'bg-[#e5e8eb] text-[#8b95a1] cursor-not-allowed'
+          }`}
+        >
+          <GithubIcon className="w-5 h-5" />
+          GitHub로 계속하기
+        </button>
+      )}
     </div>
   );
 }
