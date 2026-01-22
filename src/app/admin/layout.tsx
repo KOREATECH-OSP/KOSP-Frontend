@@ -286,9 +286,19 @@ export default function AdminLayout({
                   {session?.user?.email || 'admin@koreatech.ac.kr'}
                 </div>
               </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-                {session?.user?.name?.[0] || '관'}
-              </div>
+              {session?.user?.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name || '프로필'}
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
+                  {session?.user?.name?.[0] || '관'}
+                </div>
+              )}
               <button
                 onClick={handleLogout}
                 className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
