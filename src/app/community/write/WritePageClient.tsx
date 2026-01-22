@@ -3,10 +3,9 @@
 import { useState, useRef, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, X, Loader2, Paperclip, ChevronDown } from 'lucide-react';
+import { ArrowLeft, X, Loader2, ChevronDown } from 'lucide-react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
-import { uploadFile } from '@/lib/api/upload';
 import { createArticle, updateArticle } from '@/lib/api/article';
 import { toast } from '@/lib/toast';
 import type { BoardResponse, ArticleResponse } from '@/lib/api/types';
@@ -21,7 +20,6 @@ interface PostFormData {
   title: string;
   content: string;
   tags: string[];
-  files: File[];
 }
 
 /**
@@ -51,7 +49,6 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
     title: initialData?.title ?? '',
     content: initialData?.content ?? '',
     tags: initialData?.tags ?? [],
-    files: [],
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -105,43 +102,6 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
     isComposingRef.current = false;
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    if (formData.files.length + files.length > 5) {
-      alert('파일은 최대 5개까지 업로드 가능합니다.');
-      return;
-    }
-
-    const maxSize = 10 * 1024 * 1024;
-    const oversizedFiles = files.filter((file) => file.size > maxSize);
-
-    if (oversizedFiles.length > 0) {
-      alert('각 파일의 크기는 10MB를 초과할 수 없습니다.');
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      files: [...prev.files, ...files],
-    }));
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      files: prev.files.filter((_, i) => i !== index),
-    }));
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  };
-
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof PostFormData, string>> = {};
 
@@ -179,20 +139,11 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
     setIsSubmitting(true);
 
     try {
-      const attachmentIds: number[] = [];
-      if (formData.files.length > 0) {
-        for (const file of formData.files) {
-          const uploaded = await uploadFile(file, { accessToken: session.accessToken });
-          attachmentIds.push(uploaded.id);
-        }
-      }
-
       const payload = {
         boardId: formData.boardId,
         title: formData.title,
         content: formData.content,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
-        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
       };
 
       if (isEditMode && initialData) {
@@ -316,44 +267,6 @@ export default function WritePageClient({ boards, initialData }: WritePageClient
             className="prose-lg md:prose-xl focus:outline-none max-w-none prose-p:text-gray-700 prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-xl"
           />
 
-          {/* File Attachments */}
-          <div className="mt-16 pt-8 border-t border-gray-100">
-            <label
-              htmlFor="file-upload"
-              className="inline-flex cursor-pointer items-center gap-2 text-gray-400 hover:text-gray-700 transition-colors group"
-            >
-              <div className="p-2 rounded-full bg-gray-50 group-hover:bg-gray-100 transition-colors">
-                <Paperclip className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">파일 첨부</span>
-            </label>
-            <input
-              id="file-upload"
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
-            />
-            {formData.files.length > 0 && (
-              <div className="mt-4 grid gap-2">
-                {formData.files.map((file, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-white shadow-sm w-full sm:w-auto self-start">
-                    <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                      <Paperclip className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate text-sm font-medium text-gray-700">{file.name}</span>
-                      <span className="text-xs text-gray-400">{formatFileSize(file.size)}</span>
-                    </div>
-                    <button onClick={() => handleRemoveFile(index)} className="text-gray-300 hover:text-gray-500 ml-2">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 

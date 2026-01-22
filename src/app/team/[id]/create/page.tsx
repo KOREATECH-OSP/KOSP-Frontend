@@ -4,14 +4,11 @@ import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import {
   ArrowLeft,
   X,
-  Upload,
-  FileText,
   Loader2,
   Sparkles,
   Calendar,
   Hash,
   Type,
-  FileUp,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
@@ -20,10 +17,9 @@ import { useSession } from 'next-auth/react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
 import { API_BASE_URL } from '@/lib/api/config';
-import { uploadFile } from '@/lib/api/upload';
 import { getRecruit, updateRecruit } from '@/lib/api/recruit';
 import { toast } from '@/lib/toast';
-import type { BoardListResponse, FileResponse } from '@/lib/api/types';
+import type { BoardListResponse } from '@/lib/api/types';
 
 interface RecruitFormData {
   title: string;
@@ -31,7 +27,6 @@ interface RecruitFormData {
   tags: string[];
   startDate: string;
   endDate: string;
-  files: File[];
 }
 
 function stripHtml(html: string): string {
@@ -44,7 +39,6 @@ const formSections = [
   { id: 'period', label: '모집 기간', icon: Calendar },
   { id: 'tags', label: '기술 스택', icon: Hash },
   { id: 'content', label: '상세 내용', icon: Sparkles },
-  { id: 'files', label: '첨부파일', icon: FileUp },
 ];
 
 export default function CreateRecruitPage() {
@@ -71,7 +65,6 @@ export default function CreateRecruitPage() {
     tags: [],
     startDate: '',
     endDate: '',
-    files: [],
   });
 
   const [activeSection, setActiveSection] = useState('title');
@@ -86,7 +79,6 @@ export default function CreateRecruitPage() {
             tags: recruit.tags || [],
             startDate: recruit.startDate.split('T')[0],
             endDate: recruit.endDate ? recruit.endDate.split('T')[0] : '',
-            files: [],
           });
         })
         .catch((err) => {
@@ -108,7 +100,6 @@ export default function CreateRecruitPage() {
           setFormData((prev) => ({
             ...prev,
             ...parsed,
-            files: [],
           }));
           toast.success('작성 중인 내용을 불러왔습니다.');
         } catch (e) {
@@ -156,8 +147,6 @@ export default function CreateRecruitPage() {
       case 'content':
         if (errors.content) return 'error';
         return stripHtml(formData.content) ? 'filled' : 'empty';
-      case 'files':
-        return formData.files.length > 0 ? 'filled' : 'empty';
       default:
         return 'empty';
     }
@@ -200,40 +189,6 @@ export default function CreateRecruitPage() {
       ...prev,
       tags: prev.tags.filter((t) => t !== tag),
     }));
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    if (formData.files.length + files.length > 5) {
-      toast.error('파일은 최대 5개까지 업로드 가능합니다.');
-      return;
-    }
-
-    const maxSize = 10 * 1024 * 1024;
-    const oversizedFiles = files.filter((file) => file.size > maxSize);
-
-    if (oversizedFiles.length > 0) {
-      toast.error('각 파일의 크기는 10MB를 초과할 수 없습니다.');
-      return;
-    }
-
-    setFormData((prev) => ({ ...prev, files: [...prev.files, ...files] }));
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      files: prev.files.filter((_, i) => i !== index),
-    }));
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
   const validateForm = (): boolean => {
@@ -279,19 +234,6 @@ export default function CreateRecruitPage() {
 
     setIsSubmitting(true);
     try {
-      const attachmentIds: number[] = [];
-      if (formData.files.length > 0) {
-        for (const file of formData.files) {
-          try {
-            const fileResponse: FileResponse = await uploadFile(file, { accessToken });
-            attachmentIds.push(fileResponse.id);
-          } catch (uploadError) {
-            console.error('파일 업로드 실패:', file.name, uploadError);
-            throw new Error(`파일 업로드 실패: ${file.name}`);
-          }
-        }
-      }
-
       const commonData = {
         title: formData.title,
         content: formData.content,
@@ -301,7 +243,6 @@ export default function CreateRecruitPage() {
         endDate: formData.endDate
           ? new Date(formData.endDate).toISOString()
           : undefined,
-        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
       };
 
       const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`, {
@@ -708,70 +649,6 @@ export default function CreateRecruitPage() {
                     {errors.content}
                   </div>
                 )}
-              </section>
-
-              {/* Files Section */}
-              <section
-                id="files"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'files' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
-                }`}
-                onFocus={() => setActiveSection('files')}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                    getSectionStatus('files') === 'filled'
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <FileUp className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">첨부파일</h2>
-                    <p className="text-sm text-slate-500">관련 문서나 이미지를 첨부하세요</p>
-                  </div>
-                </div>
-
-                {formData.files.length > 0 && (
-                  <div className="mb-4 space-y-2">
-                    {formData.files.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3"
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                          <FileText className="h-5 w-5 text-slate-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
-                          <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFile(index)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-200 hover:text-red-600"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-10 transition-all hover:border-slate-400 hover:bg-slate-100">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-                    <Upload className="h-6 w-6 text-slate-600" />
-                  </div>
-                  <span className="mt-4 text-sm font-semibold text-slate-700">파일을 드래그하거나 클릭하여 업로드</span>
-                  <span className="mt-1 text-xs text-slate-500">PNG, JPG, PDF, DOC, ZIP (최대 5개, 각 10MB)</span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
-                  />
-                </label>
               </section>
 
               {/* Submit Section */}

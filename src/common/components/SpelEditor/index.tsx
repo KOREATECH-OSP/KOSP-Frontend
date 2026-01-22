@@ -142,8 +142,8 @@ function interpretCondition(python: string): string {
 
   const conditions: string[] = [];
 
-  // 변수 조건 해석
-  const matches = python.matchAll(/(\w+)\s*(>=|<=|>|<|==|!=)\s*(\d+(?:\.\d+)?)/g);
+  // 변수 조건 해석 (dictionary 접근 패턴 지원: activity['commits'])
+  const matches = python.matchAll(/(\w+(?:\['[^']+'\])?)\s*(>=|<=|>|<|==|!=)\s*(\d+(?:\.\d+)?)/g);
   for (const match of matches) {
     const variable = match[1];
     const operator = match[2];
@@ -158,7 +158,11 @@ function interpretCondition(python: string): string {
       '!=': '제외',
     };
 
-    conditions.push(`${variable} ${value}% ${opText[operator] || operator}`);
+    // dictionary 접근 패턴에서 필드명만 추출 (activity['commits'] -> commits)
+    const fieldMatch = variable.match(/\['([^']+)'\]/);
+    const displayName = fieldMatch ? fieldMatch[1] : variable;
+
+    conditions.push(`${displayName} ${value} ${opText[operator] || operator}`);
   }
 
   return conditions.join(', ');

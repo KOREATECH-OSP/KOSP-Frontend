@@ -592,6 +592,18 @@ export interface ReportRequest {
 // File Upload Types
 // ============================================
 
+export interface UploadUrlRequest {
+  file_name: string;
+  content_length: number;
+  content_type: string;
+}
+
+export interface UploadUrlResponse {
+  pre_signed_url: string;
+  file_url: string;
+  expiration_date: string;
+}
+
 export interface FileResponse {
   id: number;
   originalFileName: string;
