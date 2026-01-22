@@ -23,6 +23,8 @@ import {
   Sparkles,
   Zap,
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   getUserPosts,
@@ -71,6 +73,7 @@ export default function UserProfileClient({
 
   const [counts, setCounts] = useState(initialCounts);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAllRepos, setShowAllRepos] = useState(false);
 
   const fetchGithubData = useCallback(async () => {
     const [historyRes, activityRes, scoreRes, comparisonRes] = await Promise.all([
@@ -140,10 +143,10 @@ export default function UserProfileClient({
     );
   }
 
-  const tabs: { key: TabType; label: string }[] = [
-    { key: '활동', label: '활동' },
-    { key: '작성글', label: '작성한 글' },
-    { key: '댓글', label: '작성한 댓글' },
+  const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
+    { key: '활동', label: '활동', icon: <Activity className="h-4 w-4" /> },
+    { key: '작성글', label: '작성한 글', icon: <FileText className="h-4 w-4" /> },
+    { key: '댓글', label: '작성한 댓글', icon: <MessageCircle className="h-4 w-4" /> },
   ];
 
   return (
@@ -228,17 +231,22 @@ export default function UserProfileClient({
         <div className="lg:col-span-2">
           {/* 탭 필터 */}
           <div className="-mx-4 mb-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-1">
-              {tabs.map((tab) => (
+            <div className="flex">
+              {tabs.map((tab, index) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all ${activeTab === tab.key
+                    ? 'text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                  style={
                     activeTab === tab.key
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                  }`}
+                      ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
+                      : undefined
+                  }
                 >
+                  {tab.icon}
                   {tab.label}
                 </button>
               ))}
@@ -451,7 +459,7 @@ export default function UserProfileClient({
                         Recent Contributions
                       </h2>
                       <div className="space-y-3">
-                        {recentActivity.map((repo, idx) => (
+                        {(showAllRepos ? recentActivity : recentActivity.slice(0, 5)).map((repo, idx) => (
                           <a
                             key={idx}
                             href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
@@ -487,6 +495,24 @@ export default function UserProfileClient({
                           </a>
                         ))}
                       </div>
+                      {recentActivity.length > 5 && (
+                        <button
+                          onClick={() => setShowAllRepos(!showAllRepos)}
+                          className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                        >
+                          {showAllRepos ? (
+                            <>
+                              접기
+                              <ChevronUp className="h-4 w-4" />
+                            </>
+                          ) : (
+                            <>
+                              더보기 ({recentActivity.length - 5}개)
+                              <ChevronDown className="h-4 w-4" />
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </>

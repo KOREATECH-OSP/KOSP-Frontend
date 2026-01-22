@@ -14,7 +14,13 @@ function calculateDday(endDate: string | null): string {
     if (!endDate) return '상시모집';
     const end = new Date(endDate);
     const now = new Date();
+
+    // Normalize to midnight to compare calendar days only
+    end.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+
     const diffDays = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
     if (diffDays < 0) return '마감';
     if (diffDays === 0) return 'D-Day';
     return `D-${diffDays}`;

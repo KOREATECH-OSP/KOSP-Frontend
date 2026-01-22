@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { ArticleResponse, CommentResponse } from '@/lib/api/types';
 import ReportModal from '@/common/components/ReportModal';
-import { deleteArticle, toggleArticleLike, toggleArticleBookmark, getArticle } from '@/lib/api/article';
+import { deleteArticle, toggleArticleLike, toggleArticleBookmark } from '@/lib/api/article';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import { signOutOnce } from '@/lib/auth/signout';
@@ -115,10 +115,7 @@ export default function ArticleDetailClient({
     try {
       const response = await toggleArticleLike(article.id, { accessToken });
       setLiked(response.isLiked);
-
-      // 좋아요 수를 서버에서 다시 조회
-      const updatedArticle = await getArticle(article.id, accessToken);
-      setLikeCount(updatedArticle.likes);
+      setLikeCount((prev) => (response.isLiked ? prev + 1 : prev - 1));
     } catch (error) {
       console.error('좋아요 실패:', error);
     }
@@ -298,180 +295,243 @@ export default function ArticleDetailClient({
       />
 
       <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10">
-        {/* Left Sidebar */}
-        <aside className="mb-8 space-y-6 lg:mb-0">
-          <div className="sticky top-24 space-y-6">
-            {/* Author Profile Card */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <Link href={`/user/${article.author.id}`} className="relative h-12 w-12 overflow-hidden rounded-full border border-gray-100 bg-gray-50 flex-shrink-0">
-                  {/* Since we don't have profileImage in ArticleResponse author type explicitly shown in previous view, we use a placeholder or check if it exists in data logic. Assuming simple placeholder for now based on types seen. */}
-                  {/* Actually typings usually have profileImage. Attempting to use if available, else User icon */}
-                  <div className="flex h-full w-full items-center justify-center text-gray-300">
-                    <User className="h-6 w-6" />
-                  </div>
+        {/* Left Sidebar (Desktop) */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-20 space-y-4">
+            {/* Box 1: Author Info */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="flex flex-col items-center text-center">
+                <Link href={`/user/${article.author.id}`} className="relative mb-3 h-20 w-20 overflow-hidden rounded-full border border-gray-100 bg-gray-50 transition-transform hover:scale-105">
+                  {article.author.profileImage ? (
+                    <img
+                      src={article.author.profileImage}
+                      alt={article.author.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-gray-300">
+                      <User className="h-10 w-10" />
+                    </div>
+                  )}
                 </Link>
-                <div className="min-w-0">
-                  <Link href={`/user/${article.author.id}`} className="block font-bold text-gray-900 hover:underline truncate">
-                    {article.author.name}
-                  </Link>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  onClick={handleLike}
-                  disabled={isPending}
-                  className={`flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold transition-colors ${liked
-                    ? 'border-pink-200 bg-pink-50 text-pink-600'
-                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                  <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
-                  {likeCount}
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleBookmark}
-                    disabled={isPending}
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-semibold transition-colors ${bookmarked
-                      ? 'border-yellow-200 bg-yellow-50 text-amber-500'
-                      : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                    <Bookmark className={`h-4 w-4 ${bookmarked ? 'fill-current' : ''}`} />
-                    저장
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <Link2 className="h-4 w-4" />
-                    공유
-                  </button>
-                </div>
+                <Link href={`/user/${article.author.id}`} className="mb-1 block text-lg font-bold text-gray-900 hover:underline">
+                  {article.author.name}
+                </Link>
               </div>
             </div>
 
-            {/* Management Actions */}
-            {(isMine || !isMine) && (
-              <div className="rounded-xl border border-gray-200 bg-white p-2">
-                {isMine ? (
-                  <div className="space-y-1">
-                    <Link
-                      href={`/community/write?id=${article.id}`}
-                      className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <Pencil className="h-4 w-4 text-gray-400" />
-                      게시글 수정
-                    </Link>
-                    <button
-                      onClick={handleDeleteArticle}
-                      className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      게시글 삭제
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsReportModalOpen(true)}
-                    className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <AlertTriangle className="h-4 w-4" />
-                    게시글 신고
-                  </button>
-                )}
+            {/* Box 2: Actions */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleLike}
+                  disabled={isPending}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold transition-all active:scale-95 ${liked
+                    ? 'border-pink-200 bg-pink-50 text-pink-600'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                  <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
+                  <span>좋아요 {likeCount > 0 && likeCount}</span>
+                </button>
+                <button
+                  onClick={handleBookmark}
+                  disabled={isPending}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold transition-all active:scale-95 ${bookmarked
+                    ? 'border-yellow-200 bg-yellow-50 text-amber-500'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                  <Bookmark className={`h-4 w-4 ${bookmarked ? 'fill-current' : ''}`} />
+                  <span>저장</span>
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50 active:scale-95"
+                >
+                  <Link2 className="h-4 w-4" />
+                  <span>공유</span>
+                </button>
               </div>
-            )}
+
+              {/* Management Actions */}
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <div className="flex justify-center gap-2">
+                  {isMine ? (
+                    <>
+                      <Link
+                        href={`/community/write?id=${article.id}`}
+                        className="flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        수정
+                      </Link>
+                      <button
+                        onClick={handleDeleteArticle}
+                        className="flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600"
+                      >
+                        삭제
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setIsReportModalOpen(true)}
+                      className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-500"
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      신고하기
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </aside>
 
         {/* Main Content */}
         <div className="min-w-0">
           {/* Article Card */}
-          <article className="rounded-xl border border-gray-200 bg-white mb-8">
+          <article className="rounded-2xl border border-gray-200 bg-white mb-8 overflow-hidden">
             {/* Header */}
-            <div className="border-b border-gray-100 px-6 py-6 sm:px-8">
+            <div className="border-b border-gray-100 bg-gray-50/30 px-6 py-8 sm:px-10">
               {article.tags && article.tags.length > 0 && (
-                <div className="mb-4 flex flex-wrap items-center gap-2">
+                <div className="mb-6 flex flex-wrap items-center gap-2">
                   {article.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600"
+                      className="inline-flex items-center rounded-md bg-white border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600"
                     >
                       #{tag}
                     </span>
                   ))}
                 </div>
               )}
-              <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl mb-4">
+              <h1 className="text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl mb-4">
                 {article.title}
               </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1.5">
-                  <Eye className="h-4 w-4" />
-                  {article.views}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Heart className="h-4 w-4" />
+
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5" title="조회수">
+                    <Eye className="h-4 w-4" />
+                    {article.views}
+                  </span>
+                  <span className="flex items-center gap-1.5" title="댓글">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    {comments.length}
+                  </span>
+                </div>
+                <span>{formatDate(article.createdAt)}</span>
+              </div>
+            </div>
+
+            {/* Mobile Action Bar (Visible only on lg and below) */}
+            <div className="lg:hidden flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-white/50 backdrop-blur-sm sticky top-[57px] z-10">
+              <div className="flex items-center gap-5">
+                <button
+                  onClick={handleLike}
+                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${liked ? 'text-pink-600' : 'text-gray-600 hover:text-pink-600'}`}
+                >
+                  <Heart className={`h-5 w-5 ${liked ? 'fill-current' : ''}`} />
                   {likeCount}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                  {comments.length}
-                </span>
+                </button>
+                <button
+                  onClick={handleBookmark}
+                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${bookmarked ? 'text-amber-500' : 'text-gray-600 hover:text-amber-500'}`}
+                >
+                  <Bookmark className={`h-5 w-5 ${bookmarked ? 'fill-current' : ''}`} />
+                  저장
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link href={`/user/${article.author.id}`} className="flex items-center gap-2">
+                  {article.author.profileImage && (
+                    <img src={article.author.profileImage} alt="" className="w-6 h-6 rounded-full border border-gray-200" />
+                  )}
+                  <span className="text-sm font-bold text-gray-900">{article.author.name}</span>
+                </Link>
+                <button onClick={handleShare} className="text-gray-400 hover:text-blue-600 transition-colors">
+                  <Link2 className="h-5 w-5" />
+                </button>
               </div>
             </div>
 
             {/* Body */}
-            <div className="px-6 py-8 sm:px-8">
+            <div className="px-6 py-10 sm:px-10">
               <div
-                className="prose prose-gray max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 hover:prose-a:underline prose-img:rounded-xl"
+                className="prose prose-gray max-w-none prose-lg prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 hover:prose-a:underline prose-img:rounded-xl"
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             </div>
+
+            {/* Mobile: Management Actions */}
+            {(isMine || !isMine) && (
+              <div className="lg:hidden border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end">
+                {isMine ? (
+                  <div className="flex items-center gap-3">
+                    <Link href={`/community/write?id=${article.id}`} className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900">
+                      <Pencil className="h-3.5 w-3.5" /> 수정
+                    </Link>
+                    <button onClick={handleDeleteArticle} className="flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700">
+                      <Trash2 className="h-3.5 w-3.5" /> 삭제
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setIsReportModalOpen(true)} className="flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700">
+                    <AlertTriangle className="h-3.5 w-3.5" /> 신고
+                  </button>
+                )}
+              </div>
+            )}
           </article>
 
           {/* Comments Section */}
-          <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-10">
+            <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-2">
               댓글
-              <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{comments.length}</span>
+              <span className="text-sm font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">{comments.length}</span>
             </h2>
 
             {/* Comment Form */}
-            <form onSubmit={handleCommentSubmit} className="mb-8">
+            <form onSubmit={handleCommentSubmit} className="mb-10">
               <div className="relative">
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder={accessToken ? "자유롭게 의견을 남겨보세요." : "로그인 후 댓글을 남길 수 있습니다."}
+                  placeholder={accessToken ? "이 글에 대한 생각을 남겨주세요." : "로그인 후 댓글을 남길 수 있습니다."}
                   rows={3}
                   disabled={!accessToken}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-900 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                 />
-                <div className="absolute bottom-3 right-3">
-                  <button
-                    type="submit"
-                    disabled={!newComment.trim() || isSubmitting}
-                    className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-black disabled:bg-gray-200 disabled:text-gray-400"
-                  >
-                    {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : '등록'}
-                  </button>
-                </div>
+              </div>
+              <div className="flex justify-end mt-2">
+                <button
+                  type="submit"
+                  disabled={!newComment.trim() || isSubmitting}
+                  className="flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-black disabled:bg-gray-200 disabled:text-gray-400"
+                >
+                  {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : '등록'}
+                </button>
               </div>
             </form>
 
             {/* Comment List */}
-            <div className="space-y-6">
+            <div className="space-y-8">
               {comments.map((comment) => (
-                <div key={comment.id} className="group flex gap-4">
-                  <Link href={`/user/${comment.author.id}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400 overflow-hidden">
-                    {/* Placeholder Avatar */}
-                    <User className="h-5 w-5" />
+                <div key={comment.id} className="group flex gap-4 sm:gap-6">
+                  <Link href={`/user/${comment.author.id}`} className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-gray-100 text-gray-400">
+                    {comment.author.profileImage ? (
+                      <img
+                        src={comment.author.profileImage}
+                        alt={comment.author.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <User className="h-5 w-5" />
+                      </div>
+                    )}
                   </Link>
-                  <div className="flex-1 space-y-1.5">
+                  <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Link href={`/user/${comment.author.id}`} className="font-bold text-gray-900 text-sm hover:underline">
@@ -481,7 +541,7 @@ export default function ArticleDetailClient({
                       </div>
 
                       {/* Comment Actions */}
-                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleCommentLike(comment.id)}
                           disabled={isPending}
@@ -501,15 +561,19 @@ export default function ArticleDetailClient({
                         )}
                       </div>
                     </div>
-                    <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+                    <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                       {comment.content}
                     </p>
                   </div>
                 </div>
               ))}
               {comments.length === 0 && (
-                <div className="py-10 text-center text-sm text-gray-500">
-                  첫 번째 댓글을 남겨보세요!
+                <div className="py-12 text-center text-gray-400">
+                  <div className="flex justify-center mb-2">
+                    <svg className="w-10 h-10 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                  </div>
+                  <p>아직 댓글이 없습니다.</p>
+                  <p className="text-sm">첫 번째 댓글을 남겨보세요!</p>
                 </div>
               )}
             </div>

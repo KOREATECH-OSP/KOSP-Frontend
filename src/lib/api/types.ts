@@ -356,6 +356,7 @@ export interface ArticleResponse {
   isLiked: boolean;
   isBookmarked: boolean;
   isPinned?: boolean;
+  createdAt: string;
 }
 
 export interface ArticleListResponse {
