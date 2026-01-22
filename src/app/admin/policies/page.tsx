@@ -131,11 +131,11 @@ export default function AdminPoliciesPage() {
   };
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">정책(Policy) 관리</h1>
-          <p className="mt-1 text-sm text-gray-500">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">정책(Policy) 관리</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
             권한들을 그룹화한 정책을 관리합니다
           </p>
         </div>
@@ -184,53 +184,32 @@ export default function AdminPoliciesPage() {
             <p className="text-gray-500">검색 결과가 없습니다</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      정책명
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      설명
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      관리
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredPolicies.map((policy) => (
-                    <tr key={policy.id} className="transition-colors hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="font-semibold text-gray-900">{policy.name}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{policy.description || '-'}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenPermissionModal(policy)}
-                            disabled={isLoadingPolicy}
-                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                          >
-                            {isLoadingPolicy ? <Loader2 className="h-3 w-3 animate-spin" /> : '권한'}
-                          </button>
-                          <button
-                            onClick={() => handleDeletePolicy(policy.name)}
-                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <ul className="divide-y divide-gray-100">
+              {filteredPolicies.map((policy) => (
+                <li key={policy.id} className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium text-gray-900">{policy.name}</span>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{policy.description || '설명 없음'}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => handleOpenPermissionModal(policy)}
+                      disabled={isLoadingPolicy}
+                      className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      {isLoadingPolicy ? <Loader2 className="h-3 w-3 animate-spin" /> : '권한'}
+                    </button>
+                    <button
+                      onClick={() => handleDeletePolicy(policy.name)}
+                      className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

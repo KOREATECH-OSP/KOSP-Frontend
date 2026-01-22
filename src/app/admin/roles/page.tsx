@@ -125,11 +125,11 @@ export default function AdminRolesPage() {
   };
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">역할(Role) 관리</h1>
-          <p className="mt-1 text-sm text-gray-500">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">역할(Role) 관리</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
             사용자에게 부여할 역할을 관리합니다
           </p>
         </div>
@@ -178,79 +178,51 @@ export default function AdminRolesPage() {
             <p className="text-gray-500">검색 결과가 없습니다</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      역할명
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      설명
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      정책
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      관리
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredRoles.map((role) => (
-                    <tr key={role.name} className="transition-colors hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="font-semibold text-gray-900">{role.name}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{role.description || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {role.policies && role.policies.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {role.policies.slice(0, 3).map((policyName, idx) => (
-                              <span
-                                key={`role-${role.name}-policy-${idx}`}
-                                className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
-                              >
-                                {policyName}
-                              </span>
-                            ))}
-                            {role.policies.length > 3 && (
-                              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-400">
-                                +{role.policies.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedRole(role);
-                              setShowPolicyModal(true);
-                            }}
-                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
-                          >
-                            정책
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRole(role.name)}
-                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-                          >
-                            삭제
-                          </button>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <ul className="divide-y divide-gray-100">
+              {filteredRoles.map((role) => (
+                <li key={role.name} className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">{role.name}</span>
+                      {role.policies && role.policies.length > 0 && (
+                        <div className="flex gap-1">
+                          {role.policies.slice(0, 2).map((policyName, idx) => (
+                            <span
+                              key={`role-${role.name}-policy-${idx}`}
+                              className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
+                            >
+                              {policyName}
+                            </span>
+                          ))}
+                          {role.policies.length > 2 && (
+                            <span className="text-xs text-gray-400">+{role.policies.length - 2}</span>
+                          )}
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{role.description || '설명 없음'}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedRole(role);
+                        setShowPolicyModal(true);
+                      }}
+                      className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                    >
+                      정책
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRole(role.name)}
+                      className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

@@ -300,7 +300,7 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <main className="pt-14">{children}</main>
+        <main className="pt-20">{children}</main>
       </div>
     </div>
   );

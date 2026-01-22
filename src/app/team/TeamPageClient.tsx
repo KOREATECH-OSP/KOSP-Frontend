@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Search, Plus } from 'lucide-react';
-import type { TeamResponse, RecruitResponse } from '@/lib/api/types';
+import type { TeamResponse, RecruitResponse, PageMeta } from '@/lib/api/types';
 
 import TeamRecruitTab from './components/TeamRecruitTab';
 import TeamListTab from './components/TeamListTab';
@@ -15,6 +15,8 @@ type TabType = '전체' | '등록팀' | '모집공고' | '나의팀';
 interface TeamPageClientProps {
   initialTeams: TeamResponse[];
   initialRecruits: RecruitResponse[];
+  recruitPagination: PageMeta;
+  recruitBoardId: number;
 }
 
 const TABS = [
@@ -27,6 +29,8 @@ const TABS = [
 export default function TeamPageClient({
   initialTeams,
   initialRecruits,
+  recruitPagination,
+  recruitBoardId,
 }: TeamPageClientProps) {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>('전체');
@@ -169,18 +173,22 @@ export default function TeamPageClient({
               <TeamListTab
                 teams={filteredTeams}
                 recruits={filteredRecruits}
-                onShowMoreRecruits={() => setActiveTab('모집공고')}
               />
             )}
             {activeTab === '등록팀' && (
               <TeamListTab
                 teams={filteredTeams}
-                recruits={[]} // Hide recruits section in this tab
-                onShowMoreRecruits={() => { }}
+                recruits={[]}
                 hideTeamSectionHeader={true}
               />
             )}
-            {activeTab === '모집공고' && <TeamRecruitTab recruits={filteredRecruits} />}
+            {activeTab === '모집공고' && (
+              <TeamRecruitTab
+                recruits={filteredRecruits}
+                boardId={recruitBoardId}
+                initialPagination={recruitPagination}
+              />
+            )}
             {activeTab === '나의팀' && <MyTeamListTab />}
           </div>
         </div>

@@ -106,7 +106,7 @@ export default function NoticeDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-6 pb-6 md:px-8 md:pb-8">
+      <div className="p-6 md:p-8">
         <div className="mx-auto max-w-4xl">
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
@@ -121,7 +121,7 @@ export default function NoticeDetailPage() {
 
   if (!notice) {
     return (
-      <div className="px-6 pb-6 md:px-8 md:pb-8">
+      <div className="p-6 md:p-8">
         <div className="mx-auto max-w-4xl">
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
@@ -140,7 +140,7 @@ export default function NoticeDetailPage() {
   }
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
+    <div className="p-6 md:p-8">
       <div className="mx-auto max-w-4xl">
         {/* 상단 네비게이션 */}
         <div className="mb-6 flex items-center justify-between">

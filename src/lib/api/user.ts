@@ -81,8 +81,8 @@ export async function deleteUser(userId: number, auth: AuthOptions): Promise<voi
 /**
  * 사용자 작성 글 목록
  */
-export async function getUserPosts(userId: number): Promise<ArticleListResponse> {
-  return apiClient<ArticleListResponse>(`/v1/users/${userId}/posts`, {
+export async function getUserPosts(userId: number, page: number = 1, size: number = 10): Promise<ArticleListResponse> {
+  return apiClient<ArticleListResponse>(`/v1/users/${userId}/posts?page=${page - 1}&size=${size}`, {
     cache: 'no-store',
   });
 }
@@ -90,8 +90,8 @@ export async function getUserPosts(userId: number): Promise<ArticleListResponse>
 /**
  * 사용자 작성 댓글 목록
  */
-export async function getUserComments(userId: number): Promise<CommentListResponse> {
-  return apiClient<CommentListResponse>(`/v1/users/${userId}/comments`, {
+export async function getUserComments(userId: number, page: number = 1, size: number = 10): Promise<CommentListResponse> {
+  return apiClient<CommentListResponse>(`/v1/users/${userId}/comments?page=${page - 1}&size=${size}`, {
     cache: 'no-store',
   });
 }
@@ -99,8 +99,8 @@ export async function getUserComments(userId: number): Promise<CommentListRespon
 /**
  * 사용자 즐겨찾기 목록
  */
-export async function getUserBookmarks(userId: number): Promise<ArticleListResponse> {
-  return apiClient<ArticleListResponse>(`/v1/users/${userId}/bookmarks`, {
+export async function getUserBookmarks(userId: number, page: number = 1, size: number = 10): Promise<ArticleListResponse> {
+  return apiClient<ArticleListResponse>(`/v1/users/${userId}/bookmarks?page=${page - 1}&size=${size}`, {
     cache: 'no-store',
   });
 }

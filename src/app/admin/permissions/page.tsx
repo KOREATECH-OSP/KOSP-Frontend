@@ -40,11 +40,11 @@ export default function AdminPermissionsPage() {
   );
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">권한(Permission) 관리</h1>
-          <p className="mt-1 text-sm text-gray-500">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">권한(Permission) 관리</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
             시스템의 기본 권한을 조회합니다 (읽기 전용)
           </p>
         </div>
@@ -80,55 +80,25 @@ export default function AdminPermissionsPage() {
           <div className="flex min-h-[40vh] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
+        ) : filteredPermissions.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white py-12 text-center">
+            <Key className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+            <p className="text-gray-500">검색 결과가 없습니다</p>
+          </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-gray-200 bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      ID
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      권한 이름
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      설명
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredPermissions.map((permission) => (
-                    <tr
-                      key={permission.id}
-                      className="transition-colors hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 text-sm text-gray-400">
-                        #{permission.id}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Key className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium text-gray-900">
-                            {permission.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {permission.description}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredPermissions.length === 0 && (
-              <div className="py-12 text-center">
-                <Key className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-                <p className="text-gray-500">검색 결과가 없습니다</p>
-              </div>
-            )}
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <ul className="divide-y divide-gray-100">
+              {filteredPermissions.map((permission) => (
+                <li key={permission.id} className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-gray-50">
+                  <Key className="h-4 w-4 shrink-0 text-gray-400" />
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium text-gray-900">{permission.name}</span>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{permission.description}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-gray-400">#{permission.id}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

@@ -82,7 +82,7 @@ export default function CreateChallengePage() {
   }
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
+    <div className="p-6 md:p-8">
       <div className="mx-auto max-w-3xl">
         {/* 헤더 */}
         <div className="mb-8">

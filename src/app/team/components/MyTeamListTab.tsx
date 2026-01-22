@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Users, ArrowRight, Loader2 } from 'lucide-react';
 import { getMyTeam } from '@/lib/api';
 import type { TeamDetailResponse, TeamResponse, AuthorResponse } from '@/lib/api/types';
 import TeamCard from '@/common/components/team/TeamCard';
+import Pagination from '@/common/components/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface MyTeam {
   id: number;
@@ -23,6 +26,13 @@ export default function MyTeamListTab() {
   const [myTeams, setMyTeams] = useState<MyTeam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(myTeams.length / PAGE_SIZE) || 1;
+  const paginatedTeams = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return myTeams.slice(start, start + PAGE_SIZE);
+  }, [myTeams, currentPage]);
 
   useEffect(() => {
     async function fetchMyTeam() {
@@ -136,29 +146,37 @@ export default function MyTeamListTab() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
-      {myTeams.map((team) => {
-        const teamForCard: TeamResponse = {
-          id: team.id,
-          name: team.name,
-          description: team.description,
-          imageUrl: team.imageUrl,
-          memberCount: team.memberCount,
-          createdBy: team.createdBy,
-        };
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
+        {paginatedTeams.map((team) => {
+          const teamForCard: TeamResponse = {
+            id: team.id,
+            name: team.name,
+            description: team.description,
+            imageUrl: team.imageUrl,
+            memberCount: team.memberCount,
+            createdBy: team.createdBy,
+          };
 
-        return (
-          <TeamCard
-            key={team.id}
-            team={teamForCard}
-            badge={team.isLeader && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 ml-1.5 flex-shrink-0">
-                LEADER
-              </span>
-            )}
-          />
-        );
-      })}
+          return (
+            <TeamCard
+              key={team.id}
+              team={teamForCard}
+              badge={team.isLeader && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 ml-1.5 flex-shrink-0">
+                  LEADER
+                </span>
+              )}
+            />
+          );
+        })}
+      </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

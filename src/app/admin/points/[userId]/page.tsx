@@ -9,14 +9,13 @@ import {
   Plus,
   Minus,
   Coins,
-  ChevronLeft,
-  ChevronRight,
   TrendingUp,
   TrendingDown,
 } from 'lucide-react';
 import { getUserPointHistory, updateUserPoints } from '@/lib/api/admin';
 import type { PointHistoryResponse, PointTransaction } from '@/types/admin';
 import { toast } from '@/lib/toast';
+import Pagination from '@/common/components/Pagination';
 
 const PAGE_SIZE = 10;
 
@@ -124,24 +123,8 @@ export default function AdminPointDetailPage() {
 
   const totalPages = pointHistory?.totalPages || 1;
 
-  const getPageNumbers = () => {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
-    const end = Math.min(totalPages - 1, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(0, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  };
-
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
+    <div className="p-6 md:p-8">
       <div className="mx-auto max-w-4xl">
         {/* 뒤로가기 & 헤더 */}
         <div className="mb-6">
@@ -357,62 +340,18 @@ export default function AdminPointDetailPage() {
                 </table>
               </div>
 
-              {/* 페이지네이션 */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-3">
-                  <p className="text-sm text-gray-600">
-                    총 {pointHistory?.totalElements || 0}건
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setCurrentPage(0)}
-                      disabled={currentPage === 0}
-                      className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      처음
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                      disabled={currentPage === 0}
-                      className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-
-                    {getPageNumbers().map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm font-medium transition-colors ${
-                          currentPage === page
-                            ? 'bg-gray-900 text-white'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {page + 1}
-                      </button>
-                    ))}
-
-                    <button
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
-                      }
-                      disabled={currentPage === totalPages - 1}
-                      className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages - 1)}
-                      disabled={currentPage === totalPages - 1}
-                      className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                    >
-                      마지막
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* 페이지네이션 */}
+            {pointHistory?.transactions && pointHistory.transactions.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  currentPage={currentPage + 1}
+                  totalPages={totalPages}
+                  onPageChange={(page) => setCurrentPage(page - 1)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

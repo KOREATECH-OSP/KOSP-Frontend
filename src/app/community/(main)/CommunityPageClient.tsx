@@ -42,8 +42,8 @@ export default function CommunityPageClient({
   };
 
   const [articles, setArticles] = useState<ArticleResponse[]>(sortArticles(initialArticles, 'latest'));
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(initialPagination.currentPage);
+  // Pagination state (API는 0-based, UI는 1-based)
+  const [currentPage, setCurrentPage] = useState(initialPagination.currentPage + 1);
   const [totalPages, setTotalPages] = useState(initialPagination.totalPages);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export default function CommunityPageClient({
         .then((data: ArticleListResponse) => {
           setArticles(sortArticles(data.posts, order));
           setTotalPages(data.pagination.totalPages);
-          setCurrentPage(data.pagination.currentPage);
+          setCurrentPage(data.pagination.currentPage + 1);
         })
         .catch((error) => {
           console.error('게시글 조회 실패:', error);
@@ -267,7 +267,7 @@ export default function CommunityPageClient({
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {totalPages >= 1 && articles.length > 0 && (
             <div className="mt-10">
               <Pagination
                 currentPage={currentPage}

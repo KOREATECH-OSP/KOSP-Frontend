@@ -11,8 +11,6 @@ import {
   User as UserIcon,
   Trash2,
   Save,
-  AlertTriangle,
-  X,
   ExternalLink,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -433,18 +431,23 @@ export default function UserEditClient() {
             </div>
           </div>
 
-          {/* 계정 삭제 */}
-          <div className="overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-orange-50/50">
+          {/* 계정 비활성화 */}
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <div className="border-b border-gray-100 px-5 py-4">
+              <h3 className="font-semibold text-gray-900">위험 구역</h3>
+            </div>
             <div className="p-5">
-              <h3 className="mb-3 font-semibold text-red-900">위험 구역</h3>
-              <p className="mb-4 text-sm text-red-700/80">
-                계정 삭제 시 모든 데이터가 영구 삭제됩니다.
+              <p className="mb-2 text-sm text-gray-600">
+                계정 비활성화 시 로그인이 불가하며, 관련 데이터에 접근할 수 없습니다.
+              </p>
+              <p className="mb-4 text-xs text-gray-500">
+                회원가입을 다시 하면 계정을 활성화할 수 있습니다.
               </p>
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="w-full rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
               >
-                계정 삭제하기
+                계정 비활성화
               </button>
             </div>
           </div>
@@ -490,104 +493,55 @@ export default function UserEditClient() {
       {/* 하단 여백 (고정 바 높이만큼) */}
       {hasChanges && <div className="h-24" />}
 
-      {/* 회원 탈퇴 확인 모달 */}
+      {/* 계정 비활성화 확인 모달 */}
       {showDeleteModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowDeleteModal(false);
-              setDeleteConfirmText('');
-            }
-          }}
-        >
-          <div
-            className="w-full max-w-md animate-in zoom-in-95 fade-in overflow-hidden rounded-2xl bg-white shadow-2xl duration-200"
-          >
-            {/* 모달 헤더 */}
-            <div className="relative bg-gradient-to-r from-red-500 to-red-600 px-6 py-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-xl font-bold text-gray-900">계정 비활성화</h2>
+            <div className="mb-6">
+              <p className="text-gray-600">
+                계정을 비활성화하면 로그인이 불가하며, 관련 데이터에 접근할 수 없습니다.
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                회원가입을 다시 하면 계정을 활성화할 수 있습니다.
+              </p>
+              <div className="mt-4">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  확인을 위해 <span className="font-semibold text-red-600">회원탈퇴</span>를 입력해주세요
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+                  placeholder="회원탈퇴"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
                   setDeleteConfirmText('');
                 }}
-                className="absolute right-4 top-4 rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                  <AlertTriangle className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">회원 탈퇴</h3>
-                  <p className="text-sm text-white/80">이 작업은 되돌릴 수 없습니다</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 모달 본문 */}
-            <div className="p-6">
-              <div className="mb-5 rounded-xl border border-red-100 bg-red-50 p-4">
-                <p className="mb-3 text-sm font-medium text-red-800">
-                  다음 데이터가 영구적으로 삭제됩니다:
-                </p>
-                <ul className="space-y-2 text-sm text-red-700">
-                  <li className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                    모든 게시글과 댓글
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                    팀 활동 기록
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                    챌린지 달성 기록
-                  </li>
-                </ul>
-              </div>
-
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                확인을 위해{' '}
-                <span className="rounded bg-red-100 px-1.5 py-0.5 font-bold text-red-600">
-                  회원탈퇴
-                </span>
-                를 입력해주세요
-              </label>
-              <input
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition-all focus:border-red-300 focus:outline-none focus:ring-4 focus:ring-red-100"
-                placeholder="회원탈퇴"
-                autoComplete="off"
-              />
-            </div>
-
-            {/* 모달 푸터 */}
-            <div className="flex gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText('');
-                }}
-                className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                disabled={isDeleting}
+                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
               >
                 취소
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={deleteConfirmText !== '회원탈퇴' || isDeleting}
-                className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
                 {isDeleting ? (
-                  <span className="flex items-center justify-center gap-2">
+                  <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     처리 중...
-                  </span>
+                  </>
                 ) : (
-                  '탈퇴하기'
+                  '비활성화'
                 )}
               </button>
             </div>

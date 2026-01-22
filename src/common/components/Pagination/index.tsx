@@ -63,19 +63,19 @@ export default function Pagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-center space-x-2">
+    <div className="flex items-center justify-center space-x-1">
       {/* 이전 버튼 */}
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className={`p-2 rounded-lg border transition ${
+        className={`p-1.5 rounded-md border transition ${
           currentPage === 1
             ? 'border-gray-200 text-gray-400 cursor-not-allowed'
             : 'border-gray-300 text-gray-700 hover:bg-gray-50'
         }`}
         aria-label="이전 페이지"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft className="w-4 h-4" />
       </button>
 
       {/* 페이지 번호 */}
@@ -84,7 +84,7 @@ export default function Pagination({
           return (
             <span
               key={`ellipsis-${index}`}
-              className="px-4 py-2 text-gray-400"
+              className="px-2 py-1 text-xs text-gray-400"
             >
               ...
             </span>
@@ -95,9 +95,9 @@ export default function Pagination({
           <button
             key={page}
             onClick={() => onPageChange(page as number)}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={`px-2.5 py-1 text-sm rounded-md transition ${
               currentPage === page
-                ? 'bg-blue-600 text-white'
+                ? 'bg-gray-900 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
             }`}
           >
@@ -110,14 +110,14 @@ export default function Pagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className={`p-2 rounded-lg border transition ${
+        className={`p-1.5 rounded-md border transition ${
           currentPage === totalPages
             ? 'border-gray-200 text-gray-400 cursor-not-allowed'
             : 'border-gray-300 text-gray-700 hover:bg-gray-50'
         }`}
         aria-label="다음 페이지"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-4 h-4" />
       </button>
     </div>
   );

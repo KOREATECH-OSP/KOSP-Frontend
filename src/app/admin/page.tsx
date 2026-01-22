@@ -97,7 +97,7 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <div className="p-6 md:p-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-4xl">
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
             <p className="mb-4 text-red-600">{error}</p>
             <button
@@ -113,12 +113,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-          <p className="mt-1 text-sm text-gray-500">시스템 전체 현황을 한눈에 확인하세요</p>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">대시보드</h1>
+          <p className="mt-0.5 text-sm text-gray-500">시스템 전체 현황을 한눈에 확인하세요</p>
         </div>
 
         {/* 통계 */}
@@ -178,57 +178,31 @@ export default function AdminDashboard() {
           </div>
 
           {recentUsers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[500px]">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50">
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      이름
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      이메일
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      역할
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      가입
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {recentUsers.map((user) => (
-                    <tr key={user.id} className="transition-colors hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-3">
-                        <span className="font-medium text-gray-900">{user.name}</span>
-                      </td>
-                      <td className="px-6 py-3">
-                        <span className="text-sm text-gray-600">{user.kutEmail}</span>
-                      </td>
-                      <td className="px-6 py-3">
-                        {user.roles && user.roles.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {user.roles.map((role, index) => (
-                              <span
-                                key={index}
-                                className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
-                              >
-                                {role}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-3 text-right">
-                        <span className="text-sm text-gray-500">{getTimeAgo(user.createdAt)}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ul className="divide-y divide-gray-100">
+              {recentUsers.map((user) => (
+                <li key={user.id} className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-gray-50">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">{user.name}</span>
+                      {user.roles && user.roles.length > 0 && (
+                        <div className="flex gap-1">
+                          {user.roles.map((role, index) => (
+                            <span
+                              key={index}
+                              className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
+                            >
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{user.kutEmail}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-gray-400">{getTimeAgo(user.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
           ) : (
             <div className="py-12 text-center text-sm text-gray-500">최근 가입한 사용자가 없습니다</div>
           )}

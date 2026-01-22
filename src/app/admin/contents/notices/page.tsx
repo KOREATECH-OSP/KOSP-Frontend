@@ -7,13 +7,12 @@ import {
   Plus,
   Bell,
   Search,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
 } from 'lucide-react';
-import { getAdminNotices, toggleBanner } from '@/lib/api/admin';
+import { getAdminNotices, toggleBanner, getBannerStatus } from '@/lib/api/admin';
 import type { AdminNoticeResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
+import Pagination from '@/common/components/Pagination';
 
 const PAGE_SIZE = 20;
 
@@ -52,34 +51,29 @@ export default function NoticesPage() {
     }
   }, [session?.accessToken, currentPage]);
 
+  const fetchBannerStatus = useCallback(async () => {
+    if (!session?.accessToken) return;
+    try {
+      const result = await getBannerStatus({ accessToken: session.accessToken });
+      setBannerActive(result.isActive);
+    } catch (err) {
+      console.error('Failed to fetch banner status:', err);
+    }
+  }, [session?.accessToken]);
+
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
       fetchNotices();
+      fetchBannerStatus();
     } else if (status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [status, session?.accessToken, fetchNotices, router]);
+  }, [status, session?.accessToken, fetchNotices, fetchBannerStatus, router]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
     fetchNotices();
-  };
-
-  const getPageNumbers = () => {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    const end = Math.min(totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
   };
 
   const handleToggleBanner = async () => {
@@ -105,7 +99,7 @@ export default function NoticesPage() {
   );
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
+    <div className="p-6 md:p-8">
       <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -210,41 +204,18 @@ export default function NoticesPage() {
             </ul>
           )}
 
-          {/* 페이지네이션 */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1 border-t border-gray-100 py-4">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-
-              {getPageNumbers().map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`min-w-[36px] rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                    currentPage === page
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
         </div>
+
+        {/* 페이지네이션 */}
+        {filteredNotices.length > 0 && (
+          <div className="mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

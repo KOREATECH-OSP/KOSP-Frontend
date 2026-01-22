@@ -28,6 +28,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import Pagination from '@/common/components/Pagination';
 import {
   getUserPosts,
   getUserComments,
@@ -76,7 +77,28 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
   const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
 
-  const [counts, setCounts] = useState({ posts: 0, comments: 0 });
+  // 포인트 페이징 상태
+  const [pointPage, setPointPage] = useState(1);
+  const [pointTotalPages, setPointTotalPages] = useState(1);
+
+  // 지원내역 페이징 상태
+  const [applicationPage, setApplicationPage] = useState(1);
+  const [applicationTotalPages, setApplicationTotalPages] = useState(1);
+  const [applicationTotalItems, setApplicationTotalItems] = useState(0);
+
+  // 작성글 페이징 상태
+  const [postPage, setPostPage] = useState(1);
+  const [postTotalPages, setPostTotalPages] = useState(1);
+
+  // 댓글 페이징 상태
+  const [commentPage, setCommentPage] = useState(1);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
+
+  // 저장 페이징 상태
+  const [bookmarkPage, setBookmarkPage] = useState(1);
+  const [bookmarkTotalPages, setBookmarkTotalPages] = useState(1);
+
+  const [counts, setCounts] = useState({ posts: 0, comments: 0, bookmarks: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [showAllRepos, setShowAllRepos] = useState(false);
 
@@ -139,25 +161,32 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           await fetchGithubData();
         } else if (activeTab === '포인트') {
           if (accessToken) {
-            const res = await getMyPointHistory({ accessToken });
+            const res = await getMyPointHistory({ accessToken }, pointPage, 10);
             setPointHistory(res);
+            setPointTotalPages(res.meta?.totalPages || 1);
           }
         } else if (activeTab === '지원내역') {
           if (accessToken) {
-            const res = await getMyApplications({ accessToken });
+            const res = await getMyApplications({ accessToken }, applicationPage, 10);
             setApplications(res.applications);
+            setApplicationTotalPages(res.meta?.totalPages || 1);
+            setApplicationTotalItems(res.meta?.totalItems || 0);
           }
         } else if (activeTab === '작성글') {
-          const res = await getUserPosts(userId);
+          const res = await getUserPosts(userId, postPage, 10);
           setPosts(res.posts);
+          setPostTotalPages(res.pagination.totalPages || 1);
           setCounts((prev) => ({ ...prev, posts: res.pagination.totalItems }));
         } else if (activeTab === '댓글') {
-          const res = await getUserComments(userId);
+          const res = await getUserComments(userId, commentPage, 10);
           setComments(res.comments);
+          setCommentTotalPages(res.meta.totalPages || 1);
           setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
         } else if (activeTab === '즐겨찾기') {
-          const res = await getUserBookmarks(userId);
+          const res = await getUserBookmarks(userId, bookmarkPage, 10);
           setBookmarks(res.posts);
+          setBookmarkTotalPages(res.pagination?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, bookmarks: res.pagination?.totalItems || res.posts.length }));
         }
       } catch (error) {
         console.error('Failed to fetch tab data:', error);
@@ -165,7 +194,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     };
 
     fetchTabData();
-  }, [activeTab, userId, accessToken, fetchGithubData]);
+  }, [activeTab, userId, accessToken, fetchGithubData, pointPage, applicationPage, postPage, commentPage, bookmarkPage]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -698,22 +727,33 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     <p className="text-gray-500">포인트 내역이 없습니다.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
-                    {pointHistory.transactions.map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{tx.reason}</p>
-                          <p className="text-xs text-gray-400">{formatDate(tx.createdAt)}</p>
+                  <>
+                    <div className="divide-y divide-gray-100">
+                      {pointHistory.transactions.map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between px-6 py-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{tx.reason}</p>
+                            <p className="text-xs text-gray-400">{formatDate(tx.createdAt)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-semibold ${tx.amount > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                              {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}P
+                            </p>
+                            <p className="text-xs text-gray-400">{tx.balanceAfter.toLocaleString()}P</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`text-sm font-semibold ${tx.amount > 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}P
-                          </p>
-                          <p className="text-xs text-gray-400">{tx.balanceAfter.toLocaleString()}P</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+
+                    {/* 페이지네이션 */}
+                    <div className="border-t border-gray-100 px-6 py-4">
+                      <Pagination
+                        currentPage={pointPage}
+                        totalPages={pointTotalPages}
+                        onPageChange={setPointPage}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -723,7 +763,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           {activeTab === '지원내역' && (
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-6 py-4">
-                <h2 className="text-sm font-bold text-gray-900">지원내역 ({applications.length})</h2>
+                <h2 className="text-sm font-bold text-gray-900">지원내역 ({applicationTotalItems})</h2>
               </div>
 
               {applications.length === 0 ? (
@@ -732,38 +772,49 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   <p className="text-gray-500">지원내역이 없습니다.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
-                  {applications.map((app) => (
-                    <Link
-                      key={app.applicationId}
-                      href={`/recruit/${app.recruit.id}`}
-                      className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                            {app.recruit.title}
-                          </p>
-                          <p className="text-xs text-gray-500">{app.recruit.teamName}</p>
-                          <p className="mt-1 text-xs text-gray-400">
-                            지원일: {formatDate(app.appliedAt)}
-                          </p>
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {applications.map((app) => (
+                      <Link
+                        key={app.applicationId}
+                        href={`/recruit/${app.recruit.id}`}
+                        className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                              {app.recruit.title}
+                            </p>
+                            <p className="text-xs text-gray-500">{app.recruit.teamName}</p>
+                            <p className="mt-1 text-xs text-gray-400">
+                              지원일: {formatDate(app.appliedAt)}
+                            </p>
+                          </div>
+                          <div className="ml-4 flex-shrink-0">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              app.status === 'ACCEPTED'
+                                ? 'bg-green-100 text-green-700'
+                                : app.status === 'REJECTED'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {app.status === 'ACCEPTED' ? '승인' : app.status === 'REJECTED' ? '거절' : '대기중'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="ml-4 flex-shrink-0">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            app.status === 'ACCEPTED'
-                              ? 'bg-green-100 text-green-700'
-                              : app.status === 'REJECTED'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {app.status === 'ACCEPTED' ? '승인' : app.status === 'REJECTED' ? '거절' : '대기중'}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={applicationPage}
+                      totalPages={applicationTotalPages}
+                      onPageChange={setApplicationPage}
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -772,7 +823,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           {activeTab === '작성글' && (
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-6 py-4">
-                <h2 className="text-sm font-bold text-gray-900">작성한 글 ({posts.length})</h2>
+                <h2 className="text-sm font-bold text-gray-900">작성한 글 ({counts.posts})</h2>
               </div>
 
               {posts.length === 0 ? (
@@ -781,32 +832,43 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   <p className="text-gray-500">작성한 글이 없습니다.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
-                  {posts.map((post) => (
-                    <Link
-                      key={post.id}
-                      href={`/community/${post.id}`}
-                      className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <h3 className="mb-1 truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                          {post.title}
-                        </h3>
-                        <div className="flex items-center gap-3 text-xs text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            {post.views}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="h-3 w-3" />
-                            {post.comments}
-                          </span>
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {posts.map((post) => (
+                      <Link
+                        key={post.id}
+                        href={`/community/${post.id}`}
+                        className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="mb-1 truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                            {post.title}
+                          </h3>
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {post.views}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              {post.comments}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
-                    </Link>
-                  ))}
-                </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={postPage}
+                      totalPages={postTotalPages}
+                      onPageChange={setPostPage}
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -815,7 +877,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           {activeTab === '댓글' && (
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-6 py-4">
-                <h2 className="text-sm font-bold text-gray-900">작성한 댓글 ({comments.length})</h2>
+                <h2 className="text-sm font-bold text-gray-900">작성한 댓글 ({counts.comments})</h2>
               </div>
 
               {comments.length === 0 ? (
@@ -824,21 +886,32 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   <p className="text-gray-500">작성한 댓글이 없습니다.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
-                  {comments.map((comment) => (
-                    <Link
-                      key={comment.id}
-                      href={`/community/${comment.articleId}`}
-                      className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
-                    >
-                      <p className="mb-1 text-xs text-blue-600 group-hover:text-blue-700">
-                        {comment.articleTitle}
-                      </p>
-                      <p className="mb-2 text-sm text-gray-700">{comment.content}</p>
-                      <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
-                    </Link>
-                  ))}
-                </div>
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {comments.map((comment) => (
+                      <Link
+                        key={comment.id}
+                        href={`/community/${comment.articleId}`}
+                        className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <p className="mb-1 text-xs text-blue-600 group-hover:text-blue-700">
+                          {comment.articleTitle}
+                        </p>
+                        <p className="mb-2 text-sm text-gray-700">{comment.content}</p>
+                        <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={commentPage}
+                      totalPages={commentTotalPages}
+                      onPageChange={setCommentPage}
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -848,7 +921,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
             <div className="rounded-xl border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-6 py-4">
                 <h2 className="text-sm font-bold text-gray-900">
-                  즐겨찾기한 글 ({bookmarks.length})
+                  즐겨찾기한 글 ({counts.bookmarks})
                 </h2>
               </div>
 
@@ -858,35 +931,46 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   <p className="text-gray-500">즐겨찾기한 글이 없습니다.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
-                  {bookmarks.map((post) => (
-                    <Link
-                      key={post.id}
-                      href={`/community/${post.id}`}
-                      className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <Bookmark className="h-4 w-4 flex-shrink-0 fill-amber-400 text-amber-400" />
-                          <h3 className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                            {post.title}
-                          </h3>
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {bookmarks.map((post) => (
+                      <Link
+                        key={post.id}
+                        href={`/community/${post.id}`}
+                        className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex items-center gap-2">
+                            <Bookmark className="h-4 w-4 flex-shrink-0 fill-amber-400 text-amber-400" />
+                            <h3 className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                              {post.title}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {post.views}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              {post.comments}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            {post.views}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="h-3 w-3" />
-                            {post.comments}
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
-                    </Link>
-                  ))}
-                </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={bookmarkPage}
+                      totalPages={bookmarkTotalPages}
+                      onPageChange={setBookmarkPage}
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}

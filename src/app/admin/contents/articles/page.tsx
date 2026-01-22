@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   FileText,
   Search,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   Heart,
   MessageCircle,
@@ -15,6 +14,7 @@ import {
 import { deleteAdminArticle } from '@/lib/api/admin';
 import { clientApiClient } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
+import Pagination from '@/common/components/Pagination';
 
 interface Board {
   id: number;
@@ -54,6 +54,7 @@ const BOARDS: Board[] = [
 ];
 
 export default function ArticlesPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,8 +190,8 @@ export default function ArticlesPage() {
 
   if (loading && articles.length === 0) {
     return (
-      <div className="px-6 pb-6 md:px-8 md:pb-8">
-        <div className="mx-auto max-w-7xl">
+      <div className="p-6 md:p-8">
+        <div className="mx-auto max-w-4xl">
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-gray-400" />
@@ -204,8 +205,8 @@ export default function ArticlesPage() {
 
   if (error) {
     return (
-      <div className="px-6 pb-6 md:px-8 md:pb-8">
-        <div className="mx-auto max-w-7xl">
+      <div className="p-6 md:p-8">
+        <div className="mx-auto max-w-4xl">
           <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
             <p className="mb-4 text-red-600">{error}</p>
             <button
@@ -221,12 +222,12 @@ export default function ArticlesPage() {
   }
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">게시글 관리</h1>
-          <p className="mt-1 text-sm text-gray-500">커뮤니티 게시글을 관리합니다</p>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">게시글 관리</h1>
+          <p className="mt-0.5 text-sm text-gray-500">커뮤니티 게시글을 관리합니다</p>
         </div>
 
         {/* 통계 */}
@@ -285,7 +286,7 @@ export default function ArticlesPage() {
           </div>
         </div>
 
-        {/* 게시글 목록 - 테이블 */}
+        {/* 게시글 목록 */}
         {filteredArticles.length === 0 ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
             <FileText className="mx-auto mb-4 h-12 w-12 text-gray-300" />
@@ -294,130 +295,63 @@ export default function ArticlesPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      게시글
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      게시판
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      작성자
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      통계
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      작성일
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      관리
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredArticles.map((article) => (
-                    <tr key={article.id} className="transition-colors hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="max-w-xs">
-                          <div className="font-semibold text-gray-900 truncate">{article.title}</div>
-                          <div className="mt-1 truncate text-xs text-gray-500">
-                            {stripHtml(article.content).slice(0, 50)}...
-                          </div>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${getBoardBadgeColor(article.boardId)}`}>
-                          {getBoardName(article.boardId)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="text-sm text-gray-900">{article.author.name}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3.5 w-3.5" />
-                            {article.views}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Heart className="h-3.5 w-3.5" />
-                            {article.likes}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            {article.comments}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="text-sm text-gray-600">{formatDate(article.createdAt)}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedArticle(article);
-                            setShowDeleteModal(true);
-                          }}
-                          className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-                        >
-                          삭제
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <ul className="divide-y divide-gray-100">
+              {filteredArticles.map((article) => (
+                <li
+                  key={article.id}
+                  className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-gray-50"
+                  onClick={() => router.push(`/admin/contents/articles/${article.id}`)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getBoardBadgeColor(article.boardId)}`}>
+                        {getBoardName(article.boardId)}
+                      </span>
+                      <span className="truncate font-medium text-gray-900">{article.title}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+                      <span>{article.author.name}</span>
+                      <span>{formatDate(article.createdAt)}</span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {article.views}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {article.likes}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        {article.comments}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedArticle(article);
+                      setShowDeleteModal(true);
+                    }}
+                    className="shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                  >
+                    삭제
+                  </button>
+                </li>
+              ))}
+            </ul>
 
-            {/* 페이지네이션 */}
-            {totalPages > 1 && !searchQuery && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-                <p className="text-sm text-gray-600">
-                  총 {totalItems.toLocaleString()}개 중{' '}
-                  <span className="font-medium">
-                    {currentPage * 20 + 1}-{Math.min((currentPage + 1) * 20, totalItems)}
-                  </span>
-                </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage(0)}
-                    disabled={currentPage === 0}
-                    className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    처음
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-                    disabled={currentPage === 0}
-                    className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="px-3 text-sm font-medium text-gray-900">
-                    {currentPage + 1} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
-                    disabled={currentPage >= totalPages - 1}
-                    className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(totalPages - 1)}
-                    disabled={currentPage >= totalPages - 1}
-                    className="rounded-lg px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    마지막
-                  </button>
-                </div>
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* 페이지네이션 */}
+        {filteredArticles.length > 0 && !searchQuery && (
+          <div className="mt-4">
+            <Pagination
+              currentPage={currentPage + 1}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page - 1)}
+            />
           </div>
         )}
 

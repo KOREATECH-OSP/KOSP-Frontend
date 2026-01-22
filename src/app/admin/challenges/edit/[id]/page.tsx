@@ -91,7 +91,7 @@ export default function EditChallengePage() {
 
   if (loading) {
     return (
-      <div className="px-6 pb-6 md:px-8 md:pb-8">
+      <div className="p-6 md:p-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -105,7 +105,7 @@ export default function EditChallengePage() {
   }
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
+    <div className="p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">

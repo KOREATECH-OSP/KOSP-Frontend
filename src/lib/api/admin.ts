@@ -568,6 +568,16 @@ export interface BannerSettingResponse {
 }
 
 /**
+ * 배너 표시 여부 조회
+ */
+export async function getBannerStatus(auth: AuthOptions): Promise<BannerSettingResponse> {
+  return clientApiClient<BannerSettingResponse>('/v1/banner', {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+}
+
+/**
  * 배너 표시 여부 토글
  */
 export async function toggleBanner(auth: AuthOptions): Promise<BannerSettingResponse> {

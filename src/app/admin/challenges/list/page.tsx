@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -17,6 +17,9 @@ import {
 } from '@/lib/api/admin';
 import type { AdminChallengeResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
+import Pagination from '@/common/components/Pagination';
+
+const PAGE_SIZE = 10;
 
 export default function ChallengesListPage() {
   const router = useRouter();
@@ -28,6 +31,7 @@ export default function ChallengesListPage() {
   const [selectedChallenge, setSelectedChallenge] = useState<AdminChallengeResponse | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchChallenges = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -78,6 +82,17 @@ export default function ChallengesListPage() {
       challenge.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredChallenges.length / PAGE_SIZE) || 1;
+  const paginatedChallenges = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredChallenges.slice(start, start + PAGE_SIZE);
+  }, [filteredChallenges, currentPage]);
+
+  // 검색 시 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const getCategoryBadgeColor = (category: string) => {
     const lowerCategory = category?.toLowerCase() || '';
     if (lowerCategory.includes('contribution') || lowerCategory.includes('기여')) {
@@ -98,7 +113,7 @@ export default function ChallengesListPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="p-4 md:p-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-4xl">
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-gray-400" />
@@ -113,7 +128,7 @@ export default function ChallengesListPage() {
   if (error) {
     return (
       <div className="p-4 md:p-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-4xl">
           <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
             <p className="mb-4 text-red-600">{error}</p>
             <button
@@ -129,12 +144,12 @@ export default function ChallengesListPage() {
   }
 
   return (
-    <div className="px-6 pb-6 md:px-8 md:pb-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">챌린지 관리</h1>
-          <p className="mt-1 text-sm text-gray-500">챌린지를 생성하고 관리합니다</p>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">챌린지 관리</h1>
+          <p className="mt-0.5 text-sm text-gray-500">챌린지를 생성하고 관리합니다</p>
         </div>
 
         {/* 통계 */}
@@ -204,107 +219,69 @@ export default function ChallengesListPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      챌린지
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      카테고리
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      포인트
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      진행도
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      조건
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      관리
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredChallenges.map((challenge) => (
-                    <tr key={challenge.id} className="transition-colors hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                            {challenge.imageUrl ? (
-                              <Image
-                                src={challenge.imageUrl}
-                                alt={challenge.name}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                <ImageIcon className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900">{challenge.name}</div>
-                            <div className="truncate text-xs text-gray-500" title={challenge.description}>
-                              {challenge.description}
-                            </div>
-                          </div>
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+              <ul className="divide-y divide-gray-100">
+                {paginatedChallenges.map((challenge) => (
+                  <li key={challenge.id} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                      {challenge.imageUrl ? (
+                        <Image
+                          src={challenge.imageUrl}
+                          alt={challenge.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-gray-400" />
                         </div>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${getCategoryBadgeColor(challenge.category)}`}>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getCategoryBadgeColor(challenge.category)}`}>
                           {challenge.category || '-'}
                         </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="font-medium text-gray-900">{challenge.point}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="text-sm">
-                          <span className="font-medium text-gray-900">{challenge.maxProgress}</span>
-                          <span className="ml-1 text-gray-500">({challenge.progressField})</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <code className="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-700">
-                          {challenge.condition.length > 30
-                            ? `${challenge.condition.slice(0, 30)}...`
-                            : challenge.condition}
-                        </code>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => router.push(`/admin/challenges/edit/${challenge.id}`)}
-                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedChallenge(challenge);
-                              setShowDeleteModal(true);
-                            }}
-                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="truncate font-medium text-gray-900">{challenge.name}</span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+                        <span>{challenge.point}P</span>
+                        <span>목표: {challenge.maxProgress}</span>
+                        <span className="truncate">{challenge.description}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        onClick={() => router.push(`/admin/challenges/edit/${challenge.id}`)}
+                        className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedChallenge(challenge);
+                          setShowDeleteModal(true);
+                        }}
+                        className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
 

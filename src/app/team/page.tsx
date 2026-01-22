@@ -13,23 +13,25 @@ async function fetchTeamData() {
     const recruitBoard = boardsResponse.boards.find((b) => b.isRecruitAllowed);
     const recruitsResponse = recruitBoard
       ? await getRecruits(recruitBoard.id)
-      : { recruits: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0 } };
+      : { recruits: [], pagination: { currentPage: 0, totalPages: 1, totalItems: 0 } };
 
     return {
       teams: teamsResponse.teams,
       recruits: recruitsResponse.recruits,
+      recruitPagination: recruitsResponse.pagination,
+      recruitBoardId: recruitBoard?.id || 5,
       error: null,
     };
   } catch (error) {
     if (error instanceof ApiException && error.status === 401) {
-      return { teams: [], recruits: [], error: 'unauthorized' };
+      return { teams: [], recruits: [], recruitPagination: { currentPage: 0, totalPages: 1, totalItems: 0 }, recruitBoardId: 5, error: 'unauthorized' };
     }
     throw error;
   }
 }
 
 export default async function TeamPage() {
-  const { teams, recruits, error } = await fetchTeamData();
+  const { teams, recruits, recruitPagination, recruitBoardId, error } = await fetchTeamData();
 
   if (error === 'unauthorized') {
     return (
@@ -53,6 +55,8 @@ export default async function TeamPage() {
     <TeamPageClient
       initialTeams={teams}
       initialRecruits={recruits}
+      recruitPagination={recruitPagination}
+      recruitBoardId={recruitBoardId}
     />
   );
 }
