@@ -23,6 +23,8 @@ interface InfoStepProps {
   onVerifyCode: () => void;
   isSendingEmail?: boolean;
   isVerifyingCode?: boolean;
+  memberType: 'student' | 'staff';
+  onMemberTypeChange: (type: 'student' | 'staff') => void;
 }
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
@@ -42,10 +44,10 @@ function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   );
 }
 
-export default function InfoStep({ 
-  formData, 
-  onFormChange, 
-  onSubmit, 
+export default function InfoStep({
+  formData,
+  onFormChange,
+  onSubmit,
   onCheckStudentId,
   isStudentIdChecked,
   isLoading = false,
@@ -58,6 +60,8 @@ export default function InfoStep({
   onVerifyCode,
   isSendingEmail = false,
   isVerifyingCode = false,
+  memberType,
+  onMemberTypeChange,
 }: InfoStepProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
@@ -69,10 +73,15 @@ export default function InfoStep({
 
   const passwordsMatch = formData.password === formData.passwordConfirm && formData.passwordConfirm.length > 0;
   const isPasswordValid = PASSWORD_REGEX.test(formData.password);
-  const isStudentIdValid = /^\d{10}$/.test(formData.studentId);
+  // 학번: 10자리, 사번: 6자리 또는 8자리
+  const isIdValid = memberType === 'student'
+    ? /^\d{10}$/.test(formData.studentId)
+    : /^(\d{6}|\d{8})$/.test(formData.studentId);
+  const idMaxLength = memberType === 'student' ? 10 : 8;
+  const idPlaceholder = memberType === 'student' ? '학번 (10자리)' : '사번 (6자리 또는 8자리)';
   const isEmailValid = formData.email.endsWith('@koreatech.ac.kr');
-  
-  const isFormComplete = 
+
+  const isFormComplete =
     formData.name.trim() !== '' &&
     isStudentIdChecked &&
     isEmailVerified &&
@@ -90,14 +99,40 @@ export default function InfoStep({
         className="w-full h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
       />
 
+      {/* 학생/교직원 선택 */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onMemberTypeChange('student')}
+          className={`flex-1 h-[54px] text-[15px] font-medium rounded-2xl transition-all ${
+            memberType === 'student'
+              ? 'bg-[#3182f6] text-white'
+              : 'bg-[#f2f4f6] text-[#4e5968] hover:bg-[#e5e8eb]'
+          }`}
+        >
+          학생
+        </button>
+        <button
+          type="button"
+          onClick={() => onMemberTypeChange('staff')}
+          className={`flex-1 h-[54px] text-[15px] font-medium rounded-2xl transition-all ${
+            memberType === 'staff'
+              ? 'bg-[#3182f6] text-white'
+              : 'bg-[#f2f4f6] text-[#4e5968] hover:bg-[#e5e8eb]'
+          }`}
+        >
+          교직원
+        </button>
+      </div>
+
       <div className="flex gap-2">
         <input
           type="text"
           required
           value={formData.studentId}
           onChange={(e) => onFormChange('studentId', e.target.value)}
-          placeholder="학번 (10자리)"
-          maxLength={10}
+          placeholder={idPlaceholder}
+          maxLength={idMaxLength}
           className={`flex-1 h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 transition-all ${
             isStudentIdChecked ? 'ring-2 ring-[#16a34a] bg-[#f0fdf4]' : 'focus:ring-[#3182f6]'
           }`}
@@ -106,9 +141,9 @@ export default function InfoStep({
         <button
           type="button"
           onClick={onCheckStudentId}
-          disabled={!isStudentIdValid || isCheckingStudentId || isStudentIdChecked}
+          disabled={!isIdValid || isCheckingStudentId || isStudentIdChecked}
           className={`h-[54px] px-4 text-[14px] font-medium rounded-2xl transition-colors whitespace-nowrap ${
-            isStudentIdChecked 
+            isStudentIdChecked
               ? 'bg-[#16a34a] text-white cursor-default'
               : 'bg-[#e5e8eb] text-[#4e5968] hover:bg-[#d1d6db] disabled:bg-[#f2f4f6] disabled:text-[#adb5bd] disabled:cursor-not-allowed'
           }`}

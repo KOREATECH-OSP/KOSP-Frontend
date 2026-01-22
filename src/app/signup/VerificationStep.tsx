@@ -1,4 +1,4 @@
-import { User, Mail, GraduationCap, CheckCircle } from 'lucide-react';
+import { User, Mail, GraduationCap, Briefcase, Users, CheckCircle } from 'lucide-react';
 
 interface VerificationStepProps {
   formData: {
@@ -6,6 +6,7 @@ interface VerificationStepProps {
     studentId: string;
     email: string;
   };
+  memberType: 'student' | 'staff';
   onSignup: () => void;
   onBack: () => void;
   isLoading?: boolean;
@@ -28,10 +29,15 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof User; label: strin
 
 export default function VerificationStep({
   formData,
+  memberType,
   onSignup,
   onBack,
   isLoading = false,
 }: VerificationStepProps) {
+  const idLabel = memberType === 'student' ? '학번' : '사번';
+  const idIcon = memberType === 'student' ? GraduationCap : Briefcase;
+  const memberTypeLabel = memberType === 'student' ? '학생' : '교직원';
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -45,7 +51,8 @@ export default function VerificationStep({
 
       <div className="space-y-2">
         <InfoRow icon={User} label="이름" value={formData.name} />
-        <InfoRow icon={GraduationCap} label="학번" value={formData.studentId} />
+        <InfoRow icon={Users} label="구분" value={memberTypeLabel} />
+        <InfoRow icon={idIcon} label={idLabel} value={formData.studentId} />
         <InfoRow icon={Mail} label="이메일" value={formData.email} />
       </div>
 

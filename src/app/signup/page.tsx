@@ -37,6 +37,7 @@ function SignupContent() {
   const [signupToken, setSignupToken] = useState<string | null>(null);
   const [isTokenVerifying, setIsTokenVerifying] = useState(!!signupTokenParam);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [memberType, setMemberType] = useState<'student' | 'staff'>('student');
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -108,23 +109,30 @@ function SignupContent() {
     }
   };
 
+  const handleMemberTypeChange = (type: 'student' | 'staff') => {
+    setMemberType(type);
+    setFormData(prev => ({ ...prev, studentId: '' }));
+    setIsStudentIdChecked(false);
+  };
+
   const handleCheckStudentId = async (): Promise<boolean> => {
+    const idLabel = memberType === 'student' ? '학번' : '사번';
     setIsCheckingStudentId(true);
     try {
       const checkResult = await checkMemberId(formData.studentId);
       if (checkResult.available) {
         setIsStudentIdChecked(true);
-        toast.success('사용 가능한 학번이에요');
+        toast.success(`사용 가능한 ${idLabel}이에요`);
         return true;
       } else {
-        toast.error(checkResult.message || '이미 사용 중인 학번이에요');
+        toast.error(checkResult.message || `이미 사용 중인 ${idLabel}이에요`);
         return false;
       }
     } catch (err) {
       if (err instanceof ApiException) {
-        toast.error(err.message || '학번 확인에 실패했어요');
+        toast.error(err.message || `${idLabel} 확인에 실패했어요`);
       } else {
-        toast.error('학번 확인에 실패했어요');
+        toast.error(`${idLabel} 확인에 실패했어요`);
       }
       return false;
     } finally {
@@ -181,9 +189,10 @@ function SignupContent() {
 
   const handleSubmitInfo = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const idLabel = memberType === 'student' ? '학번' : '사번';
     if (!isStudentIdChecked) {
-      toast.error('학번 중복확인을 해주세요');
+      toast.error(`${idLabel} 중복확인을 해주세요`);
       return;
     }
 
@@ -320,6 +329,8 @@ function SignupContent() {
               onVerifyCode={handleVerifyCode}
               isSendingEmail={isSendingEmail}
               isVerifyingCode={isVerifyingCode}
+              memberType={memberType}
+              onMemberTypeChange={handleMemberTypeChange}
             />
           </Funnel.Step>
 
@@ -327,6 +338,7 @@ function SignupContent() {
             <StepIndicator currentStep="verification" />
             <VerificationStep
               formData={formData}
+              memberType={memberType}
               onSignup={handleSignup}
               onBack={handleBackToInfo}
               isLoading={isLoading}

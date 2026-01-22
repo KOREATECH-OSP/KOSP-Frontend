@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { Search, Plus } from 'lucide-react';
 import type { TeamResponse, RecruitResponse, PageMeta } from '@/lib/api/types';
+import koriDoodle from '@/assets/images/kori/11-10 K-2 끄적끄적 .png';
 
 import TeamRecruitTab from './components/TeamRecruitTab';
 import TeamListTab from './components/TeamListTab';
@@ -155,6 +157,11 @@ export default function TeamPageClient({
 
             {/* Search Bar */}
             <div className="relative flex w-full items-center">
+              <Image
+                src={koriDoodle}
+                alt="끄적끄적 코리"
+                className="absolute -top-11 right-2 w-[60px] h-auto pointer-events-none select-none"
+              />
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
