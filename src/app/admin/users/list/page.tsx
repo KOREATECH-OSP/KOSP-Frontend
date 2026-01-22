@@ -311,14 +311,21 @@ export default function AdminUsersPage() {
                           >
                             역할
                           </button>
-                          <button
-                            onClick={() => handleDeleteClick(user)}
-                            disabled={user.isDeleted || isDeleting}
-                            title={user.isDeleted ? '탈퇴 처리된 회원입니다.' : undefined}
-                            className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            탈퇴
-                          </button>
+                          <span className="group relative">
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              disabled={user.isDeleted || isDeleting}
+                              className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              탈퇴
+                            </button>
+                            {user.isDeleted && (
+                              <div className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                탈퇴 처리된 회원입니다.
+                                <div className="absolute right-3 top-full border-4 border-transparent border-t-gray-900" />
+                              </div>
+                            )}
+                          </span>
                         </div>
                       </td>
                     </tr>
