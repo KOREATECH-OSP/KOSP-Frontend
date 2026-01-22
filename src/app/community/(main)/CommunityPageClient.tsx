@@ -3,11 +3,13 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { MessageSquare, Plus, Loader2 } from 'lucide-react';
+import { MessageSquare, Plus, Loader2, ChevronDown } from 'lucide-react';
 import type { BoardResponse, ArticleResponse, PageMeta, ArticleListResponse } from '@/lib/api/types';
 import Pagination from '@/common/components/Pagination';
 import CommunityPostCard from '@/common/components/community/CommunityPostCard';
 import { API_BASE_URL } from '@/lib/api/config';
+
+type SortOrder = 'latest' | 'oldest';
 
 interface CommunityPageClientProps {
   initialBoards: BoardResponse[];
@@ -23,23 +25,30 @@ export default function CommunityPageClient({
   const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
   const [activeBoard, setActiveBoard] = useState<number | null>(1);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const sortByPinned = (posts: ArticleResponse[]) => {
+  const sortArticles = (posts: ArticleResponse[], order: SortOrder) => {
     return [...posts].sort((a, b) => {
+      // 고정 게시글은 항상 최상단
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      return 0;
+
+      // 날짜 정렬
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return order === 'latest' ? dateB - dateA : dateA - dateB;
     });
   };
 
-  const [articles, setArticles] = useState<ArticleResponse[]>(sortByPinned(initialArticles));
+  const [articles, setArticles] = useState<ArticleResponse[]>(sortArticles(initialArticles, 'latest'));
   // Pagination state
   const [currentPage, setCurrentPage] = useState(initialPagination.currentPage);
   const [totalPages, setTotalPages] = useState(initialPagination.totalPages);
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchArticles = (boardId: number, page: number) => {
+  const fetchArticles = (boardId: number, page: number, order: SortOrder = sortOrder) => {
     setIsLoading(true);
     const headers: HeadersInit = {};
     if (session?.accessToken) {
@@ -51,7 +60,7 @@ export default function CommunityPageClient({
       })
         .then((res) => res.json())
         .then((data: ArticleListResponse) => {
-          setArticles(sortByPinned(data.posts));
+          setArticles(sortArticles(data.posts, order));
           setTotalPages(data.pagination.totalPages);
           setCurrentPage(data.pagination.currentPage);
         })
@@ -62,6 +71,12 @@ export default function CommunityPageClient({
           setIsLoading(false);
         });
     });
+  };
+
+  const handleSortChange = (order: SortOrder) => {
+    setSortOrder(order);
+    setIsDropdownOpen(false);
+    setArticles(sortArticles(articles, order));
   };
 
   const handleBoardChange = (boardId: number | null) => {
@@ -161,7 +176,70 @@ export default function CommunityPageClient({
         <div className="min-w-0">
           <div className="mb-6 hidden lg:flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">{activeBoardName}</h2>
-            <span className="text-sm text-gray-500">총 {initialPagination.totalItems}개의 글</span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-500">총 {initialPagination.totalItems}개의 글</span>
+              {/* 정렬 드롭다운 */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {sortOrder === 'latest' ? '최신순' : '오래된순'}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+                    <div className="absolute right-0 z-20 mt-1 w-28 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                      <button
+                        onClick={() => handleSortChange('latest')}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${sortOrder === 'latest' ? 'font-medium text-gray-900' : 'text-gray-600'}`}
+                      >
+                        최신순
+                      </button>
+                      <button
+                        onClick={() => handleSortChange('oldest')}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${sortOrder === 'oldest' ? 'font-medium text-gray-900' : 'text-gray-600'}`}
+                      >
+                        오래된순
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 모바일 정렬 */}
+          <div className="mb-4 flex justify-end lg:hidden">
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {sortOrder === 'latest' ? '최신순' : '오래된순'}
+                <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+                  <div className="absolute right-0 z-20 mt-1 w-28 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                    <button
+                      onClick={() => handleSortChange('latest')}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${sortOrder === 'latest' ? 'font-medium text-gray-900' : 'text-gray-600'}`}
+                    >
+                      최신순
+                    </button>
+                    <button
+                      onClick={() => handleSortChange('oldest')}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${sortOrder === 'oldest' ? 'font-medium text-gray-900' : 'text-gray-600'}`}
+                    >
+                      오래된순
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from '@/lib/toast';
-import { applyRecruit, deleteRecruit, getRecruit } from '@/lib/api/recruit';
+import { applyRecruit, deleteRecruit } from '@/lib/api/recruit';
 import { getTeam } from '@/lib/api/team';
 import { toggleArticleBookmark, toggleArticleLike } from '@/lib/api/article';
 import type { RecruitResponse, TeamDetailResponse } from '@/lib/api/types';
@@ -91,14 +91,21 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
     if (isLikePending) return;
 
     setIsLikePending(true);
+    // Optimistic update
+    const prevIsLiked = isLiked;
+    const prevLikeCount = likeCount;
+    setIsLiked(!isLiked);
+    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+
     try {
       const response = await toggleArticleLike(recruit.id, { accessToken: session.accessToken });
+      // 서버 응답으로 최종 상태 확정
       setIsLiked(response.isLiked);
-
-      // 좋아요 수를 서버에서 다시 조회
-      const updatedRecruit = await getRecruit(recruit.id, session.accessToken);
-      setLikeCount(updatedRecruit.likes);
+      setLikeCount(response.isLiked ? prevLikeCount + 1 : prevLikeCount - 1);
     } catch (error) {
+      // 에러 시 롤백
+      setIsLiked(prevIsLiked);
+      setLikeCount(prevLikeCount);
       console.error('좋아요 처리 실패:', error);
       if (!(error && typeof error === 'object' && 'status' in error && error.status === 401)) {
         toast.error('좋아요 처리에 실패했습니다');
@@ -199,7 +206,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
       <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="space-y-8">
           {/* 1. Header Section */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
             {/* Tags & Status */}
             <div className="mb-6 flex flex-wrap items-center gap-3">
               {isOpen ? (
@@ -235,7 +242,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
               ))}
             </div>
 
-            <h1 className="mb-8 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl leading-tight">
+            <h1 className="mb-6 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl leading-tight">
               {recruit.title}
             </h1>
 
@@ -310,19 +317,16 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
           </section>
 
           {/* 2. Content Section */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <h2 className="mb-6 text-xl font-bold text-gray-900">상세 내용</h2>
-            <div className="prose prose-gray max-w-none text-gray-800 text-base leading-relaxed">
-              <div
-                className="whitespace-pre-wrap font-normal"
-                dangerouslySetInnerHTML={{ __html: recruit.content || '' }}
-              />
-            </div>
+          <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+            <h3 className="mb-4 text-sm font-bold text-gray-900">상세 내용</h3>
+            <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-gray-600"
+               dangerouslySetInnerHTML={{ __html: recruit.content || '' }}
+            />
           </section>
 
           {/* 3. Team Info Section */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <h2 className="mb-6 text-xl font-bold text-gray-900">팀 소개</h2>
+          <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+            <h3 className="mb-4 text-sm font-bold text-gray-900">팀 소개</h3>
             <Link href={`/team/${recruit.teamId}`} className="group block rounded-xl border border-gray-100 bg-gray-50 p-6 transition-all hover:border-blue-200 hover:bg-blue-50/30">
               <div className="flex items-start gap-5">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
@@ -334,9 +338,9 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-700 transition-colors">
+                    <h4 className="font-bold text-base text-gray-900 group-hover:text-blue-700 transition-colors">
                       {isTeamLoading ? 'Loading...' : team?.name || '팀 이름 없음'}
-                    </h3>
+                    </h4>
                     <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md group-hover:bg-blue-100 transition-colors">
                       팀 페이지 방문 &rarr;
                     </span>
@@ -354,29 +358,29 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
           </section>
 
           {/* 4. Apply & Actions Section */}
-          <section className="sticky bottom-6 z-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl ring-1 ring-gray-900/5 backdrop-blur-sm bg-white/90">
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <div className="flex w-full sm:w-auto gap-3 flex-1">
+          <section className="sticky bottom-6 z-10 rounded-xl border border-gray-200 bg-white p-5 shadow-lg ring-1 ring-gray-900/5 backdrop-blur-sm bg-white/95">
+            <div className="flex flex-col sm:flex-row gap-3 items-center">
+              <div className="flex w-full sm:w-auto gap-2 flex-1">
                 <button
                   onClick={handleLike}
                   disabled={isLikePending}
-                  className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-xl border px-6 py-3.5 text-sm font-bold transition-all hover:scale-105 active:scale-95 ${isLiked
+                  className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:scale-105 active:scale-95 ${isLiked
                     ? 'border-pink-200 bg-pink-50 text-pink-600'
                     : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                 >
-                  <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
                   <span>{likeCount}</span>
                 </button>
                 <button
                   onClick={handleBookmark}
                   disabled={isBookmarkPending}
-                  className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-xl border px-6 py-3.5 text-sm font-bold transition-all hover:scale-105 active:scale-95 ${isBookmarked
+                  className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:scale-105 active:scale-95 ${isBookmarked
                     ? 'border-yellow-200 bg-yellow-50 text-amber-500'
                     : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                 >
-                  <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-current' : ''}`} />
+                  <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`} />
                   <span>저장</span>
                 </button>
               </div>
@@ -384,14 +388,14 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
               {isOpen ? (
                 <button
                   onClick={handleOpenApplyModal}
-                  className="w-full sm:w-auto sm:flex-[2] rounded-xl bg-gray-900 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-gray-200 transition-all hover:bg-black hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+                  className="w-full sm:w-auto sm:flex-[2] rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-black hover:-translate-y-0.5 active:translate-y-0"
                 >
                   지원하기
                 </button>
               ) : (
                 <button
                   disabled
-                  className="w-full sm:w-auto sm:flex-[2] rounded-xl bg-gray-100 px-8 py-3.5 text-base font-bold text-gray-400 cursor-not-allowed border border-gray-200"
+                  className="w-full sm:w-auto sm:flex-[2] rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed border border-gray-200"
                 >
                   모집 마감
                 </button>
@@ -403,9 +407,9 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
         {/* Apply Modal */}
         {showApplyModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm transition-all duration-300">
-            <div className="w-full max-w-lg overflow-hidden border border-gray-200 bg-white shadow-2xl ring-1 ring-gray-200 rounded-2xl">
+            <div className="w-full max-w-lg overflow-hidden border border-gray-200 bg-white shadow-2xl ring-1 ring-gray-200 rounded-xl">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h3 className="text-lg font-bold text-gray-900">팀 지원하기</h3>
+                <h3 className="text-base font-bold text-gray-900">팀 지원하기</h3>
                 <button
                   onClick={() => setShowApplyModal(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
