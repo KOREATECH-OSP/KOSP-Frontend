@@ -297,8 +297,8 @@ export const authConfig: NextAuthConfig = {
       const accessTokenExpires = token.accessTokenExpires as number | undefined;
       const accessTokenTtl = token.accessTokenTtl as number | undefined;
       const refreshBufferMs = accessTokenTtl
-        ? Math.min(60 * 1000, Math.floor(accessTokenTtl * 0.1))
-        : 60 * 1000;
+        ? Math.min(2 * 60 * 1000, Math.floor(accessTokenTtl * 0.15))
+        : 2 * 60 * 1000;
       if (accessTokenExpires && Date.now() < accessTokenExpires - refreshBufferMs) {
         // 만료 직전에는 갱신 시도, 그 전에는 유지
         return token;

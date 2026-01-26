@@ -142,7 +142,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ServerStatusChecker>
-      <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+      <SessionProvider refetchInterval={4 * 60} refetchOnWindowFocus={true}>
         <AuthErrorHandler>
           {!isWritePage && <NoticeBanner />}
           {children}

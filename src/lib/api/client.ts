@@ -1,6 +1,5 @@
 import { API_BASE_URL } from './config';
 import { signOutOnce } from '@/lib/auth/signout';
-import { getSession } from 'next-auth/react';
 
 export interface ApiError {
   status: number;
@@ -121,19 +120,23 @@ export async function clientApiClient<T>(
     // 401 에러 시 토큰 갱신 후 재시도 (한 번만)
     if (response.status === 401 && !isRetry) {
       try {
-        // 세션 갱신 시도 (NextAuth가 JWT callback에서 토큰 갱신)
-        const newSession = await getSession();
+        // getSession() 대신 fetch를 통해 세션 갱신 트리거
+        // NextAuth v5에서는 세션 fetch 시 jwt callback이 호출됨
+        const res = await fetch('/api/auth/session', { method: 'GET' });
 
-        if (newSession?.accessToken && !newSession?.error) {
-          // 갱신된 토큰으로 재시도
-          return clientApiClient<T>(
-            endpoint,
-            {
-              ...options,
-              accessToken: newSession.accessToken,
-            },
-            true
-          );
+        if (res.ok) {
+          const newSession = await res.json();
+          if (newSession?.accessToken && !newSession?.error) {
+            // 갱신된 토큰으로 재시도
+            return clientApiClient<T>(
+              endpoint,
+              {
+                ...options,
+                accessToken: newSession.accessToken,
+              },
+              true
+            );
+          }
         }
       } catch {
         // 세션 갱신 실패 시 로그아웃

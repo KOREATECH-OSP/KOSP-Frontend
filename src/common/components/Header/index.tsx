@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
-import { signOut } from 'next-auth/react';
+import { signOutOnce } from '@/lib/auth/signout';
 import type { Session } from 'next-auth';
 
 import LogoImage from "../../../assets/images/koreatech_hangeul.png";
@@ -35,7 +35,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
   const handleLogout = () => {
     setMobileMenuOpen(false);
     setMobileProfileOpen(false);
-    signOut({ callbackUrl: '/' });
+    signOutOnce({ callbackUrl: '/' });
   };
   const profileActions = isLoggedIn
     ? [

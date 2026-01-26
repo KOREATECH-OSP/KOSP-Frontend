@@ -11,7 +11,7 @@ type SignOutOnceOptions = {
   toastMessage?: string;
 };
 
-export function signOutOnce(options: SignOutOnceOptions = {}): void {
+export async function signOutOnce(options: SignOutOnceOptions = {}): Promise<void> {
   const { callbackUrl = '/login', toastMessage } = options;
   const now = Date.now();
   if (now - lastSignOutAt < SIGN_OUT_DEDUPE_MS) return;
@@ -20,6 +20,13 @@ export function signOutOnce(options: SignOutOnceOptions = {}): void {
 
   if (toastMessage) {
     toast.error(toastMessage);
+  }
+
+  // 백엔드 로그아웃 API 호출 (refreshToken 삭제)
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // 실패해도 클라이언트 로그아웃은 진행
   }
 
   signOut({ callbackUrl });
