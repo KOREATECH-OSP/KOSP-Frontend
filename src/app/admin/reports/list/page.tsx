@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, User, FileText, MessageCircle, Loader2 } from 'lucide-react';
 import { getAdminReports, processAdminReport } from '@/lib/api/admin';
 import type { AdminReportResponse } from '@/types/admin';
@@ -12,6 +13,7 @@ const PAGE_SIZE = 10;
 
 export default function ReportsListPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [reports, setReports] = useState<AdminReportResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -205,7 +207,8 @@ export default function ReportsListPage() {
                 {paginatedReports.map((report) => (
                   <li
                     key={report.id}
-                    className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50"
+                    onClick={() => router.push(`/admin/reports/${report.id}`)}
+                    className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50"
                   >
                     {/* 아이콘 */}
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
@@ -239,7 +242,8 @@ export default function ReportsListPage() {
                     {/* 버튼 */}
                     {report.status === 'PENDING' ? (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedReport(report);
                           setShowProcessModal(true);
                         }}
