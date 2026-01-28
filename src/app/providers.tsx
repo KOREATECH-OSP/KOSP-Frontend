@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
 import NoticeBanner from '@/common/components/noticeBanner';
 import { usePathname } from 'next/navigation';
-import { signOutOnce } from '@/lib/auth/signout';
 import { API_BASE_URL } from '@/lib/api/config';
+import { tokenManager } from '@/lib/auth/token-manager';
 import Image from 'next/image';
 import surprisedKori from '@/assets/images/kori/11-09 L 놀람 .png';
 
@@ -115,23 +115,36 @@ function ServerStatusChecker({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// 토큰 갱신 실패 시 자동 로그아웃 처리
-function AuthErrorHandler({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
-  const isSigningOut = useRef(false);
+// 세션 로드 시 TokenManager 초기화
+function TokenManagerInitializer({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (
-      (session?.error === 'RefreshTokenExpired' || session?.error === 'RefreshTokenMissing') &&
-      !isSigningOut.current
-    ) {
-      isSigningOut.current = true;
-      signOutOnce({
-        callbackUrl: '/login',
-        toastMessage: '인증이 만료되었습니다. 다시 로그인해주세요.',
-      });
+    if (status === 'authenticated' && session?.accessToken && session?.refreshToken) {
+      // 세션이 로드되면 tokenManager 초기화
+      if (!initializedRef.current) {
+        tokenManager.initialize(session.accessToken, session.refreshToken);
+        initializedRef.current = true;
+      }
+    } else if (status === 'unauthenticated') {
+      // 로그아웃 시 tokenManager 초기화
+      tokenManager.clear();
+      initializedRef.current = false;
     }
-  }, [session?.error]);
+  }, [status, session?.accessToken, session?.refreshToken]);
+
+  // tokenRefreshed 이벤트 리스너 (토큰 갱신 시 세션 동기화)
+  useEffect(() => {
+    const handleTokenRefreshed = () => {
+      // tokenManager에서 토큰이 갱신되면 여기서 처리
+      // 실제 세션 업데이트는 다음 API 호출 시 새 토큰 사용
+      console.log('[TokenManagerInitializer] Token refreshed event received');
+    };
+
+    window.addEventListener('tokenRefreshed', handleTokenRefreshed);
+    return () => window.removeEventListener('tokenRefreshed', handleTokenRefreshed);
+  }, []);
 
   return <>{children}</>;
 }
@@ -143,10 +156,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ServerStatusChecker>
       <SessionProvider refetchInterval={4 * 60} refetchOnWindowFocus={true}>
-        <AuthErrorHandler>
+        <TokenManagerInitializer>
           {!isWritePage && <NoticeBanner />}
           {children}
-        </AuthErrorHandler>
+        </TokenManagerInitializer>
       </SessionProvider>
     </ServerStatusChecker>
   );

@@ -6,7 +6,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://dev.api.sw
 
 type JwtPayload = {
   exp?: number | string;
-  iat?: number | string;
   canAccessAdmin?: boolean;
 };
 
@@ -43,74 +42,9 @@ function getTokenExpiry(token: string): number | null {
   return normalizeJwtExp(exp);
 }
 
-function getTokenIssuedAt(token: string): number | null {
-  const payload = decodeJwtPayload(token);
-  if (!payload?.iat) return null;
-
-  const iat = typeof payload.iat === 'string' ? Number(payload.iat) : payload.iat;
-  if (!Number.isFinite(iat)) return null;
-
-  return normalizeJwtExp(iat);
-}
-
 function getCanAccessAdmin(token: string): boolean {
   const payload = decodeJwtPayload(token);
   return payload?.canAccessAdmin === true;
-}
-
-// 토큰 갱신 함수
-// 주의: 서버리스 환경에서는 모듈 레벨 변수가 요청 간 공유되지 않으므로
-// 락 메커니즘 대신 JWT 만료 시간 기반으로 갱신 여부를 결정합니다.
-async function refreshAccessToken(
-  refreshToken: string,
-  accessToken?: string
-): Promise<{
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpires: number;
-  accessTokenIssuedAt?: number;
-  accessTokenTtl?: number;
-} | null> {
-  try {
-    const headers: Record<string, string> = {
-      'X-Refresh-Token': refreshToken,
-    };
-    if (accessToken) {
-      headers['X-Access-Token'] = accessToken;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/v1/auth/reissue`, {
-      method: 'POST',
-      headers,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('[Auth] Failed to refresh token:', response.status, errorText);
-      return null;
-    }
-
-    const tokens = await response.json();
-    const accessTokenExpires = getTokenExpiry(tokens.accessToken) || Date.now() + 30 * 60 * 1000;
-    const accessTokenIssuedAt = getTokenIssuedAt(tokens.accessToken) ?? undefined;
-    const accessTokenTtl =
-      accessTokenIssuedAt && accessTokenExpires > accessTokenIssuedAt
-        ? accessTokenExpires - accessTokenIssuedAt
-        : undefined;
-
-    console.log('[Auth] Token refreshed successfully, expires at:', new Date(accessTokenExpires).toISOString());
-
-    return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      accessTokenExpires,
-      accessTokenIssuedAt,
-      accessTokenTtl,
-    };
-  } catch (error) {
-    console.error('[Auth] Error refreshing token:', error);
-    return null;
-  }
 }
 
 export const authConfig: NextAuthConfig = {
@@ -266,68 +200,23 @@ export const authConfig: NextAuthConfig = {
         const accessToken = (user as { accessToken: string }).accessToken;
         const refreshToken = (user as { refreshToken: string }).refreshToken;
         const accessTokenExpires = getTokenExpiry(accessToken) || Date.now() + 30 * 60 * 1000;
-        const accessTokenIssuedAt = getTokenIssuedAt(accessToken) ?? undefined;
-        const accessTokenTtl =
-          accessTokenIssuedAt && accessTokenExpires > accessTokenIssuedAt
-            ? accessTokenExpires - accessTokenIssuedAt
-            : undefined;
 
         return {
           ...token,
           accessToken,
           refreshToken,
           accessTokenExpires,
-          accessTokenIssuedAt,
-          accessTokenTtl,
           canAccessAdmin: getCanAccessAdmin(accessToken),
           id: user.id,
           email: user.email,
           name: user.name,
           picture: user.image,
-          error: undefined,
         };
       }
 
-      // 갱신 실패 상태면 반복 시도하지 않음
-      if (token.error === 'RefreshTokenExpired' || token.error === 'RefreshTokenMissing') {
-        return token;
-      }
-
-      // 토큰이 아직 유효한 경우 그대로 반환
-      const accessTokenExpires = token.accessTokenExpires as number | undefined;
-      const accessTokenTtl = token.accessTokenTtl as number | undefined;
-      const refreshBufferMs = accessTokenTtl
-        ? Math.min(2 * 60 * 1000, Math.floor(accessTokenTtl * 0.15))
-        : 2 * 60 * 1000;
-      if (accessTokenExpires && Date.now() < accessTokenExpires - refreshBufferMs) {
-        // 만료 직전에는 갱신 시도, 그 전에는 유지
-        return token;
-      }
-
-      // 토큰이 만료되었거나 만료 임박 - 갱신 시도
-      const refreshToken = token.refreshToken as string | undefined;
-      if (!refreshToken) {
-        return { ...token, error: 'RefreshTokenMissing' };
-      }
-
-      const currentAccessToken = token.accessToken as string | undefined;
-      const refreshedTokens = await refreshAccessToken(refreshToken, currentAccessToken);
-      if (!refreshedTokens) {
-        // 갱신 실패 - 재로그인 필요
-        return { ...token, error: 'RefreshTokenExpired' };
-      }
-
-      // 갱신 성공
-      return {
-        ...token,
-        accessToken: refreshedTokens.accessToken,
-        refreshToken: refreshedTokens.refreshToken,
-        accessTokenExpires: refreshedTokens.accessTokenExpires,
-        accessTokenIssuedAt: refreshedTokens.accessTokenIssuedAt ?? token.accessTokenIssuedAt,
-        accessTokenTtl: refreshedTokens.accessTokenTtl ?? token.accessTokenTtl,
-        canAccessAdmin: getCanAccessAdmin(refreshedTokens.accessToken),
-        error: undefined,
-      };
+      // next-auth는 세션 관리만 담당, 토큰 갱신은 API 클라이언트에서 처리
+      // 토큰을 그대로 반환
+      return token;
     },
     async session({ session, token }) {
       return {
@@ -335,7 +224,6 @@ export const authConfig: NextAuthConfig = {
         accessToken: token.accessToken as string,
         refreshToken: token.refreshToken as string,
         canAccessAdmin: (token.canAccessAdmin as boolean) ?? false,
-        error: token.error as string | undefined,
         user: {
           ...session.user,
           id: token.id as string,

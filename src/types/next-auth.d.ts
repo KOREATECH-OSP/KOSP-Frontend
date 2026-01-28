@@ -5,7 +5,6 @@ declare module 'next-auth' {
     accessToken: string;
     refreshToken: string;
     canAccessAdmin: boolean;
-    error?: string;
     user: {
       id: string;
       name: string;

@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './config';
 import { signOutOnce } from '@/lib/auth/signout';
+import { tokenManager } from '@/lib/auth/token-manager';
 
 export interface ApiError {
   status: number;
@@ -95,7 +96,17 @@ export async function clientApiClient<T>(
   options: RequestOptions = {},
   isRetry: boolean = false
 ): Promise<T> {
-  const { method = 'GET', body, headers = {}, cache, accessToken } = options;
+  const { method = 'GET', body, headers = {}, cache } = options;
+  let { accessToken } = options;
+
+  // 토큰이 만료 임박하면 선제적으로 갱신
+  if (accessToken && tokenManager.isTokenExpiringSoon()) {
+    console.log('[clientApiClient] Token expiring soon, refreshing...');
+    const newToken = await tokenManager.refreshTokens();
+    if (newToken) {
+      accessToken = newToken;
+    }
+  }
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -119,30 +130,29 @@ export async function clientApiClient<T>(
 
     // 401 에러 시 토큰 갱신 후 재시도 (한 번만)
     if (response.status === 401 && !isRetry) {
-      try {
-        // getSession() 대신 fetch를 통해 세션 갱신 트리거
-        // NextAuth v5에서는 세션 fetch 시 jwt callback이 호출됨
-        const res = await fetch('/api/auth/session', { method: 'GET' });
+      console.log('[clientApiClient] 401 error, attempting token refresh...');
 
-        if (res.ok) {
-          const newSession = await res.json();
-          if (newSession?.accessToken && !newSession?.error) {
-            // 갱신된 토큰으로 재시도
-            return clientApiClient<T>(
-              endpoint,
-              {
-                ...options,
-                accessToken: newSession.accessToken,
-              },
-              true
-            );
-          }
+      try {
+        // tokenManager로 토큰 갱신 (mutex로 race condition 방지)
+        const newToken = await tokenManager.refreshTokens();
+
+        if (newToken) {
+          console.log('[clientApiClient] Token refreshed, retrying request...');
+          // 갱신된 토큰으로 재시도
+          return clientApiClient<T>(
+            endpoint,
+            {
+              ...options,
+              accessToken: newToken,
+            },
+            true
+          );
         }
-      } catch {
-        // 세션 갱신 실패 시 로그아웃
+      } catch (error) {
+        console.error('[clientApiClient] Token refresh failed:', error);
       }
 
-      // 갱신 실패 또는 재시도 실패 시 로그아웃
+      // 갱신 실패 시 로그아웃 (tokenManager 내부에서 처리됨)
       signOutOnce({
         callbackUrl: '/login',
         toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
