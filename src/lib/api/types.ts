@@ -617,3 +617,36 @@ export interface ChallengeListResponse {
   challenges: ChallengeResponse[];
   summary: ChallengeSummary;
 }
+
+// ============================================
+// Notification Types
+// ============================================
+
+export type NotificationType =
+  | 'ARTICLE_REPORTED'
+  | 'COMMENT_REPORTED'
+  | 'CHALLENGE_ACHIEVED'
+  | 'POINT_EARNED'
+  | 'SYSTEM';
+
+export interface NotificationResponse {
+  id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  referenceId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  notifications: NotificationResponse[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  size: number;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}

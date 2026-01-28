@@ -3,28 +3,46 @@
 import { useEffect, useRef, useState } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
 import NoticeBanner from '@/common/components/noticeBanner';
+import NotificationSSEProvider from '@/common/components/NotificationSSEProvider';
 import { usePathname } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api/config';
 import { tokenManager } from '@/lib/auth/token-manager';
 import Image from 'next/image';
 import surprisedKori from '@/assets/images/kori/11-09 L 놀람 .png';
 
-const SERVER_TIMEOUT_MS = 10000;
-const RETRY_INTERVAL_MS = 10000;
+const HEALTH_CHECK_TIMEOUT_MS = 10000;
+const HEALTH_CHECK_INTERVAL_MS = 5000;
 
 // 서버 상태 체크 컴포넌트
 function ServerStatusChecker({ children }: { children: React.ReactNode }) {
   const [isServerDown, setIsServerDown] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  const retryIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 서버 다운 이벤트 리스너
   useEffect(() => {
-    let isMounted = true;
-    let retryTimeout: NodeJS.Timeout;
+    const handleServerDown = () => {
+      setIsServerDown(true);
+    };
 
-    const checkServerStatus = async () => {
+    window.addEventListener('serverDown', handleServerDown);
+    return () => window.removeEventListener('serverDown', handleServerDown);
+  }, []);
+
+  // 서버 다운 시 health check 폴링 시작
+  useEffect(() => {
+    if (!isServerDown) {
+      // 서버가 정상이면 폴링 중지
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current);
+        retryIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const checkHealth = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), SERVER_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
 
         const response = await fetch(`${API_BASE_URL}/actuator/health`, {
           method: 'GET',
@@ -34,34 +52,29 @@ function ServerStatusChecker({ children }: { children: React.ReactNode }) {
 
         clearTimeout(timeoutId);
 
-        if (isMounted) {
-          setIsServerDown(!response.ok);
-          setIsChecking(false);
+        if (response.ok) {
+          // 서버 복구됨 - 페이지 새로고침
+          window.location.reload();
         }
       } catch {
-        if (isMounted) {
-          setIsServerDown(true);
-          setIsChecking(false);
-        }
-      }
-
-      // 서버가 다운된 경우 주기적으로 재시도
-      if (isMounted) {
-        retryTimeout = setTimeout(checkServerStatus, RETRY_INTERVAL_MS);
+        // 아직 서버 다운 상태
+        console.log('[ServerStatusChecker] Server still down, retrying...');
       }
     };
 
-    checkServerStatus();
+    // 즉시 한 번 체크
+    checkHealth();
+
+    // 주기적으로 체크
+    retryIntervalRef.current = setInterval(checkHealth, HEALTH_CHECK_INTERVAL_MS);
 
     return () => {
-      isMounted = false;
-      clearTimeout(retryTimeout);
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current);
+        retryIntervalRef.current = null;
+      }
     };
-  }, []);
-
-  if (isChecking) {
-    return <>{children}</>;
-  }
+  }, [isServerDown]);
 
   if (isServerDown) {
     return (
@@ -157,8 +170,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ServerStatusChecker>
       <SessionProvider refetchInterval={4 * 60} refetchOnWindowFocus={true}>
         <TokenManagerInitializer>
-          {!isWritePage && <NoticeBanner />}
-          {children}
+          <NotificationSSEProvider>
+            {!isWritePage && <NoticeBanner />}
+            {children}
+          </NotificationSSEProvider>
         </TokenManagerInitializer>
       </SessionProvider>
     </ServerStatusChecker>

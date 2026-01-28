@@ -7,6 +7,13 @@ export interface ApiError {
   message: string;
 }
 
+// 서버 다운 이벤트 발생 함수
+function emitServerDownEvent() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('serverDown'));
+  }
+}
+
 export class ApiException extends Error {
   status: number;
 
@@ -72,9 +79,20 @@ export async function apiClient<T>(
     fetchOptions.next = { revalidate };
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+  } catch {
+    // 네트워크 에러 (서버 연결 불가)
+    emitServerDownEvent();
+    throw new ApiException(0, '서버에 연결할 수 없습니다.');
+  }
 
   if (!response.ok) {
+    // 5xx 서버 에러
+    if (response.status >= 500) {
+      emitServerDownEvent();
+    }
     const errorText = await response.text();
     throw new ApiException(
       response.status,
@@ -117,15 +135,26 @@ export async function clientApiClient<T>(
     requestHeaders['Authorization'] = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method,
-    headers: requestHeaders,
-    credentials: 'include',
-    body: body ? JSON.stringify(body) : undefined,
-    cache,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method,
+      headers: requestHeaders,
+      credentials: 'include',
+      body: body ? JSON.stringify(body) : undefined,
+      cache,
+    });
+  } catch {
+    // 네트워크 에러 (서버 연결 불가)
+    emitServerDownEvent();
+    throw new ApiException(0, '서버에 연결할 수 없습니다.');
+  }
 
   if (!response.ok) {
+    // 5xx 서버 에러
+    if (response.status >= 500) {
+      emitServerDownEvent();
+    }
     const errorText = await response.text();
 
     // 401 에러 시 토큰 갱신 후 재시도 (한 번만)
