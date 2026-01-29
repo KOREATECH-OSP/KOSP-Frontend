@@ -108,6 +108,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
   const isConnectingRef = useRef(false);
   const isRefreshingTokenRef = useRef(false);
   const isLoggingOutRef = useRef(false); // 로그아웃 중 재연결 방지
+  const shouldReconnectRef = useRef(true); // 재연결 여부 플래그
   const lastHeartbeatRef = useRef<number>(Date.now());
   const accessTokenRef = useRef<string | null>(null); // 최신 토큰 참조용
 
@@ -285,9 +286,9 @@ export default function NotificationSSEProvider({ children }: { children: React.
       isConnectingRef.current = false;
 
       // 재연결 시도 (토큰이 유효하고 로그아웃 중이 아닌 경우)
-      // accessTokenRef를 사용하여 항상 최신 토큰 참조
+      // shouldReconnectRef로 재연결 여부 판단 (heartbeat 타임아웃 등에서도 재연결)
       const currentToken = accessTokenRef.current;
-      if (!controller.signal.aborted && currentToken && !isLoggingOutRef.current) {
+      if (shouldReconnectRef.current && currentToken && !isLoggingOutRef.current) {
         console.log(`[SSE] Reconnecting in ${RECONNECT_DELAY}ms...`);
         reconnectTimeoutRef.current = setTimeout(() => {
           const latestToken = accessTokenRef.current;
@@ -306,11 +307,13 @@ export default function NotificationSSEProvider({ children }: { children: React.
 
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
+      shouldReconnectRef.current = true;
       connectSSE(session.accessToken);
     }
 
     return () => {
-      // 정리
+      // 정리 - 언마운트 시 재연결 방지
+      shouldReconnectRef.current = false;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -324,13 +327,16 @@ export default function NotificationSSEProvider({ children }: { children: React.
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && session?.accessToken && !isConnectingRef.current) {
-        // 기존 연결 끊고 재연결
+        // 기존 연결 끊고 재연결 - finally에서 중복 재연결 방지
+        shouldReconnectRef.current = false;
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
         }
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
+        // 직접 재연결
+        shouldReconnectRef.current = true;
         connectSSE(session.accessToken);
       }
     };
@@ -350,6 +356,8 @@ export default function NotificationSSEProvider({ children }: { children: React.
       }
       if (Date.now() - lastHeartbeatRef.current > HEARTBEAT_TIMEOUT) {
         console.warn('[SSE] Heartbeat timeout, reconnecting...');
+        // 재연결 필요 - shouldReconnectRef는 true 유지
+        shouldReconnectRef.current = true;
         abortControllerRef.current?.abort();
       }
     }, 10000);
