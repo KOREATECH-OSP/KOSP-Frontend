@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, useAuth } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Upload,
   User as UserIcon,
-  Trash2,
   Save,
   ExternalLink,
 } from 'lucide-react';
@@ -26,7 +25,6 @@ export default function UserEditClient() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { logout } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (process.env.NODE_ENV === 'development') {
     console.log('[DEBUG] Session:', { status, hasToken: !!session?.accessToken });
@@ -88,38 +86,6 @@ export default function UserEditClient() {
 
     fetchProfile();
   }, [session?.user?.id]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('이미지 크기는 5MB 이하여야 합니다');
-      return;
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('JPG, JPEG, PNG 형식만 업로드 가능합니다');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setPreviewImage(base64String);
-      setProfile((prev) => ({ ...prev, profileImage: base64String }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    setPreviewImage(undefined);
-    setProfile((prev) => ({ ...prev, profileImage: undefined }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const handleSave = async () => {
     const token = session?.accessToken;
@@ -314,36 +280,26 @@ export default function UserEditClient() {
                 {/* 업로드 컨트롤 */}
                 <div className="flex flex-1 flex-col gap-3">
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md"
-                    >
-                      <Upload className="h-4 w-4" />
-                      이미지 업로드
-                    </button>
-                    {previewImage && (
+                    <div className="group relative">
                       <button
-                        onClick={handleRemoveImage}
-                        className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
+                        disabled
+                        className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 shadow-sm"
                       >
-                        <Trash2 className="h-4 w-4" />
-                        제거
+                        <Upload className="h-4 w-4" />
+                        이미지 업로드
                       </button>
-                    )}
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        GitHub 프로필 사진을 변경해주세요
+                        <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                      </div>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    JPG, JPEG, PNG 형식 · 최대 5MB
+                    프로필 사진은 GitHub 계정에서 변경할 수 있습니다
                   </p>
                 </div>
               </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".jpg,.jpeg,.png"
-                onChange={handleImageChange}
-                className="hidden"
-              />
             </div>
           </div>
 
