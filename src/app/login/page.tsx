@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { toast } from 'sonner';
 import GithubIcon from '@/assets/svg/github.svg';
@@ -10,6 +10,8 @@ import { GITHUB_CLIENT_ID } from '@/lib/api/config';
 
 function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +37,7 @@ function LoginContent() {
         toast.error(result.error || '이메일 또는 비밀번호가 올바르지 않습니다');
       } else {
         toast.success('로그인되었습니다');
-        router.push('/');
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch {
@@ -51,6 +53,9 @@ function LoginContent() {
       return;
     }
     window.sessionStorage.setItem('kosp:oauth-from', 'login');
+    if (callbackUrl && callbackUrl !== '/') {
+      window.sessionStorage.setItem('kosp:oauth-callback', callbackUrl);
+    }
     const redirectUri = `${window.location.origin}/api/auth/github/callback`;
     const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email`;
     window.location.href = oauthUrl;

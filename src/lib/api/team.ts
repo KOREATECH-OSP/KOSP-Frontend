@@ -93,3 +93,29 @@ export async function deleteTeam(
     accessToken,
   });
 }
+
+/**
+ * 팀 초대 수락
+ */
+export async function acceptTeamInvite(
+  inviteId: string,
+  accessToken: string
+): Promise<void> {
+  await apiClient<void>(`/v1/teams/invites/${inviteId}/accept`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+/**
+ * 팀 초대 거절
+ */
+export async function rejectTeamInvite(
+  inviteId: string,
+  accessToken: string
+): Promise<void> {
+  await apiClient<void>(`/v1/teams/invites/${inviteId}/reject`, {
+    method: 'POST',
+    accessToken,
+  });
+}

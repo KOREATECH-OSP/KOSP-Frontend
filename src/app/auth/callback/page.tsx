@@ -25,7 +25,9 @@ function AuthCallbackContent() {
       }
 
       const oauthFrom = window.sessionStorage.getItem('kosp:oauth-from');
+      const oauthCallback = window.sessionStorage.getItem('kosp:oauth-callback') || '/';
       window.sessionStorage.removeItem('kosp:oauth-from');
+      window.sessionStorage.removeItem('kosp:oauth-callback');
 
       const githubAccessToken = searchParams.get('access_token');
       const isNew = searchParams.get('isNew');
@@ -63,7 +65,7 @@ function AuthCallbackContent() {
             }
 
             toast.success('로그인되었습니다');
-            router.replace('/');
+            router.replace(oauthCallback);
           }
         } catch (err) {
           if (err instanceof ApiException) {
@@ -102,7 +104,7 @@ function AuthCallbackContent() {
         }
 
         toast.success('로그인되었습니다');
-        router.replace('/');
+        router.replace(oauthCallback);
         return;
       }
 
