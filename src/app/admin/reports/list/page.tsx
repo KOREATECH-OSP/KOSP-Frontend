@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { AlertTriangle, User, FileText, MessageCircle, Loader2 } from 'lucide-react';
 import { getAdminReports, processAdminReport } from '@/lib/api/admin';
 import type { AdminReportResponse } from '@/types/admin';
@@ -227,7 +228,16 @@ export default function ReportsListPage() {
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                        <span>신고자: {report.reporterName}</span>
+                        <span>
+                          신고자:{' '}
+                          <Link
+                            href={`/user/${report.reporterId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="hover:text-gray-900 hover:underline"
+                          >
+                            {report.reporterName}
+                          </Link>
+                        </span>
                         <span>·</span>
                         <span>{new Date(report.createdAt).toLocaleDateString('ko-KR')}</span>
                         {report.description && (

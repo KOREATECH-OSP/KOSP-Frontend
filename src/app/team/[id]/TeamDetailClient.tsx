@@ -175,12 +175,16 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 <div className="mt-5 space-y-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">팀장</span>
-                    <div className="flex items-center gap-1.5">
-                      {leader?.profileImage && (
-                        <Image src={leader.profileImage} alt="" width={18} height={18} className="rounded-full" />
-                      )}
-                      <span className="font-medium text-gray-900">{leader?.name ?? '미지정'}</span>
-                    </div>
+                    {leader ? (
+                      <Link href={`/user/${leader.id}`} className="flex items-center gap-1.5 hover:underline">
+                        {leader.profileImage && (
+                          <Image src={leader.profileImage} alt="" width={18} height={18} className="rounded-full" />
+                        )}
+                        <span className="font-medium text-gray-900">{leader.name}</span>
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-gray-900">미지정</span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">모집 공고</span>
@@ -271,7 +275,13 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                     <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                       <span className="flex items-center gap-1.5">
                         <Crown className="h-4 w-4 text-amber-500" />
-                        <span className="font-medium text-gray-700">{leader?.name ?? '미지정'}</span>
+                        {leader ? (
+                          <Link href={`/user/${leader.id}`} className="font-medium text-gray-700 hover:underline">
+                            {leader.name}
+                          </Link>
+                        ) : (
+                          <span className="font-medium text-gray-700">미지정</span>
+                        )}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Users className="h-4 w-4 text-gray-400" />
@@ -334,33 +344,35 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                       className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors group"
                     >
                       <div className="flex items-center gap-4">
-                        {member.profileImage ? (
-                          <Image
-                            src={member.profileImage}
-                            alt={member.name}
-                            width={40}
-                            height={40}
-                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
-                          />
-                        ) : (
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${member.role === 'LEADER'
-                              ? 'bg-amber-100 text-amber-600'
-                              : 'bg-gray-100 text-gray-500'
-                              }`}
-                          >
-                            {member.role === 'LEADER' ? (
-                              <Crown className="h-5 w-5" />
-                            ) : (
-                              member.name.charAt(0)
-                            )}
-                          </div>
-                        )}
+                        <Link href={`/user/${member.id}`}>
+                          {member.profileImage ? (
+                            <Image
+                              src={member.profileImage}
+                              alt={member.name}
+                              width={40}
+                              height={40}
+                              className="h-10 w-10 rounded-full object-cover border border-gray-200 hover:ring-2 hover:ring-gray-300 transition-all"
+                            />
+                          ) : (
+                            <div
+                              className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold hover:ring-2 hover:ring-gray-300 transition-all ${member.role === 'LEADER'
+                                ? 'bg-amber-100 text-amber-600'
+                                : 'bg-gray-100 text-gray-500'
+                                }`}
+                            >
+                              {member.role === 'LEADER' ? (
+                                <Crown className="h-5 w-5" />
+                              ) : (
+                                member.name.charAt(0)
+                              )}
+                            </div>
+                          )}
+                        </Link>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">
+                            <Link href={`/user/${member.id}`} className="font-medium text-gray-900 hover:underline">
                               {member.name}
-                            </span>
+                            </Link>
                             {member.role === 'LEADER' && (
                               <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-100">
                                 TEAM LEADER

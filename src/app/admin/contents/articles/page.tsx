@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSession } from '@/lib/auth/AuthContext';
 import {
   FileText,
@@ -311,7 +312,13 @@ export default function ArticlesPage() {
                       <span className="truncate font-medium text-gray-900">{article.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
-                      <span>{article.author.name}</span>
+                      <Link
+                        href={`/user/${article.author.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hover:text-gray-900 hover:underline"
+                      >
+                        {article.author.name}
+                      </Link>
                       <span>{formatDate(article.createdAt)}</span>
                       <span className="flex items-center gap-1">
                         <Eye className="h-3 w-3" />

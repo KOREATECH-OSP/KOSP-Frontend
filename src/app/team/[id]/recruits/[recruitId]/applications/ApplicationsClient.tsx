@@ -172,22 +172,26 @@ export default function ApplicationsClient({ team, recruit }: ApplicationsClient
                   {/* 헤더: 지원자 정보 + 일시 + 버튼 */}
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <div className="flex items-center gap-3 min-w-0">
-                      {application.userProfileImage ? (
-                        <Image
-                          src={application.userProfileImage}
-                          alt={application.userName}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 shrink-0 rounded-full object-cover border border-gray-200"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-500">
-                          {application.userName.charAt(0)}
-                        </div>
-                      )}
+                      <Link href={`/user/${application.userId}`}>
+                        {application.userProfileImage ? (
+                          <Image
+                            src={application.userProfileImage}
+                            alt={application.userName}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 shrink-0 rounded-full object-cover border border-gray-200 hover:ring-2 hover:ring-gray-300 transition-all"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-500 hover:ring-2 hover:ring-gray-300 transition-all">
+                            {application.userName.charAt(0)}
+                          </div>
+                        )}
+                      </Link>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{application.userName}</span>
+                          <Link href={`/user/${application.userId}`} className="font-semibold text-gray-900 hover:underline">
+                            {application.userName}
+                          </Link>
                           {getApplicationStatusBadge(application.status)}
                         </div>
                         <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-500">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import { Search, Users, X, CheckCircle2, Loader2 } from 'lucide-react';
@@ -191,22 +192,24 @@ export default function AdminUsersPage() {
             <ul className="divide-y divide-gray-100">
               {filteredUsers.map((user) => (
                 <li key={user.id} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
-                  {user.profileImageUrl ? (
-                    <Image
-                      src={user.profileImageUrl}
-                      alt={user.name}
-                      width={36}
-                      height={36}
-                      className="h-9 w-9 shrink-0 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-medium text-white">
-                      {user.name[0]}
-                    </div>
-                  )}
+                  <Link href={`/user/${user.id}`}>
+                    {user.profileImageUrl ? (
+                      <Image
+                        src={user.profileImageUrl}
+                        alt={user.name}
+                        width={36}
+                        height={36}
+                        className="h-9 w-9 shrink-0 rounded-full object-cover hover:ring-2 hover:ring-gray-300 transition-all"
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-medium text-white hover:ring-2 hover:ring-gray-300 transition-all">
+                        {user.name[0]}
+                      </div>
+                    )}
+                  </Link>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-medium text-gray-900">{user.name}</span>
+                      <Link href={`/user/${user.id}`} className="truncate font-medium text-gray-900 hover:underline">{user.name}</Link>
                       {user.isDeleted ? (
                         <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">탈퇴</span>
                       ) : (

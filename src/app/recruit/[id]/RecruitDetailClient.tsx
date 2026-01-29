@@ -251,21 +251,36 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500">
                 {/* Author */}
                 <div className="flex items-center gap-2">
-                  <div className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
-                    {recruit.author?.profileImage ? (
-                      <Image
-                        src={recruit.author.profileImage}
-                        alt={recruit.author.name || 'Author'}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <User className="h-4 w-4 text-gray-300" />
+                  {recruit.author?.id ? (
+                    <>
+                      <Link href={`/user/${recruit.author.id}`} className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-200 bg-gray-50 hover:ring-2 hover:ring-gray-300 transition-all">
+                        {recruit.author.profileImage ? (
+                          <Image
+                            src={recruit.author.profileImage}
+                            alt={recruit.author.name || 'Author'}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <User className="h-4 w-4 text-gray-300" />
+                          </div>
+                        )}
+                      </Link>
+                      <Link href={`/user/${recruit.author.id}`} className="font-bold text-gray-900 hover:underline">
+                        {recruit.author.name || '알 수 없음'}
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-200 bg-gray-50">
+                        <div className="flex h-full w-full items-center justify-center">
+                          <User className="h-4 w-4 text-gray-300" />
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <span className="font-bold text-gray-900">{recruit.author?.name || '알 수 없음'}</span>
+                      <span className="font-bold text-gray-900">알 수 없음</span>
+                    </>
+                  )}
                 </div>
 
                 <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>

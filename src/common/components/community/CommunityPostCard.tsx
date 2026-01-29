@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, MessageSquare, Heart, Pin, Bookmark } from 'lucide-react';
 import type { ArticleResponse } from '@/lib/api/types';
 
@@ -11,6 +12,14 @@ interface CommunityPostCardProps {
 
 
 export default function CommunityPostCard({ post, boardName }: CommunityPostCardProps) {
+  const router = useRouter();
+
+  const handleAuthorClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/user/${post.author.id}`);
+  };
+
   return (
     <Link
       href={`/community/${post.id}`}
@@ -42,7 +51,12 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
       <div className="flex items-center justify-between text-xs mt-1">
         <div className="flex items-center gap-2 overflow-hidden">
           {/* Author */}
-          <span className="text-gray-500 font-medium truncate max-w-[80px]">{post.author.name}</span>
+          <button
+            onClick={handleAuthorClick}
+            className="text-gray-500 font-medium truncate max-w-[80px] hover:text-gray-900 hover:underline"
+          >
+            {post.author.name}
+          </button>
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
