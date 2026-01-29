@@ -7,6 +7,8 @@ import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { NotificationResponse, NotificationType } from '@/lib/api/types';
 import { Bell, Trophy, Award, AlertTriangle, Settings } from 'lucide-react';
+import { tokenManager } from '@/lib/auth/token-manager';
+import { signOutOnce } from '@/lib/auth/signout';
 
 const SSE_ENDPOINT = `${API_BASE_URL}/v1/notifications/subscribe`;
 const RECONNECT_DELAY = 5000;
@@ -77,6 +79,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
   const abortControllerRef = useRef<AbortController | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef(false);
+  const isRefreshingTokenRef = useRef(false);
 
   const showNotificationToast = useCallback((notification: NotificationResponse) => {
     const link = getNotificationLink(notification);
@@ -115,6 +118,52 @@ export default function NotificationSSEProvider({ children }: { children: React.
       });
 
       if (!response.ok) {
+        // 401/403 에러: 토큰 만료 또는 권한 없음
+        if (response.status === 401 || response.status === 403) {
+          console.log('[SSE] Unauthorized, attempting token refresh...');
+
+          // 이미 토큰 갱신 중이면 중복 요청 방지
+          if (isRefreshingTokenRef.current) {
+            console.log('[SSE] Token refresh already in progress');
+            return;
+          }
+
+          isRefreshingTokenRef.current = true;
+
+          try {
+            const newAccessToken = await tokenManager.refreshTokens();
+
+            if (newAccessToken) {
+              console.log('[SSE] Token refreshed, reconnecting...');
+              isRefreshingTokenRef.current = false;
+              isConnectingRef.current = false;
+
+              // 새 토큰으로 재연결
+              setTimeout(() => {
+                connectSSE(newAccessToken);
+              }, 100);
+              return;
+            } else {
+              // 토큰 갱신 실패 - 로그아웃 처리
+              console.log('[SSE] Token refresh failed, signing out...');
+              isRefreshingTokenRef.current = false;
+              signOutOnce({
+                callbackUrl: '/login',
+                toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
+              });
+              return;
+            }
+          } catch (refreshError) {
+            console.error('[SSE] Token refresh error:', refreshError);
+            isRefreshingTokenRef.current = false;
+            signOutOnce({
+              callbackUrl: '/login',
+              toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
+            });
+            return;
+          }
+        }
+
         throw new Error(`SSE connection failed: ${response.status}`);
       }
 
