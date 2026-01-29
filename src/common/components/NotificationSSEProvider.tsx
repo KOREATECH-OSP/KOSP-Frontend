@@ -109,6 +109,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
   const isRefreshingTokenRef = useRef(false);
   const isLoggingOutRef = useRef(false); // 로그아웃 중 재연결 방지
   const lastHeartbeatRef = useRef<number>(Date.now());
+  const accessTokenRef = useRef<string | null>(null); // 최신 토큰 참조용
 
   const showNotificationToast = useCallback((notification: NotificationResponse) => {
     const link = getNotificationLink(notification);
@@ -233,15 +234,28 @@ export default function NotificationSSEProvider({ children }: { children: React.
         for (const event of events) {
           try {
             // Heartbeat 처리 (JSON 파싱 전에 먼저 체크)
-            if (event.event === 'heartbeat' || event.data === 'heartbeat') {
+            // 다양한 heartbeat 형식 지원: event 타입, data 내용, 빈 data
+            const isHeartbeat =
+              event.event === 'heartbeat' ||
+              event.data === 'heartbeat' ||
+              event.data === '' ||
+              event.data?.trim() === '';
+
+            if (isHeartbeat) {
               lastHeartbeatRef.current = Date.now();
-              console.log('[SSE] Heartbeat received');
               continue;
             }
 
             // SSE 이벤트 처리: event 필드가 없거나 'notification'인 경우 모두 처리
             if (event.data && (event.event === 'notification' || !event.event)) {
-              const notification = JSON.parse(event.data) as NotificationResponse;
+              // JSON 파싱 전 기본 유효성 검사
+              const trimmedData = event.data.trim();
+              if (!trimmedData.startsWith('{') || !trimmedData.endsWith('}')) {
+                console.warn('[SSE] Invalid JSON format, skipping:', trimmedData.slice(0, 100));
+                continue;
+              }
+
+              const notification = JSON.parse(trimmedData) as NotificationResponse;
               // NotificationResponse 타입 검증
               if (notification.id && notification.message && notification.type) {
                 showNotificationToast(notification);
@@ -252,7 +266,12 @@ export default function NotificationSSEProvider({ children }: { children: React.
               }
             }
           } catch (e) {
-            console.error('[SSE] Error processing event:', e);
+            // JSON 파싱 실패 시 상세 로그
+            if (e instanceof SyntaxError) {
+              console.warn('[SSE] JSON parse error:', e.message, 'Data:', event.data?.slice(0, 100));
+            } else {
+              console.error('[SSE] Error processing event:', e);
+            }
           }
         }
       }
@@ -265,17 +284,25 @@ export default function NotificationSSEProvider({ children }: { children: React.
     } finally {
       isConnectingRef.current = false;
 
-      // 재연결 시도 (세션이 유효하고 로그아웃 중이 아닌 경우)
-      if (!controller.signal.aborted && session?.accessToken && !isLoggingOutRef.current) {
+      // 재연결 시도 (토큰이 유효하고 로그아웃 중이 아닌 경우)
+      // accessTokenRef를 사용하여 항상 최신 토큰 참조
+      const currentToken = accessTokenRef.current;
+      if (!controller.signal.aborted && currentToken && !isLoggingOutRef.current) {
         console.log(`[SSE] Reconnecting in ${RECONNECT_DELAY}ms...`);
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (!isLoggingOutRef.current) {
-            connectSSE(session.accessToken);
+          const latestToken = accessTokenRef.current;
+          if (!isLoggingOutRef.current && latestToken) {
+            connectSSE(latestToken);
           }
         }, RECONNECT_DELAY);
       }
     }
   }, [showNotificationToast]);
+
+  // accessTokenRef 동기화
+  useEffect(() => {
+    accessTokenRef.current = session?.accessToken ?? null;
+  }, [session?.accessToken]);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
