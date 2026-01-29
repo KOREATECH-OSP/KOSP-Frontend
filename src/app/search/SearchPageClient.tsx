@@ -59,7 +59,7 @@ function UserAvatar({ user, size = 'md' }: { user: UserSearchSummary; size?: 'sm
 function UserCard({ user }: { user: UserSearchSummary }) {
   return (
     <Link
-      href={`/profile/${user.id}`}
+      href={`/user/${user.id}`}
       className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 hover:shadow-sm"
     >
       <UserAvatar user={user} size="md" />
@@ -80,7 +80,7 @@ function UserCard({ user }: { user: UserSearchSummary }) {
 function UserMiniCard({ user }: { user: UserSearchSummary }) {
   return (
     <Link
-      href={`/profile/${user.id}`}
+      href={`/user/${user.id}`}
       className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-2 transition hover:border-gray-200 hover:bg-white"
     >
       <UserAvatar user={user} size="sm" />
