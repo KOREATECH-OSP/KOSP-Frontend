@@ -107,6 +107,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef(false);
   const isRefreshingTokenRef = useRef(false);
+  const isLoggingOutRef = useRef(false); // 로그아웃 중 재연결 방지
   const lastHeartbeatRef = useRef<number>(Date.now());
 
   const showNotificationToast = useCallback((notification: NotificationResponse) => {
@@ -164,18 +165,20 @@ export default function NotificationSSEProvider({ children }: { children: React.
             if (newAccessToken) {
               console.log('[SSE] Token refreshed, reconnecting...');
               isRefreshingTokenRef.current = false;
-              // isConnectingRef는 setTimeout 내부에서 false로 설정 (레이스 컨디션 방지)
+              isConnectingRef.current = false;
 
-              // 새 토큰으로 재연결
+              // 새 토큰으로 재연결 (약간의 딜레이 후)
               setTimeout(() => {
-                isConnectingRef.current = false;
-                connectSSE(newAccessToken);
+                if (!isLoggingOutRef.current) {
+                  connectSSE(newAccessToken);
+                }
               }, 100);
               return;
             } else {
               // 토큰 갱신 실패 - 로그아웃 처리
               console.log('[SSE] Token refresh failed, signing out...');
               isRefreshingTokenRef.current = false;
+              isLoggingOutRef.current = true; // 재연결 방지
               signOutOnce({
                 callbackUrl: '/login',
                 toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
@@ -185,6 +188,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
           } catch (refreshError) {
             console.error('[SSE] Token refresh error:', refreshError);
             isRefreshingTokenRef.current = false;
+            isLoggingOutRef.current = true; // 재연결 방지
             signOutOnce({
               callbackUrl: '/login',
               toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
@@ -261,11 +265,13 @@ export default function NotificationSSEProvider({ children }: { children: React.
     } finally {
       isConnectingRef.current = false;
 
-      // 재연결 시도 (세션이 유효한 경우)
-      if (!controller.signal.aborted && session?.accessToken) {
+      // 재연결 시도 (세션이 유효하고 로그아웃 중이 아닌 경우)
+      if (!controller.signal.aborted && session?.accessToken && !isLoggingOutRef.current) {
         console.log(`[SSE] Reconnecting in ${RECONNECT_DELAY}ms...`);
         reconnectTimeoutRef.current = setTimeout(() => {
-          connectSSE(session.accessToken);
+          if (!isLoggingOutRef.current) {
+            connectSSE(session.accessToken);
+          }
         }, RECONNECT_DELAY);
       }
     }
