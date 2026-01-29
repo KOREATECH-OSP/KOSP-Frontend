@@ -82,6 +82,21 @@ export default function NotificationDropdown() {
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 
+  // SSE 알림 이벤트 리스너 (실시간 동기화)
+  useEffect(() => {
+    const handleSSENotification = (event: Event) => {
+      const customEvent = event as CustomEvent<{ notification: NotificationResponse }>;
+      const { notification } = customEvent.detail;
+      // 읽지 않은 알림인 경우에만 카운트 증가
+      if (!notification.isRead) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener('sse:notification', handleSSENotification);
+    return () => window.removeEventListener('sse:notification', handleSSENotification);
+  }, []);
+
   const handleOpen = () => {
     fetchNotifications();
   };

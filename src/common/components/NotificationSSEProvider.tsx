@@ -12,6 +12,8 @@ import { signOutOnce } from '@/lib/auth/signout';
 
 const SSE_ENDPOINT = `${API_BASE_URL}/v1/notifications/subscribe`;
 const RECONNECT_DELAY = 5000;
+const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB
+const HEARTBEAT_TIMEOUT = 60000; // 60초
 
 function getNotificationIcon(type: NotificationType) {
   switch (type) {
@@ -52,25 +54,50 @@ interface SSEEvent {
   data?: string;
 }
 
-function parseSSEEvents(chunk: string): SSEEvent[] {
+interface ParseSSEResult {
+  events: SSEEvent[];
+  remainder: string;
+}
+
+function parseSSEEvents(chunk: string): ParseSSEResult {
+  // 완전한 이벤트만 파싱하고 불완전한 부분은 remainder로 반환
+  const lastEventEnd = chunk.lastIndexOf('\n\n');
+  if (lastEventEnd === -1) {
+    return { events: [], remainder: chunk };
+  }
+
+  const completePart = chunk.slice(0, lastEventEnd + 2);
+  const remainder = chunk.slice(lastEventEnd + 2);
+
   const events: SSEEvent[] = [];
-  const lines = chunk.split('\n');
+  const lines = completePart.split('\n');
   let currentEvent: SSEEvent = {};
+  let dataLines: string[] = [];
 
   for (const line of lines) {
-    if (line.startsWith('id:')) {
-      currentEvent.id = line.slice(3).trim();
+    if (line.startsWith(':')) {
+      // 주석 무시
+      continue;
+    } else if (line.startsWith('id:')) {
+      // SSE 스펙: 콜론 뒤 첫 공백 1개만 제거
+      currentEvent.id = line.slice(3).replace(/^ /, '');
     } else if (line.startsWith('event:')) {
-      currentEvent.event = line.slice(6).trim();
+      currentEvent.event = line.slice(6).replace(/^ /, '');
     } else if (line.startsWith('data:')) {
-      currentEvent.data = line.slice(5).trim();
-    } else if (line === '' && (currentEvent.data || currentEvent.event)) {
-      events.push(currentEvent);
+      // SSE 스펙: 콜론 뒤 첫 공백 1개만 제거, 멀티라인 지원
+      dataLines.push(line.slice(5).replace(/^ /, ''));
+    } else if (line === '') {
+      // 빈 줄 = 이벤트 종료
+      if (dataLines.length > 0 || currentEvent.event) {
+        currentEvent.data = dataLines.join('\n');
+        events.push(currentEvent);
+      }
       currentEvent = {};
+      dataLines = [];
     }
   }
 
-  return events;
+  return { events, remainder };
 }
 
 export default function NotificationSSEProvider({ children }: { children: React.ReactNode }) {
@@ -80,6 +107,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef(false);
   const isRefreshingTokenRef = useRef(false);
+  const lastHeartbeatRef = useRef<number>(Date.now());
 
   const showNotificationToast = useCallback((notification: NotificationResponse) => {
     const link = getNotificationLink(notification);
@@ -136,10 +164,11 @@ export default function NotificationSSEProvider({ children }: { children: React.
             if (newAccessToken) {
               console.log('[SSE] Token refreshed, reconnecting...');
               isRefreshingTokenRef.current = false;
-              isConnectingRef.current = false;
+              // isConnectingRef는 setTimeout 내부에서 false로 설정 (레이스 컨디션 방지)
 
               // 새 토큰으로 재연결
               setTimeout(() => {
+                isConnectingRef.current = false;
                 connectSSE(newAccessToken);
               }, 100);
               return;
@@ -176,6 +205,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
       let buffer = '';
 
       console.log('[SSE] Connected to notification stream');
+      lastHeartbeatRef.current = Date.now();
 
       while (true) {
         const { done, value } = await reader.read();
@@ -186,25 +216,39 @@ export default function NotificationSSEProvider({ children }: { children: React.
         }
 
         buffer += decoder.decode(value, { stream: true });
-        const events = parseSSEEvents(buffer);
 
-        // 처리된 이벤트 이후의 버퍼만 유지
-        const lastNewline = buffer.lastIndexOf('\n\n');
-        if (lastNewline !== -1) {
-          buffer = buffer.slice(lastNewline + 2);
+        // 버퍼 오버플로우 방지
+        if (buffer.length > MAX_BUFFER_SIZE) {
+          console.error('[SSE] Buffer overflow, reconnecting...');
+          break;
         }
 
+        const { events, remainder } = parseSSEEvents(buffer);
+        buffer = remainder;
+
         for (const event of events) {
-          if (event.event === 'notification' && event.data) {
-            try {
-              const notification = JSON.parse(event.data) as NotificationResponse;
-              showNotificationToast(notification);
-            } catch (e) {
-              console.error('[SSE] Failed to parse notification:', e);
+          try {
+            // Heartbeat 처리 (JSON 파싱 전에 먼저 체크)
+            if (event.event === 'heartbeat' || event.data === 'heartbeat') {
+              lastHeartbeatRef.current = Date.now();
+              console.log('[SSE] Heartbeat received');
+              continue;
             }
-          } else if (event.event === 'heartbeat' || event.data === 'heartbeat') {
-            // 하트비트는 무시
-            console.log('[SSE] Heartbeat received');
+
+            // SSE 이벤트 처리: event 필드가 없거나 'notification'인 경우 모두 처리
+            if (event.data && (event.event === 'notification' || !event.event)) {
+              const notification = JSON.parse(event.data) as NotificationResponse;
+              // NotificationResponse 타입 검증
+              if (notification.id && notification.message && notification.type) {
+                showNotificationToast(notification);
+                // 전역 이벤트 발생 (NotificationDropdown 동기화용)
+                window.dispatchEvent(new CustomEvent('sse:notification', {
+                  detail: { notification }
+                }));
+              }
+            }
+          } catch (e) {
+            console.error('[SSE] Error processing event:', e);
           }
         }
       }
@@ -225,7 +269,7 @@ export default function NotificationSSEProvider({ children }: { children: React.
         }, RECONNECT_DELAY);
       }
     }
-  }, [session?.accessToken, showNotificationToast]);
+  }, [showNotificationToast]);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
@@ -261,6 +305,24 @@ export default function NotificationSSEProvider({ children }: { children: React.
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [session?.accessToken, connectSSE]);
+
+  // Heartbeat 타임아웃 체크 (10초마다)
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    const interval = setInterval(() => {
+      // 토큰 갱신 중이거나 연결 시도 중이면 체크 스킵
+      if (isRefreshingTokenRef.current || isConnectingRef.current) {
+        return;
+      }
+      if (Date.now() - lastHeartbeatRef.current > HEARTBEAT_TIMEOUT) {
+        console.warn('[SSE] Heartbeat timeout, reconnecting...');
+        abortControllerRef.current?.abort();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [status]);
 
   return <>{children}</>;
 }
