@@ -13,7 +13,7 @@ import {
   Loader2,
   Calendar,
   CheckCircle2,
-  AlertCircle
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from '@/lib/toast';
@@ -430,7 +430,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label="Close"
                 >
-                  <AlertCircle className="h-5 w-5 rotate-45" strokeWidth={1.5} />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
