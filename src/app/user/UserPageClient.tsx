@@ -41,6 +41,7 @@ import {
   getMyPointHistory,
   getMyApplications,
 } from '@/lib/api/user';
+import { getBoards } from '@/lib/api/board';
 import type {
   ArticleResponse,
   CommentResponse,
@@ -51,6 +52,7 @@ import type {
   GithubContributionComparisonResponse,
   MyPointHistoryResponse,
   MyApplicationResponse,
+  BoardResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 
@@ -76,6 +78,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 포인트 & 지원내역 데이터
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
   const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
+
+  // 게시판 데이터 (채용공고 게시판 판별용)
+  const [boards, setBoards] = useState<BoardResponse[]>([]);
 
   // 포인트 페이징 상태
   const [pointPage, setPointPage] = useState(1);
@@ -132,15 +137,17 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         const profileData = await getUserProfile(userId);
         setProfile(profileData);
 
-        const [postsRes, commentsRes] = await Promise.all([
+        const [postsRes, commentsRes, boardsRes] = await Promise.all([
           getUserPosts(userId),
           getUserComments(userId),
+          getBoards().catch(() => ({ boards: [] })),
         ]);
         setCounts({
           posts: postsRes.pagination.totalItems,
           comments: commentsRes.meta.totalItems,
           bookmarks: 0,
         });
+        setBoards(boardsRes.boards);
 
         await fetchGithubData();
       } catch (error) {
@@ -204,6 +211,17 @@ export default function UserPageClient({ session }: UserPageClientProps) {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  // 채용공고 게시판인지 확인하는 함수
+  const isRecruitBoard = (boardId: number) => {
+    const board = boards.find((b) => b.id === boardId);
+    return board?.isRecruitAllowed ?? false;
+  };
+
+  // 게시글 상세 링크 생성 함수
+  const getPostDetailLink = (post: ArticleResponse) => {
+    return isRecruitBoard(post.boardId) ? `/recruit/${post.id}` : `/community/${post.id}`;
   };
 
 
@@ -838,7 +856,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     {posts.map((post) => (
                       <Link
                         key={post.id}
-                        href={`/community/${post.id}`}
+                        href={getPostDetailLink(post)}
                         className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
                       >
                         <div className="min-w-0 flex-1">
@@ -937,7 +955,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     {bookmarks.map((post) => (
                       <Link
                         key={post.id}
-                        href={`/community/${post.id}`}
+                        href={getPostDetailLink(post)}
                         className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
                       >
                         <div className="min-w-0 flex-1">
