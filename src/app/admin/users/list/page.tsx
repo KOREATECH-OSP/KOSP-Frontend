@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
-import { Search, Users, X, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Users, X, Check, Loader2 } from 'lucide-react';
 import { getAdminUsers, getRoles, updateUserRoles, deleteAdminUser } from '@/lib/api/admin';
 import type { AdminUserResponse, RoleResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
@@ -405,7 +405,7 @@ function UserRoleModal({
                         : 'border-gray-300'
                     }`}
                   >
-                    {hasRole && <CheckCircle2 className="h-3 w-3 text-white" />}
+                    {hasRole && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
                   </div>
                   <div className="flex-1">
                     <div className="text-sm font-medium text-gray-900">{role.name}</div>
