@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSession } from 'next-auth/react';
+import { useSession, useAuth } from '@/lib/auth/AuthContext';
 import {
   Users,
   Shield,
@@ -22,7 +22,6 @@ import {
   ShieldX,
   Coins,
 } from 'lucide-react';
-import { signOut } from 'next-auth/react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
 import { toast } from '@/lib/toast';
 
@@ -100,6 +99,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { logout } = useAuth();
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -170,7 +170,7 @@ export default function AdminLayout({
   };
 
   const handleLogout = () => {
-    signOut({ callbackUrl: '/' });
+    logout({ callbackUrl: '/' });
   };
 
   return (

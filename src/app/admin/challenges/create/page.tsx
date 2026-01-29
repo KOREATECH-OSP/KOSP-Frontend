@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Trophy, Loader2, Image as ImageIcon, Code, ChevronDown, ChevronUp, Info } from 'lucide-react';

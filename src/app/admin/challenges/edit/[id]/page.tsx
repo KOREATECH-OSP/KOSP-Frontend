@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import { ArrowLeft, Trophy, Loader2, Image as ImageIcon, Code, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { getAdminChallenge, updateAdminChallenge, getSpelVariables, type SpelVariable, type SpelExample } from '@/lib/api/admin';

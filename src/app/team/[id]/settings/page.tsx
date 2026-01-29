@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import { getTeam, updateTeam } from '@/lib/api/team';
 import { uploadFile } from '@/lib/api/upload';

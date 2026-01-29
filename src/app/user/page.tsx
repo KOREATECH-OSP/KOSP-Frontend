@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 import UserPageClient from './UserPageClient';
 
 export default async function MyPage() {

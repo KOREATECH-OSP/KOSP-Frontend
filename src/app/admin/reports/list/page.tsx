@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, User, FileText, MessageCircle, Loader2 } from 'lucide-react';
 import { getAdminReports, processAdminReport } from '@/lib/api/admin';

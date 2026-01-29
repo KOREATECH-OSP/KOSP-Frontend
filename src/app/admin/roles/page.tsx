@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { Search, Users, Plus, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { getRoles, getPolicies, createRole, deleteRole, attachPolicyToRole, detachPolicyFromRole } from '@/lib/api/admin';
 import type { RoleResponse, PolicyResponse } from '@/types/admin';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { ArrowLeft, Plus, X, Save } from 'lucide-react';
 import { PlateEditor } from '@/common/components/Editor';
 import { updateAdminNotice } from '@/lib/api/admin';

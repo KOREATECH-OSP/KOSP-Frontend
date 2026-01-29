@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Users, Search } from 'lucide-react';
 import type { GlobalSearchResponse } from '@/lib/api/types';
-import type { Session } from 'next-auth';
+import type { AuthSession } from '@/lib/auth/types';
 import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
 
@@ -13,7 +13,7 @@ import Footer from '@/common/components/Footer';
 interface SearchPageClientProps {
   keyword: string;
   initialData: GlobalSearchResponse | null;
-  session: Session | null;
+  session: AuthSession | null;
 }
 
 type TabType = 'ALL' | 'ARTICLE' | 'RECRUIT' | 'TEAM' | 'CHALLENGE';

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getBoards, getArticles } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 import CommunityPageClient from './CommunityPageClient';
 import Link from 'next/link';
 

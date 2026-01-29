@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { Users, ArrowRight, Loader2 } from 'lucide-react';
 import { getMyTeam } from '@/lib/api';
 import type { TeamDetailResponse, TeamResponse, AuthorResponse } from '@/lib/api/types';

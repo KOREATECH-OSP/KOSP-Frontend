@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import type { Session } from 'next-auth';
+import type { AuthSession } from '@/lib/auth/types';
 import {
   User,
   Github,
@@ -55,7 +55,7 @@ import type {
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 
 interface UserPageClientProps {
-  session: Session | null;
+  session: AuthSession | null;
 }
 
 type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기';

@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { SessionProvider, useSession } from 'next-auth/react';
 import NoticeBanner from '@/common/components/noticeBanner';
 import NotificationSSEProvider from '@/common/components/NotificationSSEProvider';
 import { usePathname } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api/config';
 import { tokenManager } from '@/lib/auth/token-manager';
+import { AuthProvider, useSession } from '@/lib/auth/AuthContext';
+import type { AuthSession } from '@/lib/auth/types';
 import Image from 'next/image';
 import surprisedKori from '@/assets/images/kori/11-09 L 놀람 .png';
 
@@ -147,35 +148,58 @@ function TokenManagerInitializer({ children }: { children: React.ReactNode }) {
     }
   }, [status, session?.accessToken, session?.refreshToken]);
 
-  // tokenRefreshed 이벤트 리스너 (토큰 갱신 시 세션 동기화)
+  // sessionChanged 이벤트 리스너 (세션 변경 시 tokenManager 동기화)
   useEffect(() => {
-    const handleTokenRefreshed = () => {
-      // tokenManager에서 토큰이 갱신되면 여기서 처리
-      // 실제 세션 업데이트는 다음 API 호출 시 새 토큰 사용
-      console.log('[TokenManagerInitializer] Token refreshed event received');
+    const handleSessionChanged = (event: CustomEvent<AuthSession | null>) => {
+      const newSession = event.detail;
+      if (newSession) {
+        tokenManager.initialize(newSession.accessToken, newSession.refreshToken);
+        initializedRef.current = true;
+      } else {
+        tokenManager.clear();
+        initializedRef.current = false;
+      }
     };
 
-    window.addEventListener('tokenRefreshed', handleTokenRefreshed);
-    return () => window.removeEventListener('tokenRefreshed', handleTokenRefreshed);
+    window.addEventListener('sessionChanged', handleSessionChanged as EventListener);
+    return () => window.removeEventListener('sessionChanged', handleSessionChanged as EventListener);
+  }, []);
+
+  // tokenRefreshed 이벤트 리스너 (토큰 갱신 시 tokenManager 동기화)
+  useEffect(() => {
+    const handleTokenRefreshed = (event: CustomEvent<AuthSession>) => {
+      const newSession = event.detail;
+      if (newSession) {
+        tokenManager.initialize(newSession.accessToken, newSession.refreshToken);
+      }
+    };
+
+    window.addEventListener('tokenRefreshed', handleTokenRefreshed as EventListener);
+    return () => window.removeEventListener('tokenRefreshed', handleTokenRefreshed as EventListener);
   }, []);
 
   return <>{children}</>;
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: React.ReactNode;
+  initialSession?: AuthSession | null;
+}
+
+export function Providers({ children, initialSession }: ProvidersProps) {
   const pathname = usePathname();
   const isWritePage = pathname === '/community/write';
 
   return (
     <ServerStatusChecker>
-      <SessionProvider refetchInterval={4 * 60} refetchOnWindowFocus={true}>
+      <AuthProvider initialSession={initialSession}>
         <TokenManagerInitializer>
           <NotificationSSEProvider>
             {!isWritePage && <NoticeBanner />}
             {children}
           </NotificationSSEProvider>
         </TokenManagerInitializer>
-      </SessionProvider>
+      </AuthProvider>
     </ServerStatusChecker>
   );
 }

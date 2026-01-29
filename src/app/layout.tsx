@@ -2,16 +2,19 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
+import { auth } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
   title: "K-OSP",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="ko">
       <head>
@@ -23,7 +26,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers initialSession={session}>{children}</Providers>
         <Toaster
           richColors
           position="bottom-right"

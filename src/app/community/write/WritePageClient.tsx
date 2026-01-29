@@ -2,7 +2,7 @@
 
 import { useState, useRef, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { ArrowLeft, X, Loader2, ChevronDown } from 'lucide-react';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { Search, Plus } from 'lucide-react';
 import type { TeamResponse, RecruitResponse, PageMeta } from '@/lib/api/types';
 import koriDoodle from '@/assets/images/kori/11-10 K-2 끄적끄적 .png';

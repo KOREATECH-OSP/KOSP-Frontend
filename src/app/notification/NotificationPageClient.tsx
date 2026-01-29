@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import type { Session } from 'next-auth';
+import type { AuthSession } from '@/lib/auth/types';
 import { Bell, Check, Trash2, Trophy, Award, AlertTriangle, Settings, Loader2 } from 'lucide-react';
 import {
   getNotifications,
@@ -20,7 +20,7 @@ const PAGE_SIZE = 10;
 type FilterType = '전체' | '신고' | '챌린지' | '포인트' | '시스템';
 
 interface NotificationPageClientProps {
-  session: Session | null;
+  session: AuthSession | null;
 }
 
 const FILTERS: { id: FilterType; label: string; types: NotificationType[] | null }[] = [

@@ -6,13 +6,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { signOutOnce } from '@/lib/auth/signout';
-import type { Session } from 'next-auth';
+import type { AuthSession } from '@/lib/auth/types';
 
 import LogoImage from "../../../assets/images/koreatech_hangeul.png";
 
 export interface HeaderProps {
   simple?: boolean;
-  session?: Session | null;
+  session?: AuthSession | null;
 }
 
 function Header({ simple = false, session = null }: HeaderProps) {

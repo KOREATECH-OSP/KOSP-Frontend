@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession, useAuth } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -25,6 +25,7 @@ interface UserProfile {
 export default function UserEditClient() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { logout } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (process.env.NODE_ENV === 'development') {
@@ -162,8 +163,8 @@ export default function UserEditClient() {
     try {
       await deleteUser(Number(userId), { accessToken: token });
       toast.success('회원 탈퇴가 완료되었습니다');
-      // signOut이 완료된 후 자동으로 홈으로 리다이렉트
-      signOut({ callbackUrl: '/' });
+      // logout이 완료된 후 자동으로 홈으로 리다이렉트
+      logout({ callbackUrl: '/' });
     } catch (error) {
       console.error('Failed to delete account:', error);
       toast.error('회원 탈퇴에 실패했습니다');

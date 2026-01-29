@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { Search, Key, Loader2 } from 'lucide-react';
 import { getPermissions } from '@/lib/api/admin';
 import type { PermissionResponse } from '@/types/admin';

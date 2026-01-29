@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { TiptapEditor } from '@/common/components/Editor';
 import { useImageUpload } from '@/common/components/Editor/hooks/useImageUpload';
 import { API_BASE_URL } from '@/lib/api/config';

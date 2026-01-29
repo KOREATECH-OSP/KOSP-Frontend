@@ -1,6 +1,5 @@
 'use client';
 
-import { signOut } from 'next-auth/react';
 import { toast } from '@/lib/toast';
 
 const SIGN_OUT_DEDUPE_MS = 3000;
@@ -22,12 +21,13 @@ export async function signOutOnce(options: SignOutOnceOptions = {}): Promise<voi
     toast.error(toastMessage);
   }
 
-  // 백엔드 로그아웃 API 호출 (refreshToken 삭제)
+  // 세션 삭제 API 호출
   try {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/auth/session', { method: 'DELETE' });
   } catch {
     // 실패해도 클라이언트 로그아웃은 진행
   }
 
-  signOut({ callbackUrl });
+  // 페이지 이동
+  window.location.href = callbackUrl;
 }

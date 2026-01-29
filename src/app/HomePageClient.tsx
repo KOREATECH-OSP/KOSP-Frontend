@@ -7,12 +7,12 @@ import Footer from '@/common/components/Footer';
 import CommunityPostCard from '@/common/components/community/CommunityPostCard';
 import RecruitPostCard from '@/common/components/team/RecruitPostCard';
 import type { ArticleResponse, RecruitResponse } from '@/lib/api/types';
-import type { Session } from 'next-auth';
+import type { AuthSession } from '@/lib/auth/types';
 
 interface HomePageClientProps {
   articles: ArticleResponse[];
   recruits: RecruitResponse[];
-  session: Session | null;
+  session: AuthSession | null;
 }
 
 export default function HomePageClient({ articles, recruits, session }: HomePageClientProps) {

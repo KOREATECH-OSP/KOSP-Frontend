@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { toast } from 'sonner';
 import StepIndicator from './StepIndicator';
 import GithubStep from './GithubStep';
@@ -12,9 +12,9 @@ import VerificationStep from './VerificationStep';
 import CompleteStep from './CompleteStep';
 import { useFunnel, Funnel } from '@/common/hooks/useFunnel';
 import { GITHUB_CLIENT_ID } from '@/lib/api/config';
-import { 
-  sendVerificationEmail, 
-  verifyEmailCode, 
+import {
+  sendVerificationEmail,
+  verifyEmailCode,
   checkMemberId,
   validateSignupTokenFormat,
   validateSignupToken,
@@ -27,6 +27,7 @@ const SIGNUP_STEPS = ['github', 'info', 'verification', 'complete'] as const;
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { loginWithTokens } = useAuth();
   const signupTokenParam = searchParams.get('signupToken');
   const stepParam = searchParams.get('step');
 
@@ -62,7 +63,7 @@ function SignupContent() {
 
     const verifyToken = async () => {
       const formatValidation = validateSignupTokenFormat(signupTokenParam);
-      
+
       if (!formatValidation.valid) {
         setTokenError(formatValidation.error || '잘못된 접근입니다');
         setIsTokenVerifying(false);
@@ -169,8 +170,8 @@ function SignupContent() {
 
     setIsVerifyingCode(true);
     try {
-      const response = await verifyEmailCode({ 
-        email: formData.email, 
+      const response = await verifyEmailCode({
+        email: formData.email,
         code: verificationCode,
       });
       if (response.signupToken) {
@@ -222,13 +223,9 @@ function SignupContent() {
         password: formData.password,
       }, signupToken);
 
-      const result = await signIn('signup-token', {
-        accessToken: tokenResponse.accessToken,
-        refreshToken: tokenResponse.refreshToken,
-        redirect: false,
-      });
+      const result = await loginWithTokens(tokenResponse.accessToken, tokenResponse.refreshToken);
 
-      if (result?.error) {
+      if (!result.success) {
         toast.error('세션 생성에 실패했어요. 로그인 페이지에서 다시 로그인해주세요.');
         router.push('/login');
         return;

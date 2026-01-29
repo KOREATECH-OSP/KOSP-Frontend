@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { toast } from 'sonner';
 import { exchangeGithubToken } from '@/lib/api/auth';
 import { ApiException } from '@/lib/api/client';
@@ -10,6 +10,7 @@ import { ApiException } from '@/lib/api/client';
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { loginWithGithub, loginWithTokens } = useAuth();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -41,13 +42,24 @@ function AuthCallbackContent() {
             const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
             router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=info`);
           } else {
-            const result = await signIn('github-login', {
-              githubAccessToken,
-              redirect: false,
-            });
+            const result = await loginWithGithub(githubAccessToken);
 
-            if (result?.error) {
-              throw new ApiException(404, result.error);
+            if (!result.success) {
+              if (result.error?.includes('가입되지 않은')) {
+                toast.error('가입되지 않은 GitHub 계정이에요. 회원가입을 진행해주세요.');
+                try {
+                  const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
+                  router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=github`);
+                  return;
+                } catch {
+                  setStatus('error');
+                  setErrorMessage('회원가입 처리 중 오류가 발생했어요.');
+                  return;
+                }
+              }
+              setStatus('error');
+              setErrorMessage(result.error || '인증 처리에 실패했어요.');
+              return;
             }
 
             toast.success('로그인되었습니다');
@@ -79,15 +91,11 @@ function AuthCallbackContent() {
 
       const accessToken = searchParams.get('accessToken');
       const refreshToken = searchParams.get('refreshToken');
-      
-      if (accessToken && refreshToken) {
-        const result = await signIn('signup-token', {
-          accessToken,
-          refreshToken,
-          redirect: false,
-        });
 
-        if (result?.error) {
+      if (accessToken && refreshToken) {
+        const result = await loginWithTokens(accessToken, refreshToken);
+
+        if (!result.success) {
           setStatus('error');
           setErrorMessage('세션 생성에 실패했어요.');
           return;
@@ -103,7 +111,7 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, loginWithGithub, loginWithTokens]);
 
   if (status === 'error') {
     return (

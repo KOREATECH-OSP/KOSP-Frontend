@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import { Search, Users, Loader2, Coins } from 'lucide-react';
 import { getAdminUsers } from '@/lib/api/admin';

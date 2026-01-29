@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getArticle, getComments } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
 import ArticleDetailClient from './ArticleDetailClient';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 
 interface PageProps {
   params: Promise<{ id: string }>;

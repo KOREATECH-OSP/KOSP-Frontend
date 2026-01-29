@@ -1,6 +1,6 @@
 import { getBoards, getArticles, getRecruits } from '@/lib/api';
 import { ApiException } from '@/lib/api/client';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 import HomePageClient from './HomePageClient';
 import type { ArticleResponse, RecruitResponse } from '@/lib/api/types';
 

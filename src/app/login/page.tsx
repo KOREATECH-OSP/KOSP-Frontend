@@ -3,13 +3,14 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { toast } from 'sonner';
 import GithubIcon from '@/assets/svg/github.svg';
 import { GITHUB_CLIENT_ID } from '@/lib/api/config';
 
 function LoginContent() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,14 +29,10 @@ function LoginContent() {
 
     setIsLoading(true);
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
+      const result = await login(email, password);
 
-      if (result?.error) {
-        toast.error('이메일 또는 비밀번호가 올바르지 않습니다');
+      if (!result.success) {
+        toast.error(result.error || '이메일 또는 비밀번호가 올바르지 않습니다');
       } else {
         toast.success('로그인되었습니다');
         router.push('/');

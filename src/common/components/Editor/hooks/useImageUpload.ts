@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { uploadFile } from '@/lib/api/upload';
 
 export function useImageUpload() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';

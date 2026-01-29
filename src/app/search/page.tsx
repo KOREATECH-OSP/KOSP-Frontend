@@ -1,6 +1,6 @@
 import { searchGlobal } from '@/lib/api/search';
 import SearchPageClient from './SearchPageClient';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 
 interface PageProps {
   searchParams: Promise<{ keyword?: string }>;

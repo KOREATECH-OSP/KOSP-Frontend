@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bell, Plus, X, Loader2 } from 'lucide-react';
 import { PlateEditor } from '@/common/components/Editor';

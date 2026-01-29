@@ -1,45 +1,9 @@
 import { signOutOnce } from './signout';
+import { getTokenExpiry } from './cookies';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://dev.api.swkoreatech.io';
 const REFRESH_BUFFER_MS = 2 * 60 * 1000; // 만료 2분 전부터 선제적 갱신
 const MAX_RETRY_COUNT = 2;
-
-type JwtPayload = {
-  exp?: number | string;
-  iat?: number | string;
-  canAccessAdmin?: boolean;
-};
-
-function decodeJwtPayload(token: string): JwtPayload | null {
-  const parts = token.split('.');
-  if (parts.length < 2) return null;
-
-  const payload = parts[1];
-  try {
-    const base64 = payload
-      .replace(/-/g, '+')
-      .replace(/_/g, '/')
-      .padEnd(Math.ceil(payload.length / 4) * 4, '=');
-    const decoded = atob(base64);
-    return JSON.parse(decoded) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
-
-function normalizeJwtExp(exp: number): number {
-  return exp > 10_000_000_000 ? exp : exp * 1000;
-}
-
-function getTokenExpiry(token: string): number | null {
-  const payload = decodeJwtPayload(token);
-  if (!payload?.exp) return null;
-
-  const exp = typeof payload.exp === 'string' ? Number(payload.exp) : payload.exp;
-  if (!Number.isFinite(exp)) return null;
-
-  return normalizeJwtExp(exp);
-}
 
 interface TokenState {
   accessToken: string;
@@ -157,7 +121,7 @@ class TokenManager {
 
         console.log('[TokenManager] Token refreshed successfully, expires at:', new Date(accessTokenExpires).toISOString());
 
-        // 세션 업데이트 트리거 (SessionProvider가 새 토큰을 인식하도록)
+        // 세션 업데이트 트리거
         this.updateSession(newTokens.accessToken, newTokens.refreshToken);
 
         return this.tokens;
@@ -192,10 +156,8 @@ class TokenManager {
     }
   }
 
-  private async updateSession(accessToken: string, refreshToken: string): Promise<void> {
+  private updateSession(accessToken: string, refreshToken: string): void {
     try {
-      // NextAuth 세션 업데이트를 위해 update 함수 호출
-      // SessionProvider의 update를 직접 호출할 수 없으므로 이벤트 발생
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('tokenRefreshed', {

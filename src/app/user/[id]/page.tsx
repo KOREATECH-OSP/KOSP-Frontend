@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getUserProfile, getUserPosts, getUserComments } from '@/lib/api/user';
 import { ApiException } from '@/lib/api/client';
 import UserProfileClient from './UserProfileClient';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 
 interface PageProps {
   params: Promise<{ id: string }>;

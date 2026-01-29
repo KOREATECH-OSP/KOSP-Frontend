@@ -1,7 +1,7 @@
 import { getBoards, getArticle } from '@/lib/api';
 import WritePageClient from './WritePageClient';
 import { notFound } from 'next/navigation';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 
 interface PageProps {
   searchParams: Promise<{ id?: string }>;

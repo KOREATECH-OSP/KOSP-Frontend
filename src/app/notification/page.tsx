@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 import NotificationPageClient from './NotificationPageClient';
 
 export default async function NotificationPage() {

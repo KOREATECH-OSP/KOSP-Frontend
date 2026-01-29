@@ -1,7 +1,7 @@
 import { getRecruit } from '@/lib/api/recruit';
 import { notFound } from 'next/navigation';
 import RecruitDetailClient from './RecruitDetailClient';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/server';
 import { ApiException } from '@/lib/api/client';
 
 interface PageProps {
