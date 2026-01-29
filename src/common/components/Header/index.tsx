@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { signOutOnce } from '@/lib/auth/signout';
 import type { AuthSession } from '@/lib/auth/types';
+import NotificationDropdown from './NotificationDropdown';
 
 import LogoImage from "../../../assets/images/koreatech_hangeul.png";
 
@@ -91,7 +92,8 @@ function Header({ simple = false, session = null }: HeaderProps) {
 
           {!simple && (
             <>
-              <div className="hidden lg:flex items-center gap-4">
+              <div className="hidden lg:flex items-center gap-2">
+                {isLoggedIn && <NotificationDropdown />}
                 {isLoggedIn ? (
                   <Menu as="div" className="relative">
                     {({ open }) => (
@@ -178,6 +180,11 @@ function Header({ simple = false, session = null }: HeaderProps) {
                 )}
               </div>
 
+              {isLoggedIn && (
+                <div className="lg:hidden">
+                  <NotificationDropdown />
+                </div>
+              )}
               <button
                 type="button"
                 className="lg:hidden flex items-center justify-center w-10 h-10 -mr-2 rounded-lg hover:bg-gray-100 transition-colors"
