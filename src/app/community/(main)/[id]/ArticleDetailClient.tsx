@@ -449,7 +449,7 @@ export default function ArticleDetailClient({
             {/* Body */}
             <div className="px-6 py-10 sm:px-10">
               <div
-                className="prose prose-gray max-w-none prose-lg prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 hover:prose-a:underline prose-img:rounded-xl"
+                className="prose prose-gray max-w-none prose-lg prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 hover:prose-a:underline prose-img:rounded-xl [&_table]:w-full [&_table]:border-collapse [&_table]:my-4 [&_table]:border [&_table]:border-gray-200 [&_table]:rounded-lg [&_table]:overflow-hidden [&_th]:border [&_th]:border-gray-200 [&_th]:bg-gray-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-900 [&_td]:border [&_td]:border-gray-200 [&_td]:px-4 [&_td]:py-3 [&_td]:text-gray-700 [&_tr:hover]:bg-gray-50/50"
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             </div>

@@ -46,6 +46,7 @@ import {
   Table as TableIcon,
   FileCode,
   Loader2,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { INSERT_IMAGE_COMMAND } from './ImagePlugin';
@@ -111,7 +112,10 @@ export function ToolbarPlugin({
   const [isLink, setIsLink] = useState(false);
   const [blockType, setBlockType] = useState<string>('paragraph');
   const [isUploading, setIsUploading] = useState(false);
+  const [showTablePicker, setShowTablePicker] = useState(false);
+  const [tableSize, setTableSize] = useState({ rows: 0, cols: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tablePickerRef = useRef<HTMLDivElement>(null);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -254,21 +258,34 @@ export function ToolbarPlugin({
     });
   };
 
-  const insertTable = () => {
-    const rows = prompt('행 수를 입력하세요:', '3');
-    const columns = prompt('열 수를 입력하세요:', '3');
-
-    if (rows && columns) {
-      const rowsNum = parseInt(rows, 10);
-      const colsNum = parseInt(columns, 10);
-
-      if (rowsNum > 0 && colsNum > 0) {
-        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
-          rows: rowsNum.toString(),
-          columns: colsNum.toString(),
-        });
+  // 테이블 피커 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tablePickerRef.current && !tablePickerRef.current.contains(event.target as Node)) {
+        setShowTablePicker(false);
+        setTableSize({ rows: 0, cols: 0 });
       }
+    };
+    if (showTablePicker) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showTablePicker]);
+
+  const insertTable = (rows: number, cols: number) => {
+    if (rows > 0 && cols > 0) {
+      editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+        rows: rows.toString(),
+        columns: cols.toString(),
+      });
+      setShowTablePicker(false);
+      setTableSize({ rows: 0, cols: 0 });
+    }
+  };
+
+  const toggleTablePicker = () => {
+    setShowTablePicker(!showTablePicker);
+    setTableSize({ rows: 0, cols: 0 });
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -426,9 +443,55 @@ export function ToolbarPlugin({
       )}
 
       {enableTable && (
-        <ToolbarButton onClick={insertTable} tooltip="표 삽입">
-          <TableIcon className="h-4 w-4" />
-        </ToolbarButton>
+        <div className="relative" ref={tablePickerRef}>
+          <ToolbarButton onClick={toggleTablePicker} isActive={showTablePicker} tooltip="표 삽입">
+            <TableIcon className="h-4 w-4" />
+          </ToolbarButton>
+
+          {showTablePicker && (
+            <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700">
+                  {tableSize.rows > 0 && tableSize.cols > 0
+                    ? `${tableSize.rows} × ${tableSize.cols}`
+                    : '표 크기 선택'}
+                </span>
+                <button
+                  onClick={() => {
+                    setShowTablePicker(false);
+                    setTableSize({ rows: 0, cols: 0 });
+                  }}
+                  className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-6 gap-1">
+                {Array.from({ length: 6 }).map((_, rowIndex) =>
+                  Array.from({ length: 6 }).map((_, colIndex) => {
+                    const isSelected = rowIndex < tableSize.rows && colIndex < tableSize.cols;
+                    return (
+                      <button
+                        key={`${rowIndex}-${colIndex}`}
+                        className={cn(
+                          'h-5 w-5 rounded border transition-colors',
+                          isSelected
+                            ? 'border-blue-500 bg-blue-100'
+                            : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50'
+                        )}
+                        onMouseEnter={() => setTableSize({ rows: rowIndex + 1, cols: colIndex + 1 })}
+                        onClick={() => insertTable(rowIndex + 1, colIndex + 1)}
+                      />
+                    );
+                  })
+                )}
+              </div>
+              <p className="mt-2 text-center text-[10px] text-gray-400">
+                최대 6×6
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {enableImage && onImageUpload && (
