@@ -529,7 +529,7 @@ export interface ChallengeResponse {
   current: number;
   total: number;
   isCompleted: boolean;
-  imageUrl: string | null;
+  icon: string | null;
   tier: number;
   point: number;
 }

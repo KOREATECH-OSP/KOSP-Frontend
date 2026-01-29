@@ -15,6 +15,7 @@ import type { ChallengeResponse } from '@/lib/api/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import KoriDistImage from '@/assets/images/kori/11-09 F 멀리보기 .png';
+import { ChallengeIcon } from '@/common/utils/challengeIcons';
 
 type TierFilter = 'all' | number;
 
@@ -280,18 +281,7 @@ export default function ChallengePage() {
                     {/* Icon */}
                     <div className={`flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
                       }`}>
-                      {challenge.imageUrl ? (
-                        <Image
-                          src={challenge.imageUrl}
-                          alt={challenge.title}
-                          width={48}
-                          height={48}
-                          className="w-full h-full object-cover rounded-lg"
-                          unoptimized
-                        />
-                      ) : (
-                        <Trophy className="h-6 w-6" />
-                      )}
+                      <ChallengeIcon name={challenge.icon} className="h-6 w-6" />
                     </div>
 
                     <div className="flex-1 min-w-0">

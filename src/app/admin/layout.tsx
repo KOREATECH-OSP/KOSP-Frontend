@@ -21,6 +21,7 @@ import {
   Flag,
   ShieldX,
   Coins,
+  Home,
 } from 'lucide-react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
 import { toast } from '@/lib/toast';
@@ -299,13 +300,22 @@ export default function AdminLayout({
                   {session?.user?.name?.[0] || '관'}
                 </div>
               )}
-              <button
-                onClick={handleLogout}
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
-                title="로그아웃"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-1 border-l border-gray-200 pl-4">
+                <Link
+                  href="/"
+                  className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                  title="홈으로"
+                >
+                  <Home className="h-5 w-5" />
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                  title="로그아웃"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
         </header>

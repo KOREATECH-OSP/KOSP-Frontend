@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { ArrowLeft, Trophy, Loader2, Image as ImageIcon, Code, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { ArrowLeft, Trophy, Loader2, Code, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { createAdminChallenge, getSpelVariables, type SpelVariable, type SpelExample } from '@/lib/api/admin';
 import type { AdminChallengeCreateRequest } from '@/types/admin';
 import { toast } from '@/lib/toast';
 import SpelEditor from '@/common/components/SpelEditor';
+import IconPicker from '@/common/components/IconPicker';
 
 export default function CreateChallengePage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function CreateChallengePage() {
     description: '',
     condition: '',
     tier: 1,
-    imageUrl: '',
+    icon: '',
     point: 0,
   });
   const [pythonCode, setPythonCode] = useState('');
@@ -180,39 +180,14 @@ export default function CreateChallengePage() {
                 />
               </div>
 
-              {/* 이미지 URL */}
+              {/* 아이콘 선택 */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">이미지 URL</label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-colors focus:border-gray-400 focus:outline-none"
+                <label className="mb-2 block text-sm font-medium text-gray-700">아이콘</label>
+                <IconPicker
+                  value={formData.icon || ''}
+                  onChange={(icon) => setFormData({ ...formData, icon })}
                   disabled={submitting}
                 />
-                {formData.imageUrl && (
-                  <div className="mt-3 overflow-hidden rounded-xl border border-gray-200">
-                    <div className="border-b border-gray-100 bg-gray-50 px-4 py-2">
-                      <span className="text-xs font-medium text-gray-500">미리보기</span>
-                    </div>
-                    <div className="relative h-40 w-full bg-gray-100">
-                      <Image
-                        src={formData.imageUrl}
-                        alt="Preview"
-                        fill
-                        className="object-cover"
-                        unoptimized
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <ImageIcon className="h-8 w-8 text-gray-300" />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

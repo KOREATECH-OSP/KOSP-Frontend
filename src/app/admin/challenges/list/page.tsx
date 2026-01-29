@@ -3,14 +3,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import {
   Plus,
   Trophy,
   Search,
-  Image as ImageIcon,
   Loader2,
 } from 'lucide-react';
+import { ChallengeIcon } from '@/common/utils/challengeIcons';
 import {
   getAdminChallenges,
   deleteAdminChallenge,
@@ -227,23 +226,8 @@ export default function ChallengesListPage() {
               <ul className="divide-y divide-gray-100">
                 {paginatedChallenges.map((challenge) => (
                   <li key={challenge.id} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
-                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                      {challenge.imageUrl ? (
-                        <Image
-                          src={challenge.imageUrl}
-                          alt={challenge.name}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <ImageIcon className="h-4 w-4 text-gray-400" />
-                        </div>
-                      )}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                      <ChallengeIcon name={challenge.icon} className="h-5 w-5 text-gray-600" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
