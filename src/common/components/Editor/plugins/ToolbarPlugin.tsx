@@ -449,14 +449,15 @@ export function ToolbarPlugin({
           </ToolbarButton>
 
           {showTablePicker && (
-            <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-700">
+            <div className="absolute left-0 top-full z-50 mt-1 w-[156px] rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
                   {tableSize.rows > 0 && tableSize.cols > 0
                     ? `${tableSize.rows} × ${tableSize.cols}`
                     : '표 크기 선택'}
                 </span>
                 <button
+                  type="button"
                   onClick={() => {
                     setShowTablePicker(false);
                     setTableSize({ rows: 0, cols: 0 });
@@ -467,24 +468,25 @@ export function ToolbarPlugin({
                 </button>
               </div>
               <div className="grid grid-cols-6 gap-1">
-                {Array.from({ length: 6 }).map((_, rowIndex) =>
-                  Array.from({ length: 6 }).map((_, colIndex) => {
-                    const isSelected = rowIndex < tableSize.rows && colIndex < tableSize.cols;
-                    return (
-                      <button
-                        key={`${rowIndex}-${colIndex}`}
-                        className={cn(
-                          'h-5 w-5 rounded border transition-colors',
-                          isSelected
-                            ? 'border-blue-500 bg-blue-100'
-                            : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50'
-                        )}
-                        onMouseEnter={() => setTableSize({ rows: rowIndex + 1, cols: colIndex + 1 })}
-                        onClick={() => insertTable(rowIndex + 1, colIndex + 1)}
-                      />
-                    );
-                  })
-                )}
+                {Array.from({ length: 36 }).map((_, index) => {
+                  const rowIndex = Math.floor(index / 6);
+                  const colIndex = index % 6;
+                  const isSelected = rowIndex < tableSize.rows && colIndex < tableSize.cols;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      className={cn(
+                        'h-5 w-5 rounded border transition-colors',
+                        isSelected
+                          ? 'border-blue-500 bg-blue-100'
+                          : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50'
+                      )}
+                      onMouseEnter={() => setTableSize({ rows: rowIndex + 1, cols: colIndex + 1 })}
+                      onClick={() => insertTable(rowIndex + 1, colIndex + 1)}
+                    />
+                  );
+                })}
               </div>
               <p className="mt-2 text-center text-[10px] text-gray-400">
                 최대 6×6
