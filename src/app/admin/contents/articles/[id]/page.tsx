@@ -137,12 +137,12 @@ export default function ArticleDetailPage() {
   };
 
   const handleDeleteComment = async () => {
-    if (!selectedComment || !session?.accessToken) return;
+    if (!selectedComment || !session?.accessToken || !article) return;
 
     try {
       setDeleting(true);
       await clientApiClient(
-        `/v1/admin/comments/${selectedComment.id}`,
+        `/v1/community/articles/${article.id}/comments/${selectedComment.id}`,
         {
           method: 'DELETE',
           accessToken: session.accessToken,
