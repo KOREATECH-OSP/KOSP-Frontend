@@ -570,11 +570,20 @@ export interface ChallengeSearchSummary {
   tier: number;
 }
 
+export interface UserSearchSummary {
+  id: number;
+  name: string;
+  githubLogin: string;
+  githubName: string | null;
+  profileImageUrl: string | null;
+}
+
 export interface GlobalSearchResponse {
   articles: ArticleSummary[];
   recruits: RecruitSummary[];
   teams: TeamSummary[];
   challenges: ChallengeSearchSummary[];
+  users: UserSearchSummary[];
 }
 
 // ============================================
