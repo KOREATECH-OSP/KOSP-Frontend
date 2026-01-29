@@ -8,10 +8,14 @@ import type {
 
 /**
  * 팀 목록 조회
+ * RSQL 필터로 삭제되지 않은 팀만 조회
  */
 export async function getTeams(search?: string): Promise<TeamListResponse> {
-  const params = search ? `?search=${encodeURIComponent(search)}` : '';
-  return apiClient<TeamListResponse>(`/v1/teams${params}`, {
+  const rsqlFilter = 'isDeleted==false';
+  const searchQuery = search
+    ? `${rsqlFilter};name=like=${encodeURIComponent(search)}`
+    : rsqlFilter;
+  return apiClient<TeamListResponse>(`/v1/teams?search=${searchQuery}`, {
     cache: 'no-store',
   });
 }
@@ -72,6 +76,20 @@ export async function inviteTeamMember(
   await apiClient<void>(`/v1/teams/${teamId}/invites`, {
     method: 'POST',
     body: { email },
+    accessToken,
+  });
+}
+
+/**
+ * 팀 삭제
+ * 팀장만 삭제 가능, 모든 멤버와 초대도 함께 삭제됨
+ */
+export async function deleteTeam(
+  teamId: number,
+  accessToken: string
+): Promise<void> {
+  await apiClient<void>(`/v1/teams/${teamId}`, {
+    method: 'DELETE',
     accessToken,
   });
 }
