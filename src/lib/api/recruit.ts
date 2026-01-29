@@ -20,6 +20,7 @@ interface AuthOptions {
 
 /**
  * 모집 공고 목록 조회
+ * RSQL 필터로 삭제되지 않은 공고만 조회
  */
 export async function getRecruits(
   boardId: number,
@@ -30,6 +31,7 @@ export async function getRecruits(
     boardId: String(boardId),
     page: String(page - 1),
     size: String(size),
+    search: 'isDeleted==false',
   });
   return apiClient<RecruitListResponse>(`/v1/community/recruits?${params}`, {
     cache: 'no-store',
