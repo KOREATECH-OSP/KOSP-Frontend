@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2, ArrowDown } from 'lucide-react';
 import type { Monaco } from '@monaco-editor/react';
@@ -16,36 +16,10 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
 });
 
 // Python을 SpEL로 변환하는 함수 (0~100% 백분율 표현식)
-function pythonToSpel(python: string, variables: string[]): string {
+function pythonToSpel(python: string): string {
   if (!python.trim()) return '';
 
   let spel = python;
-
-  // 변수 목록에서 루트 변수명 추출 (activity['stars'] -> activity, stats.totalCommits -> stats)
-  const rootVars = new Set<string>();
-  for (const varName of variables) {
-    const match = varName.match(/^(\w+)/);
-    if (match) {
-      rootVars.add(match[1]);
-    }
-  }
-
-  // 루트 변수명에 # 추가 (점(.) 뒤에 오는 속성은 제외)
-  // (?<!#) - 이미 #이 붙어있지 않은 경우
-  // (?<!\.) - 점(.) 바로 뒤가 아닌 경우 (속성 접근이 아닌 경우)
-  for (const rootVar of rootVars) {
-    const regex = new RegExp(`(?<!#)(?<!\\.)(\\b${rootVar}\\b)`, 'g');
-    spel = spel.replace(regex, '#$1');
-  }
-
-  // 기존 단순 변수명도 처리 (progressField 등) - 점(.) 뒤는 제외
-  for (const varName of variables) {
-    // dictionary 접근 패턴이 아니고 점(.) 접근 패턴도 아닌 단순 변수만 처리
-    if (!varName.includes('[') && !varName.includes('.')) {
-      const regex = new RegExp(`(?<!#)(?<!\\.)(\\b${varName}\\b)`, 'g');
-      spel = spel.replace(regex, '#$1');
-    }
-  }
 
   // Python 논리 연산자를 SpEL로 변환
   spel = spel.replace(/\band\b/g, '&&');
@@ -59,88 +33,144 @@ function pythonToSpel(python: string, variables: string[]): string {
   return spel;
 }
 
-// 조건식을 백분율 반환 SpEL로 변환 (0~100)
-function toPercentageSpel(python: string, variables: string[]): string {
-  if (!python.trim()) return '';
+// 변수 패턴: variable, variable['field'], variable.field 모두 지원
+const VAR_PATTERN = "\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
 
-  // 먼저 기본 SpEL 변환
-  const spel = pythonToSpel(python, variables);
+// 단일 조건을 백분율 SpEL로 변환
+function conditionToPercentage(condition: string): string | null {
+  const partRegex = new RegExp(`^(${VAR_PATTERN})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
+  const match = condition.trim().match(partRegex);
 
-  // 조건식 패턴 분석
-  // 패턴 1: 변수 >= 목표값 → min(변수 * 100 / 목표값, 100)
-  // 패턴 2: 변수 == 목표값 → 변수 >= 목표값 ? 100 : (변수 * 100 / 목표값)
-  // 패턴 3: 복합 조건 (and/or) → 각각 변환 후 평균 또는 최소값
-
-  // 변수 패턴: #variable, #variable['field'], #variable.field 모두 지원
-  const varPattern = "#\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
-
-  // 단일 비교 조건 패턴
-  const singleCompareRegex = new RegExp(`^(${varPattern})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
-  const singleCompareMatch = spel.match(singleCompareRegex);
-
-  if (singleCompareMatch) {
-    const [, variable, , targetStr] = singleCompareMatch;
+  if (match) {
+    const [, variable, , targetStr] = match;
     const target = parseFloat(targetStr);
-
     if (target > 0) {
-      // 백분율 계산 SpEL 표현식 생성
-      // T(Math).min(변수 * 100 / 목표값, 100)
+      // 개별 조건의 백분율: min(변수 * 100 / 목표값, 100) - 100% 상한
       return `T(Math).min(${variable} * 100 / ${target}, 100)`;
     }
   }
+  return null;
+}
 
-  // AND 조건: 여러 조건의 최소값
-  if (spel.includes('&&')) {
-    const parts = spel.split(/\s*&&\s*/);
-    const partRegex = new RegExp(`^(${varPattern})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
-    const percentageParts = parts.map(part => {
-      const match = part.trim().match(partRegex);
-      if (match) {
-        const [, variable, , targetStr] = match;
-        const target = parseFloat(targetStr);
-        if (target > 0) {
-          return `T(Math).min(${variable} * 100 / ${target}, 100)`;
-        }
-      }
-      return null;
-    }).filter(Boolean);
+// 여러 백분율을 중첩된 min/max로 결합 (Java Math.min/max는 2개 인자만 받음)
+function combinePercentages(parts: string[], operation: 'min' | 'max'): string {
+  if (parts.length === 0) return '0';
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return `T(Math).${operation}(${parts[0]}, ${parts[1]})`;
 
-    if (percentageParts.length > 0) {
-      if (percentageParts.length === 1) {
-        return percentageParts[0]!;
+  // 3개 이상: 중첩 호출 - T(Math).min(T(Math).min(a, b), c)
+  let result = parts[0];
+  for (let i = 1; i < parts.length; i++) {
+    result = `T(Math).${operation}(${result}, ${parts[i]})`;
+  }
+  return result;
+}
+
+// 최상위 레벨에서 연산자로 분리 (괄호 내부는 무시)
+function splitByOperatorTopLevel(expr: string, operator: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+  let i = 0;
+
+  while (i < expr.length) {
+    const char = expr[i];
+
+    if (char === '(') {
+      depth++;
+      current += char;
+      i++;
+    } else if (char === ')') {
+      depth--;
+      current += char;
+      i++;
+    } else if (depth === 0 && expr.slice(i).startsWith(operator)) {
+      // 최상위 레벨에서 연산자 발견
+      if (current.trim()) {
+        parts.push(current.trim());
       }
-      // 여러 조건의 최소값 반환
-      return `T(Math).min(${percentageParts.join(', ')})`;
+      current = '';
+      i += operator.length;
+      // 연산자 뒤 공백 스킵
+      while (i < expr.length && expr[i] === ' ') i++;
+    } else {
+      current += char;
+      i++;
     }
   }
 
-  // OR 조건: 여러 조건의 최대값
-  if (spel.includes('||')) {
-    const parts = spel.split(/\s*\|\|\s*/);
-    const partRegex = new RegExp(`^(${varPattern})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
-    const percentageParts = parts.map(part => {
-      const match = part.trim().match(partRegex);
-      if (match) {
-        const [, variable, , targetStr] = match;
-        const target = parseFloat(targetStr);
-        if (target > 0) {
-          return `T(Math).min(${variable} * 100 / ${target}, 100)`;
-        }
-      }
-      return null;
-    }).filter(Boolean);
+  if (current.trim()) {
+    parts.push(current.trim());
+  }
 
-    if (percentageParts.length > 0) {
-      if (percentageParts.length === 1) {
-        return percentageParts[0]!;
+  return parts;
+}
+
+// 표현식을 재귀적으로 백분율 SpEL로 변환
+// 우선순위: 괄호 > AND > OR
+function parseExpression(expr: string): string | null {
+  expr = expr.trim();
+  if (!expr) return null;
+
+  // 전체가 괄호로 감싸져 있으면 벗기고 재귀
+  if (expr.startsWith('(') && expr.endsWith(')')) {
+    // 실제로 매칭되는 괄호인지 확인
+    let depth = 0;
+    let isWrapped = true;
+    for (let i = 0; i < expr.length; i++) {
+      if (expr[i] === '(') depth++;
+      else if (expr[i] === ')') depth--;
+      // 중간에 depth가 0이 되면 전체를 감싸는 괄호가 아님
+      if (depth === 0 && i < expr.length - 1) {
+        isWrapped = false;
+        break;
       }
-      // 여러 조건의 최대값 반환
-      return `T(Math).max(${percentageParts.join(', ')})`;
+    }
+    if (isWrapped) {
+      return parseExpression(expr.slice(1, -1));
     }
   }
+
+  // 1단계: OR로 분리 (가장 낮은 우선순위)
+  const orParts = splitByOperatorTopLevel(expr, '||');
+  if (orParts.length > 1) {
+    const orPercentages = orParts
+      .map(part => parseExpression(part))
+      .filter((p): p is string => p !== null);
+
+    if (orPercentages.length === 0) return null;
+    return combinePercentages(orPercentages, 'max');
+  }
+
+  // 2단계: AND로 분리
+  const andParts = splitByOperatorTopLevel(expr, '&&');
+  if (andParts.length > 1) {
+    const andPercentages = andParts
+      .map(part => parseExpression(part))
+      .filter((p): p is string => p !== null);
+
+    if (andPercentages.length === 0) return null;
+    return combinePercentages(andPercentages, 'min');
+  }
+
+  // 3단계: 단일 조건
+  return conditionToPercentage(expr);
+}
+
+// 조건식을 백분율 반환 SpEL로 변환 (0~100)
+// 연산자 우선순위: 괄호 > AND > OR
+// 예: A and (B or C) → min(A%, max(B%, C%))
+function toPercentageSpel(python: string): string {
+  if (!python.trim()) return '';
+
+  // 먼저 기본 SpEL 변환 (and → &&, or → ||)
+  const spel = pythonToSpel(python);
+
+  // 재귀적으로 파싱
+  const result = parseExpression(spel);
 
   // 패턴 매칭 실패 시 기본 SpEL 반환
-  return spel;
+  return result || spel;
 }
 
 // 조건의 의미를 백분율로 해석
@@ -194,28 +224,25 @@ export default function SpelEditor({
   height = 220,
   variables = ['progressField']
 }: SpelEditorProps) {
-  const [spelOutput, setSpelOutput] = useState('');
-  const [interpretation, setInterpretation] = useState('');
-  const onSpelChangeRef = useRef(onSpelChange);
   const variablesRef = useRef(variables);
+  const prevSpelRef = useRef<string>('');
 
   // ref 업데이트
-  useEffect(() => {
-    onSpelChangeRef.current = onSpelChange;
-  }, [onSpelChange]);
-
   useEffect(() => {
     variablesRef.current = variables;
   }, [variables]);
 
-  // value 변경 시 SpEL 변환 (백분율 표현식)
+  // value에서 SpEL 및 해석 계산 (useMemo 사용)
+  const spelOutput = useMemo(() => toPercentageSpel(value), [value]);
+  const interpretation = useMemo(() => interpretCondition(value), [value]);
+
+  // SpEL 변경 시 콜백 호출 (이전 값과 비교하여 변경 시에만)
   useEffect(() => {
-    const spel = toPercentageSpel(value, variablesRef.current);
-    const interp = interpretCondition(value);
-    setSpelOutput(spel);
-    setInterpretation(interp);
-    onSpelChangeRef.current?.(spel);
-  }, [value]);
+    if (spelOutput !== prevSpelRef.current) {
+      prevSpelRef.current = spelOutput;
+      onSpelChange?.(spelOutput);
+    }
+  }, [spelOutput, onSpelChange]);
 
   // Monaco Editor 자동완성 설정
   const handleEditorMount = (editor: unknown, monaco: Monaco) => {

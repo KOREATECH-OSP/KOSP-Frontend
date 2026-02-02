@@ -81,14 +81,13 @@ export default function CreateChallengePage() {
     if (!spel.trim()) return '';
     let python = spel;
 
-    // 변수 패턴: #var, #var['field'], #var.field 모두 지원
-    const varPattern = "#\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
+    // 변수 패턴: var, var['field'], var.field 모두 지원 (# 없음)
+    const varPattern = "\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
 
-    // T(Math).min(#variable * 100 / target, 100) 패턴을 variable >= target 으로 변환
+    // T(Math).min(variable * 100 / target, 100) 패턴을 variable >= target 으로 변환
     const singlePattern = new RegExp(`T\\(Math\\)\\.min\\((${varPattern})\\s*\\*\\s*100\\s*\\/\\s*(\\d+(?:\\.\\d+)?),\\s*100\\)`, 'g');
     python = python.replace(singlePattern, (_, variable, target) => {
-      const varName = variable.replace('#', '');
-      return `${varName} >= ${target}`;
+      return `${variable} >= ${target}`;
     });
 
     // 중첩된 T(Math).min/max 처리
@@ -98,8 +97,7 @@ export default function CreateChallengePage() {
 
       const innerPattern = new RegExp(`T\\(Math\\)\\.min\\((${varPattern})\\s*\\*\\s*100\\s*\\/\\s*(\\d+(?:\\.\\d+)?),\\s*100\\)`, 'g');
       python = python.replace(innerPattern, (_, variable, target) => {
-        const varName = variable.replace('#', '');
-        return `${varName} >= ${target}`;
+        return `${variable} >= ${target}`;
       });
 
       python = python.replace(/T\(Math\)\.min\(([^,]+),\s*([^)]+)\)/g, (_, cond1, cond2) => {
@@ -116,8 +114,7 @@ export default function CreateChallengePage() {
       hasCompound = prevPython !== python;
     }
 
-    // 나머지 # 제거 및 연산자 변환
-    python = python.replace(/#(\w+)/g, '$1');
+    // 연산자 변환
     python = python.replace(/&&/g, 'and');
     python = python.replace(/\|\|/g, 'or');
     python = python.replace(/!/g, 'not ');
@@ -336,17 +333,17 @@ export default function CreateChallengePage() {
                     <>
                       <button
                         type="button"
-                        onClick={() => insertPythonExample('progressField >= 50')}
+                        onClick={() => insertPythonExample('stats.totalCommits >= 10')}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
                       >
-                        progressField &gt;= 50
+                        stats.totalCommits &gt;= 10
                       </button>
                       <button
                         type="button"
-                        onClick={() => insertPythonExample('progressField == 100')}
+                        onClick={() => insertPythonExample('stats.totalCommits >= 10 and stats.totalPrs >= 5')}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
                       >
-                        progressField == 100
+                        stats.totalCommits &gt;= 10 and stats.totalPrs &gt;= 5
                       </button>
                     </>
                   )}
