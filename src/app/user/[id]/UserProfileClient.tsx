@@ -258,81 +258,27 @@ export default function UserProfileClient({
               {/* 데이터가 모두 없을 때 블러 처리된 통계 UI */}
               {!overallHistory && !contributionScore && recentActivity.length === 0 ? (
                 <div className="relative">
-                  {/* 블러된 더미 통계 UI - 실제 GithubRankCard와 동일한 디자인 */}
+                  {/* 블러된 더미 통계 UI */}
                   <div className="pointer-events-none select-none space-y-6 blur-sm">
-                    {/* 더미 GithubRankCard */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6">
-                      <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-slate-800/60 shadow-2xl">
-                        {/* Header Section */}
-                        <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-                          {/* Profile */}
-                          <div className="z-10 flex items-center gap-4">
-                            <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-white/10 bg-slate-700 shadow-2xl sm:h-20 sm:w-20">
-                              <div className="flex h-full w-full items-center justify-center text-slate-500">
-                                <Github className="h-8 w-8 sm:h-10 sm:w-10" />
-                              </div>
-                            </div>
-                            <div>
-                              <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-md sm:text-2xl">
-                                {profile.name}
-                              </h2>
-                            </div>
-                          </div>
-                          {/* Rank */}
-                          <div className="z-10 text-left sm:text-right">
-                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
-                              Current Rank
-                            </div>
-                            <div className="bg-gradient-to-r from-[#b45309] to-[#fde047] bg-clip-text text-3xl font-black text-transparent drop-shadow-lg sm:text-4xl">
-                              GOLD
-                            </div>
-                            <div className="mt-1 text-xs font-light text-slate-400 sm:text-sm">
-                              <span className="font-medium text-white">Top 12%</span> of developers
-                            </div>
-                          </div>
+                    {/* 더미 기여 점수 카드 */}
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-slate-50 to-gray-100">
+                      <div className="border-b border-gray-200/50 bg-white/60 px-6 py-4 backdrop-blur-sm">
+                        <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                          <TrendingUp className="h-4 w-4 text-blue-500" />
+                          Contribution Score
+                        </h2>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-4 sm:p-6">
+                        <div className="mb-2 bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-black text-transparent">
+                          A
                         </div>
-
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 border-t border-white/10 bg-black/10 sm:grid-cols-4">
-                          <div className="flex flex-col items-center justify-center border-r border-white/5 p-4 sm:p-6">
-                            <GitCommit className="mb-1.5 h-4 w-4 text-slate-400 sm:h-5 sm:w-5" />
-                            <span className="text-lg font-bold text-white sm:text-xl">1,234</span>
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">Commits</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center border-r-0 border-white/5 p-4 sm:border-r sm:p-6">
-                            <GitPullRequest className="mb-1.5 h-4 w-4 text-slate-400 sm:h-5 sm:w-5" />
-                            <span className="text-lg font-bold text-white sm:text-xl">89</span>
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">Pull Requests</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center border-r border-t border-white/5 p-4 sm:border-t-0 sm:p-6">
-                            <AlertCircle className="mb-1.5 h-4 w-4 text-slate-400 sm:h-5 sm:w-5" />
-                            <span className="text-lg font-bold text-white sm:text-xl">56</span>
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">Issues</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center border-t border-white/5 p-4 sm:border-t-0 sm:p-6">
-                            <FolderGit className="mb-1.5 h-4 w-4 text-slate-400 sm:h-5 sm:w-5" />
-                            <span className="text-lg font-bold text-white sm:text-xl">12</span>
-                            <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">Repositories</span>
-                          </div>
+                        <div className="mb-2 flex gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`h-5 w-5 ${i < 4 ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} />
+                          ))}
                         </div>
-
-                        {/* Progress Section */}
-                        <div className="bg-white/[0.02] p-6 sm:p-8">
-                          <div className="mb-3 flex justify-between text-xs sm:text-sm">
-                            <span className="text-slate-400">Progress to next tier</span>
-                            <span className="font-mono text-white">3.5 / 4.5 pts</span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: '65%',
-                                backgroundColor: '#fbbf24',
-                                boxShadow: '0 0 15px #fbbf2480',
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <span className="text-sm font-bold uppercase tracking-wide text-gray-700">Expert</span>
+                        <div className="mt-4 text-2xl font-bold text-gray-900">75.0</div>
                       </div>
                     </div>
 
@@ -340,17 +286,17 @@ export default function UserProfileClient({
                     <div className="grid grid-cols-3 gap-4">
                       <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
                         <Activity className="mx-auto mb-2 h-5 w-5 text-blue-500" />
-                        <div className="text-xl font-bold text-gray-900">2.5</div>
+                        <div className="text-xl font-bold text-gray-900">25.0</div>
                         <div className="text-xs text-gray-500">Activity</div>
                       </div>
                       <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
                         <Sparkles className="mx-auto mb-2 h-5 w-5 text-purple-500" />
-                        <div className="text-xl font-bold text-gray-900">0.8</div>
+                        <div className="text-xl font-bold text-gray-900">25.0</div>
                         <div className="text-xs text-gray-500">Diversity</div>
                       </div>
                       <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
                         <Zap className="mx-auto mb-2 h-5 w-5 text-amber-500" />
-                        <div className="text-xl font-bold text-gray-900">1.2</div>
+                        <div className="text-xl font-bold text-gray-900">25.0</div>
                         <div className="text-xs text-gray-500">Impact</div>
                       </div>
                     </div>
@@ -379,7 +325,7 @@ export default function UserProfileClient({
                         </div>
                         <div className="text-center">
                           <FolderGit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">12</div>
+                          <div className="text-2xl font-bold text-white sm:text-3xl">23</div>
                           <div className="text-[10px] text-gray-400 sm:text-xs">Repositories</div>
                         </div>
                         <div className="text-center">
@@ -398,16 +344,13 @@ export default function UserProfileClient({
 
                   {/* 오버레이 메시지 */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="rounded-xl border border-gray-200 bg-white/95 px-6 py-4 shadow-lg backdrop-blur-sm">
+                    <div className="rounded-xl bg-white/95 px-6 py-4 shadow-lg">
                       <div className="text-center">
-                        <div className="mb-2 flex justify-center">
-                          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                        </div>
                         <p className="text-sm font-medium text-gray-700">
-                          GitHub 통계를 수집 중입니다
+                          GitHub 통계를 수집 중입니다.
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          잠시 후 다시 방문해 주세요
+                          이 작업은 오래 걸립니다. 나중에 다시 방문하여 확인해주세요.
                         </p>
                       </div>
                     </div>
