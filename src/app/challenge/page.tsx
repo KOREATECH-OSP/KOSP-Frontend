@@ -270,7 +270,7 @@ export default function ChallengePage() {
             {filteredChallenges.map((challenge) => {
               const isCompleted = challenge.isCompleted;
               const style = getTierStyle(challenge.tier);
-              const progress = challenge.total > 0 ? Math.round((challenge.current / challenge.total) * 100) : 0;
+              const progress = challenge.progress;
 
               return (
                 <div

@@ -526,8 +526,7 @@ export interface ChallengeResponse {
   title: string;
   description: string;
   category: string;
-  current: number;
-  total: number;
+  progress: number;
   isCompleted: boolean;
   icon: string | null;
   tier: number;
