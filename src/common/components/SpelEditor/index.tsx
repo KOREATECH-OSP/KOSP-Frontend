@@ -21,7 +21,7 @@ function pythonToSpel(python: string, variables: string[]): string {
 
   let spel = python;
 
-  // 변수 목록에서 루트 변수명 추출 (activity['stars'] -> activity)
+  // 변수 목록에서 루트 변수명 추출 (activity['stars'] -> activity, stats.totalCommits -> stats)
   const rootVars = new Set<string>();
   for (const varName of variables) {
     const match = varName.match(/^(\w+)/);
@@ -30,18 +30,19 @@ function pythonToSpel(python: string, variables: string[]): string {
     }
   }
 
-  // 루트 변수명에 # 추가 (dictionary 접근 패턴 지원)
+  // 루트 변수명에 # 추가 (점(.) 뒤에 오는 속성은 제외)
+  // (?<!#) - 이미 #이 붙어있지 않은 경우
+  // (?<!\.) - 점(.) 바로 뒤가 아닌 경우 (속성 접근이 아닌 경우)
   for (const rootVar of rootVars) {
-    // activity['...'] 또는 activity 단독 사용 모두 처리
-    const regex = new RegExp(`(?<!#)\\b(${rootVar})\\b`, 'g');
+    const regex = new RegExp(`(?<!#)(?<!\\.)(\\b${rootVar}\\b)`, 'g');
     spel = spel.replace(regex, '#$1');
   }
 
-  // 기존 단순 변수명도 처리 (progressField 등)
+  // 기존 단순 변수명도 처리 (progressField 등) - 점(.) 뒤는 제외
   for (const varName of variables) {
-    // dictionary 접근 패턴이 아닌 단순 변수만 처리
-    if (!varName.includes('[')) {
-      const regex = new RegExp(`(?<!#)\\b(${varName})\\b`, 'g');
+    // dictionary 접근 패턴이 아니고 점(.) 접근 패턴도 아닌 단순 변수만 처리
+    if (!varName.includes('[') && !varName.includes('.')) {
+      const regex = new RegExp(`(?<!#)(?<!\\.)(\\b${varName}\\b)`, 'g');
       spel = spel.replace(regex, '#$1');
     }
   }
@@ -70,8 +71,12 @@ function toPercentageSpel(python: string, variables: string[]): string {
   // 패턴 2: 변수 == 목표값 → 변수 >= 목표값 ? 100 : (변수 * 100 / 목표값)
   // 패턴 3: 복합 조건 (and/or) → 각각 변환 후 평균 또는 최소값
 
-  // 단일 비교 조건 패턴: #variable['field'] >= 숫자 또는 #variable >= 숫자
-  const singleCompareMatch = spel.match(/^(#\w+(?:\['[^']+'\])?)\s*(>=|<=|>|<|==)\s*(\d+(?:\.\d+)?)$/);
+  // 변수 패턴: #variable, #variable['field'], #variable.field 모두 지원
+  const varPattern = "#\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
+
+  // 단일 비교 조건 패턴
+  const singleCompareRegex = new RegExp(`^(${varPattern})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
+  const singleCompareMatch = spel.match(singleCompareRegex);
 
   if (singleCompareMatch) {
     const [, variable, , targetStr] = singleCompareMatch;
@@ -87,8 +92,9 @@ function toPercentageSpel(python: string, variables: string[]): string {
   // AND 조건: 여러 조건의 최소값
   if (spel.includes('&&')) {
     const parts = spel.split(/\s*&&\s*/);
+    const partRegex = new RegExp(`^(${varPattern})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
     const percentageParts = parts.map(part => {
-      const match = part.trim().match(/^(#\w+(?:\['[^']+'\])?)\s*(>=|<=|>|<|==)\s*(\d+(?:\.\d+)?)$/);
+      const match = part.trim().match(partRegex);
       if (match) {
         const [, variable, , targetStr] = match;
         const target = parseFloat(targetStr);
@@ -111,8 +117,9 @@ function toPercentageSpel(python: string, variables: string[]): string {
   // OR 조건: 여러 조건의 최대값
   if (spel.includes('||')) {
     const parts = spel.split(/\s*\|\|\s*/);
+    const partRegex = new RegExp(`^(${varPattern})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
     const percentageParts = parts.map(part => {
-      const match = part.trim().match(/^(#\w+(?:\['[^']+'\])?)\s*(>=|<=|>|<|==)\s*(\d+(?:\.\d+)?)$/);
+      const match = part.trim().match(partRegex);
       if (match) {
         const [, variable, , targetStr] = match;
         const target = parseFloat(targetStr);
@@ -142,8 +149,9 @@ function interpretCondition(python: string): string {
 
   const conditions: string[] = [];
 
-  // 변수 조건 해석 (dictionary 접근 패턴 지원: activity['commits'])
-  const matches = python.matchAll(/(\w+(?:\['[^']+'\])?)\s*(>=|<=|>|<|==|!=)\s*(\d+(?:\.\d+)?)/g);
+  // 변수 조건 해석 (dictionary 접근, 점 접근 패턴 모두 지원)
+  // activity['commits'], stats.totalCommits, progressField 등
+  const matches = python.matchAll(/(\w+(?:\['[^']+'\]|\.\w+)*)\s*(>=|<=|>|<|==|!=)\s*(\d+(?:\.\d+)?)/g);
   for (const match of matches) {
     const variable = match[1];
     const operator = match[2];
@@ -158,9 +166,10 @@ function interpretCondition(python: string): string {
       '!=': '제외',
     };
 
-    // dictionary 접근 패턴에서 필드명만 추출 (activity['commits'] -> commits)
-    const fieldMatch = variable.match(/\['([^']+)'\]/);
-    const displayName = fieldMatch ? fieldMatch[1] : variable;
+    // 필드명 추출: activity['commits'] -> commits, stats.totalCommits -> totalCommits
+    const dictMatch = variable.match(/\['([^']+)'\]/);
+    const dotMatch = variable.match(/\.(\w+)$/);
+    const displayName = dictMatch ? dictMatch[1] : (dotMatch ? dotMatch[1] : variable);
 
     conditions.push(`${displayName} ${value} ${opText[operator] || operator}`);
   }

@@ -76,6 +76,57 @@ export default function CreateChallengePage() {
     setPythonCode(example);
   };
 
+  // SpEL을 Python으로 역변환
+  const spelToPython = useCallback((spel: string): string => {
+    if (!spel.trim()) return '';
+    let python = spel;
+
+    // 변수 패턴: #var, #var['field'], #var.field 모두 지원
+    const varPattern = "#\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
+
+    // T(Math).min(#variable * 100 / target, 100) 패턴을 variable >= target 으로 변환
+    const singlePattern = new RegExp(`T\\(Math\\)\\.min\\((${varPattern})\\s*\\*\\s*100\\s*\\/\\s*(\\d+(?:\\.\\d+)?),\\s*100\\)`, 'g');
+    python = python.replace(singlePattern, (_, variable, target) => {
+      const varName = variable.replace('#', '');
+      return `${varName} >= ${target}`;
+    });
+
+    // 중첩된 T(Math).min/max 처리
+    let hasCompound = true;
+    while (hasCompound) {
+      const prevPython = python;
+
+      const innerPattern = new RegExp(`T\\(Math\\)\\.min\\((${varPattern})\\s*\\*\\s*100\\s*\\/\\s*(\\d+(?:\\.\\d+)?),\\s*100\\)`, 'g');
+      python = python.replace(innerPattern, (_, variable, target) => {
+        const varName = variable.replace('#', '');
+        return `${varName} >= ${target}`;
+      });
+
+      python = python.replace(/T\(Math\)\.min\(([^,]+),\s*([^)]+)\)/g, (_, cond1, cond2) => {
+        if (cond1.trim() === '100' || cond2.trim() === '100') {
+          return cond1.trim() === '100' ? cond2 : cond1;
+        }
+        return `${cond1} and ${cond2}`;
+      });
+
+      python = python.replace(/T\(Math\)\.max\(([^,]+),\s*([^)]+)\)/g, (_, cond1, cond2) => {
+        return `${cond1} or ${cond2}`;
+      });
+
+      hasCompound = prevPython !== python;
+    }
+
+    // 나머지 # 제거 및 연산자 변환
+    python = python.replace(/#(\w+)/g, '$1');
+    python = python.replace(/&&/g, 'and');
+    python = python.replace(/\|\|/g, 'or');
+    python = python.replace(/!/g, 'not ');
+    python = python.replace(/\btrue\b/g, 'True');
+    python = python.replace(/\bfalse\b/g, 'False');
+
+    return python.trim();
+  }, []);
+
   const getTierStyle = (tier: number) => {
     switch (tier) {
       case 1:
@@ -243,11 +294,11 @@ export default function CreateChallengePage() {
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-2">
                 <p className="flex items-start gap-2">
                   <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                  <span>한 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">activity[&apos;value&apos;] &gt;= 1</code> 처럼 부등호로 작성 시 백분율로 환산되어 진행도가 표기됩니다.</span>
+                  <span>한 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">stats.totalCommits &gt;= 10</code> 처럼 부등호로 작성 시 백분율로 환산되어 진행도가 표기됩니다.</span>
                 </p>
                 <p className="flex items-start gap-2">
                   <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                  <span>두 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">activity[&apos;value1&apos;] &gt; 10 and activity[&apos;value2&apos;] &gt; 100</code> 처럼 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">and</code>로 작성하나 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">or</code>도 가능합니다. 둘 중 가장 가까운 것으로 백분율이 계산됩니다.</span>
+                  <span>두 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">stats.totalCommits &gt; 10 and stats.totalPrs &gt; 5</code> 처럼 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">and</code>로 작성하나 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">or</code>도 가능합니다. 둘 중 가장 가까운 것으로 백분율이 계산됩니다.</span>
                 </p>
               </div>
 
@@ -274,7 +325,7 @@ export default function CreateChallengePage() {
                       <button
                         key={index}
                         type="button"
-                        onClick={() => insertPythonExample(example.condition.replace(/#/g, '').replace(/&&/g, 'and').replace(/\|\|/g, 'or'))}
+                        onClick={() => insertPythonExample(spelToPython(example.condition))}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
                         title={example.description}
                       >
@@ -345,7 +396,7 @@ export default function CreateChallengePage() {
                 <input
                   type="number"
                   min="0"
-                  step="10"
+                  step="1"
                   value={formData.point}
                   onChange={(e) => setFormData({ ...formData, point: Math.max(0, Number(e.target.value)) })}
                   placeholder="100"

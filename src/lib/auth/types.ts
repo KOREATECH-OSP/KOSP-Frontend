@@ -17,7 +17,7 @@ export interface AuthContextValue {
   session: AuthSession | null;
   status: 'loading' | 'authenticated' | 'unauthenticated';
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  loginWithGithub: (githubAccessToken: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGithub: (githubAccessToken: string) => Promise<{ success: boolean; error?: string; needsSignup?: boolean }>;
   loginWithTokens: (accessToken: string, refreshToken: string) => Promise<{ success: boolean; error?: string }>;
   logout: (options?: { callbackUrl?: string; toastMessage?: string }) => Promise<void>;
   updateSession: (session: Partial<AuthSession>) => void;
