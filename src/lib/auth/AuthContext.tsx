@@ -119,7 +119,11 @@ export function AuthProvider({ children, initialSession = null }: AuthProviderPr
       const data = await res.json();
 
       if (!res.ok) {
-        return { success: false, error: data.error || '로그인에 실패했습니다' };
+        return {
+          success: false,
+          error: data.error || '로그인에 실패했습니다',
+          needsSignup: data.needsSignup || false,
+        };
       }
 
       setSession(data.session);

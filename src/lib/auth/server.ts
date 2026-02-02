@@ -20,7 +20,7 @@ export async function auth(): Promise<AuthSession | null> {
   try {
     // 사용자 정보 가져오기
     const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { 'X-Access-Token': accessToken },
       cache: 'no-store',
     });
 
@@ -74,7 +74,7 @@ async function refreshAndGetSession(refreshToken: string): Promise<AuthSession |
 
     // 사용자 정보 가져오기
     const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-      headers: { Authorization: `Bearer ${newAccessToken}` },
+      headers: { 'X-Access-Token': newAccessToken },
       cache: 'no-store',
     });
 

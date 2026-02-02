@@ -28,7 +28,7 @@ export async function GET() {
 
   try {
     const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { 'X-Access-Token': accessToken },
       cache: 'no-store',
     });
 
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       tokens = await loginRes.json();
 
       const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-        headers: { Authorization: `Bearer ${tokens.accessToken}` },
+        headers: { 'X-Access-Token': tokens.accessToken },
       });
 
       if (!meRes.ok) {
@@ -126,23 +126,43 @@ export async function POST(request: NextRequest) {
 
       if (!loginRes.ok) {
         const status = loginRes.status;
+        const errorData = await loginRes.json().catch(() => ({}));
+        console.error('[auth/session] GitHub 로그인 실패:', { status, errorData });
+
         if (status === 404) {
           return NextResponse.json(
             { error: '가입되지 않은 GitHub 계정입니다' },
             { status: 404 }
           );
         }
-        return NextResponse.json({ error: 'GitHub 로그인에 실패했습니다' }, { status: 401 });
+        if (status === 403) {
+          return NextResponse.json(
+            { error: '비활성화된 계정입니다. 다시 가입해주세요.' },
+            { status: 403 }
+          );
+        }
+        return NextResponse.json(
+          { error: errorData.message || 'GitHub 로그인에 실패했습니다' },
+          { status: status || 401 }
+        );
       }
 
       tokens = await loginRes.json();
 
       const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-        headers: { Authorization: `Bearer ${tokens.accessToken}` },
+        headers: { 'X-Access-Token': tokens.accessToken },
       });
 
       if (!meRes.ok) {
-        return NextResponse.json({ error: '사용자 정보를 가져올 수 없습니다' }, { status: 500 });
+        const meStatus = meRes.status;
+        const meErrorData = await meRes.json().catch(() => ({}));
+        console.error('[auth/session] /v1/auth/me 실패:', { status: meStatus, errorData: meErrorData });
+
+        // 사용자 정보 조회 실패 (비활성화 등) → 회원가입 필요
+        return NextResponse.json(
+          { error: '회원가입이 필요합니다', needsSignup: true },
+          { status: 403 }
+        );
       }
 
       userInfo = await meRes.json();
@@ -151,7 +171,7 @@ export async function POST(request: NextRequest) {
       const { accessToken, refreshToken } = body;
 
       const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { 'X-Access-Token': accessToken },
       });
 
       if (!meRes.ok) {
@@ -251,7 +271,7 @@ async function refreshAndCreateSession(refreshToken: string): Promise<{
     const tokens: LoginResponse = await refreshRes.json();
 
     const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-      headers: { Authorization: `Bearer ${tokens.accessToken}` },
+      headers: { 'X-Access-Token': tokens.accessToken },
       cache: 'no-store',
     });
 

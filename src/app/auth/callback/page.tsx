@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { toast } from 'sonner';
@@ -13,9 +13,17 @@ function AuthCallbackContent() {
   const { loginWithGithub, loginWithTokens } = useAuth();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isProcessedRef = useRef(false);
 
   useEffect(() => {
+    // 이미 처리된 경우 재실행 방지
+    if (isProcessedRef.current) {
+      return;
+    }
+
     const handleCallback = async () => {
+      isProcessedRef.current = true;
+
       const error = searchParams.get('error');
       if (error) {
         const errorDescription = searchParams.get('error_description') || '인증에 실패했습니다.';
@@ -47,8 +55,13 @@ function AuthCallbackContent() {
             const result = await loginWithGithub(githubAccessToken);
 
             if (!result.success) {
-              if (result.error?.includes('가입되지 않은')) {
-                toast.error('가입되지 않은 GitHub 계정이에요. 회원가입을 진행해주세요.');
+              // 가입되지 않은 계정 또는 비활성화된 계정 → 회원가입으로 이동
+              if (result.error?.includes('가입되지 않은') || result.needsSignup) {
+                toast.error(
+                  result.needsSignup
+                    ? '계정이 비활성화되었어요. 다시 가입해주세요.'
+                    : '가입되지 않은 GitHub 계정이에요. 회원가입을 진행해주세요.'
+                );
                 try {
                   const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
                   router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=github`);
@@ -113,7 +126,8 @@ function AuthCallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams, router, loginWithGithub, loginWithTokens]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   if (status === 'error') {
     return (

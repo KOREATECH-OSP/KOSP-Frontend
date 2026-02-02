@@ -52,7 +52,7 @@ export async function POST() {
 
     // 사용자 정보 가져오기
     const meRes = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-      headers: { Authorization: `Bearer ${tokens.accessToken}` },
+      headers: { 'X-Access-Token': tokens.accessToken },
       cache: 'no-store',
     });
 
