@@ -291,11 +291,11 @@ export default function CreateChallengePage() {
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-2">
                 <p className="flex items-start gap-2">
                   <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                  <span>한 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">stats.totalCommits &gt;= 10</code> 처럼 부등호로 작성 시 백분율로 환산되어 진행도가 표기됩니다.</span>
+                  <span>한 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">totalCommits &gt;= 10</code> 처럼 부등호로 작성 시 백분율로 환산되어 진행도가 표기됩니다.</span>
                 </p>
                 <p className="flex items-start gap-2">
                   <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                  <span>두 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">stats.totalCommits &gt; 10 and stats.totalPrs &gt; 5</code> 처럼 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">and</code>로 작성하나 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">or</code>도 가능합니다. 둘 중 가장 가까운 것으로 백분율이 계산됩니다.</span>
+                  <span>두 가지 조건은 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">totalCommits &gt; 10 and totalPrs &gt; 5</code> 처럼 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">and</code>로 작성하나 <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">or</code>도 가능합니다. 둘 중 가장 가까운 것으로 백분율이 계산됩니다.</span>
                 </p>
               </div>
 
@@ -333,17 +333,17 @@ export default function CreateChallengePage() {
                     <>
                       <button
                         type="button"
-                        onClick={() => insertPythonExample('stats.totalCommits >= 10')}
+                        onClick={() => insertPythonExample('totalCommits >= 10')}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
                       >
-                        stats.totalCommits &gt;= 10
+                        totalCommits &gt;= 10
                       </button>
                       <button
                         type="button"
-                        onClick={() => insertPythonExample('stats.totalCommits >= 10 and stats.totalPrs >= 5')}
+                        onClick={() => insertPythonExample('totalCommits >= 10 and totalPrs >= 5')}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
                       >
-                        stats.totalCommits &gt;= 10 and stats.totalPrs &gt;= 5
+                        totalCommits &gt;= 10 and totalPrs &gt;= 5
                       </button>
                     </>
                   )}
