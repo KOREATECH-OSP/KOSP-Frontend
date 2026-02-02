@@ -1,7 +1,36 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import FootLogo from "../../../assets/images/foot_logo.svg";
 import Link from 'next/link';
+import { API_BASE_URL } from '@/lib/api/config';
 
-function Footer() { 
+interface AdminContactResponse {
+  email: string;
+}
+
+function Footer() {
+  const [contactEmail, setContactEmail] = useState<string | null>(null);
+  const [showContact, setShowContact] = useState(false);
+
+  useEffect(() => {
+    async function fetchContact() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/v1/admin/contact`, {
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          const data: AdminContactResponse = await response.json();
+          setContactEmail(data.email);
+        }
+      } catch (error) {
+        console.error('Failed to fetch admin contact:', error);
+      }
+    }
+
+    fetchContact();
+  }, []);
+
   return (
     <footer className="bg-[#2e3358] text-white mt-12 sm:mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
@@ -45,6 +74,26 @@ function Footer() {
 
         <div className="space-y-4 text-sm text-white/70 leading-relaxed">
           <p>[31253] 충청남도 천안시 동남구 병천면 충절로 1600 (가전리, 한국기술교육대학교) / TEL : 041-560-1114</p>
+          {contactEmail && (
+            <p>
+              문의:{' '}
+              {showContact ? (
+                <a
+                  href={`mailto:${contactEmail}`}
+                  className="text-white/90 hover:text-white underline"
+                >
+                  {contactEmail}
+                </a>
+              ) : (
+                <button
+                  onClick={() => setShowContact(true)}
+                  className="hover:text-white underline cursor-pointer"
+                >
+                  [여기를 눌러 확인하기]
+                </button>
+              )}
+            </p>
+          )}
           <p>COPYRIGHT © KOREATECH. ALL RIGHTS RESERVED.</p>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between" />
         </div>

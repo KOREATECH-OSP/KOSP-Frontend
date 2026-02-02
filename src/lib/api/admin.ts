@@ -678,3 +678,39 @@ export async function getUserPointHistory(
     cache: 'no-store',
   });
 }
+
+// ============================================
+// Contact API
+// ============================================
+
+export interface AdminContactResponse {
+  email: string;
+}
+
+export interface AdminContactUpdateRequest {
+  email: string;
+}
+
+/**
+ * 관리자 연락처 조회 (Footer용)
+ */
+export async function getAdminContact(auth: AuthOptions): Promise<AdminContactResponse> {
+  return clientApiClient<AdminContactResponse>('/v1/admin/contact', {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 관리자 연락처 수정
+ */
+export async function updateAdminContact(
+  data: AdminContactUpdateRequest,
+  auth: AuthOptions
+): Promise<AdminContactResponse> {
+  return clientApiClient<AdminContactResponse>('/v1/admin/contact', {
+    method: 'PUT',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}

@@ -22,6 +22,7 @@ import {
   ShieldX,
   Coins,
   Home,
+  Settings,
 } from 'lucide-react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
 import { toast } from '@/lib/toast';
@@ -87,6 +88,11 @@ const navigation: NavItem[] = [
       { name: 'Policies', href: '/admin/policies', icon: FileText },
       { name: 'Roles', href: '/admin/roles', icon: Shield },
     ],
+  },
+  {
+    name: '사이트 설정',
+    href: '/admin/settings',
+    icon: Settings,
   },
 ];
 
