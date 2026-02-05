@@ -12,10 +12,12 @@ import type {
  */
 export async function getTeams(search?: string): Promise<TeamListResponse> {
   const rsqlFilter = 'isDeleted==false';
-  const searchQuery = search
-    ? `${rsqlFilter};name=like=${encodeURIComponent(search)}`
-    : rsqlFilter;
-  return apiClient<TeamListResponse>(`/v1/teams?search=${searchQuery}`, {
+  const params = new URLSearchParams();
+  params.set('rsql', rsqlFilter);
+  if (search) {
+    params.set('search', search);
+  }
+  return apiClient<TeamListResponse>(`/v1/teams?${params.toString()}`, {
     cache: 'no-store',
   });
 }
