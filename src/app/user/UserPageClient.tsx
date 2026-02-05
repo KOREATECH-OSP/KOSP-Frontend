@@ -27,6 +27,11 @@ import {
   Activity,
   Sparkles,
   Zap,
+  X,
+  Calendar,
+  Link as LinkIcon,
+  Users,
+  Clock,
 } from 'lucide-react';
 import Pagination from '@/common/components/Pagination';
 import {
@@ -106,6 +111,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [counts, setCounts] = useState({ posts: 0, comments: 0, bookmarks: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [showAllRepos, setShowAllRepos] = useState(false);
+
+  // 지원내역 모달 상태
+  const [selectedApplication, setSelectedApplication] = useState<MyApplicationResponse | null>(null);
 
   const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
   const accessToken = session?.accessToken as string | undefined;
@@ -794,10 +802,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 <>
                   <div className="divide-y divide-gray-100">
                     {applications.map((app) => (
-                      <Link
+                      <button
                         key={app.applicationId}
-                        href={`/recruit/${app.recruit.id}`}
-                        className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
+                        onClick={() => setSelectedApplication(app)}
+                        className="group block w-full px-6 py-4 text-left transition-colors hover:bg-gray-50/80"
                       >
                         <div className="flex items-center justify-between">
                           <div className="min-w-0 flex-1">
@@ -809,7 +817,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                               지원일: {formatDate(app.appliedAt)}
                             </p>
                           </div>
-                          <div className="ml-4 flex-shrink-0">
+                          <div className="ml-4 flex items-center gap-2">
                             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                               app.status === 'ACCEPTED'
                                 ? 'bg-green-100 text-green-700'
@@ -819,9 +827,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             }`}>
                               {app.status === 'ACCEPTED' ? '승인' : app.status === 'REJECTED' ? '거절' : '대기중'}
                             </span>
+                            <ChevronRight className="h-4 w-4 text-gray-300" />
                           </div>
                         </div>
-                      </Link>
+                      </button>
                     ))}
                   </div>
 
@@ -835,6 +844,154 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {/* 지원내역 상세 모달 */}
+          {selectedApplication && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
+                {/* 모달 헤더 */}
+                <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
+                  <h3 className="text-lg font-bold text-gray-900">지원 상세</h3>
+                  <button
+                    onClick={() => setSelectedApplication(null)}
+                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* 모달 내용 */}
+                <div className="space-y-6 p-6">
+                  {/* 모집공고 정보 */}
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Users className="h-4 w-4" />
+                      모집공고 정보
+                    </h4>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500">공고 제목</p>
+                        <p className="font-medium text-gray-900">{selectedApplication.recruit.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">팀 이름</p>
+                        <p className="text-sm text-gray-700">{selectedApplication.recruit.teamName}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">모집 상태</p>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            selectedApplication.recruit.status === 'OPEN'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {selectedApplication.recruit.status === 'OPEN' ? '모집중' : '마감'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">마감일</p>
+                          <p className="text-sm text-gray-700">{formatDate(selectedApplication.recruit.endDate)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 지원 정보 */}
+                  <div>
+                    <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <FileText className="h-4 w-4" />
+                      지원 정보
+                    </h4>
+                    <div className="space-y-4">
+                      {/* 지원 상태 */}
+                      <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                        <span className="text-sm text-gray-600">지원 상태</span>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                          selectedApplication.status === 'ACCEPTED'
+                            ? 'bg-green-100 text-green-700'
+                            : selectedApplication.status === 'REJECTED'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {selectedApplication.status === 'ACCEPTED' ? '승인됨' : selectedApplication.status === 'REJECTED' ? '거절됨' : '검토중'}
+                        </span>
+                      </div>
+
+                      {/* 지원일 */}
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="h-4 w-4" />
+                        <span>지원일: {formatDate(selectedApplication.appliedAt)}</span>
+                      </div>
+
+                      {/* 포트폴리오 URL */}
+                      {selectedApplication.portfolioUrl && (
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-gray-500">포트폴리오</p>
+                          <a
+                            href={selectedApplication.portfolioUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                            {selectedApplication.portfolioUrl}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* 지원 동기 */}
+                      <div>
+                        <p className="mb-2 text-xs font-medium text-gray-500">지원 동기</p>
+                        <div className="rounded-lg border border-gray-200 bg-white p-4">
+                          <p className="whitespace-pre-wrap text-sm text-gray-700">
+                            {selectedApplication.reason || '작성된 지원 동기가 없습니다.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 결정 사유 (승인/거절된 경우) */}
+                      {selectedApplication.decisionReason && (
+                        <div>
+                          <p className="mb-2 text-xs font-medium text-gray-500">
+                            {selectedApplication.status === 'ACCEPTED' ? '승인 사유' : '거절 사유'}
+                          </p>
+                          <div className={`rounded-lg border p-4 ${
+                            selectedApplication.status === 'ACCEPTED'
+                              ? 'border-green-200 bg-green-50'
+                              : 'border-red-200 bg-red-50'
+                          }`}>
+                            <p className={`whitespace-pre-wrap text-sm ${
+                              selectedApplication.status === 'ACCEPTED' ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                              {selectedApplication.decisionReason}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 모달 푸터 */}
+                <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white px-6 py-4">
+                  <button
+                    onClick={() => setSelectedApplication(null)}
+                    className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    닫기
+                  </button>
+                  <Link
+                    href={`/recruit/${selectedApplication.recruit.id}`}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                  >
+                    공고 보기
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 

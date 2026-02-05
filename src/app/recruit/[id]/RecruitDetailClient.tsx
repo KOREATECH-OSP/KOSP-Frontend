@@ -39,6 +39,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applyReason, setApplyReason] = useState('');
+  const [applyPortfolioUrl, setApplyPortfolioUrl] = useState('');
   const [team, setTeam] = useState<TeamDetailResponse | null>(null);
   const [isTeamLoading, setIsTeamLoading] = useState(true);
 
@@ -157,16 +158,25 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
 
     setIsApplying(true);
     try {
-      await applyRecruit(recruit.id, { reason: applyReason.trim() }, { accessToken: session.accessToken });
+      await applyRecruit(
+        recruit.id,
+        {
+          reason: applyReason.trim(),
+          portfolioUrl: applyPortfolioUrl.trim() || undefined,
+        },
+        { accessToken: session.accessToken }
+      );
       toast.success('지원이 완료되었습니다');
       setShowApplyModal(false);
       setApplyReason('');
+      setApplyPortfolioUrl('');
     } catch (error: unknown) {
       console.error('Failed to apply:', error);
       if (error && typeof error === 'object' && 'status' in error && error.status === 409) {
         toast.error('이미 지원한 공고입니다');
         setShowApplyModal(false);
         setApplyReason('');
+        setApplyPortfolioUrl('');
       } else {
         toast.error('지원에 실패했습니다');
       }
@@ -448,20 +458,40 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">
-                    지원 메시지 <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={applyReason}
-                    onChange={(e) => setApplyReason(e.target.value)}
-                    placeholder="안녕하세요, 백엔드 개발자 ㅇㅇㅇ입니다. 이 프로젝트의 ㅇㅇㅇ 부분이 흥미로워 지원합니다..."
-                    rows={6}
-                    className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  />
-                  <p className="text-right text-xs text-gray-400">
-                    {applyReason.length}자 입력
-                  </p>
+                <div className="space-y-4">
+                  {/* 지원 메시지 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      지원 메시지 <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={applyReason}
+                      onChange={(e) => setApplyReason(e.target.value)}
+                      placeholder="안녕하세요, 백엔드 개발자 ㅇㅇㅇ입니다. 이 프로젝트의 ㅇㅇㅇ 부분이 흥미로워 지원합니다..."
+                      rows={5}
+                      className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    />
+                    <p className="text-right text-xs text-gray-400">
+                      {applyReason.length}자 입력
+                    </p>
+                  </div>
+
+                  {/* 포트폴리오 URL */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      포트폴리오 URL <span className="text-xs font-normal text-gray-400">(선택)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={applyPortfolioUrl}
+                      onChange={(e) => setApplyPortfolioUrl(e.target.value)}
+                      placeholder="https://github.com/username 또는 포트폴리오 링크"
+                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    />
+                    <p className="text-xs text-gray-400">
+                      GitHub, 노션, 개인 웹사이트 등 본인을 어필할 수 있는 링크를 첨부해주세요.
+                    </p>
+                  </div>
                 </div>
               </div>
 

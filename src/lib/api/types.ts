@@ -140,6 +140,7 @@ export interface MyApplicationResponse {
   reason: string;
   portfolioUrl: string;
   appliedAt: string;
+  decisionReason?: string;
   recruit: RecruitSummary;
 }
 
