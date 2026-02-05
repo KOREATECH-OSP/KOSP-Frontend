@@ -36,7 +36,7 @@ function pythonToSpel(python: string): string {
 // 변수 패턴: variable, variable['field'], variable.field 모두 지원
 const VAR_PATTERN = "\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
 
-// 단일 조건을 백분율 SpEL로 변환
+// 단일 조건을 #progress SpEL로 변환
 function conditionToPercentage(condition: string): string | null {
   const partRegex = new RegExp(`^(${VAR_PATTERN})\\s*(>=|<=|>|<|==)\\s*(\\d+(?:\\.\\d+)?)$`);
   const match = condition.trim().match(partRegex);
@@ -45,23 +45,23 @@ function conditionToPercentage(condition: string): string | null {
     const [, variable, , targetStr] = match;
     const target = parseFloat(targetStr);
     if (target > 0) {
-      // 개별 조건의 백분율: min(변수 * 100 / 목표값, 100) - 100% 상한
-      return `T(Math).min(${variable} * 100 / ${target}, 100)`;
+      // #progress(변수, 목표점수) 형태로 변환
+      return `#progress(${variable}, ${target})`;
     }
   }
   return null;
 }
 
-// 여러 백분율을 중첩된 min/max로 결합 (Java Math.min/max는 2개 인자만 받음)
+// 여러 조건을 #min/#max로 결합 (SpEL 커스텀 함수)
 function combinePercentages(parts: string[], operation: 'min' | 'max'): string {
   if (parts.length === 0) return '0';
   if (parts.length === 1) return parts[0];
-  if (parts.length === 2) return `T(Math).${operation}(${parts[0]}, ${parts[1]})`;
+  if (parts.length === 2) return `#${operation}(${parts[0]}, ${parts[1]})`;
 
-  // 3개 이상: 중첩 호출 - T(Math).min(T(Math).min(a, b), c)
+  // 3개 이상: 중첩 호출 - #min(#min(a, b), c)
   let result = parts[0];
   for (let i = 1; i < parts.length; i++) {
-    result = `T(Math).${operation}(${result}, ${parts[i]})`;
+    result = `#${operation}(${result}, ${parts[i]})`;
   }
   return result;
 }

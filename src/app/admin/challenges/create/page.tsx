@@ -81,37 +81,98 @@ export default function CreateChallengePage() {
     if (!spel.trim()) return '';
     let python = spel;
 
-    // 변수 패턴: var, var['field'], var.field 모두 지원 (# 없음)
+    // 변수 패턴: var, var['field'], var.field 모두 지원
     const varPattern = "\\w+(?:\\['[^']+'\\]|\\.\\w+)*";
 
-    // T(Math).min(variable * 100 / target, 100) 패턴을 variable >= target 으로 변환
-    const singlePattern = new RegExp(`T\\(Math\\)\\.min\\((${varPattern})\\s*\\*\\s*100\\s*\\/\\s*(\\d+(?:\\.\\d+)?),\\s*100\\)`, 'g');
-    python = python.replace(singlePattern, (_, variable, target) => {
-      return `${variable} >= ${target}`;
-    });
+    // 괄호를 고려하여 함수 인자를 분리하는 헬퍼 함수
+    const splitFunctionArgs = (argsStr: string): [string, string] | null => {
+      let depth = 0;
+      for (let i = 0; i < argsStr.length; i++) {
+        const char = argsStr[i];
+        if (char === '(') depth++;
+        else if (char === ')') depth--;
+        else if (char === ',' && depth === 0) {
+          return [argsStr.slice(0, i).trim(), argsStr.slice(i + 1).trim()];
+        }
+      }
+      return null;
+    };
 
-    // 중첩된 T(Math).min/max 처리
+    // #min/#max 함수를 파싱하여 변환하는 함수
+    const parseMinMax = (str: string, funcName: string, operator: string): string => {
+      const pattern = new RegExp(`#${funcName}\\(`);
+      let result = str;
+      let match;
+
+      while ((match = pattern.exec(result)) !== null) {
+        const startIdx = match.index;
+        const argsStart = startIdx + funcName.length + 2; // "#min(" or "#max("
+
+        // 괄호 매칭으로 함수 끝 찾기
+        let depth = 1;
+        let endIdx = argsStart;
+        while (endIdx < result.length && depth > 0) {
+          if (result[endIdx] === '(') depth++;
+          else if (result[endIdx] === ')') depth--;
+          endIdx++;
+        }
+
+        if (depth === 0) {
+          const argsStr = result.slice(argsStart, endIdx - 1);
+          const args = splitFunctionArgs(argsStr);
+
+          if (args) {
+            const [arg1, arg2] = args;
+            const replacement = `(${arg1} ${operator} ${arg2})`;
+            result = result.slice(0, startIdx) + replacement + result.slice(endIdx);
+          } else {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+
+      return result;
+    };
+
+    // 중첩된 #min/#max와 #progress 처리
     let hasCompound = true;
     while (hasCompound) {
       const prevPython = python;
 
-      const innerPattern = new RegExp(`T\\(Math\\)\\.min\\((${varPattern})\\s*\\*\\s*100\\s*\\/\\s*(\\d+(?:\\.\\d+)?),\\s*100\\)`, 'g');
-      python = python.replace(innerPattern, (_, variable, target) => {
+      // #progress(variable, target) 패턴을 variable >= target 으로 변환
+      const progressPattern = new RegExp(`#progress\\((${varPattern}),\\s*(\\d+(?:\\.\\d+)?)\\)`, 'g');
+      python = python.replace(progressPattern, (_, variable, target) => {
         return `${variable} >= ${target}`;
       });
 
-      python = python.replace(/T\(Math\)\.min\(([^,]+),\s*([^)]+)\)/g, (_, cond1, cond2) => {
-        if (cond1.trim() === '100' || cond2.trim() === '100') {
-          return cond1.trim() === '100' ? cond2 : cond1;
-        }
-        return `${cond1} and ${cond2}`;
-      });
+      // #min(a, b) → (a and b)
+      python = parseMinMax(python, 'min', 'and');
 
-      python = python.replace(/T\(Math\)\.max\(([^,]+),\s*([^)]+)\)/g, (_, cond1, cond2) => {
-        return `${cond1} or ${cond2}`;
-      });
+      // #max(a, b) → (a or b)
+      python = parseMinMax(python, 'max', 'or');
 
       hasCompound = prevPython !== python;
+    }
+
+    // 불필요한 괄호 정리 (최외곽 괄호만)
+    python = python.trim();
+    if (python.startsWith('(') && python.endsWith(')')) {
+      // 전체가 괄호로 감싸져 있는지 확인
+      let depth = 0;
+      let isWrapped = true;
+      for (let i = 0; i < python.length; i++) {
+        if (python[i] === '(') depth++;
+        else if (python[i] === ')') depth--;
+        if (depth === 0 && i < python.length - 1) {
+          isWrapped = false;
+          break;
+        }
+      }
+      if (isWrapped) {
+        python = python.slice(1, -1);
+      }
     }
 
     // 연산자 변환
