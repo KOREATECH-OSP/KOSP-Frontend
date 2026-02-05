@@ -1,0 +1,203 @@
+import { API_BASE_URL } from './config';
+import { signOutOnce } from '@/lib/auth/signout';
+import { tokenManager } from '@/lib/auth/token-manager';
+
+export interface ApiError {
+  status: number;
+  message: string;
+}
+
+// 서버 다운 이벤트 발생 함수
+function emitServerDownEvent() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('serverDown'));
+  }
+}
+
+export class ApiException extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = 'ApiException';
+  }
+}
+
+type RequestOptions = {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  body?: unknown;
+  headers?: Record<string, string>;
+  cache?: RequestCache;
+  revalidate?: number;
+  accessToken?: string;
+};
+
+function parseErrorMessage(text: string, status: number): string {
+  if (status === 401) {
+    return '로그인이 필요합니다.';
+  }
+  if (status === 403) {
+    return '권한이 없습니다.';
+  }
+  if (!text) return `API Error: ${status}`;
+  try {
+    const json = JSON.parse(text);
+    return json.message || json.error || `API Error: ${status}`;
+  } catch {
+    return text;
+  }
+}
+
+export async function apiClient<T>(
+  endpoint: string,
+  options: RequestOptions = {}
+): Promise<T> {
+  const { method = 'GET', body, headers = {}, cache, revalidate, accessToken } = options;
+
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...headers,
+  };
+
+  if (accessToken) {
+    requestHeaders['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  const fetchOptions: RequestInit & { next?: { revalidate?: number } } = {
+    method,
+    headers: requestHeaders,
+    credentials: 'include',
+    cache,
+  };
+
+  if (body) {
+    fetchOptions.body = JSON.stringify(body);
+  }
+
+  if (revalidate !== undefined) {
+    fetchOptions.next = { revalidate };
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+  } catch {
+    // 네트워크 에러 (서버 연결 불가)
+    emitServerDownEvent();
+    throw new ApiException(0, '서버에 연결할 수 없습니다.');
+  }
+
+  if (!response.ok) {
+    // 5xx 서버 에러
+    if (response.status >= 500) {
+      emitServerDownEvent();
+    }
+    const errorText = await response.text();
+    throw new ApiException(
+      response.status,
+      parseErrorMessage(errorText, response.status)
+    );
+  }
+
+  // 204 No Content
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
+}
+
+export async function clientApiClient<T>(
+  endpoint: string,
+  options: RequestOptions = {},
+  isRetry: boolean = false
+): Promise<T> {
+  const { method = 'GET', body, headers = {}, cache } = options;
+  let { accessToken } = options;
+
+  // 토큰이 만료 임박하면 선제적으로 갱신
+  if (accessToken && tokenManager.isTokenExpiringSoon()) {
+    console.log('[clientApiClient] Token expiring soon, refreshing...');
+    const newToken = await tokenManager.refreshTokens();
+    if (newToken) {
+      accessToken = newToken;
+    }
+  }
+
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...headers,
+  };
+
+  if (accessToken) {
+    requestHeaders['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method,
+      headers: requestHeaders,
+      credentials: 'include',
+      body: body ? JSON.stringify(body) : undefined,
+      cache,
+    });
+  } catch {
+    // 네트워크 에러 (서버 연결 불가)
+    emitServerDownEvent();
+    throw new ApiException(0, '서버에 연결할 수 없습니다.');
+  }
+
+  if (!response.ok) {
+    // 5xx 서버 에러
+    if (response.status >= 500) {
+      emitServerDownEvent();
+    }
+    const errorText = await response.text();
+
+    // 401 에러 시 토큰 갱신 후 재시도 (한 번만)
+    if (response.status === 401 && !isRetry) {
+      console.log('[clientApiClient] 401 error, attempting token refresh...');
+
+      try {
+        // tokenManager로 토큰 갱신 (mutex로 race condition 방지)
+        const newToken = await tokenManager.refreshTokens();
+
+        if (newToken) {
+          console.log('[clientApiClient] Token refreshed, retrying request...');
+          // 갱신된 토큰으로 재시도
+          return clientApiClient<T>(
+            endpoint,
+            {
+              ...options,
+              accessToken: newToken,
+            },
+            true
+          );
+        }
+      } catch (error) {
+        console.error('[clientApiClient] Token refresh failed:', error);
+      }
+
+      // 갱신 실패 시 로그아웃 (tokenManager 내부에서 처리됨)
+      signOutOnce({
+        callbackUrl: '/login',
+        toastMessage: '인증 정보가 만료되었습니다. 다시 로그인해주세요.',
+      });
+    }
+
+    throw new ApiException(
+      response.status,
+      parseErrorMessage(errorText, response.status)
+    );
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
+}

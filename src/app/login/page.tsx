@@ -1,0 +1,149 @@
+'use client';
+
+import { Suspense, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { toast } from 'sonner';
+import GithubIcon from '@/assets/svg/github.svg';
+import { GITHUB_CLIENT_ID } from '@/lib/api/config';
+
+function LoginContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      toast.error('이메일을 입력해주세요');
+      return;
+    }
+    if (!password) {
+      toast.error('비밀번호를 입력해주세요');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await login(email, password);
+
+      if (!result.success) {
+        toast.error(result.error || '이메일 또는 비밀번호가 올바르지 않습니다');
+      } else {
+        toast.success('로그인되었습니다');
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch {
+      toast.error('로그인에 실패했습니다');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubLogin = () => {
+    if (!GITHUB_CLIENT_ID) {
+      toast.error('GitHub 로그인이 설정되지 않았습니다');
+      return;
+    }
+    window.sessionStorage.setItem('kosp:oauth-from', 'login');
+    if (callbackUrl && callbackUrl !== '/') {
+      window.sessionStorage.setItem('kosp:oauth-callback', callbackUrl);
+    }
+    const redirectUri = `${window.location.origin}/api/auth/github/callback`;
+    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email`;
+    window.location.href = oauthUrl;
+  };
+
+  return (
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-4 sm:px-5 py-10">
+      <div className="w-full max-w-[400px]">
+        <div className="mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
+            오픈소스포털에
+            <br />
+            로그인하세요
+          </h1>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일 주소"
+            autoComplete="email"
+            className="w-full h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
+          />
+
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호"
+            autoComplete="current-password"
+            className="w-full h-[54px] px-4 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
+          />
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-[54px] mt-2 bg-[#3182f6] text-white text-[16px] font-semibold rounded-2xl hover:bg-[#1b64da] active:bg-[#1957c2] disabled:bg-[#a8caff] disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? '로그인 중...' : '로그인'}
+          </button>
+        </form>
+
+        <div className="flex items-center justify-center gap-3 mt-5 text-[14px] text-[#6b7684]">
+          <Link href="/signup" className="hover:text-[#3182f6] transition-colors">
+            회원가입
+          </Link>
+          <span className="text-[#d1d6db]">·</span>
+          <Link href="/forgot-password" className="hover:text-[#3182f6] transition-colors">
+            비밀번호 찾기
+          </Link>
+        </div>
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#e5e8eb]" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="px-4 bg-white text-[13px] text-[#8b95a1]">간편 로그인</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGithubLogin}
+          className="w-full h-[54px] flex items-center justify-center gap-2.5 bg-[#191f28] text-white text-[15px] font-medium rounded-2xl hover:bg-[#333d4b] active:bg-[#4e5968] transition-colors"
+        >
+          <GithubIcon className="w-5 h-5" />
+          GitHub로 계속하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
+      <div className="w-8 h-8 border-[3px] border-[#e5e8eb] border-t-[#3182f6] rounded-full animate-spin" />
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <LoginContent />
+    </Suspense>
+  );
+}

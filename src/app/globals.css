@@ -1,0 +1,194 @@
+/* @import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+} */
+
+
+@import "tailwindcss";
+
+:root {
+  --primary-black: #021730;
+  --primary-white: #ffffff;
+
+  /* Safe area insets */
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-right: env(safe-area-inset-right);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+
+  /* Legacy aliases */
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+
+  /* Touch target minimum size (44px for accessibility) */
+  --touch-target-min: 44px;
+
+  /* Mobile-first spacing */
+  --spacing-mobile: 16px;
+  --spacing-desktop: 24px;
+}
+
+@layer base {
+  html {
+    font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  }
+
+  body {
+    position: relative;
+  }
+
+  button {
+    cursor: pointer;
+    font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  }
+
+  svg {
+    pointer-events: none;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  ol,
+  li,
+  ul {
+    list-style: none;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  table {
+    border-spacing: 0;
+    border-collapse: collapse;
+  }
+
+  input,
+  textarea {
+    outline: none;
+  }
+}
+
+/* Utility classes for safe area */
+@layer utilities {
+  .safe-area-top {
+    padding-top: var(--safe-area-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: var(--safe-area-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: var(--safe-area-left);
+  }
+
+  .safe-area-right {
+    padding-right: var(--safe-area-right);
+  }
+
+  .safe-area-x {
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+  }
+
+  .safe-area-y {
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+  }
+
+  .safe-area-all {
+    padding-top: var(--safe-area-top);
+    padding-right: var(--safe-area-right);
+    padding-bottom: var(--safe-area-bottom);
+    padding-left: var(--safe-area-left);
+  }
+
+  /* Touch target minimum size */
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch feedback for interactive elements */
+  .touch-feedback {
+    transition: transform 100ms ease-out;
+  }
+
+  .touch-feedback:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Page transition animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Skeleton shimmer effect (Toss style) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

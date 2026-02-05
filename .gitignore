@@ -36,3 +36,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Jetbrains
+.idea
+
+# Custom
+.claude
+claude.md
+.vscode

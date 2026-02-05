@@ -1,0 +1,1136 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import type { AuthSession } from '@/lib/auth/types';
+import {
+  User,
+  Github,
+  Edit,
+  GitPullRequest,
+  GitCommit,
+  MessageCircle,
+  Bookmark,
+  Eye,
+  FileText,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  AlertCircle,
+  Loader2,
+  FolderGit,
+  ExternalLink,
+  TrendingUp,
+  Activity,
+  Sparkles,
+  Zap,
+  X,
+  Calendar,
+  Link as LinkIcon,
+  Users,
+  Trophy,
+} from 'lucide-react';
+import Pagination from '@/common/components/Pagination';
+import {
+  getUserPosts,
+  getUserComments,
+  getUserBookmarks,
+  getUserProfile,
+  getUserGithubOverallHistory,
+  getUserGithubRecentActivity,
+  getUserGithubContributionScore,
+  getUserGithubContributionComparison,
+  getMyPointHistory,
+  getMyApplications,
+} from '@/lib/api/user';
+import { getBoards } from '@/lib/api/board';
+import { getChallenges } from '@/lib/api/challenge';
+import { ensureEncodedUrl } from '@/lib/utils';
+import type {
+  ArticleResponse,
+  CommentResponse,
+  UserProfileResponse,
+  GithubOverallHistoryResponse,
+  GithubRecentActivityResponse,
+  GithubContributionScoreResponse,
+  GithubContributionComparisonResponse,
+  MyPointHistoryResponse,
+  MyApplicationResponse,
+  BoardResponse,
+} from '@/lib/api/types';
+import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
+
+interface UserPageClientProps {
+  session: AuthSession | null;
+}
+
+type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기';
+
+export default function UserPageClient({ session }: UserPageClientProps) {
+  const [activeTab, setActiveTab] = useState<TabType>('활동');
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [posts, setPosts] = useState<ArticleResponse[]>([]);
+  const [comments, setComments] = useState<CommentResponse[]>([]);
+  const [bookmarks, setBookmarks] = useState<ArticleResponse[]>([]);
+
+  // GitHub 데이터 (백엔드 API에 맞춤)
+  const [overallHistory, setOverallHistory] = useState<GithubOverallHistoryResponse | null>(null);
+  const [recentActivity, setRecentActivity] = useState<GithubRecentActivityResponse[]>([]);
+  const [contributionScore, setContributionScore] = useState<GithubContributionScoreResponse | null>(null);
+  const [comparison, setComparison] = useState<GithubContributionComparisonResponse | null>(null);
+
+  // 포인트 & 지원내역 데이터
+  const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
+  const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
+
+  // 챌린지 달성률
+  const [challengeRate, setChallengeRate] = useState<{ completed: number; total: number } | null>(null);
+
+  // 게시판 데이터 (채용공고 게시판 판별용)
+  const [boards, setBoards] = useState<BoardResponse[]>([]);
+
+  // 포인트 페이징 상태
+  const [pointPage, setPointPage] = useState(1);
+  const [pointTotalPages, setPointTotalPages] = useState(1);
+
+  // 지원내역 페이징 상태
+  const [applicationPage, setApplicationPage] = useState(1);
+  const [applicationTotalPages, setApplicationTotalPages] = useState(1);
+  const [applicationTotalItems, setApplicationTotalItems] = useState(0);
+
+  // 작성글 페이징 상태
+  const [postPage, setPostPage] = useState(1);
+  const [postTotalPages, setPostTotalPages] = useState(1);
+
+  // 댓글 페이징 상태
+  const [commentPage, setCommentPage] = useState(1);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
+
+  // 저장 페이징 상태
+  const [bookmarkPage, setBookmarkPage] = useState(1);
+  const [bookmarkTotalPages, setBookmarkTotalPages] = useState(1);
+
+  const [counts, setCounts] = useState({ posts: 0, comments: 0, bookmarks: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAllRepos, setShowAllRepos] = useState(false);
+
+  // 지원내역 모달 상태
+  const [selectedApplication, setSelectedApplication] = useState<MyApplicationResponse | null>(null);
+
+  const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
+  const accessToken = session?.accessToken as string | undefined;
+
+  const fetchGithubData = useCallback(async () => {
+    if (!userId) return;
+
+    const [historyRes, activityRes, scoreRes, comparisonRes] = await Promise.all([
+      getUserGithubOverallHistory(userId).catch(() => null),
+      getUserGithubRecentActivity(userId).catch(() => []),
+      getUserGithubContributionScore(userId).catch(() => null),
+      getUserGithubContributionComparison(userId).catch(() => null),
+    ]);
+
+    if (historyRes) setOverallHistory(historyRes);
+    if (activityRes) setRecentActivity(activityRes);
+    if (scoreRes) setContributionScore(scoreRes);
+    if (comparisonRes) setComparison(comparisonRes);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchInitialData = async () => {
+      try {
+        const profileData = await getUserProfile(userId);
+        setProfile(profileData);
+
+        const [postsRes, commentsRes, boardsRes] = await Promise.all([
+          getUserPosts(userId),
+          getUserComments(userId),
+          getBoards().catch(() => ({ boards: [] })),
+        ]);
+        setCounts({
+          posts: postsRes.pagination.totalItems,
+          comments: commentsRes.meta.totalItems,
+          bookmarks: 0,
+        });
+        setBoards(boardsRes.boards);
+
+        if (accessToken) {
+          const challengeRes = await getChallenges({ accessToken }).catch(() => null);
+          if (challengeRes) {
+            const total = challengeRes.challenges.length;
+            const completed = challengeRes.challenges.filter((c) => c.isCompleted).length;
+            setChallengeRate({ completed, total });
+          }
+        }
+
+        await fetchGithubData();
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [userId, fetchGithubData]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchTabData = async () => {
+      try {
+        if (activeTab === '활동') {
+          await fetchGithubData();
+        } else if (activeTab === '포인트') {
+          if (accessToken) {
+            const res = await getMyPointHistory({ accessToken }, pointPage, 10);
+            setPointHistory(res);
+            setPointTotalPages(res.meta?.totalPages || 1);
+          }
+        } else if (activeTab === '지원내역') {
+          if (accessToken) {
+            const res = await getMyApplications({ accessToken }, applicationPage, 10);
+            setApplications(res.applications);
+            setApplicationTotalPages(res.meta?.totalPages || 1);
+            setApplicationTotalItems(res.meta?.totalItems || 0);
+          }
+        } else if (activeTab === '작성글') {
+          const res = await getUserPosts(userId, postPage, 10);
+          setPosts(res.posts);
+          setPostTotalPages(res.pagination.totalPages || 1);
+          setCounts((prev) => ({ ...prev, posts: res.pagination.totalItems }));
+        } else if (activeTab === '댓글') {
+          const res = await getUserComments(userId, commentPage, 10);
+          setComments(res.comments);
+          setCommentTotalPages(res.meta.totalPages || 1);
+          setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
+        } else if (activeTab === '즐겨찾기') {
+          const res = await getUserBookmarks(userId, bookmarkPage, 10);
+          setBookmarks(res.posts);
+          setBookmarkTotalPages(res.pagination?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, bookmarks: res.pagination?.totalItems || res.posts.length }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch tab data:', error);
+      }
+    };
+
+    fetchTabData();
+  }, [activeTab, userId, accessToken, fetchGithubData, pointPage, applicationPage, postPage, commentPage, bookmarkPage]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  // 채용공고 게시판인지 확인하는 함수
+  const isRecruitBoard = (boardId: number) => {
+    const board = boards.find((b) => b.id === boardId);
+    return board?.isRecruitAllowed ?? false;
+  };
+
+  // 게시글 상세 링크 생성 함수
+  const getPostDetailLink = (post: ArticleResponse) => {
+    return isRecruitBoard(post.boardId) ? `/recruit/${post.id}` : `/community/${post.id}`;
+  };
+
+
+  if (!session || !userId) {
+    return (
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-4 py-20">
+        <User className="mb-4 h-16 w-16 text-gray-300" />
+        <h2 className="mb-2 text-xl font-semibold text-gray-900">로그인이 필요합니다</h2>
+        <p className="mb-6 text-gray-500">내 정보를 확인하려면 로그인해주세요.</p>
+        <Link
+          href="/login"
+          className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+        >
+          로그인하기
+        </Link>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[500px] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
+    { key: '활동', label: '활동', icon: <Activity className="h-4 w-4" /> },
+    { key: '포인트', label: '포인트', icon: <Star className="h-4 w-4" /> },
+    { key: '지원내역', label: '지원내역', icon: <FileText className="h-4 w-4" /> },
+    { key: '작성글', label: '작성글', icon: <Edit className="h-4 w-4" /> },
+    { key: '댓글', label: '댓글', icon: <MessageCircle className="h-4 w-4" /> },
+    { key: '즐겨찾기', label: '저장', icon: <Bookmark className="h-4 w-4" /> },
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* 사이드바 - 프로필 */}
+        <aside className="lg:col-span-1">
+          <div className="sticky top-20 space-y-4">
+            {/* 프로필 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="relative h-20 w-20">
+                  {profile?.profileImage ? (
+                    <Image
+                      src={ensureEncodedUrl(profile.profileImage)}
+                      alt={profile.name}
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-900">
+                      <User className="h-10 w-10 text-white" />
+                    </div>
+                  )}
+                </div>
+                <Link
+                  href="/user/edit"
+                  className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-50"
+                >
+                  <Edit className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <h1 className="mb-1 text-xl font-bold text-gray-900">{profile?.name}</h1>
+              <p className="mb-2 text-sm text-gray-500">{session.user?.email}</p>
+              <p className="break-all text-xs text-gray-400">ID: {userId}</p>
+
+              {profile?.introduction && (
+                <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>
+              )}
+            </div>
+
+            {/* 통계 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-4 text-sm font-bold text-gray-900">활동 통계</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Star className="h-4 w-4" />
+                    보유 포인트
+                  </span>
+                  <span className="font-medium text-gray-900">{pointHistory?.currentBalance?.toLocaleString() ?? 0}P</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Trophy className="h-4 w-4" />
+                    챌린지 달성
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {challengeRate ? `${challengeRate.completed}/${challengeRate.total}` : '-'}
+                  </span>
+                </div>
+                <div className="my-2 border-t border-gray-100" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <FileText className="h-4 w-4" />
+                    작성한 글
+                  </span>
+                  <span className="font-medium text-gray-900">{counts.posts}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <MessageCircle className="h-4 w-4" />
+                    작성한 댓글
+                  </span>
+                  <span className="font-medium text-gray-900">{counts.comments}</span>
+                </div>
+                <div className="my-2 border-t border-gray-100" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <GitCommit className="h-4 w-4" />
+                    커밋
+                  </span>
+                  <span className="font-medium text-gray-900">{overallHistory?.totalCommitCount?.toLocaleString() ?? '-'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <GitPullRequest className="h-4 w-4" />
+                    PR
+                  </span>
+                  <span className="font-medium text-gray-900">{overallHistory?.totalPrCount?.toLocaleString() ?? '-'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <AlertCircle className="h-4 w-4" />
+                    이슈
+                  </span>
+                  <span className="font-medium text-gray-900">{overallHistory?.totalIssueCount?.toLocaleString() ?? '-'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* 메인 콘텐츠 */}
+        <div className="lg:col-span-2">
+          {/* 탭 필터 */}
+          <div className="sticky top-14 z-20 -mx-4 mb-6 border-b border-gray-200/60 bg-gray-50 px-4 pb-3 pt-4 sm:relative sm:top-0 sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 lg:static">
+            <div className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {tabs.map((tab, index) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all ${
+                    activeTab === tab.key
+                      ? 'text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                  style={
+                    activeTab === tab.key
+                      ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
+                      : undefined
+                  }
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeTab === '활동' && (
+            <div className="space-y-4">
+              {/* 통계 수집 안내 문구 */}
+              <div className="space-y-0.5 text-xs text-slate-500">
+                <p>- 통계는 최초 가입 시 우선 수집되며, 이후 주기적으로 증분 수집됩니다. (마지막 수집 시점부터 현재까지)</p>
+                <p>- 더 다양한 통계를 준비 중이니 기대해주세요!</p>
+              </div>
+
+              {/* 데이터가 모두 없을 때 블러 처리된 통계 UI */}
+              {!overallHistory && !contributionScore && recentActivity.length === 0 ? (
+                <div className="relative">
+                  {/* 블러된 더미 통계 UI */}
+                  <div className="pointer-events-none select-none space-y-4 blur-sm">
+                    {/* 더미 GitHub Rank Card 영역 */}
+                    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="h-16 w-16 rounded-xl bg-slate-700" />
+                          <div>
+                            <div className="h-6 w-32 rounded bg-slate-700" />
+                            <div className="mt-2 h-4 w-24 rounded bg-slate-700/50" />
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="h-4 w-20 rounded bg-slate-700/50" />
+                          <div className="mt-2 h-10 w-28 rounded bg-gradient-to-r from-amber-500 to-amber-300" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 더미 점수 상세 */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {['Activity', 'Diversity', 'Impact'].map((label) => (
+                        <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 text-center">
+                          <div className="mx-auto mb-2 h-5 w-5 rounded bg-slate-700" />
+                          <div className="mx-auto h-6 w-12 rounded bg-slate-700" />
+                          <div className="mx-auto mt-1 h-3 w-16 rounded bg-slate-700/50" />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 더미 Contribution Overview */}
+                    <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/50 p-6">
+                      <div className="mb-4 h-5 w-40 rounded bg-slate-700" />
+                      <div className="grid grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="text-center">
+                            <div className="mx-auto mb-2 h-6 w-6 rounded bg-slate-700" />
+                            <div className="mx-auto h-7 w-16 rounded bg-slate-700" />
+                            <div className="mx-auto mt-1 h-3 w-12 rounded bg-slate-700/50" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 오버레이 메시지 */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-xl border border-slate-700 bg-slate-900/95 px-6 py-4 shadow-2xl">
+                      <div className="text-center">
+                        <Github className="mx-auto mb-2 h-8 w-8 text-slate-500" />
+                        <p className="text-sm font-medium text-slate-300">
+                          GitHub 통계를 수집 중입니다
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          잠시 후 다시 확인해주세요
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* GitHub Rank Card */}
+                  {contributionScore && overallHistory && (
+                    <GithubRankCard
+                      name={profile?.name || '사용자'}
+                      profileImage={profile?.profileImage}
+                      rank={getRankFromScore(contributionScore.totalScore)}
+                      totalScore={contributionScore.totalScore}
+                      stats={{
+                        commits: overallHistory.totalCommitCount,
+                        pullRequests: overallHistory.totalPrCount,
+                        issues: overallHistory.totalIssueCount,
+                        repositories: overallHistory.contributedRepoCount,
+                      }}
+                    />
+                  )}
+
+                  {/* 점수 상세 */}
+                  {contributionScore && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                        <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
+                          <Activity className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div className="text-xl font-bold text-gray-900">
+                          {contributionScore.activityScore.toFixed(1)}
+                        </div>
+                        <div className="text-xs text-gray-500">Activity</div>
+                      </div>
+                      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                        <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50">
+                          <Sparkles className="h-5 w-5 text-purple-500" />
+                        </div>
+                        <div className="text-xl font-bold text-gray-900">
+                          {contributionScore.diversityScore.toFixed(1)}
+                        </div>
+                        <div className="text-xs text-gray-500">Diversity</div>
+                      </div>
+                      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                        <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50">
+                          <Zap className="h-5 w-5 text-amber-500" />
+                        </div>
+                        <div className="text-xl font-bold text-gray-900">
+                          {contributionScore.impactScore.toFixed(1)}
+                        </div>
+                        <div className="text-xs text-gray-500">Impact</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contribution Overview */}
+                  {overallHistory && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                      <div className="border-b border-gray-100 px-5 py-4">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <Github className="h-4 w-4 text-gray-500" />
+                          Contribution Overview
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-2 divide-x divide-y divide-gray-100 sm:grid-cols-3">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <GitCommit className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
+                            {overallHistory.totalCommitCount.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Commits</div>
+                          {comparison && (
+                            <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${overallHistory.totalCommitCount >= comparison.avgCommitCount ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                              <span className={`text-[10px] font-medium ${overallHistory.totalCommitCount >= comparison.avgCommitCount ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {overallHistory.totalCommitCount >= comparison.avgCommitCount ? '▲' : '▼'} 평균 대비 {Math.abs(overallHistory.totalCommitCount - Math.round(comparison.avgCommitCount)).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <GitPullRequest className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
+                            {overallHistory.totalPrCount.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Pull Requests</div>
+                          {comparison && (
+                            <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${overallHistory.totalPrCount >= comparison.avgPrCount ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                              <span className={`text-[10px] font-medium ${overallHistory.totalPrCount >= comparison.avgPrCount ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {overallHistory.totalPrCount >= comparison.avgPrCount ? '▲' : '▼'} 평균 대비 {Math.abs(overallHistory.totalPrCount - Math.round(comparison.avgPrCount)).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <AlertCircle className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
+                            {overallHistory.totalIssueCount.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Issues</div>
+                          {comparison && (
+                            <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${overallHistory.totalIssueCount >= comparison.avgIssueCount ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                              <span className={`text-[10px] font-medium ${overallHistory.totalIssueCount >= comparison.avgIssueCount ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {overallHistory.totalIssueCount >= comparison.avgIssueCount ? '▲' : '▼'} 평균 대비 {Math.abs(overallHistory.totalIssueCount - Math.round(comparison.avgIssueCount)).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <FolderGit className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
+                            {overallHistory.contributedRepoCount.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Repositories</div>
+                        </div>
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <TrendingUp className="mb-1.5 h-5 w-5 text-emerald-500" />
+                          <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
+                            +{overallHistory.totalAdditions.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Additions</div>
+                        </div>
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <TrendingUp className="mb-1.5 h-5 w-5 rotate-180 text-red-500" />
+                          <div className="text-xl font-bold text-red-600 sm:text-2xl">
+                            -{overallHistory.totalDeletions.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Deletions</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recent Contributions */}
+                  {recentActivity.length > 0 && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <FolderGit className="h-4 w-4 text-gray-500" />
+                          Recent Contributions
+                        </h2>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                          {recentActivity.length}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {(showAllRepos ? recentActivity : recentActivity.slice(0, 5)).map((repo, idx) => (
+                          <a
+                            key={idx}
+                            href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-gray-50"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate text-sm font-medium text-gray-900">
+                                  {repo.repoOwner}/{repo.repositoryName}
+                                </span>
+                                <ExternalLink className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                              </div>
+                              {repo.description && (
+                                <p className="mt-0.5 truncate text-xs text-gray-500">{repo.description}</p>
+                              )}
+                              <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <GitCommit className="h-3 w-3" />
+                                  {repo.userCommitCount}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <GitPullRequest className="h-3 w-3" />
+                                  {repo.userPrCount}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Star className="h-3 w-3 text-amber-500" />
+                                  {repo.stargazersCount}
+                                </span>
+                              </div>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                      {recentActivity.length > 5 && (
+                        <div className="border-t border-gray-100 p-3">
+                          <button
+                            onClick={() => setShowAllRepos(!showAllRepos)}
+                            className="flex w-full items-center justify-center gap-1 rounded-lg bg-gray-100 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
+                          >
+                            {showAllRepos ? (
+                              <>
+                                접기
+                                <ChevronUp className="h-4 w-4" />
+                              </>
+                            ) : (
+                              <>
+                                더보기 ({recentActivity.length - 5}개)
+                                <ChevronDown className="h-4 w-4" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 포인트 탭 */}
+          {activeTab === '포인트' && (
+            <div className="space-y-6">
+              {/* 현재 포인트 */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">보유 포인트</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {pointHistory?.currentBalance?.toLocaleString() ?? 0}
+                      <span className="ml-1 text-lg font-medium text-gray-500">P</span>
+                    </p>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                    <Star className="h-6 w-6 text-amber-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 포인트 안내 */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex gap-2">
+                    <span className="text-gray-400">•</span>
+                    <span>포인트는 챌린지 또는 소프트웨어중심대학에서 진행하는 행사를 통해 얻을 수 있습니다.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-gray-400">•</span>
+                    <span>포인트 내역은 모두 투명하게 기록됩니다.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-gray-400">•</span>
+                    <span>부적절한 방법으로 포인트가 적립될 경우 회수될 수 있습니다.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* 포인트 내역 */}
+              <div className="rounded-xl border border-gray-200 bg-white">
+                <div className="border-b border-gray-100 px-6 py-4">
+                  <h2 className="text-sm font-bold text-gray-900">포인트 내역</h2>
+                </div>
+
+                {!pointHistory?.transactions || pointHistory.transactions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Star className="mb-3 h-12 w-12 text-gray-200" />
+                    <p className="text-gray-500">포인트 내역이 없습니다.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="divide-y divide-gray-100">
+                      {pointHistory.transactions.map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between px-6 py-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{tx.reason}</p>
+                            <p className="text-xs text-gray-400">{formatDate(tx.createdAt)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-semibold ${tx.amount > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                              {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}P
+                            </p>
+                            <p className="text-xs text-gray-400">{tx.balanceAfter.toLocaleString()}P</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 페이지네이션 */}
+                    <div className="border-t border-gray-100 px-6 py-4">
+                      <Pagination
+                        currentPage={pointPage}
+                        totalPages={pointTotalPages}
+                        onPageChange={setPointPage}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 지원내역 탭 */}
+          {activeTab === '지원내역' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">지원내역 ({applicationTotalItems})</h2>
+              </div>
+
+              {applications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">지원내역이 없습니다.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {applications.map((app) => (
+                      <button
+                        key={app.applicationId}
+                        onClick={() => setSelectedApplication(app)}
+                        className="group block w-full px-6 py-4 text-left transition-colors hover:bg-gray-50/80"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                              {app.recruit.title}
+                            </p>
+                            <p className="text-xs text-gray-500">{app.recruit.teamName}</p>
+                            <p className="mt-1 text-xs text-gray-400">
+                              지원일: {formatDate(app.appliedAt)}
+                            </p>
+                          </div>
+                          <div className="ml-4 flex items-center gap-2">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              app.status === 'ACCEPTED'
+                                ? 'bg-green-100 text-green-700'
+                                : app.status === 'REJECTED'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {app.status === 'ACCEPTED' ? '승인' : app.status === 'REJECTED' ? '거절' : '대기중'}
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-gray-300" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={applicationPage}
+                      totalPages={applicationTotalPages}
+                      onPageChange={setApplicationPage}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 지원내역 상세 모달 */}
+          {selectedApplication && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl">
+                {/* 모달 헤더 */}
+                <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
+                  <h3 className="text-lg font-bold text-gray-900">지원 상세</h3>
+                  <button
+                    onClick={() => setSelectedApplication(null)}
+                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* 모달 내용 */}
+                <div className="space-y-6 p-6">
+                  {/* 모집공고 정보 */}
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Users className="h-4 w-4" />
+                      모집공고 정보
+                    </h4>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500">공고 제목</p>
+                        <p className="font-medium text-gray-900">{selectedApplication.recruit.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">팀 이름</p>
+                        <p className="text-sm text-gray-700">{selectedApplication.recruit.teamName}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">모집 상태</p>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            selectedApplication.recruit.status === 'OPEN'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {selectedApplication.recruit.status === 'OPEN' ? '모집중' : '마감'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">마감일</p>
+                          <p className="text-sm text-gray-700">{formatDate(selectedApplication.recruit.endDate)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 지원 정보 */}
+                  <div>
+                    <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <FileText className="h-4 w-4" />
+                      지원 정보
+                    </h4>
+                    <div className="space-y-4">
+                      {/* 지원 상태 */}
+                      <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                        <span className="text-sm text-gray-600">지원 상태</span>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                          selectedApplication.status === 'ACCEPTED'
+                            ? 'bg-green-100 text-green-700'
+                            : selectedApplication.status === 'REJECTED'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {selectedApplication.status === 'ACCEPTED' ? '승인됨' : selectedApplication.status === 'REJECTED' ? '거절됨' : '검토중'}
+                        </span>
+                      </div>
+
+                      {/* 지원일 */}
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="h-4 w-4" />
+                        <span>지원일: {formatDate(selectedApplication.appliedAt)}</span>
+                      </div>
+
+                      {/* 포트폴리오 URL */}
+                      {selectedApplication.portfolioUrl && (
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-gray-500">포트폴리오</p>
+                          <a
+                            href={selectedApplication.portfolioUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                            {selectedApplication.portfolioUrl}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* 지원 동기 */}
+                      <div>
+                        <p className="mb-2 text-xs font-medium text-gray-500">지원 동기</p>
+                        <div className="rounded-lg border border-gray-200 bg-white p-4">
+                          <p className="whitespace-pre-wrap text-sm text-gray-700">
+                            {selectedApplication.reason || '작성된 지원 동기가 없습니다.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 결정 사유 (승인/거절된 경우) */}
+                      {selectedApplication.decisionReason && (
+                        <div>
+                          <p className="mb-2 text-xs font-medium text-gray-500">
+                            {selectedApplication.status === 'ACCEPTED' ? '승인 사유' : '거절 사유'}
+                          </p>
+                          <div className={`rounded-lg border p-4 ${
+                            selectedApplication.status === 'ACCEPTED'
+                              ? 'border-green-200 bg-green-50'
+                              : 'border-red-200 bg-red-50'
+                          }`}>
+                            <p className={`whitespace-pre-wrap text-sm ${
+                              selectedApplication.status === 'ACCEPTED' ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                              {selectedApplication.decisionReason}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 모달 푸터 */}
+                <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white px-6 py-4">
+                  <button
+                    onClick={() => setSelectedApplication(null)}
+                    className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    닫기
+                  </button>
+                  <Link
+                    href={`/recruit/${selectedApplication.recruit.id}`}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                  >
+                    공고 보기
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 작성한 글 탭 */}
+          {activeTab === '작성글' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">작성한 글 ({counts.posts})</h2>
+              </div>
+
+              {posts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">작성한 글이 없습니다.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {posts.map((post) => (
+                      <Link
+                        key={post.id}
+                        href={getPostDetailLink(post)}
+                        className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="mb-1 truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                            {post.title}
+                          </h3>
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {post.views}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              {post.comments}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={postPage}
+                      totalPages={postTotalPages}
+                      onPageChange={setPostPage}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 작성한 댓글 탭 */}
+          {activeTab === '댓글' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">작성한 댓글 ({counts.comments})</h2>
+              </div>
+
+              {comments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <MessageCircle className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">작성한 댓글이 없습니다.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {comments.map((comment) => (
+                      <Link
+                        key={comment.id}
+                        href={`/community/${comment.articleId}`}
+                        className="group block px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <p className="mb-1 text-xs text-blue-600 group-hover:text-blue-700">
+                          {comment.articleTitle}
+                        </p>
+                        <p className="mb-2 text-sm text-gray-700">{comment.content}</p>
+                        <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={commentPage}
+                      totalPages={commentTotalPages}
+                      onPageChange={setCommentPage}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 즐겨찾기 탭 */}
+          {activeTab === '즐겨찾기' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-sm font-bold text-gray-900">
+                  즐겨찾기한 글 ({counts.bookmarks})
+                </h2>
+              </div>
+
+              {bookmarks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Bookmark className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-gray-500">즐겨찾기한 글이 없습니다.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-gray-100">
+                    {bookmarks.map((post) => (
+                      <Link
+                        key={post.id}
+                        href={getPostDetailLink(post)}
+                        className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/80"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex items-center gap-2">
+                            <Bookmark className="h-4 w-4 flex-shrink-0 fill-amber-400 text-amber-400" />
+                            <h3 className="truncate text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                              {post.title}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {post.views}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              {post.comments}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  <div className="border-t border-gray-100 px-6 py-4">
+                    <Pagination
+                      currentPage={bookmarkPage}
+                      totalPages={bookmarkTotalPages}
+                      onPageChange={setBookmarkPage}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
