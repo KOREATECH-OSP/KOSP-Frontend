@@ -22,6 +22,7 @@ import Image from 'next/image';
 import { getTeam, updateTeam, deleteTeam } from '@/lib/api/team';
 import { uploadFile } from '@/lib/api/upload';
 import { toast } from '@/lib/toast';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface TeamFormData {
   name: string;
@@ -74,7 +75,7 @@ export default function TeamSettingsPage() {
           description: team.description || '',
           imageUrl: team.imageUrl || '',
         });
-        setPreviewImage(team.imageUrl || '');
+        setPreviewImage(ensureEncodedUrl(team.imageUrl || ''));
       } catch (error) {
         console.error('팀 정보 로드 실패:', error);
         toast.error('팀 정보를 불러오는데 실패했습니다.');

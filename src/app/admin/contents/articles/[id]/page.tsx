@@ -20,6 +20,7 @@ import { clientApiClient } from '@/lib/api/client';
 import { getComments } from '@/lib/api/comment';
 import { toast } from '@/lib/toast';
 import type { CommentResponse } from '@/lib/api/types';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface ArticleDetail {
   id: number;
@@ -302,7 +303,7 @@ export default function ArticleDetailPage() {
                     <div className="flex items-start gap-3">
                       {comment.author.profileImage ? (
                         <Image
-                          src={comment.author.profileImage}
+                          src={ensureEncodedUrl(comment.author.profileImage)}
                           alt={comment.author.name}
                           width={32}
                           height={32}

@@ -488,6 +488,8 @@ export interface RecruitResponse {
   endDate: string | null;
   isLiked: boolean;
   isBookmarked: boolean;
+  canApply: boolean;
+  isDeleted: boolean;
 }
 
 export interface RecruitListResponse {

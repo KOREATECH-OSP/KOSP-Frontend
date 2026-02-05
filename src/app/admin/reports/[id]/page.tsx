@@ -25,6 +25,7 @@ import { getComments } from '@/lib/api/comment';
 import { toast } from '@/lib/toast';
 import type { AdminReportResponse } from '@/types/admin';
 import type { CommentResponse } from '@/lib/api/types';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface ArticleDetail {
   id: number;
@@ -417,7 +418,7 @@ export default function ReportDetailPage() {
                             <Link href={`/user/${comment.author.id}`}>
                               {comment.author.profileImage ? (
                                 <Image
-                                  src={comment.author.profileImage}
+                                  src={ensureEncodedUrl(comment.author.profileImage)}
                                   alt={comment.author.name}
                                   width={32}
                                   height={32}

@@ -21,6 +21,7 @@ import { applyRecruit, deleteRecruit } from '@/lib/api/recruit';
 import { getTeam } from '@/lib/api/team';
 import { toggleArticleBookmark, toggleArticleLike } from '@/lib/api/article';
 import type { RecruitResponse, TeamDetailResponse } from '@/lib/api/types';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface RecruitDetailClientProps {
   recruit: RecruitResponse;
@@ -266,7 +267,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                       <Link href={`/user/${recruit.author.id}`} className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-200 bg-gray-50 hover:ring-2 hover:ring-gray-300 transition-all">
                         {recruit.author.profileImage ? (
                           <Image
-                            src={recruit.author.profileImage}
+                            src={ensureEncodedUrl(recruit.author.profileImage)}
                             alt={recruit.author.name || 'Author'}
                             fill
                             className="object-cover"
@@ -356,7 +357,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
               <div className="flex items-start gap-5">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
                   {team?.imageUrl ? (
-                    <Image src={team.imageUrl} alt={team.name} width={64} height={64} className="h-full w-full object-cover" />
+                    <Image src={ensureEncodedUrl(team.imageUrl)} alt={team.name} width={64} height={64} className="h-full w-full object-cover" />
                   ) : (
                     <Users className="h-8 w-8 text-gray-300" />
                   )}
@@ -410,12 +411,19 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                 </button>
               </div>
 
-              {isOpen ? (
+              {isOpen && recruit.canApply ? (
                 <button
                   onClick={handleOpenApplyModal}
                   className="w-full sm:w-auto sm:flex-[2] rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-black hover:-translate-y-0.5 active:translate-y-0"
                 >
                   지원하기
+                </button>
+              ) : isOpen && !recruit.canApply ? (
+                <button
+                  disabled
+                  className="w-full sm:w-auto sm:flex-[2] rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed border border-gray-200"
+                >
+                  지원 불가
                 </button>
               ) : (
                 <button

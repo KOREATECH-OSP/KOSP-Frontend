@@ -9,6 +9,7 @@ import type { GlobalSearchResponse, UserSearchSummary } from '@/lib/api/types';
 import type { AuthSession } from '@/lib/auth/types';
 import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface SearchPageClientProps {
   keyword: string;
@@ -37,7 +38,7 @@ function UserAvatar({ user, size = 'md' }: { user: UserSearchSummary; size?: 'sm
   if (user.profileImageUrl) {
     return (
       <Image
-        src={user.profileImageUrl}
+        src={ensureEncodedUrl(user.profileImageUrl)}
         alt={user.name}
         width={size === 'lg' ? 64 : size === 'md' ? 48 : 32}
         height={size === 'lg' ? 64 : size === 'md' ? 48 : 32}

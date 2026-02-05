@@ -44,6 +44,7 @@ import type {
   GithubContributionComparisonResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface UserProfileClientProps {
   userId: number;
@@ -170,7 +171,7 @@ export default function UserProfileClient({
                 <div className="relative h-20 w-20">
                   {profile.profileImage ? (
                     <Image
-                      src={profile.profileImage}
+                      src={ensureEncodedUrl(profile.profileImage)}
                       alt={profile.name}
                       width={80}
                       height={80}

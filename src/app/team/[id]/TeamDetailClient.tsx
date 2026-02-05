@@ -24,6 +24,7 @@ import { toast } from '@/lib/toast';
 import { updateRecruitStatus, deleteRecruit } from '@/lib/api/recruit';
 import { inviteTeamMember } from '@/lib/api/team';
 import type { TeamDetailResponse, RecruitResponse, RecruitStatus } from '@/lib/api/types';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 type UserRole = 'leader' | 'member' | 'guest';
 
@@ -178,7 +179,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                     {leader ? (
                       <Link href={`/user/${leader.id}`} className="flex items-center gap-1.5 hover:underline">
                         {leader.profileImage && (
-                          <Image src={leader.profileImage} alt="" width={18} height={18} className="rounded-full" />
+                          <Image src={ensureEncodedUrl(leader.profileImage)} alt="" width={18} height={18} className="rounded-full" />
                         )}
                         <span className="font-medium text-gray-900">{leader.name}</span>
                       </Link>
@@ -258,7 +259,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                   <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-gray-300 overflow-hidden">
                     {team.imageUrl ? (
                       <Image
-                        src={team.imageUrl}
+                        src={ensureEncodedUrl(team.imageUrl)}
                         alt={team.name}
                         width={80}
                         height={80}
@@ -347,7 +348,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                         <Link href={`/user/${member.id}`}>
                           {member.profileImage ? (
                             <Image
-                              src={member.profileImage}
+                              src={ensureEncodedUrl(member.profileImage)}
                               alt={member.name}
                               width={40}
                               height={40}

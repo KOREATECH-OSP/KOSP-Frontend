@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Eye, MessageSquare, Heart, User } from 'lucide-react';
 import type { RecruitResponse } from '@/lib/api/types';
 import StatusTag from '@/common/components/StatusTag';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface RecruitPostCardProps {
     recruit: RecruitResponse;
@@ -92,7 +93,7 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
                     <div className="relative h-5 w-5 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
                         {recruit.author.profileImage ? (
                             <Image
-                                src={recruit.author.profileImage}
+                                src={ensureEncodedUrl(recruit.author.profileImage)}
                                 alt={recruit.author.name}
                                 fill
                                 className="object-cover"

@@ -11,6 +11,7 @@ import {
   Spread,
 } from 'lexical';
 import { Suspense, type ReactNode } from 'react';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 export interface ImagePayload {
   src: string;
@@ -46,7 +47,7 @@ function ImageComponent({
   return (
     <div className="lexical-image-container" data-lexical-image-key={nodeKey}>
       <img
-        src={src}
+        src={ensureEncodedUrl(src)}
         alt={altText}
         width={width}
         height={height}

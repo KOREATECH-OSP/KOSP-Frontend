@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Users, User } from 'lucide-react';
 import type { TeamResponse } from '@/lib/api/types';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 interface TeamCardProps {
     team: TeamResponse;
@@ -19,7 +20,7 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
                 <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
                     {team.imageUrl ? (
                         <Image
-                            src={team.imageUrl}
+                            src={ensureEncodedUrl(team.imageUrl)}
                             alt={team.name}
                             fill
                             className="object-cover"
@@ -47,7 +48,7 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
                             <div className="relative h-5 w-5 flex-shrink-0 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
                                 {team.createdBy?.profileImage ? (
                                     <Image
-                                        src={team.createdBy.profileImage}
+                                        src={ensureEncodedUrl(team.createdBy.profileImage)}
                                         alt={team.createdBy.name}
                                         fill
                                         className="object-cover"

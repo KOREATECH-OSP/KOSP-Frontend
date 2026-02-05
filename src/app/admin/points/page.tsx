@@ -9,6 +9,7 @@ import { getAdminUsers } from '@/lib/api/admin';
 import type { AdminUserResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
 import Pagination from '@/common/components/Pagination';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
 
@@ -131,7 +132,7 @@ export default function AdminPointsPage() {
                 >
                   {user.profileImageUrl ? (
                     <Image
-                      src={user.profileImageUrl}
+                      src={ensureEncodedUrl(user.profileImageUrl)}
                       alt={user.name}
                       width={36}
                       height={36}

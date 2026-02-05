@@ -47,6 +47,7 @@ import {
   getMyApplications,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
+import { ensureEncodedUrl } from '@/lib/utils';
 import type {
   ArticleResponse,
   CommentResponse,
@@ -278,7 +279,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 <div className="relative h-20 w-20">
                   {profile?.profileImage ? (
                     <Image
-                      src={profile.profileImage}
+                      src={ensureEncodedUrl(profile.profileImage)}
                       alt={profile.name}
                       width={80}
                       height={80}

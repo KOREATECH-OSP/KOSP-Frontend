@@ -22,6 +22,7 @@ import { deleteArticle, toggleArticleLike, toggleArticleBookmark } from '@/lib/a
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import { signOutOnce } from '@/lib/auth/signout';
+import { ensureEncodedUrl } from '@/lib/utils';
 
 function decodeHtmlEntities(value: string): string {
   if (typeof document === 'undefined') return value;
@@ -304,7 +305,7 @@ export default function ArticleDetailClient({
                 <Link href={`/user/${article.author.id}`} className="relative mb-3 h-20 w-20 overflow-hidden rounded-full border border-gray-100 bg-gray-50 transition-transform hover:scale-105">
                   {article.author.profileImage ? (
                     <img
-                      src={article.author.profileImage}
+                      src={ensureEncodedUrl(article.author.profileImage)}
                       alt={article.author.name}
                       className="h-full w-full object-cover"
                     />
@@ -414,7 +415,7 @@ export default function ArticleDetailClient({
                 <Link href={`/user/${article.author.id}`} className="relative h-8 w-8 overflow-hidden rounded-full border border-gray-100">
                   {article.author.profileImage ? (
                     <img
-                      src={article.author.profileImage}
+                      src={ensureEncodedUrl(article.author.profileImage)}
                       alt={article.author.name}
                       className="h-full w-full object-cover"
                     />
@@ -512,7 +513,7 @@ export default function ArticleDetailClient({
                   <Link href={`/user/${comment.author.id}`} className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-gray-100 text-gray-400">
                     {comment.author.profileImage ? (
                       <img
-                        src={comment.author.profileImage}
+                        src={ensureEncodedUrl(comment.author.profileImage)}
                         alt={comment.author.name}
                         className="h-full w-full object-cover"
                       />

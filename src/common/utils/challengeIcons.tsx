@@ -129,28 +129,13 @@ export function getChallengeIconComponent(iconName: string | null | undefined): 
   return CHALLENGE_ICONS[iconName]?.icon ?? Trophy;
 }
 
+import { ensureEncodedUrl } from '@/lib/utils';
+
 interface ChallengeIconProps {
   name: string | null | undefined;
   className?: string;
   /** 아이콘 타입: ICON이면 Lucide 아이콘, IMAGE_URL이면 이미지 */
   iconType?: 'ICON' | 'IMAGE_URL';
-}
-
-/**
- * URL 경로의 한글 등 비 ASCII 문자 인코딩 (이미 DB에 저장된 URL 대응)
- */
-function ensureEncodedUrl(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    const decodedPath = decodeURIComponent(urlObj.pathname);
-    urlObj.pathname = decodedPath
-      .split('/')
-      .map(segment => encodeURIComponent(segment))
-      .join('/');
-    return urlObj.toString();
-  } catch {
-    return url;
-  }
 }
 
 export function ChallengeIcon({ name, className, iconType = 'ICON' }: ChallengeIconProps) {
