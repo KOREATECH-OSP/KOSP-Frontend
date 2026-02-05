@@ -523,6 +523,8 @@ export interface RecruitApplyDecisionRequest {
 // Challenge Types
 // ============================================
 
+export type ChallengeIconType = 'ICON' | 'IMAGE_URL';
+
 export interface ChallengeResponse {
   id: number;
   title: string;
@@ -530,7 +532,8 @@ export interface ChallengeResponse {
   category: string;
   progress: number;
   isCompleted: boolean;
-  icon: string | null;
+  icon: ChallengeIconType;
+  imageResource: string | null;
   tier: number;
   point: number;
 }

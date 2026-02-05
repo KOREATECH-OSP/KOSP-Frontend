@@ -227,7 +227,11 @@ export default function ChallengesListPage() {
                 {paginatedChallenges.map((challenge) => (
                   <li key={challenge.id} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
-                      <ChallengeIcon name={challenge.icon} className="h-5 w-5 text-gray-600" />
+                      <ChallengeIcon
+                        name={challenge.imageResource}
+                        iconType={challenge.icon}
+                        className={challenge.icon === 'IMAGE_URL' ? 'h-10 w-10' : 'h-5 w-5 text-gray-600'}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">

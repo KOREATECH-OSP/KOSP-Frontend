@@ -132,9 +132,21 @@ export function getChallengeIconComponent(iconName: string | null | undefined): 
 interface ChallengeIconProps {
   name: string | null | undefined;
   className?: string;
+  /** 아이콘 타입: ICON이면 Lucide 아이콘, IMAGE_URL이면 이미지 */
+  iconType?: 'ICON' | 'IMAGE_URL';
 }
 
-export function ChallengeIcon({ name, className }: ChallengeIconProps) {
+export function ChallengeIcon({ name, className, iconType = 'ICON' }: ChallengeIconProps) {
+  // IMAGE_URL 타입이고 name이 URL인 경우 이미지로 렌더링
+  if (iconType === 'IMAGE_URL' && name) {
+    return createElement('img', {
+      src: name,
+      alt: 'challenge icon',
+      className: `${className} object-cover rounded`,
+    });
+  }
+
+  // ICON 타입이거나 기본값인 경우 Lucide 아이콘으로 렌더링
   const iconComponent = CHALLENGE_ICONS[name ?? '']?.icon ?? Trophy;
   return createElement(iconComponent, { className });
 }

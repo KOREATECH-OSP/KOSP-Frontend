@@ -279,9 +279,13 @@ export default function ChallengePage() {
                 >
                   <div className="flex items-start gap-4 mb-4">
                     {/* Icon */}
-                    <div className={`flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
+                    <div className={`flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center overflow-hidden ${isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
                       }`}>
-                      <ChallengeIcon name={challenge.icon} className="h-6 w-6" />
+                      <ChallengeIcon
+                        name={challenge.imageResource}
+                        iconType={challenge.icon}
+                        className={challenge.icon === 'IMAGE_URL' ? 'h-12 w-12' : 'h-6 w-6'}
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
