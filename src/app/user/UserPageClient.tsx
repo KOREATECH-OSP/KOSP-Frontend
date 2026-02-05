@@ -30,6 +30,7 @@ import {
   Calendar,
   Link as LinkIcon,
   Users,
+  Trophy,
 } from 'lucide-react';
 import Pagination from '@/common/components/Pagination';
 import {
@@ -45,6 +46,7 @@ import {
   getMyApplications,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
+import { getChallenges } from '@/lib/api/challenge';
 import { ensureEncodedUrl } from '@/lib/utils';
 import type {
   ArticleResponse,
@@ -82,6 +84,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 포인트 & 지원내역 데이터
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
   const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
+
+  // 챌린지 달성률
+  const [challengeRate, setChallengeRate] = useState<{ completed: number; total: number } | null>(null);
 
   // 게시판 데이터 (채용공고 게시판 판별용)
   const [boards, setBoards] = useState<BoardResponse[]>([]);
@@ -155,6 +160,15 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           bookmarks: 0,
         });
         setBoards(boardsRes.boards);
+
+        if (accessToken) {
+          const challengeRes = await getChallenges({ accessToken }).catch(() => null);
+          if (challengeRes) {
+            const total = challengeRes.challenges.length;
+            const completed = challengeRes.challenges.filter((c) => c.isCompleted).length;
+            setChallengeRate({ completed, total });
+          }
+        }
 
         await fetchGithubData();
       } catch (error) {
@@ -312,6 +326,23 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 text-gray-500">
+                    <Star className="h-4 w-4" />
+                    보유 포인트
+                  </span>
+                  <span className="font-medium text-gray-900">{pointHistory?.currentBalance?.toLocaleString() ?? 0}P</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <Trophy className="h-4 w-4" />
+                    챌린지 달성
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {challengeRate ? `${challengeRate.completed}/${challengeRate.total}` : '-'}
+                  </span>
+                </div>
+                <div className="my-2 border-t border-gray-100" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
                     <FileText className="h-4 w-4" />
                     작성한 글
                   </span>
@@ -323,6 +354,28 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     작성한 댓글
                   </span>
                   <span className="font-medium text-gray-900">{counts.comments}</span>
+                </div>
+                <div className="my-2 border-t border-gray-100" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <GitCommit className="h-4 w-4" />
+                    커밋
+                  </span>
+                  <span className="font-medium text-gray-900">{overallHistory?.totalCommitCount?.toLocaleString() ?? '-'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <GitPullRequest className="h-4 w-4" />
+                    PR
+                  </span>
+                  <span className="font-medium text-gray-900">{overallHistory?.totalPrCount?.toLocaleString() ?? '-'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-gray-500">
+                    <AlertCircle className="h-4 w-4" />
+                    이슈
+                  </span>
+                  <span className="font-medium text-gray-900">{overallHistory?.totalIssueCount?.toLocaleString() ?? '-'}</span>
                 </div>
               </div>
             </div>
