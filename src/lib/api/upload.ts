@@ -11,6 +11,28 @@ export interface UploadResult {
 }
 
 /**
+ * URL 경로 부분의 한글 등 비 ASCII 문자를 인코딩
+ * - 이미 인코딩된 URL은 먼저 디코딩 후 다시 인코딩 (이중 인코딩 방지)
+ * - S3 URL의 파일명에 한글이 포함된 경우 브라우저 호환성 문제 해결
+ */
+function encodeUrlPath(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    // pathname을 디코딩 후 다시 인코딩 (이중 인코딩 방지)
+    // decodeURIComponent는 개별 컴포넌트 디코딩, encodeURI는 전체 경로 인코딩
+    const decodedPath = decodeURIComponent(urlObj.pathname);
+    urlObj.pathname = decodedPath
+      .split('/')
+      .map(segment => encodeURIComponent(segment))
+      .join('/');
+    return urlObj.toString();
+  } catch {
+    // URL 파싱 실패 시 원본 반환
+    return url;
+  }
+}
+
+/**
  * Presigned URL을 이용한 파일 업로드
  * 1. 서버에서 presigned URL 획득
  * 2. presigned URL로 S3에 직접 업로드
@@ -57,8 +79,8 @@ export async function uploadFile(file: File, auth: AuthOptions): Promise<UploadR
     throw new ApiException(s3Response.status, 'S3 파일 업로드에 실패했습니다.');
   }
 
-  // 3. 최종 파일 URL 반환
+  // 3. 최종 파일 URL 반환 (한글 파일명 인코딩 처리)
   return {
-    url: uploadUrlData.file_url,
+    url: encodeUrlPath(uploadUrlData.file_url),
   };
 }

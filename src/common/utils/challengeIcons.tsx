@@ -136,11 +136,28 @@ interface ChallengeIconProps {
   iconType?: 'ICON' | 'IMAGE_URL';
 }
 
+/**
+ * URL 경로의 한글 등 비 ASCII 문자 인코딩 (이미 DB에 저장된 URL 대응)
+ */
+function ensureEncodedUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const decodedPath = decodeURIComponent(urlObj.pathname);
+    urlObj.pathname = decodedPath
+      .split('/')
+      .map(segment => encodeURIComponent(segment))
+      .join('/');
+    return urlObj.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function ChallengeIcon({ name, className, iconType = 'ICON' }: ChallengeIconProps) {
   // IMAGE_URL 타입이고 name이 URL인 경우 이미지로 렌더링
   if (iconType === 'IMAGE_URL' && name) {
     return createElement('img', {
-      src: name,
+      src: ensureEncodedUrl(name),
       alt: 'challenge icon',
       className: `${className} object-cover rounded`,
     });
