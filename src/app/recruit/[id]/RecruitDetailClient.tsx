@@ -345,7 +345,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
           {/* 2. Content Section */}
           <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
             <h3 className="mb-4 text-sm font-bold text-gray-900">상세 내용</h3>
-            <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-gray-600"
+            <div className="whitespace-pre-wrap text-[15px] leading-relaxed text-gray-600"
                dangerouslySetInnerHTML={{ __html: recruit.content || '' }}
             />
           </section>
