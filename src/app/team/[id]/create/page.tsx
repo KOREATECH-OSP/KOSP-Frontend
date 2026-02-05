@@ -293,7 +293,7 @@ export default function CreateRecruitPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fa]">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+      <div className="sticky top-14 z-30 border-b border-gray-200 bg-white md:top-[50px]">
         <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5">
           <button
             onClick={() => router.back()}
@@ -309,7 +309,7 @@ export default function CreateRecruitPage() {
                 <div
                   key={i}
                   className={`h-1.5 w-6 rounded-full transition-colors ${
-                    i < requiredFilledCount ? 'bg-blue-500' : 'bg-gray-200'
+                    i < requiredFilledCount ? 'bg-orange-500' : 'bg-gray-200'
                   }`}
                 />
               ))}
@@ -325,7 +325,7 @@ export default function CreateRecruitPage() {
         <div className="flex gap-10">
           {/* Left Sidebar - Step Navigation */}
           <div className="hidden w-[200px] shrink-0 lg:block">
-            <div className="sticky top-24">
+            <div className="sticky top-32 md:top-28">
               <nav className="space-y-1">
                 {formSections.map((section, index) => {
                   const sectionStatus = getSectionStatus(section.id);
@@ -343,18 +343,18 @@ export default function CreateRecruitPage() {
                       }}
                       className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
                         isActive
-                          ? 'bg-blue-50 text-blue-600'
+                          ? 'bg-orange-50 text-orange-600'
                           : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                       }`}
                     >
                       <div
                         className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm font-semibold ${
                           sectionStatus === 'filled'
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-orange-500 text-white'
                             : sectionStatus === 'error'
                               ? 'bg-red-500 text-white'
                               : isActive
-                                ? 'bg-blue-100 text-blue-600'
+                                ? 'bg-orange-100 text-orange-600'
                                 : 'bg-gray-100 text-gray-400'
                         }`}
                       >
@@ -364,7 +364,7 @@ export default function CreateRecruitPage() {
                           <span>{index + 1}</span>
                         )}
                       </div>
-                      <span className={`text-sm font-medium ${isActive ? 'text-blue-600' : ''}`}>
+                      <span className={`text-sm font-medium ${isActive ? 'text-orange-600' : ''}`}>
                         {section.label}
                       </span>
                       {section.required && sectionStatus !== 'filled' && (
@@ -393,11 +393,7 @@ export default function CreateRecruitPage() {
               {/* Title Section */}
               <section
                 id="title"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'title'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('title')}
               >
                 <div className="mb-5 flex items-center justify-between">
@@ -405,7 +401,7 @@ export default function CreateRecruitPage() {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                         getSectionStatus('title') === 'filled'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-orange-500 text-white'
                           : getSectionStatus('title') === 'error'
                             ? 'bg-red-50 text-red-500'
                             : 'bg-gray-100 text-gray-400'
@@ -428,8 +424,8 @@ export default function CreateRecruitPage() {
                   onChange={handleInputChange}
                   onFocus={() => setActiveSection('title')}
                   placeholder="예: React 프론트엔드 개발자를 찾습니다"
-                  className={`w-full rounded-xl border-0 bg-gray-50 px-4 py-3.5 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 ${
-                    errors.title ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
+                  className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.title ? 'border-red-400' : ''
                   }`}
                 />
                 {errors.title && (
@@ -443,11 +439,7 @@ export default function CreateRecruitPage() {
               {/* Period Section */}
               <section
                 id="period"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'period'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('period')}
               >
                 <div className="mb-5 flex items-center justify-between">
@@ -455,7 +447,7 @@ export default function CreateRecruitPage() {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                         getSectionStatus('period') === 'filled'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-orange-500 text-white'
                           : getSectionStatus('period') === 'error'
                             ? 'bg-red-50 text-red-500'
                             : 'bg-gray-100 text-gray-400'
@@ -482,8 +474,8 @@ export default function CreateRecruitPage() {
                       value={formData.startDate}
                       onChange={handleInputChange}
                       onFocus={() => setActiveSection('period')}
-                      className={`w-full rounded-xl border-0 bg-gray-50 px-4 py-3 text-[14px] text-gray-900 focus:bg-white focus:outline-none focus:ring-2 ${
-                        errors.startDate ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
+                      className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] text-gray-900 focus:border-orange-400 focus:outline-none ${
+                        errors.startDate ? 'border-red-400' : ''
                       }`}
                     />
                   </div>
@@ -498,7 +490,7 @@ export default function CreateRecruitPage() {
                       value={formData.endDate}
                       onChange={handleInputChange}
                       onFocus={() => setActiveSection('period')}
-                      className="w-full rounded-xl border-0 bg-gray-50 px-4 py-3 text-[14px] text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] text-gray-900 focus:border-orange-400 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -513,18 +505,14 @@ export default function CreateRecruitPage() {
               {/* Tags Section */}
               <section
                 id="tags"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'tags'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('tags')}
               >
                 <div className="mb-5 flex items-center gap-3">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                       getSectionStatus('tags') === 'filled'
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-orange-500 text-white'
                         : 'bg-gray-100 text-gray-400'
                     }`}
                   >
@@ -536,12 +524,12 @@ export default function CreateRecruitPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-gray-50 p-3 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500">
+                <div className="rounded-xl border border-gray-200 bg-white p-3 focus-within:border-orange-400">
                   <div className="flex flex-wrap gap-2">
                     {formData.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-[13px] font-medium text-white"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-[13px] font-medium text-white"
                       >
                         {tag}
                         <button
@@ -586,11 +574,7 @@ export default function CreateRecruitPage() {
               {/* Content Editor Section */}
               <section
                 id="content"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'content'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('content')}
               >
                 <div className="mb-5 flex items-center justify-between">
@@ -598,7 +582,7 @@ export default function CreateRecruitPage() {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                         getSectionStatus('content') === 'filled'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-orange-500 text-white'
                           : getSectionStatus('content') === 'error'
                             ? 'bg-red-50 text-red-500'
                             : 'bg-gray-100 text-gray-400'
@@ -648,7 +632,7 @@ export default function CreateRecruitPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>

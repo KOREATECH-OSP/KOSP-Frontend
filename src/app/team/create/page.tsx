@@ -213,7 +213,7 @@ export default function CreateTeamPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fa]">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+      <div className="sticky top-14 z-30 border-b border-gray-200 bg-white md:top-[50px]">
         <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5">
           <button
             onClick={() => router.back()}
@@ -229,7 +229,7 @@ export default function CreateTeamPage() {
                 <div
                   key={i}
                   className={`h-1.5 w-6 rounded-full transition-colors ${
-                    i < requiredFilledCount ? 'bg-blue-500' : 'bg-gray-200'
+                    i < requiredFilledCount ? 'bg-orange-500' : 'bg-gray-200'
                   }`}
                 />
               ))}
@@ -245,7 +245,7 @@ export default function CreateTeamPage() {
         <div className="flex gap-10">
           {/* Left Sidebar - Step Navigation */}
           <div className="hidden w-[200px] shrink-0 lg:block">
-            <div className="sticky top-24">
+            <div className="sticky top-32 md:top-28">
               <nav className="space-y-1">
                 {formSections.map((section, index) => {
                   const sectionStatus = getSectionStatus(section.id);
@@ -262,18 +262,18 @@ export default function CreateTeamPage() {
                       }}
                       className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
                         isActive
-                          ? 'bg-blue-50 text-blue-600'
+                          ? 'bg-orange-50 text-orange-600'
                           : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                       }`}
                     >
                       <div
                         className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm font-semibold ${
                           sectionStatus === 'filled'
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-orange-500 text-white'
                             : sectionStatus === 'error'
                               ? 'bg-red-500 text-white'
                               : isActive
-                                ? 'bg-blue-100 text-blue-600'
+                                ? 'bg-orange-100 text-orange-600'
                                 : 'bg-gray-100 text-gray-400'
                         }`}
                       >
@@ -283,7 +283,7 @@ export default function CreateTeamPage() {
                           <span>{index + 1}</span>
                         )}
                       </div>
-                      <span className={`text-sm font-medium ${isActive ? 'text-blue-600' : ''}`}>
+                      <span className={`text-sm font-medium ${isActive ? 'text-orange-600' : ''}`}>
                         {section.label}
                       </span>
                       {section.required && sectionStatus !== 'filled' && (
@@ -310,11 +310,7 @@ export default function CreateTeamPage() {
               {/* Name Section */}
               <section
                 id="name"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'name'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('name')}
               >
                 <div className="mb-5 flex items-center justify-between">
@@ -322,7 +318,7 @@ export default function CreateTeamPage() {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                         getSectionStatus('name') === 'filled'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-orange-500 text-white'
                           : getSectionStatus('name') === 'error'
                             ? 'bg-red-50 text-red-500'
                             : 'bg-gray-100 text-gray-400'
@@ -344,8 +340,8 @@ export default function CreateTeamPage() {
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   onFocus={() => setActiveSection('name')}
                   placeholder="예: KOSP 프로젝트 팀"
-                  className={`w-full rounded-xl border-0 bg-gray-50 px-4 py-3.5 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 ${
-                    errors.name ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
+                  className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.name ? 'border-red-400' : ''
                   }`}
                 />
                 {errors.name && (
@@ -359,11 +355,7 @@ export default function CreateTeamPage() {
               {/* Description Section */}
               <section
                 id="description"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'description'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('description')}
               >
                 <div className="mb-5 flex items-center justify-between">
@@ -371,7 +363,7 @@ export default function CreateTeamPage() {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                         getSectionStatus('description') === 'filled'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-orange-500 text-white'
                           : getSectionStatus('description') === 'error'
                             ? 'bg-red-50 text-red-500'
                             : 'bg-gray-100 text-gray-400'
@@ -393,8 +385,8 @@ export default function CreateTeamPage() {
                   onFocus={() => setActiveSection('description')}
                   placeholder="팀의 목표, 프로젝트 내용, 팀 문화 등을 자유롭게 작성해주세요..."
                   rows={5}
-                  className={`w-full resize-none rounded-xl border-0 bg-gray-50 px-4 py-3.5 text-[15px] leading-relaxed text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 ${
-                    errors.description ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
+                  className={`w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.description ? 'border-red-400' : ''
                   }`}
                 />
                 <div className="mt-2 flex items-center justify-between">
@@ -413,18 +405,14 @@ export default function CreateTeamPage() {
               {/* Image Section */}
               <section
                 id="image"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'image'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('image')}
               >
                 <div className="mb-5 flex items-center gap-3">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                       getSectionStatus('image') === 'filled'
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-orange-500 text-white'
                         : 'bg-gray-100 text-gray-400'
                     }`}
                   >
@@ -457,7 +445,7 @@ export default function CreateTeamPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 py-10 transition-all hover:border-blue-300 hover:bg-blue-50/50">
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 py-10 transition-all hover:border-orange-300 hover:bg-orange-50/50">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
                       <Upload className="h-5 w-5 text-gray-400" />
                     </div>
@@ -487,7 +475,7 @@ export default function CreateTeamPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>

@@ -120,7 +120,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
   return (
     <div className="min-h-screen bg-[#f7f8fa]">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+      <div className="sticky top-14 z-30 border-b border-gray-200 bg-white md:top-[50px]">
         <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5">
           <Link
             href={`/recruit/${recruit.id}`}
@@ -136,7 +136,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                 <div
                   key={i}
                   className={`h-1.5 w-6 rounded-full transition-colors ${
-                    i < requiredFilledCount ? 'bg-blue-500' : 'bg-gray-200'
+                    i < requiredFilledCount ? 'bg-orange-500' : 'bg-gray-200'
                   }`}
                 />
               ))}
@@ -152,7 +152,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
         <div className="flex gap-10">
           {/* Left Sidebar */}
           <div className="hidden w-[200px] shrink-0 lg:block">
-            <div className="sticky top-24">
+            <div className="sticky top-32 md:top-28">
               <nav className="space-y-1">
                 {formSections.map((section, index) => {
                   const sectionStatus = getSectionStatus(section.id);
@@ -169,18 +169,18 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                       }}
                       className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
                         isActive
-                          ? 'bg-blue-50 text-blue-600'
+                          ? 'bg-orange-50 text-orange-600'
                           : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                       }`}
                     >
                       <div
                         className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm font-semibold ${
                           sectionStatus === 'filled'
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-orange-500 text-white'
                             : sectionStatus === 'error'
                               ? 'bg-red-500 text-white'
                               : isActive
-                                ? 'bg-blue-100 text-blue-600'
+                                ? 'bg-orange-100 text-orange-600'
                                 : 'bg-gray-100 text-gray-400'
                         }`}
                       >
@@ -190,7 +190,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                           <span>{index + 1}</span>
                         )}
                       </div>
-                      <span className={`text-sm font-medium ${isActive ? 'text-blue-600' : ''}`}>
+                      <span className={`text-sm font-medium ${isActive ? 'text-orange-600' : ''}`}>
                         {section.label}
                       </span>
                       {section.required && sectionStatus !== 'filled' && (
@@ -205,7 +205,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
               {team && (
                 <Link
                   href={`/team/${team.id}`}
-                  className="mt-6 block rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-blue-300 hover:shadow-sm"
+                  className="mt-6 block rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-orange-300 hover:shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
@@ -244,11 +244,11 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
             </div>
 
             {/* Info Banner */}
-            <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-orange-100 bg-orange-50 p-4">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
               <div>
-                <p className="text-[14px] font-medium text-blue-900">지원 전 확인해주세요</p>
-                <p className="mt-1 text-[13px] text-blue-700 leading-relaxed">
+                <p className="text-[14px] font-medium text-orange-900">지원 전 확인해주세요</p>
+                <p className="mt-1 text-[13px] text-orange-700 leading-relaxed">
                   작성하신 지원서는 팀장에게 전달됩니다. 본인의 역량과 지원 동기를 구체적으로
                   작성하면 합격 확률이 높아집니다.
                 </p>
@@ -259,11 +259,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
               {/* Message Section */}
               <section
                 id="message"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'message'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('message')}
               >
                 <div className="mb-5 flex items-center justify-between">
@@ -271,7 +267,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                         getSectionStatus('message') === 'filled'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-orange-500 text-white'
                           : getSectionStatus('message') === 'error'
                             ? 'bg-red-50 text-red-500'
                             : 'bg-gray-100 text-gray-400'
@@ -298,8 +294,8 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                   onFocus={() => setActiveSection('message')}
                   placeholder="안녕하세요, 백엔드 개발자 ㅇㅇㅇ입니다.&#10;&#10;이 프로젝트의 ㅇㅇㅇ 부분이 흥미로워 지원합니다. 저는 ㅇㅇㅇ 경험이 있으며..."
                   rows={8}
-                  className={`w-full resize-none rounded-xl border-0 bg-gray-50 px-4 py-3.5 text-[15px] leading-relaxed text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 ${
-                    errors.reason ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
+                  className={`w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.reason ? 'border-red-400' : ''
                   }`}
                 />
                 <div className="mt-2 flex items-center justify-between">
@@ -318,18 +314,14 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
               {/* Portfolio Section */}
               <section
                 id="portfolio"
-                className={`rounded-2xl bg-white p-6 transition-all ${
-                  activeSection === 'portfolio'
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'ring-1 ring-gray-200'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('portfolio')}
               >
                 <div className="mb-5 flex items-center gap-3">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                       getSectionStatus('portfolio') === 'filled'
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-orange-500 text-white'
                         : getSectionStatus('portfolio') === 'error'
                           ? 'bg-red-50 text-red-500'
                           : 'bg-gray-100 text-gray-400'
@@ -356,8 +348,8 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                   }}
                   onFocus={() => setActiveSection('portfolio')}
                   placeholder="https://github.com/username"
-                  className={`w-full rounded-xl border-0 bg-gray-50 px-4 py-3.5 text-[15px] text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 ${
-                    errors.portfolioUrl ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
+                  className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.portfolioUrl ? 'border-red-400' : ''
                   }`}
                 />
                 {errors.portfolioUrl && (
@@ -381,7 +373,7 @@ export default function ApplyClient({ recruit, team }: ApplyClientProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting || !applyReason.trim()}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <>
