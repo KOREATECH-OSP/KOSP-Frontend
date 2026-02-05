@@ -11,35 +11,12 @@ export interface UploadResult {
 }
 
 /**
- * 파일명에서 확장자 추출
- */
-function getFileExtension(filename: string): string {
-  const lastDot = filename.lastIndexOf('.');
-  if (lastDot === -1) return '';
-  return filename.slice(lastDot).toLowerCase();
-}
-
-/**
- * 안전한 파일명 생성 (타임스탬프 + 랜덤 + 확장자)
- * 한글 등 비 ASCII 문자로 인한 인코딩 문제 방지
- */
-function generateSafeFileName(originalName: string): string {
-  const extension = getFileExtension(originalName);
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
-  return `${timestamp}_${random}${extension}`;
-}
-
-/**
  * Presigned URL을 이용한 파일 업로드
  * 1. 서버에서 presigned URL 획득
  * 2. presigned URL로 S3에 직접 업로드
  * 3. 최종 파일 URL 반환
  */
 export async function uploadFile(file: File, auth: AuthOptions): Promise<UploadResult> {
-  // 안전한 파일명 생성 (한글 인코딩 문제 방지)
-  const safeFileName = generateSafeFileName(file.name);
-
   // 1. Presigned URL 요청
   const presignedResponse = await fetch(`${API_BASE_URL}/v1/upload/url`, {
     method: 'POST',
@@ -48,7 +25,7 @@ export async function uploadFile(file: File, auth: AuthOptions): Promise<UploadR
       'Authorization': `Bearer ${auth.accessToken}`,
     },
     body: JSON.stringify({
-      file_name: safeFileName,
+      file_name: file.name,
       content_length: file.size,
       content_type: file.type || 'application/octet-stream',
     }),
