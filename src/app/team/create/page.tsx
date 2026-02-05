@@ -19,6 +19,7 @@ import Image from 'next/image';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import { uploadFile } from '@/lib/api/upload';
+import koriCheerImage from '@/assets/images/kori/11-09 M-1 응원 .png';
 
 interface TeamFormData {
   name: string;
@@ -307,7 +308,7 @@ export default function CreateTeamPage() {
                 </p>
               </div>
               <Image
-                src={require('@/assets/images/kori/11-09 M-1 응원 .png')}
+                src={koriCheerImage}
                 alt="응원하는 코리"
                 width={120}
                 height={120}
