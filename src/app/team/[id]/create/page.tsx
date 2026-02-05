@@ -5,12 +5,13 @@ import {
   ArrowLeft,
   X,
   Loader2,
-  Sparkles,
   Calendar,
   Hash,
   Type,
+  FileText,
   CheckCircle2,
   AlertCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useSession } from '@/lib/auth/AuthContext';
@@ -30,15 +31,14 @@ interface RecruitFormData {
 }
 
 function stripHtml(html: string): string {
-  // Remove HTML tags using regex - safe for validation purposes only
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
 const formSections = [
-  { id: 'title', label: '제목', icon: Type },
-  { id: 'period', label: '모집 기간', icon: Calendar },
-  { id: 'tags', label: '기술 스택', icon: Hash },
-  { id: 'content', label: '상세 내용', icon: Sparkles },
+  { id: 'title', label: '공고 제목', icon: Type, required: true },
+  { id: 'period', label: '모집 기간', icon: Calendar, required: true },
+  { id: 'tags', label: '기술 스택', icon: Hash, required: false },
+  { id: 'content', label: '상세 내용', icon: FileText, required: true },
 ];
 
 export default function CreateRecruitPage() {
@@ -129,9 +129,7 @@ export default function CreateRecruitPage() {
 
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof RecruitFormData, string>>
-  >({});
+  const [errors, setErrors] = useState<Partial<Record<keyof RecruitFormData, string>>>({});
   const isComposingRef = useRef(false);
 
   const getSectionStatus = (sectionId: string): 'empty' | 'filled' | 'error' => {
@@ -152,9 +150,7 @@ export default function CreateRecruitPage() {
     }
   };
 
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof RecruitFormData]) {
@@ -204,11 +200,7 @@ export default function CreateRecruitPage() {
     if (!formData.startDate) {
       newErrors.startDate = '모집 시작일을 선택해주세요';
     }
-    if (
-      formData.startDate &&
-      formData.endDate &&
-      formData.startDate > formData.endDate
-    ) {
+    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
       newErrors.endDate = '모집 마감일은 시작일 이후여야 합니다';
     }
 
@@ -240,14 +232,12 @@ export default function CreateRecruitPage() {
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         teamId,
         startDate: new Date(formData.startDate).toISOString(),
-        endDate: formData.endDate
-          ? new Date(formData.endDate).toISOString()
-          : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
       };
 
       const boardsRes = await fetch(`${API_BASE_URL}/v1/community/boards`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         credentials: 'include',
       });
@@ -269,7 +259,7 @@ export default function CreateRecruitPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           credentials: 'include',
           body: JSON.stringify(requestData),
@@ -295,133 +285,107 @@ export default function CreateRecruitPage() {
     }
   };
 
-  const completedCount = formSections.filter(s => getSectionStatus(s.id) === 'filled').length;
-  const requiredCount = 3; // title, period, content
+  const requiredFilledCount = formSections.filter(
+    (s) => s.required && getSectionStatus(s.id) === 'filled'
+  ).length;
+  const requiredCount = formSections.filter((s) => s.required).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-[#f7f8fa]">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+        <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5">
           <button
             onClick={() => router.back()}
-            className="group flex items-center gap-2.5 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
+            className="flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
           >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>돌아가기</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>나가기</span>
           </button>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2 sm:flex">
-              <div className="flex items-center gap-1.5">
-                {[...Array(requiredCount)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-2 w-2 rounded-full transition-colors ${
-                      i < Math.min(completedCount, requiredCount)
-                        ? 'bg-emerald-500'
-                        : 'bg-slate-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs font-medium text-slate-600">
-                {Math.min(completedCount, requiredCount)}/{requiredCount} 필수 항목
-              </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              {[...Array(requiredCount)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-6 rounded-full transition-colors ${
+                    i < requiredFilledCount ? 'bg-blue-500' : 'bg-gray-200'
+                  }`}
+                />
+              ))}
             </div>
+            <span className="text-xs text-gray-400">
+              {requiredFilledCount}/{requiredCount}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          {/* Left Sidebar - Progress Tracker */}
-          <div className="hidden lg:col-span-3 lg:block">
+      <div className="mx-auto max-w-[1200px] px-5 py-10">
+        <div className="flex gap-10">
+          {/* Left Sidebar - Step Navigation */}
+          <div className="hidden w-[200px] shrink-0 lg:block">
             <div className="sticky top-24">
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-slate-900">작성 진행 상황</h3>
-                  <p className="mt-1 text-xs text-slate-500">섹션을 클릭하여 이동하세요</p>
-                </div>
+              <nav className="space-y-1">
+                {formSections.map((section, index) => {
+                  const sectionStatus = getSectionStatus(section.id);
+                  const isActive = activeSection === section.id;
+                  const Icon = section.icon;
 
-                <nav className="space-y-1">
-                  {formSections.map((section, index) => {
-                    const Icon = section.icon;
-                    const sectionStatus = getSectionStatus(section.id);
-                    const isActive = activeSection === section.id;
-
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => {
-                          setActiveSection(section.id);
-                          document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }}
-                        className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ${
-                          isActive
-                            ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => {
+                        setActiveSection(section.id);
+                        document
+                          .getElementById(section.id)
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                      }`}
+                    >
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm font-semibold ${
+                          sectionStatus === 'filled'
+                            ? 'bg-blue-500 text-white'
+                            : sectionStatus === 'error'
+                              ? 'bg-red-500 text-white'
+                              : isActive
+                                ? 'bg-blue-100 text-blue-600'
+                                : 'bg-gray-100 text-gray-400'
                         }`}
                       >
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-white/20'
-                            : sectionStatus === 'filled'
-                            ? 'bg-emerald-100 text-emerald-600'
-                            : sectionStatus === 'error'
-                            ? 'bg-red-100 text-red-600'
-                            : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
-                        }`}>
-                          {sectionStatus === 'filled' && !isActive ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : sectionStatus === 'error' && !isActive ? (
-                            <AlertCircle className="h-4 w-4" />
-                          ) : (
-                            <Icon className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className={`text-sm font-medium ${isActive ? 'text-white' : ''}`}>
-                            {section.label}
-                          </div>
-                          {sectionStatus === 'filled' && !isActive && (
-                            <div className="text-xs text-emerald-600">완료</div>
-                          )}
-                        </div>
-                        <div className={`text-xs font-medium ${isActive ? 'text-white/60' : 'text-slate-400'}`}>
-                          {String(index + 1).padStart(2, '0')}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </nav>
-
-                <div className="mt-6 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-white">
-                  <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    PRO TIP
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                    구체적인 역할과 기술 스택을 명시하면 지원율이 <span className="font-semibold text-white">2배</span> 높아집니다.
-                  </p>
-                </div>
-              </div>
+                        {sectionStatus === 'filled' ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <span>{index + 1}</span>
+                        )}
+                      </div>
+                      <span className={`text-sm font-medium ${isActive ? 'text-blue-600' : ''}`}>
+                        {section.label}
+                      </span>
+                      {section.required && sectionStatus !== 'filled' && (
+                        <span className="ml-auto text-[10px] text-red-400">필수</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
           </div>
 
           {/* Main Form Area */}
-          <div className="lg:col-span-9">
+          <div className="flex-1 max-w-[720px]">
             {/* Header */}
             <div className="mb-8">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white">
-                <Sparkles className="h-3.5 w-3.5" />
-                {isEditMode ? '공고 수정' : '새 공고 작성'}
-              </div>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                {isEditMode ? '모집 공고 수정하기' : '팀원을 모집해보세요'}
+              <h1 className="text-[28px] font-bold tracking-tight text-gray-900">
+                {isEditMode ? '모집공고 수정' : '새 모집공고 작성'}
               </h1>
-              <p className="mt-3 text-lg text-slate-600">
-                매력적인 공고로 최고의 팀원을 찾아보세요.
+              <p className="mt-2 text-[15px] text-gray-500">
+                매력적인 공고로 최고의 팀원을 찾아보세요
               </p>
             </div>
 
@@ -429,25 +393,32 @@ export default function CreateRecruitPage() {
               {/* Title Section */}
               <section
                 id="title"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'title' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                className={`rounded-2xl bg-white p-6 transition-all ${
+                  activeSection === 'title'
+                    ? 'ring-2 ring-blue-500 ring-offset-2'
+                    : 'ring-1 ring-gray-200'
                 }`}
                 onFocus={() => setActiveSection('title')}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                    getSectionStatus('title') === 'filled'
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : getSectionStatus('title') === 'error'
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <Type className="h-5 w-5" />
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                        getSectionStatus('title') === 'filled'
+                          ? 'bg-blue-500 text-white'
+                          : getSectionStatus('title') === 'error'
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <Type className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] font-semibold text-gray-900">공고 제목</h2>
+                      <p className="text-[13px] text-gray-400">눈에 띄는 제목을 작성하세요</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">공고 제목</h2>
-                    <p className="text-sm text-slate-500">한눈에 들어오는 매력적인 제목을 작성하세요</p>
-                  </div>
+                  <span className="text-xs text-red-400">필수</span>
                 </div>
 
                 <input
@@ -456,49 +427,54 @@ export default function CreateRecruitPage() {
                   value={formData.title}
                   onChange={handleInputChange}
                   onFocus={() => setActiveSection('title')}
-                  placeholder="예: React 프론트엔드 개발자를 찾습니다!"
-                  className={`w-full rounded-xl border-2 bg-slate-50 px-5 py-4 text-lg font-medium transition-all placeholder:text-slate-400 focus:bg-white focus:outline-none ${
-                    errors.title
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-transparent focus:border-slate-900'
+                  placeholder="예: React 프론트엔드 개발자를 찾습니다"
+                  className={`w-full rounded-xl border-0 bg-gray-50 px-4 py-3.5 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 ${
+                    errors.title ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
                   }`}
                 />
                 {errors.title && (
-                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-600">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-2 flex items-center gap-1 text-[13px] text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
                     {errors.title}
-                  </div>
+                  </p>
                 )}
               </section>
 
               {/* Period Section */}
               <section
                 id="period"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'period' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                className={`rounded-2xl bg-white p-6 transition-all ${
+                  activeSection === 'period'
+                    ? 'ring-2 ring-blue-500 ring-offset-2'
+                    : 'ring-1 ring-gray-200'
                 }`}
                 onFocus={() => setActiveSection('period')}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                    getSectionStatus('period') === 'filled'
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : getSectionStatus('period') === 'error'
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <Calendar className="h-5 w-5" />
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                        getSectionStatus('period') === 'filled'
+                          ? 'bg-blue-500 text-white'
+                          : getSectionStatus('period') === 'error'
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <Calendar className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] font-semibold text-gray-900">모집 기간</h2>
+                      <p className="text-[13px] text-gray-400">언제까지 모집하나요?</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">모집 기간</h2>
-                    <p className="text-sm text-slate-500">모집 시작일과 마감일을 설정하세요</p>
-                  </div>
+                  <span className="text-xs text-red-400">필수</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      시작일 <span className="text-red-500">*</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-[13px] font-medium text-gray-500">
+                      시작일
                     </label>
                     <input
                       type="date"
@@ -506,22 +482,15 @@ export default function CreateRecruitPage() {
                       value={formData.startDate}
                       onChange={handleInputChange}
                       onFocus={() => setActiveSection('period')}
-                      className={`w-full rounded-xl border-2 bg-slate-50 px-4 py-3.5 text-sm font-medium transition-all focus:bg-white focus:outline-none ${
-                        errors.startDate
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-transparent focus:border-slate-900'
+                      className={`w-full rounded-xl border-0 bg-gray-50 px-4 py-3 text-[14px] text-gray-900 focus:bg-white focus:outline-none focus:ring-2 ${
+                        errors.startDate ? 'ring-2 ring-red-400' : 'focus:ring-blue-500'
                       }`}
                     />
-                    {errors.startDate && (
-                      <div className="flex items-center gap-2 text-sm font-medium text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        {errors.startDate}
-                      </div>
-                    )}
                   </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      마감일 <span className="text-slate-400">(선택)</span>
+                  <ChevronRight className="mt-6 h-5 w-5 text-gray-300" />
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-[13px] font-medium text-gray-500">
+                      마감일 <span className="text-gray-400">(선택)</span>
                     </label>
                     <input
                       type="date"
@@ -529,53 +498,56 @@ export default function CreateRecruitPage() {
                       value={formData.endDate}
                       onChange={handleInputChange}
                       onFocus={() => setActiveSection('period')}
-                      className="w-full rounded-xl border-2 border-transparent bg-slate-50 px-4 py-3.5 text-sm font-medium transition-all focus:border-slate-900 focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border-0 bg-gray-50 px-4 py-3 text-[14px] text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    {errors.endDate && (
-                      <div className="flex items-center gap-2 text-sm font-medium text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        {errors.endDate}
-                      </div>
-                    )}
                   </div>
                 </div>
+                {(errors.startDate || errors.endDate) && (
+                  <p className="mt-2 flex items-center gap-1 text-[13px] text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {errors.startDate || errors.endDate}
+                  </p>
+                )}
               </section>
 
               {/* Tags Section */}
               <section
                 id="tags"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'tags' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                className={`rounded-2xl bg-white p-6 transition-all ${
+                  activeSection === 'tags'
+                    ? 'ring-2 ring-blue-500 ring-offset-2'
+                    : 'ring-1 ring-gray-200'
                 }`}
                 onFocus={() => setActiveSection('tags')}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                    getSectionStatus('tags') === 'filled'
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
+                <div className="mb-5 flex items-center gap-3">
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                      getSectionStatus('tags') === 'filled'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-400'
+                    }`}
+                  >
                     <Hash className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">기술 스택 & 태그</h2>
-                    <p className="text-sm text-slate-500">필요한 기술이나 역할을 태그로 추가하세요</p>
+                    <h2 className="text-[15px] font-semibold text-gray-900">기술 스택 & 태그</h2>
+                    <p className="text-[13px] text-gray-400">필요한 기술이나 역할을 태그로 추가</p>
                   </div>
                 </div>
 
-                <div className="rounded-xl border-2 border-transparent bg-slate-50 p-4 transition-all focus-within:border-slate-900 focus-within:bg-white">
+                <div className="rounded-xl bg-gray-50 p-3 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500">
                   <div className="flex flex-wrap gap-2">
                     {formData.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-[13px] font-medium text-white"
                       >
-                        <Hash className="h-3 w-3" />
                         {tag}
                         <button
                           type="button"
                           onClick={() => handleRemoveTag(tag)}
-                          className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-white/20"
+                          className="rounded-full p-0.5 hover:bg-white/20"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -594,49 +566,62 @@ export default function CreateRecruitPage() {
                             handleAddTag();
                           }
                         }}
-                        onCompositionStart={() => { isComposingRef.current = true; }}
-                        onCompositionEnd={() => { isComposingRef.current = false; }}
-                        placeholder={formData.tags.length === 0 ? "React, TypeScript, Node.js 등..." : "태그 추가..."}
-                        className="min-w-[150px] flex-1 bg-transparent px-2 py-1.5 text-sm font-medium placeholder-slate-400 focus:outline-none"
+                        onCompositionStart={() => {
+                          isComposingRef.current = true;
+                        }}
+                        onCompositionEnd={() => {
+                          isComposingRef.current = false;
+                        }}
+                        placeholder={
+                          formData.tags.length === 0 ? 'React, TypeScript 등...' : '태그 추가'
+                        }
+                        className="min-w-[120px] flex-1 bg-transparent px-2 py-1.5 text-[14px] placeholder:text-gray-400 focus:outline-none"
                       />
                     )}
                   </div>
                 </div>
-                <p className="mt-3 text-xs text-slate-500">Enter를 눌러 태그를 추가하세요. 최대 5개까지 등록 가능합니다.</p>
+                <p className="mt-2 text-[12px] text-gray-400">Enter로 태그 추가 (최대 5개)</p>
               </section>
 
               {/* Content Editor Section */}
               <section
                 id="content"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'content' ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80'
+                className={`rounded-2xl bg-white p-6 transition-all ${
+                  activeSection === 'content'
+                    ? 'ring-2 ring-blue-500 ring-offset-2'
+                    : 'ring-1 ring-gray-200'
                 }`}
                 onFocus={() => setActiveSection('content')}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                    getSectionStatus('content') === 'filled'
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : getSectionStatus('content') === 'error'
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <Sparkles className="h-5 w-5" />
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                        getSectionStatus('content') === 'filled'
+                          ? 'bg-blue-500 text-white'
+                          : getSectionStatus('content') === 'error'
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] font-semibold text-gray-900">상세 내용</h2>
+                      <p className="text-[13px] text-gray-400">팀과 프로젝트를 자세히 소개하세요</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">상세 내용</h2>
-                    <p className="text-sm text-slate-500">팀과 프로젝트에 대해 자세히 설명해주세요</p>
-                  </div>
+                  <span className="text-xs text-red-400">필수</span>
                 </div>
 
-                <div className={`rounded-xl border-2 overflow-hidden transition-all ${
-                  errors.content ? 'border-red-300' : 'border-transparent focus-within:border-slate-900'
-                }`}>
+                <div
+                  className={`overflow-hidden rounded-xl ${errors.content ? 'ring-2 ring-red-400' : ''}`}
+                >
                   <TiptapEditor
                     content={formData.content}
                     onChange={handleContentChange}
                     placeholder="팀 소개, 프로젝트 목표, 필요한 역할, 활동 일정 등을 자유롭게 작성해주세요..."
-                    minHeight={400}
+                    minHeight={350}
                     maxCharacters={5000}
                     showCharacterCount
                     onImageUpload={uploadImage}
@@ -644,47 +629,36 @@ export default function CreateRecruitPage() {
                   />
                 </div>
                 {errors.content && (
-                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-600">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-2 flex items-center gap-1 text-[13px] text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
                     {errors.content}
-                  </div>
+                  </p>
                 )}
               </section>
 
               {/* Submit Section */}
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-slate-800 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-                <div className="text-white">
-                  <h3 className="text-lg font-semibold">모든 준비가 완료되었나요?</h3>
-                  <p className="mt-1 text-sm text-slate-300">
-                    작성 완료 후 공고가 즉시 게시됩니다
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 text-sm font-bold text-slate-900 shadow-lg transition-all hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        처리 중...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        {isEditMode ? '수정 완료' : '공고 등록하기'}
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="rounded-xl px-6 py-3 text-[14px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      처리 중...
+                    </>
+                  ) : (
+                    <>{isEditMode ? '수정 완료' : '공고 등록'}</>
+                  )}
+                </button>
               </div>
             </form>
           </div>
