@@ -12,7 +12,6 @@ import {
   ImageIcon,
   CheckCircle2,
   AlertCircle,
-  Users,
   Trash2,
   AlertTriangle,
 } from 'lucide-react';
@@ -31,9 +30,9 @@ interface TeamFormData {
 }
 
 const formSections = [
-  { id: 'name', label: '팀 이름', icon: Type },
-  { id: 'description', label: '팀 소개', icon: FileText },
-  { id: 'image', label: '팀 이미지', icon: ImageIcon },
+  { id: 'name', label: '팀 이름', icon: Type, required: true },
+  { id: 'description', label: '팀 소개', icon: FileText, required: true },
+  { id: 'image', label: '팀 이미지', icon: ImageIcon, required: false },
 ];
 
 export default function TeamSettingsPage() {
@@ -126,14 +125,12 @@ export default function TeamSettingsPage() {
       return;
     }
 
-    // 미리보기 설정
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewImage(reader.result as string);
     };
     reader.readAsDataURL(file);
 
-    // 파일 업로드
     if (!session?.accessToken) {
       toast.error('로그인이 필요합니다.');
       return;
@@ -230,147 +227,119 @@ export default function TeamSettingsPage() {
     }
   };
 
-  const completedCount = formSections.filter((s) => getSectionStatus(s.id) === 'filled').length;
-  const requiredCount = 2; // name, description
+  const requiredFilledCount = formSections.filter(
+    (s) => s.required && getSectionStatus(s.id) === 'filled'
+  ).length;
+  const requiredCount = formSections.filter((s) => s.required).length;
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa]">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-[#f7f8fa]">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="sticky top-14 z-30 border-b border-gray-200 bg-white md:top-[50px]">
+        <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-5">
           <button
             onClick={() => router.back()}
-            className="group flex items-center gap-2.5 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
+            className="flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
           >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>돌아가기</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>나가기</span>
           </button>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2 sm:flex">
-              <div className="flex items-center gap-1.5">
-                {[...Array(requiredCount)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-2 w-2 rounded-full transition-colors ${
-                      i < Math.min(completedCount, requiredCount)
-                        ? 'bg-emerald-500'
-                        : 'bg-slate-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs font-medium text-slate-600">
-                {Math.min(completedCount, requiredCount)}/{requiredCount} 필수 항목
-              </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              {[...Array(requiredCount)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-6 rounded-full transition-colors ${
+                    i < requiredFilledCount ? 'bg-orange-500' : 'bg-gray-200'
+                  }`}
+                />
+              ))}
             </div>
+            <span className="text-xs text-gray-400">
+              {requiredFilledCount}/{requiredCount}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          {/* Left Sidebar - Progress Tracker */}
-          <div className="hidden lg:col-span-3 lg:block">
-            <div className="sticky top-24">
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-slate-900">설정 항목</h3>
-                  <p className="mt-1 text-xs text-slate-500">섹션을 클릭하여 이동하세요</p>
-                </div>
+      <div className="mx-auto max-w-[1200px] px-5 py-10">
+        <div className="flex gap-10">
+          {/* Left Sidebar - Step Navigation */}
+          <div className="hidden w-[200px] shrink-0 lg:block">
+            <div className="sticky top-32 md:top-28">
+              <nav className="space-y-1">
+                {formSections.map((section, index) => {
+                  const sectionStatus = getSectionStatus(section.id);
+                  const isActive = activeSection === section.id;
+                  const Icon = section.icon;
 
-                <nav className="space-y-1">
-                  {formSections.map((section, index) => {
-                    const Icon = section.icon;
-                    const sectionStatus = getSectionStatus(section.id);
-                    const isActive = activeSection === section.id;
-
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => {
-                          setActiveSection(section.id);
-                          document
-                            .getElementById(section.id)
-                            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }}
-                        className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ${
-                          isActive
-                            ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => {
+                        setActiveSection(section.id);
+                        document
+                          .getElementById(section.id)
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
+                        isActive
+                          ? 'bg-orange-50 text-orange-600'
+                          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                      }`}
+                    >
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm font-semibold ${
+                          sectionStatus === 'filled'
+                            ? 'bg-orange-500 text-white'
+                            : sectionStatus === 'error'
+                              ? 'bg-red-500 text-white'
+                              : isActive
+                                ? 'bg-orange-100 text-orange-600'
+                                : 'bg-gray-100 text-gray-400'
                         }`}
                       >
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                            isActive
-                              ? 'bg-white/20'
-                              : sectionStatus === 'filled'
-                              ? 'bg-emerald-100 text-emerald-600'
-                              : sectionStatus === 'error'
-                              ? 'bg-red-100 text-red-600'
-                              : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
-                          }`}
-                        >
-                          {sectionStatus === 'filled' && !isActive ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : sectionStatus === 'error' && !isActive ? (
-                            <AlertCircle className="h-4 w-4" />
-                          ) : (
-                            <Icon className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className={`text-sm font-medium ${isActive ? 'text-white' : ''}`}>
-                            {section.label}
-                          </div>
-                          {sectionStatus === 'filled' && !isActive && (
-                            <div className="text-xs text-emerald-600">완료</div>
-                          )}
-                        </div>
-                        <div
-                          className={`text-xs font-medium ${isActive ? 'text-white/60' : 'text-slate-400'}`}
-                        >
-                          {String(index + 1).padStart(2, '0')}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </nav>
-
-                <div className="mt-6 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-white">
-                  <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-                    <Users className="h-3.5 w-3.5" />
-                    TIP
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                    매력적인 팀 소개로 더 많은 지원자를 모집해보세요.
-                  </p>
-                </div>
-              </div>
+                        {sectionStatus === 'filled' ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <span>{index + 1}</span>
+                        )}
+                      </div>
+                      <span className={`text-sm font-medium ${isActive ? 'text-orange-600' : ''}`}>
+                        {section.label}
+                      </span>
+                      {section.required && sectionStatus !== 'filled' && (
+                        <span className="ml-auto text-[10px] text-red-400">필수</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
           </div>
 
           {/* Main Form Area */}
-          <div className="lg:col-span-9">
+          <div className="flex-1 max-w-[720px]">
             {/* Header */}
             <div className="mb-8">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white">
+              <div className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold text-white">
                 <Settings className="h-3.5 w-3.5" />
                 팀 설정
               </div>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="mt-4 text-[28px] font-bold tracking-tight text-gray-900">
                 팀 정보 수정
               </h1>
-              <p className="mt-3 text-lg text-slate-600">
-                팀의 기본 정보를 수정하세요.
+              <p className="mt-2 text-[15px] text-gray-500">
+                팀의 기본 정보를 수정하세요
               </p>
             </div>
 
@@ -378,29 +347,28 @@ export default function TeamSettingsPage() {
               {/* Name Section */}
               <section
                 id="name"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'name'
-                    ? 'border-slate-900 ring-1 ring-slate-900'
-                    : 'border-slate-200/80'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('name')}
               >
-                <div className="mb-6 flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                      getSectionStatus('name') === 'filled'
-                        ? 'bg-emerald-100 text-emerald-600'
-                        : getSectionStatus('name') === 'error'
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    <Type className="h-5 w-5" />
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                        getSectionStatus('name') === 'filled'
+                          ? 'bg-orange-500 text-white'
+                          : getSectionStatus('name') === 'error'
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <Type className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] font-semibold text-gray-900">팀 이름</h2>
+                      <p className="text-[13px] text-gray-400">팀을 대표하는 이름을 입력하세요</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">팀 이름</h2>
-                    <p className="text-sm text-slate-500">팀을 대표하는 이름을 입력하세요</p>
-                  </div>
+                  <span className="text-xs text-red-400">필수</span>
                 </div>
 
                 <input
@@ -409,46 +377,43 @@ export default function TeamSettingsPage() {
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   onFocus={() => setActiveSection('name')}
                   placeholder="예: KOSP 프로젝트 팀"
-                  className={`w-full rounded-xl border-2 bg-slate-50 px-5 py-4 text-lg font-medium transition-all placeholder:text-slate-400 focus:bg-white focus:outline-none ${
-                    errors.name
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-transparent focus:border-slate-900'
+                  className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.name ? 'border-red-400' : ''
                   }`}
                 />
                 {errors.name && (
-                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-600">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-2 flex items-center gap-1 text-[13px] text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
                     {errors.name}
-                  </div>
+                  </p>
                 )}
               </section>
 
               {/* Description Section */}
               <section
                 id="description"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'description'
-                    ? 'border-slate-900 ring-1 ring-slate-900'
-                    : 'border-slate-200/80'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('description')}
               >
-                <div className="mb-6 flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                      getSectionStatus('description') === 'filled'
-                        ? 'bg-emerald-100 text-emerald-600'
-                        : getSectionStatus('description') === 'error'
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    <FileText className="h-5 w-5" />
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                        getSectionStatus('description') === 'filled'
+                          ? 'bg-orange-500 text-white'
+                          : getSectionStatus('description') === 'error'
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] font-semibold text-gray-900">팀 소개</h2>
+                      <p className="text-[13px] text-gray-400">팀에 대해 자세히 소개해주세요</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">팀 소개</h2>
-                    <p className="text-sm text-slate-500">팀에 대해 자세히 소개해주세요</p>
-                  </div>
+                  <span className="text-xs text-red-400">필수</span>
                 </div>
 
                 <textarea
@@ -457,49 +422,43 @@ export default function TeamSettingsPage() {
                   onFocus={() => setActiveSection('description')}
                   placeholder="팀의 목표, 프로젝트 내용, 팀 문화 등을 자유롭게 작성해주세요..."
                   rows={6}
-                  className={`w-full resize-none rounded-xl border-2 bg-slate-50 px-5 py-4 text-base leading-relaxed transition-all placeholder:text-slate-400 focus:bg-white focus:outline-none ${
-                    errors.description
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-transparent focus:border-slate-900'
+                  className={`w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none ${
+                    errors.description ? 'border-red-400' : ''
                   }`}
                 />
                 {errors.description && (
-                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-600">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-2 flex items-center gap-1 text-[13px] text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
                     {errors.description}
-                  </div>
+                  </p>
                 )}
               </section>
 
               {/* Image Section */}
               <section
                 id="image"
-                className={`rounded-2xl border bg-white p-6 shadow-sm transition-all sm:p-8 ${
-                  activeSection === 'image'
-                    ? 'border-slate-900 ring-1 ring-slate-900'
-                    : 'border-slate-200/80'
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white p-6"
                 onFocus={() => setActiveSection('image')}
               >
-                <div className="mb-6 flex items-center gap-3">
+                <div className="mb-5 flex items-center gap-3">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                       getSectionStatus('image') === 'filled'
-                        ? 'bg-emerald-100 text-emerald-600'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-100 text-gray-400'
                     }`}
                   >
                     <ImageIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">팀 이미지</h2>
-                    <p className="text-sm text-slate-500">팀을 대표하는 이미지를 업로드하세요</p>
+                    <h2 className="text-[15px] font-semibold text-gray-900">팀 이미지</h2>
+                    <p className="text-[13px] text-gray-400">팀을 대표하는 이미지를 업로드하세요</p>
                   </div>
                 </div>
 
                 {previewImage ? (
                   <div className="relative">
-                    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-gray-200">
                       <Image
                         src={previewImage}
                         alt="팀 이미지 미리보기"
@@ -516,14 +475,14 @@ export default function TeamSettingsPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-12 transition-all hover:border-slate-400 hover:bg-slate-100">
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 py-12 transition-all hover:border-orange-400 hover:bg-orange-50/30">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-                      <Upload className="h-6 w-6 text-slate-600" />
+                      <Upload className="h-6 w-6 text-gray-400" />
                     </div>
-                    <span className="mt-4 text-sm font-semibold text-slate-700">
+                    <span className="mt-4 text-sm font-semibold text-gray-700">
                       클릭하여 이미지 업로드
                     </span>
-                    <span className="mt-1 text-xs text-slate-500">
+                    <span className="mt-1 text-xs text-gray-400">
                       JPG, PNG, GIF (최대 5MB)
                     </span>
                     <input
@@ -538,50 +497,39 @@ export default function TeamSettingsPage() {
               </section>
 
               {/* Submit Section */}
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-slate-800 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-                <div className="text-white">
-                  <h3 className="text-lg font-semibold">변경사항을 저장하시겠습니까?</h3>
-                  <p className="mt-1 text-sm text-slate-300">
-                    저장 후 팀 상세 페이지로 이동합니다
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 text-sm font-bold text-slate-900 shadow-lg transition-all hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        저장 중...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        저장하기
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="rounded-xl px-6 py-3 text-[14px] font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      저장 중...
+                    </>
+                  ) : (
+                    '저장하기'
+                  )}
+                </button>
               </div>
 
               {/* Danger Zone - 팀 삭제 */}
-              <section className="rounded-2xl border-2 border-red-200 bg-red-50/50 p-6 sm:p-8">
+              <section className="mt-8 rounded-2xl border-2 border-red-200 bg-red-50/50 p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                    <AlertTriangle className="h-6 w-6" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                    <AlertTriangle className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-red-900">팀 삭제</h3>
-                    <p className="mt-1 text-sm text-red-700">
+                    <h3 className="text-[15px] font-semibold text-red-900">팀 삭제</h3>
+                    <p className="mt-1 text-[13px] text-red-700">
                       팀을 삭제하면 모든 멤버와 초대, 모집공고가 함께 삭제됩니다.
                       <br />
                       <strong>이 작업은 되돌릴 수 없습니다.</strong>
@@ -589,7 +537,7 @@ export default function TeamSettingsPage() {
                     <button
                       type="button"
                       onClick={() => setShowDeleteModal(true)}
-                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700"
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:bg-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
                       팀 삭제하기
@@ -618,7 +566,7 @@ export default function TeamSettingsPage() {
                   </p>
                 </div>
               </div>
-              <div className="mt-4 rounded-lg bg-red-50 p-4">
+              <div className="mt-4 rounded-xl bg-red-50 p-4">
                 <p className="text-sm text-red-800">
                   <strong>{formData.name}</strong> 팀과 함께 다음 항목이 영구적으로 삭제됩니다:
                 </p>
@@ -637,7 +585,7 @@ export default function TeamSettingsPage() {
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
                   placeholder="확인했습니다"
-                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                 />
               </div>
             </div>

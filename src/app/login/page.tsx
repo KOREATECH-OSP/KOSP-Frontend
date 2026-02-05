@@ -62,10 +62,10 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-5 py-10">
+    <div className="flex items-center justify-center w-full min-h-[calc(100vh-56px)] px-4 sm:px-5 py-10">
       <div className="w-full max-w-[400px]">
-        <div className="mb-10">
-          <h1 className="text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
+        <div className="mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-[26px] font-bold text-[#191f28] leading-snug tracking-tight">
             오픈소스포털에
             <br />
             로그인하세요

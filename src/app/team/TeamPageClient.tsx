@@ -64,8 +64,8 @@ export default function TeamPageClient({
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      {/* Mobile Header & Tabs (< lg) */}
-      <div className="lg:hidden">
+      {/* Mobile Header & Tabs (< md) */}
+      <div className="md:hidden">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">팀 찾기</h1>
@@ -76,41 +76,45 @@ export default function TeamPageClient({
           {session && (
             <Link
               href="/team/create"
-              className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="inline-flex items-center whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 flex-shrink-0"
             >
-              <Plus className="mr-1.5 h-4 w-4" />
-              팀 만들기
+              <Plus className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">팀 만들기</span>
             </Link>
           )}
         </div>
 
-        {/* Mobile Horizontal Tabs */}
-        <div className="mb-6 -mx-4 px-4 overflow-x-auto pb-2 scrollbar-hide">
-          <div className="flex gap-2">
-            {TABS.map((tab) => {
-              // Hide '나의 팀' if not logged in
-              if (tab.id === '나의팀' && !session) return null;
+        {/* Mobile Horizontal Tabs with gradient hint */}
+        <div className="relative mb-6">
+          <div className="-mx-4 px-4 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-2">
+              {TABS.map((tab) => {
+                // Hide '나의 팀' if not logged in
+                if (tab.id === '나의팀' && !session) return null;
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${activeTab === tab.id
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={`whitespace-nowrap rounded-full min-h-[44px] px-4 py-2 text-sm font-medium transition-colors touch-feedback ${activeTab === tab.id
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          {/* Right gradient hint for more content */}
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent" />
         </div>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10">
-        {/* Desktop Sidebar (>= lg) */}
-        <aside className="hidden lg:block">
+      <div className="md:grid md:grid-cols-[200px_1fr] md:gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
+        {/* Desktop Sidebar (>= md) */}
+        <aside className="hidden md:block">
           <div className="sticky top-24 space-y-8">
             <div>
               <h2 className="text-base font-bold text-gray-900 mb-4 px-2">팀게시판</h2>
@@ -151,7 +155,7 @@ export default function TeamPageClient({
         <div className="min-w-0">
           <div className="mb-6 space-y-4">
             {/* Desktop Section Header */}
-            <div className="hidden lg:flex items-center justify-between">
+            <div className="hidden md:flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">{activeTabLabel}</h2>
             </div>
 

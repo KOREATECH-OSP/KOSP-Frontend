@@ -67,7 +67,7 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
     return (
         <Link
             href={`/recruit/${recruit.id}`}
-            className="group relative flex flex-col justify-between gap-3 rounded-xl bg-white p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-200"
+            className="group relative flex flex-col justify-between gap-3 rounded-xl bg-white p-4 sm:p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-200 touch-feedback"
         >
             {/* Top Row: Status & D-Day */}
             <div className="flex items-start justify-between">
@@ -105,7 +105,7 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
             {/* Author & Stats */}
             <div className="flex items-center gap-2 text-xs text-gray-500">
                 <div className="flex items-center gap-1.5">
-                    <div className="relative h-5 w-5 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
+                    <div className="relative h-5 w-5 sm:h-6 sm:w-6 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
                         {recruit.author.profileImage ? (
                             <Image
                                 src={ensureEncodedUrl(recruit.author.profileImage)}
@@ -121,8 +121,8 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
                     </div>
                     <span className="font-medium text-gray-700">{recruit.author.name}</span>
                 </div>
-                <span className="text-gray-300">|</span>
-                <div className="flex items-center gap-3">
+                <span className="text-gray-300 hidden sm:inline">|</span>
+                <div className="hidden sm:flex items-center gap-3">
                     <span className="flex items-center gap-1">
                         <Heart className="h-3 w-3" />
                         {recruit.likes}

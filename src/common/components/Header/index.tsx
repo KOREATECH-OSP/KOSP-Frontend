@@ -185,7 +185,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                 {isLoggedIn && <NotificationDropdown linkMode />}
                 <button
                   type="button"
-                  className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-gray-100 transition-colors touch-feedback"
                   aria-label="모바일 메뉴 열기"
                   aria-expanded={mobileMenuOpen}
                   onClick={() => setMobileMenuOpen(true)}
@@ -227,7 +227,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-[85%] max-w-xs bg-white h-full shadow-2xl flex flex-col">
+                <Dialog.Panel className="w-full max-w-[320px] bg-white h-full shadow-2xl flex flex-col safe-area-top safe-area-bottom">
                   <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
                       <Image
@@ -241,7 +241,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     </Link>
                     <button
                       type="button"
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                      className="w-11 h-11 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-feedback"
                       aria-label="모바일 메뉴 닫기"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -262,7 +262,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                         <Link
                           key={href}
                           href={href}
-                          className="flex items-center px-4 py-3 text-[15px] font-medium text-gray-700 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          className="flex items-center px-4 py-3.5 min-h-[44px] text-[15px] font-medium text-gray-700 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors touch-feedback"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           {label}

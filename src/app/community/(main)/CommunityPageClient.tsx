@@ -97,8 +97,8 @@ export default function CommunityPageClient({
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      {/* Mobile Header & Tabs (< lg) */}
-      <div className="lg:hidden">
+      {/* Mobile Header & Tabs (< md) */}
+      <div className="md:hidden">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">커뮤니티</h1>
@@ -117,29 +117,33 @@ export default function CommunityPageClient({
           )}
         </div>
 
-        {/* Mobile Horizontal Tabs */}
-        <div className="mb-6 -mx-4 px-4 overflow-x-auto pb-2 scrollbar-hide">
-          <div className="flex gap-2">
-            {initialBoards.map((board) => (
-              <button
-                key={board.id}
-                onClick={() => handleBoardChange(board.id)}
-                disabled={isPending || isLoading}
-                className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${activeBoard === board.id
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-              >
-                {board.name}
-              </button>
-            ))}
+        {/* Mobile Horizontal Tabs with gradient hint */}
+        <div className="relative mb-6">
+          <div className="-mx-4 px-4 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-2">
+              {initialBoards.map((board) => (
+                <button
+                  key={board.id}
+                  onClick={() => handleBoardChange(board.id)}
+                  disabled={isPending || isLoading}
+                  className={`whitespace-nowrap rounded-full min-h-[44px] px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 touch-feedback ${activeBoard === board.id
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                  {board.name}
+                </button>
+              ))}
+            </div>
           </div>
+          {/* Right gradient hint for more content */}
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent" />
         </div>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10">
-        {/* Desktop Sidebar (>= lg) */}
-        <aside className="hidden lg:block">
+      <div className="md:grid md:grid-cols-[200px_1fr] md:gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
+        {/* Desktop Sidebar (>= md) */}
+        <aside className="hidden md:block">
           <div className="sticky top-24 space-y-8">
             <div>
               <h2 className="text-base font-bold text-gray-900 mb-4 px-2">커뮤니티</h2>
@@ -174,7 +178,7 @@ export default function CommunityPageClient({
 
         {/* Main Content Area */}
         <div className="min-w-0">
-          <div className="mb-6 hidden lg:flex items-center justify-between">
+          <div className="mb-6 hidden md:flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">{activeBoardName}</h2>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-500">총 {initialPagination.totalItems}개의 글</span>
@@ -211,7 +215,7 @@ export default function CommunityPageClient({
           </div>
 
           {/* 모바일 정렬 */}
-          <div className="mb-4 flex justify-end lg:hidden">
+          <div className="mb-4 flex justify-end md:hidden">
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}

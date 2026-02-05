@@ -13,11 +13,11 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
     return (
         <Link
             href={`/team/${team.id}`}
-            className="group flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300"
+            className="group flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-4 sm:p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300 touch-feedback"
         >
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
                 {/* Team Logo/Icon */}
-                <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
+                <div className="relative h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
                     {team.imageUrl ? (
                         <Image
                             src={ensureEncodedUrl(team.imageUrl)}
@@ -27,7 +27,7 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
                         />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center text-gray-400">
-                            <Users className="h-7 w-7" />
+                            <Users className="h-6 w-6 sm:h-7 sm:w-7" />
                         </div>
                     )}
                 </div>
@@ -71,8 +71,8 @@ export default function TeamCard({ team, badge }: TeamCardProps) {
             </div>
 
             {/* Description */}
-            <div className="mt-4 flex-1">
-                <p className="line-clamp-2 text-sm text-gray-500 leading-relaxed">
+            <div className="mt-3 sm:mt-4 flex-1">
+                <p className="line-clamp-2 text-sm sm:text-base text-gray-500 leading-relaxed">
                     {team.description}
                 </p>
             </div>

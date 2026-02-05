@@ -169,7 +169,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
 
   // Note: recruit.content should be sanitized server-side before storage
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-8">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-8">
       <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Main Card */}
         <article className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
@@ -185,9 +185,9 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
                 </span>
               ) : isOpen ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
-                  <span className="relative h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                  <span className="relative inline-flex h-1.5 w-1.5 flex-shrink-0">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                   </span>
                   모집중
                 </span>
@@ -392,12 +392,12 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
       </div>
 
       {/* Mobile Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 safe-area-bottom lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-lg px-4 py-3 pb-[calc(12px+var(--safe-area-bottom))] lg:hidden">
         <div className="mx-auto flex max-w-md items-center gap-3">
           <button
             onClick={handleLike}
             disabled={isLikePending}
-            className={`flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border min-h-[44px] px-4 py-2.5 text-sm font-medium transition-all touch-feedback ${
               isLiked
                 ? 'border-pink-200 bg-pink-50 text-pink-600'
                 : 'border-gray-200 bg-white text-gray-600'
@@ -409,7 +409,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
           <button
             onClick={handleBookmark}
             disabled={isBookmarkPending}
-            className={`flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border min-h-[44px] min-w-[44px] px-3 py-2.5 text-sm font-medium transition-all touch-feedback ${
               isBookmarked
                 ? 'border-amber-200 bg-amber-50 text-amber-500'
                 : 'border-gray-200 bg-white text-gray-600'
@@ -420,22 +420,22 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
 
           {/* TODO: 추후 백엔드에서 status 자동 변경 시 isNotStarted 체크 제거 */}
           {isNotStarted ? (
-            <span className="flex-1 rounded-xl bg-amber-50 py-2.5 text-center text-sm font-semibold text-amber-600 border border-amber-200">
+            <span className="flex-1 rounded-xl bg-amber-50 min-h-[44px] py-2.5 text-center text-sm font-semibold text-amber-600 border border-amber-200 flex items-center justify-center">
               모집 예정
             </span>
           ) : isOpen && recruit.canApply ? (
             <Link
               href={`/recruit/${recruit.id}/apply`}
-              className="flex-1 rounded-xl bg-gray-900 py-2.5 text-center text-sm font-bold text-white"
+              className="flex-1 rounded-xl bg-gray-900 min-h-[44px] py-2.5 text-center text-sm font-bold text-white flex items-center justify-center touch-feedback"
             >
               지원하기
             </Link>
           ) : isOpen && !recruit.canApply ? (
-            <span className="flex-1 rounded-xl bg-gray-100 py-2.5 text-center text-sm font-medium text-gray-400 border border-gray-200">
+            <span className="flex-1 rounded-xl bg-gray-100 min-h-[44px] py-2.5 text-center text-sm font-medium text-gray-400 border border-gray-200 flex items-center justify-center">
               지원 불가
             </span>
           ) : (
-            <span className="flex-1 rounded-xl bg-gray-100 py-2.5 text-center text-sm font-medium text-gray-400 border border-gray-200">
+            <span className="flex-1 rounded-xl bg-gray-100 min-h-[44px] py-2.5 text-center text-sm font-medium text-gray-400 border border-gray-200 flex items-center justify-center">
               모집 마감
             </span>
           )}

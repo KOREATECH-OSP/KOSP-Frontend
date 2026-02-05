@@ -231,26 +231,28 @@ export default function UserProfileClient({
         {/* 메인 콘텐츠 */}
         <div className="lg:col-span-2">
           {/* 탭 필터 */}
-          <div className="-mx-4 mb-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="flex">
-              {tabs.map((tab, index) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all ${activeTab === tab.key
-                    ? 'text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
-                  style={
-                    activeTab === tab.key
-                      ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
-                      : undefined
-                  }
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
+          <div className="relative -mx-4 mb-6 px-4 sm:mx-0 sm:px-0">
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex">
+                {tabs.map((tab, index) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-sm font-medium transition-all touch-feedback ${activeTab === tab.key
+                      ? 'text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                    style={
+                      activeTab === tab.key
+                        ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
+                        : undefined
+                    }
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

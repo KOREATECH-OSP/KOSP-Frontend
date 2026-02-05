@@ -169,7 +169,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 touch-feedback"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -177,7 +177,7 @@ function Pagination({
           <>
             <button
               onClick={() => onPageChange(1)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-sm text-gray-700 transition hover:bg-gray-50"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-sm text-gray-700 transition hover:bg-gray-50 touch-feedback"
             >
               1
             </button>
@@ -188,7 +188,7 @@ function Pagination({
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm transition ${
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border text-sm transition touch-feedback ${
               currentPage === page
                 ? 'border-blue-500 bg-blue-500 text-white'
                 : 'border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -202,7 +202,7 @@ function Pagination({
             {endPage < totalPages - 1 && <span className="px-1 text-gray-400">...</span>}
             <button
               onClick={() => onPageChange(totalPages)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-sm text-gray-700 transition hover:bg-gray-50"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-sm text-gray-700 transition hover:bg-gray-50 touch-feedback"
             >
               {totalPages}
             </button>
@@ -211,7 +211,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 touch-feedback"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -518,24 +518,28 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
         </div>
 
         {/* 탭 */}
-        <div className="mb-6 overflow-x-auto border-b border-gray-200">
-          <div className="flex gap-4 sm:gap-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center gap-2 whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${activeTab === tab.key
-                  ? 'border-gray-900 text-gray-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                {tab.label}
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                  {tab.count}
-                </span>
-              </button>
-            ))}
+        <div className="relative mb-6 border-b border-gray-200">
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-4 sm:gap-6">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab.key)}
+                  className={`flex items-center gap-2 whitespace-nowrap border-b-2 pb-3 min-h-[44px] text-sm font-medium transition-colors touch-feedback ${activeTab === tab.key
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  {tab.label}
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
+          {/* Right gradient hint for more content */}
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
         </div>
 
         {/* 페이지 크기 선택 (전체 탭 제외) */}

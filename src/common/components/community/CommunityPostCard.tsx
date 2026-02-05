@@ -23,7 +23,7 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
   return (
     <Link
       href={`/community/${post.id}`}
-      className="group relative flex flex-col gap-2 rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-100"
+      className="group relative flex flex-col gap-2 rounded-xl p-4 sm:p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300 border border-gray-100 touch-feedback"
       style={{
         background: post.isPinned
           ? 'linear-gradient(to right, white, rgba(59, 130, 246, 0.10))'
@@ -74,10 +74,10 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
           )}
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-3 text-gray-400 font-medium flex-shrink-0">
+        {/* Stats - hide views/bookmark on mobile for cleaner look */}
+        <div className="flex items-center gap-2 sm:gap-3 text-gray-400 font-medium flex-shrink-0">
           <span
-            className={`relative flex items-center group/bookmark ${
+            className={`relative hidden sm:flex items-center group/bookmark ${
               post.isBookmarked ? 'text-yellow-500' : ''
             }`}
           >
@@ -105,7 +105,7 @@ export default function CommunityPostCard({ post, boardName }: CommunityPostCard
             <MessageSquare className="h-3.5 w-3.5" />
             {post.comments}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="hidden sm:flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" />
             {post.views}
           </span>
