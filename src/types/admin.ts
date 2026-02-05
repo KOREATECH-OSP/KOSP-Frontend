@@ -109,13 +109,16 @@ export interface UserRoleUpdateRequest {
 // Admin Challenge Types
 // ============================================
 
+export type ChallengeIconType = 'ICON' | 'IMAGE_URL';
+
 export interface AdminChallengeResponse {
   id: number;
   name: string;
   description: string;
   condition: string;
   tier: number;
-  icon?: string;
+  icon: ChallengeIconType;
+  imageResource: string;
   point: number;
   createdAt?: string;
   updatedAt?: string;
@@ -130,7 +133,8 @@ export interface AdminChallengeCreateRequest {
   description: string;
   condition: string;
   tier: number;
-  icon?: string;
+  icon: ChallengeIconType;
+  imageResource: string;
   point: number;
 }
 
@@ -139,7 +143,8 @@ export interface AdminChallengeUpdateRequest {
   description: string;
   condition: string;
   tier: number;
-  icon?: string;
+  icon: ChallengeIconType;
+  imageResource: string;
   point: number;
 }
 
@@ -226,7 +231,7 @@ export interface AdminReportResponse {
   targetId: number;
   reason: string;
   description?: string;
-  status: 'PENDING' | 'ACCEPTED';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   createdAt: string;
   processedAt?: string;
 }

@@ -516,6 +516,7 @@ export interface RecruitApplyListResponse {
 
 export interface RecruitApplyDecisionRequest {
   status: RecruitApplicationStatus;
+  decisionReason?: string;
 }
 
 // ============================================

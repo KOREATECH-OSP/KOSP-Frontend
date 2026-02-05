@@ -31,7 +31,7 @@ export async function getRecruits(
     boardId: String(boardId),
     page: String(page - 1),
     size: String(size),
-    search: 'isDeleted==false',
+    rsql: 'isDeleted==false',
   });
   return apiClient<RecruitListResponse>(`/v1/community/recruits?${params}`, {
     cache: 'no-store',

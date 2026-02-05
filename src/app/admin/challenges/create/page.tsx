@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Trophy, Loader2, Code, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { ArrowLeft, Trophy, Loader2, Code, ChevronDown, ChevronUp, Info, Upload, Image as ImageIcon, X } from 'lucide-react';
 import { createAdminChallenge, getSpelVariables, type SpelVariable, type SpelExample } from '@/lib/api/admin';
-import type { AdminChallengeCreateRequest } from '@/types/admin';
+import type { AdminChallengeCreateRequest, ChallengeIconType } from '@/types/admin';
 import { toast } from '@/lib/toast';
 import SpelEditor from '@/common/components/SpelEditor';
 import IconPicker from '@/common/components/IconPicker';
+import { uploadFile } from '@/lib/api/upload';
 
 export default function CreateChallengePage() {
   const router = useRouter();
@@ -18,7 +19,8 @@ export default function CreateChallengePage() {
     description: '',
     condition: '',
     tier: 1,
-    icon: '',
+    icon: 'ICON',
+    imageResource: '',
     point: 0,
   });
   const [pythonCode, setPythonCode] = useState('');
@@ -26,6 +28,9 @@ export default function CreateChallengePage() {
   const [spelVariables, setSpelVariables] = useState<SpelVariable[]>([]);
   const [spelExamples, setSpelExamples] = useState<SpelExample[]>([]);
   const [showVariables, setShowVariables] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // SpEL 변수 목록 가져오기
   const fetchSpelVariables = useCallback(async () => {
@@ -44,6 +49,61 @@ export default function CreateChallengePage() {
       fetchSpelVariables();
     }
   }, [session?.accessToken, fetchSpelVariables]);
+
+  // 이미지 업로드 핸들러
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session?.accessToken) return;
+
+    // 이미지 파일 검증
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // 미리보기 URL 생성
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+
+      // 파일 업로드
+      const result = await uploadFile(file, { accessToken: session.accessToken });
+      setFormData({ ...formData, imageResource: result.url });
+      toast.success('이미지가 업로드되었습니다.');
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      toast.error('이미지 업로드에 실패했습니다.');
+      setPreviewUrl(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 이미지 제거 핸들러
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, imageResource: '' });
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // 아이콘 타입 변경 핸들러
+  const handleIconTypeChange = (iconType: ChallengeIconType) => {
+    setFormData({ ...formData, icon: iconType, imageResource: '' });
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,14 +349,98 @@ export default function CreateChallengePage() {
                 />
               </div>
 
-              {/* 아이콘 선택 */}
+              {/* 아이콘 타입 선택 */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">아이콘</label>
-                <IconPicker
-                  value={formData.icon || ''}
-                  onChange={(icon) => setFormData({ ...formData, icon })}
-                  disabled={submitting}
-                />
+                <label className="mb-2 block text-sm font-medium text-gray-700">아이콘 타입</label>
+                <div className="flex gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => handleIconTypeChange('ICON')}
+                    disabled={submitting}
+                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition-colors ${
+                      formData.icon === 'ICON'
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Trophy className="h-4 w-4" />
+                    아이콘 선택
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleIconTypeChange('IMAGE_URL')}
+                    disabled={submitting}
+                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition-colors ${
+                      formData.icon === 'IMAGE_URL'
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    이미지 업로드
+                  </button>
+                </div>
+
+                {/* 아이콘 선택 UI */}
+                {formData.icon === 'ICON' && (
+                  <IconPicker
+                    value={formData.imageResource}
+                    onChange={(iconName) => setFormData({ ...formData, imageResource: iconName })}
+                    disabled={submitting}
+                  />
+                )}
+
+                {/* 이미지 업로드 UI */}
+                {formData.icon === 'IMAGE_URL' && (
+                  <div className="space-y-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={submitting || uploading}
+                    />
+
+                    {previewUrl || formData.imageResource ? (
+                      <div className="relative inline-block">
+                        <img
+                          src={previewUrl || formData.imageResource}
+                          alt="챌린지 이미지"
+                          className="h-24 w-24 rounded-xl object-cover border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          disabled={submitting}
+                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-700 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={submitting || uploading}
+                        className="flex h-24 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                      >
+                        {uploading ? (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            업로드 중...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-5 w-5" />
+                            이미지 업로드
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 5MB)</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
