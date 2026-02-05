@@ -2,7 +2,8 @@
 
 import { Fragment, useState, useEffect, useCallback } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { Bell, Check } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth/AuthContext';
 import {
@@ -12,6 +13,11 @@ import {
   markAllNotificationsAsRead,
 } from '@/lib/api/notification';
 import type { NotificationResponse } from '@/lib/api/types';
+
+interface NotificationDropdownProps {
+  /** true이면 드롭다운 대신 알림 페이지로 이동하는 링크로 동작 */
+  linkMode?: boolean;
+}
 
 function getNotificationLink(notification: NotificationResponse): string {
   const { type, referenceId } = notification;
@@ -46,7 +52,7 @@ function formatTimeAgo(dateString: string): string {
   return date.toLocaleDateString('ko-KR');
 }
 
-export default function NotificationDropdown() {
+export default function NotificationDropdown({ linkMode = false }: NotificationDropdownProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
@@ -127,6 +133,25 @@ export default function NotificationDropdown() {
     }
   };
 
+  // 링크 모드: 클릭 시 알림 페이지로 이동 (모바일용)
+  if (linkMode) {
+    return (
+      <Link
+        href="/notification"
+        className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+        aria-label="알림"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
+  // 드롭다운 모드: 드롭다운으로 알림 표시 (데스크톱용)
   return (
     <Menu as="div" className="relative">
       {({ open }) => (

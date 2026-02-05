@@ -180,24 +180,23 @@ function Header({ simple = false, session = null }: HeaderProps) {
                 )}
               </div>
 
-              {isLoggedIn && (
-                <div className="lg:hidden">
-                  <NotificationDropdown />
-                </div>
-              )}
-              <button
-                type="button"
-                className="lg:hidden flex items-center justify-center w-10 h-10 -mr-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="모바일 메뉴 열기"
-                aria-expanded={mobileMenuOpen}
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <div className="flex flex-col gap-1.5">
-                  <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
-                  <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
-                  <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
-                </div>
-              </button>
+              {/* 모바일 우측 버튼 그룹 */}
+              <div className="lg:hidden flex items-center gap-1">
+                {isLoggedIn && <NotificationDropdown linkMode />}
+                <button
+                  type="button"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="모바일 메뉴 열기"
+                  aria-expanded={mobileMenuOpen}
+                  onClick={() => setMobileMenuOpen(true)}
+                >
+                  <div className="flex flex-col gap-1.5">
+                    <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
+                    <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
+                    <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
+                  </div>
+                </button>
+              </div>
             </>
           )}
         </div>
