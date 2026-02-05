@@ -242,13 +242,13 @@ export default function CommunityPageClient({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-3">
             {isPending || isLoading ? (
-              <div className="col-span-full flex items-center justify-center py-20">
+              <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
             ) : articles.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20 text-center">
                 <MessageSquare className="mb-3 h-10 w-10 text-gray-300" />
                 <p className="text-gray-500 font-medium">게시글이 없습니다.</p>
                 <p className="mt-1 text-sm text-gray-400">
