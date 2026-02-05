@@ -10,19 +10,11 @@ const PROTECTED_ROUTES = [
   '/community/write',
 ];
 
-// 인증된 사용자가 접근하면 안 되는 라우트
-const AUTH_ROUTES = ['/login', '/signup'];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const accessToken = request.cookies.get(COOKIE_NAMES.ACCESS_TOKEN)?.value;
   const isAuthenticated = !!accessToken;
-
-  // 인증된 사용자가 로그인/회원가입 페이지 접근 시 홈으로 리다이렉트
-  if (isAuthenticated && AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
 
   // 보호된 라우트에 미인증 사용자 접근 시 로그인으로 리다이렉트
   if (!isAuthenticated && PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
@@ -41,8 +33,5 @@ export const config = {
     '/user/edit/:path*',
     '/team/create/:path*',
     '/community/write/:path*',
-    // 인증 라우트
-    '/login',
-    '/signup',
   ],
 };
