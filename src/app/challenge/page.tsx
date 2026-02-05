@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from '@/lib/auth/AuthContext';
 import {
   Trophy,
-  Zap,
+  Star,
   CheckCircle2,
   Loader2,
   ArrowRight,
@@ -246,7 +246,7 @@ export default function ChallengePage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Zap className="h-4 w-4 text-amber-500" />
+                      <Star className="h-4 w-4 text-amber-500" />
                       <span className="text-lg font-bold text-gray-900">{totalPoints.toLocaleString()}</span>
                     </div>
                   </div>
@@ -302,7 +302,7 @@ export default function ChallengePage() {
                           {getTierLabel(challenge.tier)}
                         </span>
                         <span className="flex items-center gap-1 text-[11px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                          <Zap className="h-3 w-3" />
+                          <Star className="h-3 w-3" />
                           +{challenge.point.toLocaleString()}P
                         </span>
                       </div>

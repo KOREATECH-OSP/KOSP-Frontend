@@ -19,6 +19,7 @@ interface TeamRecruitSectionProps {
 const STATUS_GRADIENTS: Record<string, string> = {
   마감임박: 'bg-gradient-to-l from-red-200/70 via-transparent',
   모집중: 'bg-gradient-to-l from-green-200/70 via-transparent',
+  모집예정: 'bg-gradient-to-l from-amber-200/70 via-transparent',
 };
 
 const getStatusGradient = (status: string) =>

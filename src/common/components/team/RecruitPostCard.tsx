@@ -27,9 +27,23 @@ function calculateDday(endDate: string | null): string {
     return `D-${diffDays}`;
 }
 
+// TODO: 추후 백엔드에서 startDate/endDate 기반으로 status를 자동 변경하도록 처리 필요
+// 현재는 프론트엔드에서 임시로 날짜 체크하여 모집 예정/마감 처리
+function checkIsNotStarted(startDate: string): boolean {
+    const now = new Date();
+    const start = new Date(startDate);
+    now.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    return start.getTime() > now.getTime();
+}
+
 function getRecruitStatus(recruit: RecruitResponse, dday: string): string {
     if (recruit.status === 'CLOSED') return '마감';
     if (dday === '마감') return '마감';
+
+    // 시작일이 미래인 경우 모집예정
+    if (checkIsNotStarted(recruit.startDate)) return '모집예정';
+
     const days = parseInt(dday.replace('D-', ''));
     if (!isNaN(days) && days <= 3) return '마감임박';
     return '모집중';
@@ -37,8 +51,9 @@ function getRecruitStatus(recruit: RecruitResponse, dday: string): string {
 
 export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
     const dday = calculateDday(recruit.endDate);
-    const isClosed = recruit.status === 'CLOSED' || dday === '마감';
     const displayStatus = getRecruitStatus(recruit, dday);
+    const isClosed = displayStatus === '마감';
+    const isNotStarted = displayStatus === '모집예정';
 
     // Determine status color/style based on D-Day
     const getDDayStyle = () => {
@@ -58,7 +73,7 @@ export default function RecruitPostCard({ recruit }: RecruitPostCardProps) {
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                     <StatusTag recruit={{ status: displayStatus }} />
-                    {!isClosed && (
+                    {!isClosed && !isNotStarted && (
                         <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-bold ${getDDayStyle()}`}>
                             {dday}
                         </span>
