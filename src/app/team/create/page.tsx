@@ -299,11 +299,20 @@ export default function CreateTeamPage() {
           {/* Main Form Area */}
           <div className="flex-1 max-w-[720px]">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-[28px] font-bold tracking-tight text-gray-900">새 팀 만들기</h1>
-              <p className="mt-2 text-[15px] text-gray-500">
-                프로젝트를 함께할 멋진 팀을 만들어보세요
-              </p>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-[28px] font-bold tracking-tight text-gray-900">새 팀 만들기</h1>
+                <p className="mt-2 text-[15px] text-gray-500">
+                  프로젝트를 함께할 멋진 팀을 만들어보세요
+                </p>
+              </div>
+              <Image
+                src={require('@/assets/images/kori/11-09 M-1 응원 .png')}
+                alt="응원하는 코리"
+                width={120}
+                height={120}
+                className="w-12 sm:w-14 h-auto"
+              />
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
