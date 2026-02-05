@@ -359,9 +359,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           {activeTab === '활동' && (
             <div className="space-y-4">
               {/* 통계 수집 안내 문구 */}
-              <p className="text-xs text-slate-500">
-                통계는 최초 가입 시 우선 수집되며, 이후 주기적으로 증분 수집됩니다. (마지막 수집 시점부터 현재까지)
-              </p>
+              <div className="space-y-0.5 text-xs text-slate-500">
+                <p>- 통계는 최초 가입 시 우선 수집되며, 이후 주기적으로 증분 수집됩니다. (마지막 수집 시점부터 현재까지)</p>
+                <p>- 더 다양한 통계를 준비 중이니 기대해주세요!</p>
+              </div>
 
               {/* 데이터가 모두 없을 때 블러 처리된 통계 UI */}
               {!overallHistory && !contributionScore && recentActivity.length === 0 ? (
