@@ -44,3 +44,5 @@ next-env.d.ts
 .claude
 claude.md
 .vscode
+# Sentry Config File
+.env.sentry-build-plugin
