@@ -15,7 +15,6 @@ import {
   Star,
   AlertCircle,
   Loader2,
-  Code,
   FolderGit,
   ExternalLink,
   TrendingUp,
@@ -231,129 +230,90 @@ export default function UserProfileClient({
         {/* 메인 콘텐츠 */}
         <div className="lg:col-span-2">
           {/* 탭 필터 */}
-          <div className="relative -mx-4 mb-6 px-4 sm:mx-0 sm:px-0">
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex">
-                {tabs.map((tab, index) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-sm font-medium transition-all touch-feedback ${activeTab === tab.key
+          <div className="sticky top-14 z-20 -mx-4 mb-6 border-b border-gray-200/60 bg-gray-50 px-4 pb-3 pt-4 sm:relative sm:top-0 sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 lg:static">
+            <div className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {tabs.map((tab, index) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex flex-shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all ${
+                    activeTab === tab.key
                       ? 'text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
-                    style={
-                      activeTab === tab.key
-                        ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
-                        : undefined
-                    }
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+                  } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                  style={
+                    activeTab === tab.key
+                      ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
+                      : undefined
+                  }
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {activeTab === '활동' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* 데이터가 모두 없을 때 블러 처리된 통계 UI */}
               {!overallHistory && !contributionScore && recentActivity.length === 0 ? (
                 <div className="relative">
                   {/* 블러된 더미 통계 UI */}
-                  <div className="pointer-events-none select-none space-y-6 blur-sm">
-                    {/* 더미 기여 점수 카드 */}
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-slate-50 to-gray-100">
-                      <div className="border-b border-gray-200/50 bg-white/60 px-6 py-4 backdrop-blur-sm">
-                        <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                          <TrendingUp className="h-4 w-4 text-blue-500" />
-                          Contribution Score
-                        </h2>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 sm:p-6">
-                        <div className="mb-2 bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-black text-transparent">
-                          A
+                  <div className="pointer-events-none select-none space-y-4 blur-sm">
+                    {/* 더미 GitHub Rank Card 영역 */}
+                    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="h-16 w-16 rounded-xl bg-slate-700" />
+                          <div>
+                            <div className="h-6 w-32 rounded bg-slate-700" />
+                            <div className="mt-2 h-4 w-24 rounded bg-slate-700/50" />
+                          </div>
                         </div>
-                        <div className="mb-2 flex gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`h-5 w-5 ${i < 4 ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} />
-                          ))}
+                        <div className="text-right">
+                          <div className="h-4 w-20 rounded bg-slate-700/50" />
+                          <div className="mt-2 h-10 w-28 rounded bg-gradient-to-r from-amber-500 to-amber-300" />
                         </div>
-                        <span className="text-sm font-bold uppercase tracking-wide text-gray-700">Expert</span>
-                        <div className="mt-4 text-2xl font-bold text-gray-900">75.0</div>
                       </div>
                     </div>
 
                     {/* 더미 점수 상세 */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                        <Activity className="mx-auto mb-2 h-5 w-5 text-blue-500" />
-                        <div className="text-xl font-bold text-gray-900">25.0</div>
-                        <div className="text-xs text-gray-500">Activity</div>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                        <Sparkles className="mx-auto mb-2 h-5 w-5 text-purple-500" />
-                        <div className="text-xl font-bold text-gray-900">25.0</div>
-                        <div className="text-xs text-gray-500">Diversity</div>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                        <Zap className="mx-auto mb-2 h-5 w-5 text-amber-500" />
-                        <div className="text-xl font-bold text-gray-900">25.0</div>
-                        <div className="text-xs text-gray-500">Impact</div>
-                      </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {['Activity', 'Diversity', 'Impact'].map((label) => (
+                        <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 text-center">
+                          <div className="mx-auto mb-2 h-5 w-5 rounded bg-slate-700" />
+                          <div className="mx-auto h-6 w-12 rounded bg-slate-700" />
+                          <div className="mx-auto mt-1 h-3 w-16 rounded bg-slate-700/50" />
+                        </div>
+                      ))}
                     </div>
 
                     {/* 더미 Contribution Overview */}
-                    <div className="overflow-hidden rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-4 sm:p-6">
-                      <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-white sm:mb-6">
-                        <Github className="h-4 w-4" />
-                        Contribution Overview
-                      </h2>
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6">
-                        <div className="text-center">
-                          <GitCommit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">1,234</div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Commits</div>
-                        </div>
-                        <div className="text-center">
-                          <GitPullRequest className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">89</div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Pull Requests</div>
-                        </div>
-                        <div className="text-center">
-                          <AlertCircle className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">56</div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Issues</div>
-                        </div>
-                        <div className="text-center">
-                          <FolderGit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">23</div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Repositories</div>
-                        </div>
-                        <div className="text-center">
-                          <TrendingUp className="mx-auto mb-1.5 h-5 w-5 text-green-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-green-400 sm:text-3xl">+45,678</div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Additions</div>
-                        </div>
-                        <div className="text-center">
-                          <TrendingUp className="mx-auto mb-1.5 h-5 w-5 rotate-180 text-red-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-red-400 sm:text-3xl">-12,345</div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Deletions</div>
-                        </div>
+                    <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/50 p-6">
+                      <div className="mb-4 h-5 w-40 rounded bg-slate-700" />
+                      <div className="grid grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="text-center">
+                            <div className="mx-auto mb-2 h-6 w-6 rounded bg-slate-700" />
+                            <div className="mx-auto h-7 w-16 rounded bg-slate-700" />
+                            <div className="mx-auto mt-1 h-3 w-12 rounded bg-slate-700/50" />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
                   {/* 오버레이 메시지 */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="rounded-xl bg-white/95 px-6 py-4 shadow-lg">
+                    <div className="rounded-xl border border-slate-700 bg-slate-900/95 px-6 py-4 shadow-2xl">
                       <div className="text-center">
-                        <p className="text-sm font-medium text-gray-700">
-                          GitHub 통계를 수집 중입니다.
+                        <Github className="mx-auto mb-2 h-8 w-8 text-slate-500" />
+                        <p className="text-sm font-medium text-slate-300">
+                          GitHub 통계를 수집 중입니다
                         </p>
-                        <p className="mt-1 text-xs text-gray-400">
-                          이 작업은 오래 걸립니다. 나중에 다시 방문하여 확인해주세요.
+                        <p className="mt-1 text-xs text-slate-500">
+                          잠시 후 다시 확인해주세요
                         </p>
                       </div>
                     </div>
@@ -368,6 +328,7 @@ export default function UserProfileClient({
                       profileImage={profile.profileImage}
                       rank={getRankFromScore(contributionScore.totalScore)}
                       totalScore={contributionScore.totalScore}
+                      tierLabel={`${profile.name}님의 티어`}
                       stats={{
                         commits: overallHistory.totalCommitCount,
                         pullRequests: overallHistory.totalPrCount,
@@ -379,23 +340,29 @@ export default function UserProfileClient({
 
                   {/* 점수 상세 */}
                   {contributionScore && (
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                        <Activity className="mx-auto mb-2 h-5 w-5 text-blue-500" />
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                        <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
+                          <Activity className="h-5 w-5 text-blue-500" />
+                        </div>
                         <div className="text-xl font-bold text-gray-900">
                           {contributionScore.activityScore.toFixed(1)}
                         </div>
                         <div className="text-xs text-gray-500">Activity</div>
                       </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                        <Sparkles className="mx-auto mb-2 h-5 w-5 text-purple-500" />
+                      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                        <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50">
+                          <Sparkles className="h-5 w-5 text-purple-500" />
+                        </div>
                         <div className="text-xl font-bold text-gray-900">
                           {contributionScore.diversityScore.toFixed(1)}
                         </div>
                         <div className="text-xs text-gray-500">Diversity</div>
                       </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-                        <Zap className="mx-auto mb-2 h-5 w-5 text-amber-500" />
+                      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                        <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50">
+                          <Zap className="h-5 w-5 text-amber-500" />
+                        </div>
                         <div className="text-xl font-bold text-gray-900">
                           {contributionScore.impactScore.toFixed(1)}
                         </div>
@@ -406,83 +373,76 @@ export default function UserProfileClient({
 
                   {/* Contribution Overview */}
                   {overallHistory && (
-                    <div className="overflow-hidden rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-4 sm:p-6">
-                      <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-white sm:mb-6">
-                        <Github className="h-4 w-4" />
-                        Contribution Overview
-                      </h2>
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6">
-                        <div className="text-center">
-                          <GitCommit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                      <div className="border-b border-gray-100 px-5 py-4">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <Github className="h-4 w-4 text-gray-500" />
+                          Contribution Overview
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-2 divide-x divide-y divide-gray-100 sm:grid-cols-3">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <GitCommit className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
                             {overallHistory.totalCommitCount.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Commits</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Commits</div>
                           {comparison && (
-                            <div className="mx-auto mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-                              <span className="text-[10px] text-gray-400">
-                                평균 {Math.round(comparison.avgCommitCount).toLocaleString()}
-                              </span>
-                              <span className={`text-[10px] font-semibold ${overallHistory.totalCommitCount >= comparison.avgCommitCount ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {overallHistory.totalCommitCount >= comparison.avgCommitCount ? '▲' : '▼'}{Math.abs(overallHistory.totalCommitCount - comparison.avgCommitCount).toLocaleString()}
+                            <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${overallHistory.totalCommitCount >= comparison.avgCommitCount ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                              <span className={`text-[10px] font-medium ${overallHistory.totalCommitCount >= comparison.avgCommitCount ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {overallHistory.totalCommitCount >= comparison.avgCommitCount ? '▲' : '▼'} 평균 대비 {Math.abs(overallHistory.totalCommitCount - Math.round(comparison.avgCommitCount)).toLocaleString()}
                               </span>
                             </div>
                           )}
                         </div>
-                        <div className="text-center">
-                          <GitPullRequest className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <GitPullRequest className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
                             {overallHistory.totalPrCount.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Pull Requests</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Pull Requests</div>
                           {comparison && (
-                            <div className="mx-auto mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-                              <span className="text-[10px] text-gray-400">
-                                평균 {Math.round(comparison.avgPrCount).toLocaleString()}
-                              </span>
-                              <span className={`text-[10px] font-semibold ${overallHistory.totalPrCount >= comparison.avgPrCount ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {overallHistory.totalPrCount >= comparison.avgPrCount ? '▲' : '▼'}{Math.abs(overallHistory.totalPrCount - comparison.avgPrCount).toLocaleString()}
+                            <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${overallHistory.totalPrCount >= comparison.avgPrCount ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                              <span className={`text-[10px] font-medium ${overallHistory.totalPrCount >= comparison.avgPrCount ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {overallHistory.totalPrCount >= comparison.avgPrCount ? '▲' : '▼'} 평균 대비 {Math.abs(overallHistory.totalPrCount - Math.round(comparison.avgPrCount)).toLocaleString()}
                               </span>
                             </div>
                           )}
                         </div>
-                        <div className="text-center">
-                          <AlertCircle className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <AlertCircle className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
                             {overallHistory.totalIssueCount.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Issues</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Issues</div>
                           {comparison && (
-                            <div className="mx-auto mt-2 flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-2 py-1">
-                              <span className="text-[10px] text-gray-400">
-                                평균 {Math.round(comparison.avgIssueCount).toLocaleString()}
-                              </span>
-                              <span className={`text-[10px] font-semibold ${overallHistory.totalIssueCount >= comparison.avgIssueCount ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {overallHistory.totalIssueCount >= comparison.avgIssueCount ? '▲' : '▼'}{Math.abs(overallHistory.totalIssueCount - comparison.avgIssueCount).toLocaleString()}
+                            <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${overallHistory.totalIssueCount >= comparison.avgIssueCount ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                              <span className={`text-[10px] font-medium ${overallHistory.totalIssueCount >= comparison.avgIssueCount ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {overallHistory.totalIssueCount >= comparison.avgIssueCount ? '▲' : '▼'} 평균 대비 {Math.abs(overallHistory.totalIssueCount - Math.round(comparison.avgIssueCount)).toLocaleString()}
                               </span>
                             </div>
                           )}
                         </div>
-                        <div className="text-center">
-                          <FolderGit className="mx-auto mb-1.5 h-5 w-5 text-gray-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-white sm:text-3xl">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <FolderGit className="mb-1.5 h-5 w-5 text-gray-400" />
+                          <div className="text-xl font-bold text-gray-900 sm:text-2xl">
                             {overallHistory.contributedRepoCount.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Repositories</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Repositories</div>
                         </div>
-                        <div className="text-center">
-                          <TrendingUp className="mx-auto mb-1.5 h-5 w-5 text-green-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-green-400 sm:text-3xl">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <TrendingUp className="mb-1.5 h-5 w-5 text-emerald-500" />
+                          <div className="text-xl font-bold text-emerald-600 sm:text-2xl">
                             +{overallHistory.totalAdditions.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Additions</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Additions</div>
                         </div>
-                        <div className="text-center">
-                          <TrendingUp className="mx-auto mb-1.5 h-5 w-5 rotate-180 text-red-400 sm:mb-2 sm:h-6 sm:w-6" />
-                          <div className="text-2xl font-bold text-red-400 sm:text-3xl">
+                        <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
+                          <TrendingUp className="mb-1.5 h-5 w-5 rotate-180 text-red-500" />
+                          <div className="text-xl font-bold text-red-600 sm:text-2xl">
                             -{overallHistory.totalDeletions.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-gray-400 sm:text-xs">Deletions</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Deletions</div>
                         </div>
                       </div>
                     </div>
@@ -490,31 +450,36 @@ export default function UserProfileClient({
 
                   {/* Recent Contributions */}
                   {recentActivity.length > 0 && (
-                    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-                      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
-                        <FolderGit className="h-4 w-4" />
-                        Recent Contributions
-                      </h2>
-                      <div className="space-y-3">
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <FolderGit className="h-4 w-4 text-gray-500" />
+                          Recent Contributions
+                        </h2>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                          {recentActivity.length}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
                         {(showAllRepos ? recentActivity : recentActivity.slice(0, 5)).map((repo, idx) => (
                           <a
                             key={idx}
                             href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
+                            className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-gray-50"
                           >
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="truncate font-medium text-gray-900">
+                                <span className="truncate text-sm font-medium text-gray-900">
                                   {repo.repoOwner}/{repo.repositoryName}
                                 </span>
                                 <ExternalLink className="h-3 w-3 flex-shrink-0 text-gray-400" />
                               </div>
                               {repo.description && (
-                                <p className="mt-1 truncate text-xs text-gray-500">{repo.description}</p>
+                                <p className="mt-0.5 truncate text-xs text-gray-500">{repo.description}</p>
                               )}
-                              <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+                              <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
                                 <span className="flex items-center gap-1">
                                   <GitCommit className="h-3 w-3" />
                                   {repo.userCommitCount}
@@ -524,7 +489,7 @@ export default function UserProfileClient({
                                   {repo.userPrCount}
                                 </span>
                                 <span className="flex items-center gap-1">
-                                  <Star className="h-3 w-3" />
+                                  <Star className="h-3 w-3 text-amber-500" />
                                   {repo.stargazersCount}
                                 </span>
                               </div>
@@ -533,64 +498,30 @@ export default function UserProfileClient({
                         ))}
                       </div>
                       {recentActivity.length > 5 && (
-                        <button
-                          onClick={() => setShowAllRepos(!showAllRepos)}
-                          className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-                        >
-                          {showAllRepos ? (
-                            <>
-                              접기
-                              <ChevronUp className="h-4 w-4" />
-                            </>
-                          ) : (
-                            <>
-                              더보기 ({recentActivity.length - 5}개)
-                              <ChevronDown className="h-4 w-4" />
-                            </>
-                          )}
-                        </button>
+                        <div className="border-t border-gray-100 p-3">
+                          <button
+                            onClick={() => setShowAllRepos(!showAllRepos)}
+                            className="flex w-full items-center justify-center gap-1 rounded-lg bg-gray-100 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
+                          >
+                            {showAllRepos ? (
+                              <>
+                                접기
+                                <ChevronUp className="h-4 w-4" />
+                              </>
+                            ) : (
+                              <>
+                                더보기 ({recentActivity.length - 5}개)
+                                <ChevronDown className="h-4 w-4" />
+                              </>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
                   )}
                 </>
               )}
 
-              {/* 언어 통계 (블러 처리) */}
-              <div className="relative rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-                <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900 sm:mb-4">
-                  <Code className="h-4 w-4" />
-                  Language Stats
-                </h2>
-                <div className="relative">
-                  {/* 블러된 더미 콘텐츠 */}
-                  <div className="pointer-events-none select-none blur-sm">
-                    <div className="space-y-2">
-                      {['TypeScript', 'JavaScript', 'Python', 'Go', 'Rust'].map((lang, i) => (
-                        <div key={lang} className="flex items-center gap-3">
-                          <span className="w-20 truncate text-sm text-gray-700">{lang}</span>
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-gray-700 to-gray-900"
-                              style={{ width: `${80 - i * 15}%` }}
-                            />
-                          </div>
-                          <span className="w-12 text-right text-xs text-gray-500">
-                            {(40 - i * 8).toFixed(1)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {/* 오버레이 메시지 */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="rounded-lg bg-white/90 px-4 py-2 shadow-sm">
-                      <p className="text-sm font-medium text-gray-600">
-                        언어 통계는 곧 만나보실 수 있습니다.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

@@ -23,6 +23,7 @@ interface GithubRankCardProps {
   rank: RankType;
   totalScore: number;
   maxScore?: number;
+  tierLabel?: string;
   stats: {
     commits: number;
     pullRequests: number;
@@ -110,6 +111,7 @@ export default function GithubRankCard({
   profileImage,
   rank,
   totalScore,
+  tierLabel,
   stats,
 }: GithubRankCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -451,7 +453,7 @@ export default function GithubRankCard({
                         <div className="relative rounded-md bg-green-500 px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg">
                           {/* 말풍선 꼬리 (위쪽) */}
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-green-500" />
-                          내 티어
+                          {tierLabel || '내 티어'}
                         </div>
                       </div>
                     )}
