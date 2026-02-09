@@ -31,6 +31,8 @@ function LoginContent() {
 
     setIsLoading(true);
     try {
+      // 기존 쿠키가 있으면 제거 (httpOnly 쿠키이므로 서버 API 호출)
+      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
       const result = await login(email, password);
 
       if (!result.success) {
@@ -47,11 +49,13 @@ function LoginContent() {
     }
   };
 
-  const handleGithubLogin = () => {
+  const handleGithubLogin = async () => {
     if (!GITHUB_CLIENT_ID) {
       toast.error('GitHub 로그인이 설정되지 않았습니다');
       return;
     }
+    // 기존 쿠키가 있으면 제거 (httpOnly 쿠키이므로 서버 API 호출)
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     window.sessionStorage.setItem('kosp:oauth-from', 'login');
     if (callbackUrl && callbackUrl !== '/') {
       window.sessionStorage.setItem('kosp:oauth-callback', callbackUrl);
