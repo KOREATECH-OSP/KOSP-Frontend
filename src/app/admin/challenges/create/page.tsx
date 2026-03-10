@@ -216,6 +216,9 @@ export default function CreateChallengePage() {
       hasCompound = prevPython !== python;
     }
 
+    python = python.replace(/T\(Math\)\.min\(/g, 'min(');
+    python = python.replace(/T\(Math\)\.max\(/g, 'max(');
+
     // 불필요한 괄호 정리 (최외곽 괄호만)
     python = python.trim();
     if (python.startsWith('(') && python.endsWith(')')) {
@@ -238,7 +241,7 @@ export default function CreateChallengePage() {
     // 연산자 변환
     python = python.replace(/&&/g, 'and');
     python = python.replace(/\|\|/g, 'or');
-    python = python.replace(/!/g, 'not ');
+    python = python.replace(/!(?!=)/g, 'not ');
     python = python.replace(/\btrue\b/g, 'True');
     python = python.replace(/\bfalse\b/g, 'False');
 

@@ -1,4 +1,4 @@
-import { clientApiClient } from './client';
+import { ApiException, clientApiClient } from './client';
 import type {
   PermissionResponse,
   PermissionListResponse,
@@ -12,6 +12,8 @@ import type {
   RoleCreateRequest,
   RoleUpdateRequest,
   AdminUserListResponse,
+  AdminUserResponse,
+  AdminUserUpdateRequest,
   AdminChallengeResponse,
   AdminChallengeListResponse,
   AdminChallengeCreateRequest,
@@ -268,6 +270,8 @@ interface GetUsersParams {
   size?: number;
 }
 
+const ADMIN_USER_SCAN_PAGE_SIZE = 100;
+
 /**
  * 회원 목록 조회 (관리자용)
  */
@@ -293,7 +297,7 @@ export async function getAdminUsers(
  */
 export async function updateAdminUser(
   userId: number,
-  data: { name?: string; introduction?: string; profileImageUrl?: string },
+  data: AdminUserUpdateRequest,
   auth: AuthOptions
 ): Promise<void> {
   await clientApiClient<void>(`/v1/admin/users/${userId}`, {
@@ -301,6 +305,32 @@ export async function updateAdminUser(
     body: data,
     accessToken: auth.accessToken,
   });
+}
+
+/**
+ * 사용자 단건 조회 대체
+ * 관리 API 명세에 단건 GET이 없어 목록 API를 순회하여 사용자를 찾음
+ */
+export async function getAdminUserById(
+  userId: number,
+  auth: AuthOptions
+): Promise<AdminUserResponse> {
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const data = await getAdminUsers({ page, size: ADMIN_USER_SCAN_PAGE_SIZE }, auth);
+    const found = data.users.find((user) => user.id === userId);
+
+    if (found) {
+      return found;
+    }
+
+    totalPages = data.totalPages || 1;
+    page += 1;
+  }
+
+  throw new ApiException(404, '사용자를 찾을 수 없습니다.');
 }
 
 /**

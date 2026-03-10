@@ -29,6 +29,8 @@ function pythonToSpel(python: string): string {
   // Python 불리언을 SpEL로 변환
   spel = spel.replace(/\bTrue\b/g, 'true');
   spel = spel.replace(/\bFalse\b/g, 'false');
+  spel = spel.replace(/\bmin\(/g, 'T(Math).min(');
+  spel = spel.replace(/\bmax\(/g, 'T(Math).max(');
 
   return spel;
 }
@@ -282,6 +284,8 @@ export default function SpelEditor({
           { label: 'and', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'and', detail: '논리 AND (&&)', range },
           { label: 'or', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'or', detail: '논리 OR (||)', range },
           { label: 'not', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'not ', detail: '논리 NOT (!)', range },
+          { label: 'min', kind: monaco.languages.CompletionItemKind.Function, insertText: 'min(${1:a}, ${2:b})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: '최솟값 함수', range },
+          { label: 'max', kind: monaco.languages.CompletionItemKind.Function, insertText: 'max(${1:a}, ${2:b})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: '최댓값 함수', range },
           { label: 'True', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'True', detail: '참', range },
           { label: 'False', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'False', detail: '거짓', range },
         ];

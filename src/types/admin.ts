@@ -96,7 +96,9 @@ export interface AdminUserListResponse {
 }
 
 export interface AdminUserUpdateRequest {
-  name?: string;
+  name: string;
+  kutEmail: string;
+  kutId: string;
   introduction?: string;
   profileImageUrl?: string;
 }
