@@ -275,12 +275,12 @@ export default function GithubRankCard({
             {/* Rank */}
             <div className="z-10 text-left sm:text-right" style={{ transform: 'translateZ(30px)' }}>
               <div className="mb-1 flex items-center gap-1.5 sm:justify-end">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80 sm:text-xs">
                   Current Rank
                 </span>
                 <button
                   onClick={() => setShowTierInfo(true)}
-                  className="rounded-full p-0.5 text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-300"
+                  className="rounded-full p-0.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label="티어 기준 보기"
                 >
                   <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -295,7 +295,7 @@ export default function GithubRankCard({
               >
                 {data.title}
               </div>
-              <div className="mt-1 text-xs font-light text-slate-400 sm:text-sm">
+              <div className="mt-1 text-xs font-light text-white/80 sm:text-sm">
                 <span className="font-medium text-white">{data.percent}</span> of developers
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function GithubRankCard({
               <span className="text-lg font-bold text-white sm:text-xl">
                 {stats.commits.toLocaleString()}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">
+              <span className="text-[10px] uppercase tracking-wider text-white/80 sm:text-xs">
                 Commits
               </span>
             </div>
@@ -320,7 +320,7 @@ export default function GithubRankCard({
               <span className="text-lg font-bold text-white sm:text-xl">
                 {stats.pullRequests.toLocaleString()}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">
+              <span className="text-[10px] uppercase tracking-wider text-white/80 sm:text-xs">
                 Pull Requests
               </span>
             </div>
@@ -329,7 +329,7 @@ export default function GithubRankCard({
               <span className="text-lg font-bold text-white sm:text-xl">
                 {stats.issues.toLocaleString()}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">
+              <span className="text-[10px] uppercase tracking-wider text-white/80 sm:text-xs">
                 Issues
               </span>
             </div>
@@ -338,8 +338,8 @@ export default function GithubRankCard({
               <span className="text-lg font-bold text-white sm:text-xl">
                 {stats.repositories.toLocaleString()}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 sm:text-xs">
-                Repositories
+              <span className="text-[10px] uppercase tracking-wider text-white/80 sm:text-xs">
+                Recent Repos
               </span>
             </div>
           </div>
@@ -350,7 +350,7 @@ export default function GithubRankCard({
             style={{ transform: 'translateZ(20px)' }}
           >
             <div className="mb-3 flex justify-between text-xs sm:text-sm">
-              <span className="text-slate-400">Progress to next tier</span>
+              <span className="text-white/80">Progress to next tier</span>
               <span className="font-mono text-white">
                 {totalScore.toFixed(1)} / {data.maxScore} pts
               </span>
