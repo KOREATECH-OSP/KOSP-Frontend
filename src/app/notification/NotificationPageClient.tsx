@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import type { AuthSession } from '@/lib/auth/types';
-import { Bell, Check, Trash2, Trophy, Award, AlertTriangle, Settings, Loader2 } from 'lucide-react';
+import { Bell, Check, Trash2, Trophy, Award, AlertTriangle, Settings, Loader2, UserPlus } from 'lucide-react';
 import {
   getNotifications,
   markNotificationAsRead,
@@ -17,7 +17,7 @@ import Pagination from '@/common/components/Pagination';
 
 const PAGE_SIZE = 10;
 
-type FilterType = '전체' | '신고' | '챌린지' | '포인트' | '시스템';
+type FilterType = '전체' | '신고' | '챌린지' | '포인트' | '팀' | '시스템';
 
 interface NotificationPageClientProps {
   session: AuthSession | null;
@@ -28,6 +28,7 @@ const FILTERS: { id: FilterType; label: string; types: NotificationType[] | null
   { id: '신고', label: '신고', types: ['ARTICLE_REPORTED', 'COMMENT_REPORTED'] },
   { id: '챌린지', label: '챌린지', types: ['CHALLENGE_ACHIEVED'] },
   { id: '포인트', label: '포인트', types: ['POINT_EARNED'] },
+  { id: '팀', label: '팀', types: ['TEAM_INVITED'] },
   { id: '시스템', label: '시스템', types: ['SYSTEM'] },
 ];
 
@@ -40,6 +41,8 @@ const getNotificationIcon = (type: NotificationType) => {
       return <Trophy className="h-4 w-4" />;
     case 'POINT_EARNED':
       return <Award className="h-4 w-4" />;
+    case 'TEAM_INVITED':
+      return <UserPlus className="h-4 w-4" />;
     case 'SYSTEM':
       return <Settings className="h-4 w-4" />;
     default:
@@ -56,6 +59,8 @@ const getNotificationColor = (type: NotificationType) => {
       return 'bg-amber-100 text-amber-600';
     case 'POINT_EARNED':
       return 'bg-green-100 text-green-600';
+    case 'TEAM_INVITED':
+      return 'bg-sky-100 text-sky-600';
     case 'SYSTEM':
       return 'bg-gray-100 text-gray-600';
     default:
@@ -76,6 +81,8 @@ const getNotificationLink = (notification: NotificationResponse): string => {
       return '/challenge';
     case 'POINT_EARNED':
       return '/user/points';
+    case 'TEAM_INVITED':
+      return `/team/invite/${referenceId}`;
     case 'SYSTEM':
     default:
       return '#';

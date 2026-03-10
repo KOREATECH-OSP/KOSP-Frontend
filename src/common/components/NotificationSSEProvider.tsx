@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import type { NotificationResponse, NotificationType } from '@/lib/api/types';
-import { Bell, Trophy, Award, AlertTriangle, Settings } from 'lucide-react';
+import { Bell, Trophy, Award, AlertTriangle, Settings, UserPlus } from 'lucide-react';
 import { tokenManager } from '@/lib/auth/token-manager';
 import { signOutOnce } from '@/lib/auth/signout';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
@@ -24,6 +24,8 @@ function getNotificationIcon(type: NotificationType) {
       return <Trophy className="h-4 w-4 text-amber-500" />;
     case 'POINT_EARNED':
       return <Award className="h-4 w-4 text-green-500" />;
+    case 'TEAM_INVITED':
+      return <UserPlus className="h-4 w-4 text-sky-500" />;
     case 'SYSTEM':
       return <Settings className="h-4 w-4 text-gray-500" />;
     default:
@@ -43,6 +45,8 @@ function getNotificationLink(notification: NotificationResponse): string | undef
       return '/challenge';
     case 'POINT_EARNED':
       return '/user/points';
+    case 'TEAM_INVITED':
+      return `/team/invite/${referenceId}`;
     default:
       return '/notification';
   }
