@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import { Search, Users, X, Check, Loader2 } from 'lucide-react';
-import { getAdminUsers, getRoles, updateUserRoles, deleteAdminUser } from '@/lib/api/admin';
-import type { AdminUserResponse, RoleResponse } from '@/types/admin';
+import { adminSearch, getAdminUsers, getRoles, updateUserRoles, deleteAdminUser } from '@/lib/api/admin';
+import type { AdminSearchUserSummary, AdminUserResponse, RoleResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
 import Pagination from '@/common/components/Pagination';
 import { ensureEncodedUrl } from '@/lib/utils';
@@ -38,56 +38,174 @@ export default function AdminUsersPage() {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const requestIdRef = useRef(0);
+  const userCacheRef = useRef(new Map<number, AdminUserResponse>());
+  const loadedPagesRef = useRef(new Set<number>());
+  const knownTotalPagesRef = useRef<number | null>(null);
+  const isSearchMode = searchQuery.trim().length > 0;
 
-  const fetchUsers = useCallback(async () => {
+  const resetUserCache = useCallback(() => {
+    userCacheRef.current.clear();
+    loadedPagesRef.current.clear();
+    knownTotalPagesRef.current = null;
+  }, []);
+
+  const cacheUserPage = useCallback((page: number, data: { users?: AdminUserResponse[]; totalPages?: number }) => {
+    loadedPagesRef.current.add(page);
+    data.users?.forEach((user) => {
+      userCacheRef.current.set(user.id, user);
+    });
+    if (data.totalPages !== undefined) {
+      knownTotalPagesRef.current = data.totalPages;
+    }
+  }, []);
+
+  const fetchRoles = useCallback(async () => {
+    if (!session?.accessToken) return;
+
+    try {
+      const rolesData = await getRoles({ accessToken: session.accessToken });
+      setRoles(rolesData.roles || []);
+    } catch (err) {
+      console.error('Failed to fetch roles:', err);
+      setRoles([]);
+    }
+  }, [session?.accessToken]);
+
+  const fetchUserPage = useCallback(async (page: number) => {
+    if (!session?.accessToken) {
+      return { users: [], totalPages: 1, totalElements: 0, currentPage: 0, pageSize: PAGE_SIZE };
+    }
+
+    const usersData = await getAdminUsers(
+      { page, size: PAGE_SIZE },
+      { accessToken: session.accessToken }
+    );
+
+    cacheUserPage(page, usersData);
+    return usersData;
+  }, [cacheUserPage, session?.accessToken]);
+
+  const fetchUsers = useCallback(async (requestId: number) => {
     if (!session?.accessToken) return;
 
     setIsLoading(true);
     try {
-      const [usersData, rolesData] = await Promise.all([
-        getAdminUsers(
-          { page: currentPage, size: PAGE_SIZE },
-          { accessToken: session.accessToken }
-        ).catch(() => ({ users: [], totalPages: 1, totalElements: 0 })),
-        getRoles({ accessToken: session.accessToken }).catch(() => ({ roles: [] })),
-      ]);
+      const usersData = await fetchUserPage(currentPage);
+
+      if (requestId !== requestIdRef.current) return;
+
       setUsers(usersData.users || []);
       setTotalPages(usersData.totalPages || 1);
       setTotalItems(usersData.totalElements || 0);
-      setRoles(rolesData.roles || []);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+
       console.error('Failed to fetch users:', err);
       toast.error('회원 목록을 불러오는데 실패했습니다.');
       setUsers([]);
-      setRoles([]);
+      setTotalPages(1);
+      setTotalItems(0);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [session?.accessToken, currentPage]);
+  }, [session?.accessToken, currentPage, fetchUserPage]);
+
+  const hydrateSearchUsers = useCallback(async (searchUsers: AdminSearchUserSummary[]) => {
+    const searchIds = searchUsers.map((user) => user.id);
+
+    let missingIds = searchIds.filter((id) => !userCacheRef.current.has(id));
+    let page = 1;
+
+    while (missingIds.length > 0) {
+      const knownTotalPages = knownTotalPagesRef.current;
+      if (knownTotalPages !== null && page > knownTotalPages) break;
+
+      if (loadedPagesRef.current.has(page)) {
+        page += 1;
+        continue;
+      }
+
+      await fetchUserPage(page);
+      missingIds = searchIds.filter((id) => !userCacheRef.current.has(id));
+      page += 1;
+    }
+
+    return searchUsers
+      .map((user) => userCacheRef.current.get(user.id))
+      .filter((user): user is AdminUserResponse => Boolean(user));
+  }, [fetchUserPage]);
+
+  const searchUsers = useCallback(async (keyword: string, requestId: number) => {
+    if (!session?.accessToken) return;
+
+    setIsLoading(true);
+    try {
+      const searchData = await adminSearch(keyword, 'USER', { accessToken: session.accessToken });
+
+      if (requestId !== requestIdRef.current) return;
+
+      const hydratedUsers = await hydrateSearchUsers(searchData.users || []);
+
+      if (requestId !== requestIdRef.current) return;
+
+      setUsers(hydratedUsers);
+      setTotalPages(1);
+      setTotalItems(hydratedUsers.length);
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+
+      console.error('Failed to search users:', err);
+      toast.error('회원 검색에 실패했습니다.');
+      setUsers([]);
+      setTotalPages(1);
+      setTotalItems(0);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [hydrateSearchUsers, session?.accessToken]);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
-      fetchUsers();
+      void fetchRoles();
       return;
     }
 
     if (status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [status, session?.accessToken, fetchUsers, router]);
+  }, [status, session?.accessToken, fetchRoles, router]);
 
-  // 클라이언트 측 검색 필터링
+  useEffect(() => {
+    resetUserCache();
+  }, [resetUserCache, session?.accessToken]);
+
+  useEffect(() => {
+    if (status !== 'authenticated' || !session?.accessToken) return;
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    const keyword = searchQuery.trim();
+
+    if (!keyword) {
+      void fetchUsers(requestId);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void searchUsers(keyword, requestId);
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [status, session?.accessToken, searchQuery, currentPage, fetchUsers, searchUsers]);
+
   const filteredUsers = users.filter((user) => {
-    // 탈퇴 회원 제외 필터
     if (excludeDeleted && user.isDeleted) return false;
-
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      user.name?.toLowerCase().includes(query) ||
-      user.kutEmail?.toLowerCase().includes(query) ||
-      user.kutId?.toLowerCase().includes(query)
-    );
+    return true;
   });
 
   const handleDeleteClick = (user: AdminUserResponse) => {
@@ -110,7 +228,16 @@ export default function AdminUsersPage() {
       setIsDeleting(true);
       await deleteAdminUser(selectedUser.id, { accessToken: session.accessToken });
       toast.success('회원이 탈퇴 처리되었습니다.');
-      await fetchUsers();
+      resetUserCache();
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
+
+      if (searchQuery.trim()) {
+        await searchUsers(searchQuery.trim(), requestId);
+      } else {
+        await fetchUsers(requestId);
+      }
+
       setShowDeleteModal(false);
       setSelectedUser(null);
     } catch (err) {
@@ -129,15 +256,25 @@ export default function AdminUsersPage() {
     try {
       await updateUserRoles(userId, newRoles, { accessToken: session.accessToken });
       toast.success('역할이 변경되었습니다.');
-      fetchUsers();
+      resetUserCache();
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
+
+      if (searchQuery.trim()) {
+        await searchUsers(searchQuery.trim(), requestId);
+      } else {
+        await fetchUsers(requestId);
+      }
+
       setShowRoleModal(false);
+      setSelectedUser(null);
     } catch (err) {
       console.error('Role change failed:', err);
       toast.error('역할 변경에 실패했습니다.');
     }
   };
 
-  const activeCount = users.filter((u) => !u.isDeleted).length;
+  const activeCount = users.filter((user) => !user.isDeleted).length;
 
   return (
     <div className="p-6 md:p-8">
@@ -147,7 +284,9 @@ export default function AdminUsersPage() {
           <div>
             <h1 className="text-xl font-bold text-gray-900">회원 관리</h1>
             <p className="mt-0.5 text-sm text-gray-500">
-              전체 {totalItems.toLocaleString()}명 · 활성 {activeCount}명
+              {isSearchMode
+                ? `검색 ${totalItems.toLocaleString()}명`
+                : `전체 ${totalItems.toLocaleString()}명 · 활성 ${activeCount.toLocaleString()}명`}
             </p>
           </div>
 
@@ -269,7 +408,7 @@ export default function AdminUsersPage() {
         </div>
 
         {/* 페이지네이션 */}
-        {filteredUsers.length > 0 && (
+        {!isSearchMode && filteredUsers.length > 0 && (
           <div className="mt-4">
             <Pagination
               currentPage={currentPage}
