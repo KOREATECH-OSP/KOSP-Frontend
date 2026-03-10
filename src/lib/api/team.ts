@@ -4,6 +4,7 @@ import type {
   TeamUpdateRequest,
   TeamListResponse,
   TeamDetailResponse,
+  TeamInviteResponse,
 } from './types';
 
 /**
@@ -63,6 +64,15 @@ export async function updateTeam(
     method: 'PUT',
     body: data,
     accessToken,
+  });
+}
+
+/**
+ * 팀 초대 상세 조회
+ */
+export async function getTeamInvite(inviteId: string): Promise<TeamInviteResponse> {
+  return apiClient<TeamInviteResponse>(`/v1/teams/invites/${inviteId}`, {
+    cache: 'no-store',
   });
 }
 
