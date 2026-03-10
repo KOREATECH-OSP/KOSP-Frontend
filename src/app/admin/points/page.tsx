@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
 import { Search, Users, Loader2, Coins, RefreshCcw, X } from 'lucide-react';
-import { adminSearch, getAdminUsers } from '@/lib/api/admin';
-import type { AdminSearchUserSummary, AdminUserResponse } from '@/types/admin';
+import { getAdminUsers } from '@/lib/api/admin';
+import type { AdminUserResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
 import Pagination from '@/common/components/Pagination';
 import { ensureEncodedUrl } from '@/lib/utils';
@@ -57,6 +57,18 @@ function UserStatusBadge({ isDeleted }: { isDeleted: boolean }) {
     <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
       활성
     </span>
+  );
+}
+
+function matchesUserSearch(user: AdminUserResponse, keyword: string): boolean {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+
+  if (!normalizedKeyword) {
+    return true;
+  }
+
+  return [user.name, user.kutId, user.kutEmail].some((value) =>
+    value.toLowerCase().includes(normalizedKeyword)
   );
 }
 
@@ -133,46 +145,40 @@ export default function AdminPointsPage() {
     }
   }, [currentPage, fetchUserPage, session?.accessToken]);
 
-  const hydrateSearchUsers = useCallback(async (searchUsers: AdminSearchUserSummary[]) => {
-    const searchIds = searchUsers.map((user) => user.id);
-    let missingIds = searchIds.filter((id) => !userCacheRef.current.has(id));
-    let page = 1;
+  const ensureAllUsersLoaded = useCallback(async () => {
+    if (!session?.accessToken) return;
 
-    while (missingIds.length > 0) {
-      const knownTotalPages = knownTotalPagesRef.current;
-      if (knownTotalPages !== null && page > knownTotalPages) break;
+    if (!loadedPagesRef.current.has(1)) {
+      await fetchUserPage(1);
+    }
 
+    const totalPageCount = knownTotalPagesRef.current ?? 1;
+
+    for (let page = 1; page <= totalPageCount; page += 1) {
       if (loadedPagesRef.current.has(page)) {
-        page += 1;
         continue;
       }
 
       await fetchUserPage(page);
-      missingIds = searchIds.filter((id) => !userCacheRef.current.has(id));
-      page += 1;
     }
-
-    return searchUsers
-      .map((user) => userCacheRef.current.get(user.id))
-      .filter((user): user is AdminUserResponse => Boolean(user));
-  }, [fetchUserPage]);
+  }, [fetchUserPage, session?.accessToken]);
 
   const searchUsers = useCallback(async (keyword: string, requestId: number) => {
     if (!session?.accessToken) return;
 
     setIsLoading(true);
     try {
-      const searchData = await adminSearch(keyword, 'USER', { accessToken: session.accessToken });
+      await ensureAllUsersLoaded();
 
       if (requestId !== requestIdRef.current) return;
 
-      const hydratedUsers = await hydrateSearchUsers(searchData.users || []);
+      const matchedUsers = Array.from(userCacheRef.current.values()).filter((user) =>
+        matchesUserSearch(user, keyword)
+      );
 
-      if (requestId !== requestIdRef.current) return;
-
-      setUsers(hydratedUsers);
+      setUsers(matchedUsers);
       setTotalPages(1);
-      setTotalItems(hydratedUsers.length);
+      setTotalItems(matchedUsers.length);
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
 
@@ -186,7 +192,7 @@ export default function AdminPointsPage() {
         setIsLoading(false);
       }
     }
-  }, [hydrateSearchUsers, session?.accessToken]);
+  }, [ensureAllUsersLoaded, session?.accessToken]);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
@@ -275,7 +281,7 @@ export default function AdminPointsPage() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="이름, 이메일, 학번 검색"
+                  placeholder="이름으로 검색"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm transition-colors focus:border-gray-400 focus:outline-none"
@@ -309,6 +315,9 @@ export default function AdminPointsPage() {
               />
               탈퇴 회원 제외
             </label>
+            <p className="text-xs text-gray-500">
+              현재 사용자 검색은 이름 기준으로만 지원합니다.
+            </p>
           </div>
         </div>
 
