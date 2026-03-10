@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth/AuthContext';
 import Image from 'next/image';
-import { Search, Users, X, Check, Loader2 } from 'lucide-react';
+import { Search, Users, X, Check, Loader2, SquarePen } from 'lucide-react';
 import { adminSearch, getAdminUsers, getRoles, updateUserRoles, deleteAdminUser } from '@/lib/api/admin';
 import type { AdminSearchUserSummary, AdminUserResponse, RoleResponse } from '@/types/admin';
 import { toast } from '@/lib/toast';
@@ -332,7 +332,7 @@ export default function AdminUsersPage() {
             <ul className="divide-y divide-gray-100">
               {filteredUsers.map((user) => (
                 <li key={user.id} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50">
-                  <Link href={`/user/${user.id}`}>
+                  <Link href={`/admin/users/list/${user.id}`}>
                     {user.profileImageUrl ? (
                       <Image
                         src={ensureEncodedUrl(user.profileImageUrl)}
@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
                   </Link>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <Link href={`/user/${user.id}`} className="truncate font-medium text-gray-900 hover:underline">{user.name}</Link>
+                      <Link href={`/admin/users/list/${user.id}`} className="truncate font-medium text-gray-900 hover:underline">{user.name}</Link>
                       {user.isDeleted ? (
                         <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">탈퇴</span>
                       ) : (
@@ -375,6 +375,13 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    <Link
+                      href={`/admin/users/list/${user.id}`}
+                      className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                    >
+                      <SquarePen className="h-3.5 w-3.5" />
+                      수정
+                    </Link>
                     <button
                       onClick={() => {
                         setSelectedUser(user);
