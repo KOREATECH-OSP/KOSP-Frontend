@@ -439,6 +439,22 @@ export interface TeamMemberResponse {
   role: 'LEADER' | 'MEMBER';
 }
 
+export interface TeamBasicInfo {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+  memberCount: number;
+}
+
+export interface TeamInviteResponse {
+  id: number;
+  team: TeamBasicInfo;
+  inviter: AuthorResponse;
+  invitee: AuthorResponse;
+  expiresAt: string;
+  createdAt: string;
+}
+
 export interface TeamDetailResponse {
   id: number;
   name: string;
