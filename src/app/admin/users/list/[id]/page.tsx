@@ -93,7 +93,7 @@ export default function AdminUserEditPage() {
     if (!session?.accessToken || !formData || !user) return;
 
     if (!formData.name.trim() || !formData.kutId.trim() || !formData.kutEmail.trim()) {
-      toast.error('이름, 학번/사번, 이메일은 필수입니다.');
+      toast.error('이름, 학번/사번, 아우누리 이메일은 필수입니다.');
       return;
     }
 
@@ -233,7 +233,7 @@ export default function AdminUserEditPage() {
 
                 <div>
                   <label htmlFor="kutEmail" className="mb-2 block text-sm font-medium text-gray-700">
-                    KUT 이메일
+                    아우누리 이메일
                   </label>
                   <input
                     id="kutEmail"
