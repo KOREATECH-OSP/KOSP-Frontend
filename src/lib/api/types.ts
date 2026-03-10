@@ -670,6 +670,7 @@ export type NotificationType =
   | 'COMMENT_REPORTED'
   | 'CHALLENGE_ACHIEVED'
   | 'POINT_EARNED'
+  | 'TEAM_INVITED'
   | 'SYSTEM';
 
 export interface NotificationResponse {

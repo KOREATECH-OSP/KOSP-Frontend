@@ -31,6 +31,8 @@ function getNotificationLink(notification: NotificationResponse): string {
       return '/challenge';
     case 'POINT_EARNED':
       return '/user/points';
+    case 'TEAM_INVITED':
+      return `/team/invite/${referenceId}`;
     default:
       return '/notification';
   }
@@ -154,7 +156,7 @@ export default function NotificationDropdown({ linkMode = false }: NotificationD
   // 드롭다운 모드: 드롭다운으로 알림 표시 (데스크톱용)
   return (
     <Menu as="div" className="relative">
-      {({ open }) => (
+      {() => (
         <>
           <Menu.Button
             onClick={handleOpen}

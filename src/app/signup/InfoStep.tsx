@@ -28,6 +28,8 @@ interface InfoStepProps {
 }
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+const ALLOWED_SPECIAL_CHARACTERS = '@$!%*#?&';
+const INVALID_PASSWORD_CHARACTER_REGEX = /[^A-Za-z\d@$!%*#?&]/;
 
 function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   return (
@@ -70,6 +72,7 @@ export default function InfoStep({
   const hasNumber = /\d/.test(formData.password);
   const hasSpecial = /[@$!%*#?&]/.test(formData.password);
   const hasMinLength = formData.password.length >= 8;
+  const hasOnlyAllowedCharacters = !INVALID_PASSWORD_CHARACTER_REGEX.test(formData.password);
 
   const passwordsMatch = formData.password === formData.passwordConfirm && formData.passwordConfirm.length > 0;
   const isPasswordValid = PASSWORD_REGEX.test(formData.password);
@@ -214,7 +217,7 @@ export default function InfoStep({
           required
           value={formData.password}
           onChange={(e) => onFormChange('password', e.target.value)}
-          placeholder="비밀번호 (8자 이상, 영문/숫자/특수문자)"
+          placeholder={`비밀번호 (영문/숫자/허용 특수문자 ${ALLOWED_SPECIAL_CHARACTERS})`}
           className="w-full h-[54px] px-4 pr-12 bg-[#f2f4f6] rounded-2xl text-[15px] text-[#191f28] placeholder:text-[#8b95a1] border-0 focus:outline-none focus:ring-2 focus:ring-[#3182f6] transition-all"
         />
         <button
@@ -225,12 +228,24 @@ export default function InfoStep({
           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
         </button>
       </div>
+      <p className="px-1 text-[12px] text-[#8b95a1]">
+        허용 특수문자: <span className="font-medium text-[#4e5968]">{ALLOWED_SPECIAL_CHARACTERS}</span>
+        {' '}| 그 외 특수문자는 사용할 수 없어요
+      </p>
       {formData.password && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 px-1">
+        <div className="space-y-2 px-1">
+          {!hasOnlyAllowedCharacters && (
+            <p className="text-[13px] text-[#e53935]">
+              허용되지 않은 특수문자가 포함되어 있어요. 사용 가능: {ALLOWED_SPECIAL_CHARACTERS}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
           <PasswordRequirement met={hasMinLength} label="8자 이상" />
           <PasswordRequirement met={hasLetter} label="영문" />
           <PasswordRequirement met={hasNumber} label="숫자" />
-          <PasswordRequirement met={hasSpecial} label="특수문자" />
+          <PasswordRequirement met={hasSpecial} label={`특수문자 (${ALLOWED_SPECIAL_CHARACTERS})`} />
+          <PasswordRequirement met={hasOnlyAllowedCharacters} label="허용되지 않은 문자 없음" />
+          </div>
         </div>
       )}
 
