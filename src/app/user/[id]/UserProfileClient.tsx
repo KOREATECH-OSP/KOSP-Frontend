@@ -74,6 +74,7 @@ export default function UserProfileClient({
   const [counts, setCounts] = useState(initialCounts);
   const [isLoading, setIsLoading] = useState(true);
   const [showAllRepos, setShowAllRepos] = useState(false);
+  const recentRepositoryCount = recentActivity.length;
 
   const fetchGithubData = useCallback(async () => {
     const [historyRes, activityRes, scoreRes, comparisonRes] = await Promise.all([
@@ -333,7 +334,7 @@ export default function UserProfileClient({
                         commits: overallHistory.totalCommitCount,
                         pullRequests: overallHistory.totalPrCount,
                         issues: overallHistory.totalIssueCount,
-                        repositories: overallHistory.contributedRepoCount,
+                        repositories: recentRepositoryCount,
                       }}
                     />
                   )}
@@ -426,9 +427,9 @@ export default function UserProfileClient({
                         <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
                           <FolderGit className="mb-1.5 h-5 w-5 text-gray-400" />
                           <div className="text-xl font-bold text-gray-900 sm:text-2xl">
-                            {overallHistory.contributedRepoCount.toLocaleString()}
+                            {recentRepositoryCount.toLocaleString()}
                           </div>
-                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Repositories</div>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">Recent Repos</div>
                         </div>
                         <div className="flex flex-col items-center justify-center p-4 transition-colors hover:bg-gray-50 sm:p-5">
                           <TrendingUp className="mb-1.5 h-5 w-5 text-emerald-500" />
