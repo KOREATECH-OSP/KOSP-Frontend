@@ -584,12 +584,24 @@ export interface UserSearchSummary {
   profileImageUrl: string | null;
 }
 
+export interface RepositorySearchSummary {
+  repoOwner: string;
+  repoName: string;
+  description: string | null;
+  primaryLanguage: string | null;
+  stargazersCount: number;
+  forksCount: number;
+  lastCommitDate: string | null;
+}
+
 export interface GlobalSearchResponse {
   articles: ArticleSummary[];
   recruits: RecruitSummary[];
   teams: TeamSummary[];
   challenges: ChallengeSearchSummary[];
   users: UserSearchSummary[];
+  repositories: RepositorySearchSummary[];
+  meta?: PageMeta;
 }
 
 // ============================================
