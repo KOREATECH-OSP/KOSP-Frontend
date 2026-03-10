@@ -3,7 +3,7 @@ import type { GlobalSearchResponse } from './types';
 
 export interface SearchParams {
   keyword: string;
-  filter?: ('articles' | 'recruits' | 'teams' | 'challenges' | 'users')[];
+  filter?: ('articles' | 'recruits' | 'teams' | 'challenges' | 'users' | 'repositories')[];
   page?: number;
   size?: number;
 }
