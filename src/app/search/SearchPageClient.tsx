@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Users, Search, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Users, Search, ChevronLeft, ChevronRight, User, Star, GitFork, ExternalLink } from 'lucide-react';
 import type { GlobalSearchResponse, UserSearchSummary } from '@/lib/api/types';
 import type { AuthSession } from '@/lib/auth/types';
 import Header from '@/common/components/Header';
@@ -17,10 +17,16 @@ interface SearchPageClientProps {
   session: AuthSession | null;
 }
 
-type TabType = 'ALL' | 'ARTICLE' | 'RECRUIT' | 'TEAM' | 'CHALLENGE' | 'USER';
+type TabType = 'ALL' | 'ARTICLE' | 'RECRUIT' | 'TEAM' | 'CHALLENGE' | 'USER' | 'REPOSITORY';
 
 const MAX_ITEMS_ALL_TAB = 10; // 전체 탭에서 각 카테고리별 최대 개수
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
+
+function formatDate(dateString: string | null) {
+  if (!dateString) return '최근 커밋 정보 없음';
+
+  return new Date(dateString).toLocaleDateString();
+}
 
 // 사용자 아바타 컴포넌트
 function UserAvatar({ user, size = 'md' }: { user: UserSearchSummary; size?: 'sm' | 'md' | 'lg' }) {
@@ -115,7 +121,7 @@ function SearchForm({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="프로젝트, 팀, 사용자를 검색해보세요."
+              placeholder="프로젝트, 팀, 사용자, 레포지토리를 검색해보세요."
               className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-12 pr-4 text-gray-900 placeholder-gray-400 focus:border-gray-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-200"
             />
           </div>
@@ -275,15 +281,16 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
     );
   }
 
-  const { articles, recruits, teams, challenges, users = [] } = initialData;
+  const { articles, recruits, teams, challenges, users = [], repositories = [] } = initialData;
 
   const tabs: { key: TabType; label: string; count: number }[] = [
-    { key: 'ALL', label: '전체', count: articles.length + recruits.length + teams.length + challenges.length + users.length },
+    { key: 'ALL', label: '전체', count: articles.length + recruits.length + teams.length + challenges.length + users.length + repositories.length },
     { key: 'ARTICLE', label: '게시글', count: articles.length },
     { key: 'RECRUIT', label: '모집공고', count: recruits.length },
     { key: 'TEAM', label: '팀', count: teams.length },
     { key: 'CHALLENGE', label: '챌린지', count: challenges.length },
     { key: 'USER', label: '사용자', count: users.length },
+    { key: 'REPOSITORY', label: '레포지토리', count: repositories.length },
   ];
 
   // 페이지네이션 헬퍼
@@ -504,6 +511,65 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
     );
   };
 
+  const renderRepositories = (isAllTab: boolean) => {
+    const { paginatedItems, totalPages } = getPaginatedItems(repositories, isAllTab);
+
+    if (paginatedItems.length === 0) {
+      return <p className="py-8 text-center text-gray-500">검색 결과가 없습니다.</p>;
+    }
+
+    return (
+      <>
+        <div className="space-y-4">
+          {paginatedItems.map((repo) => (
+            <Link
+              key={`${repo.repoOwner}/${repo.repoName}`}
+              href={`https://github.com/${repo.repoOwner}/${repo.repoName}`}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-xl border border-gray-200 bg-white p-5 transition hover:border-gray-300 hover:shadow-sm"
+            >
+              <div className="mb-3 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-bold text-gray-900">
+                    {repo.repoOwner}/{repo.repoName}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                    {repo.description || '레포지토리 설명이 없습니다.'}
+                  </p>
+                </div>
+                <ExternalLink className="mt-1 h-4 w-4 flex-shrink-0 text-gray-400" />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                  {repo.primaryLanguage || '언어 정보 없음'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Star className="h-4 w-4" />
+                  {repo.stargazersCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <GitFork className="h-4 w-4" />
+                  {repo.forksCount}
+                </span>
+                <span>최근 커밋 {formatDate(repo.lastCommitDate)}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+        {!isAllTab && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={repositories.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header session={session} />
@@ -577,6 +643,13 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
                   {renderSeeMoreLink('USER', users.length)}
                 </section>
               )}
+              {repositories.length > 0 && (
+                <section>
+                  <h2 className="mb-4 text-lg font-bold text-gray-900">레포지토리</h2>
+                  {renderRepositories(true)}
+                  {renderSeeMoreLink('REPOSITORY', repositories.length)}
+                </section>
+              )}
               {articles.length > 0 && (
                 <section>
                   <h2 className="mb-4 text-lg font-bold text-gray-900">게시글</h2>
@@ -605,7 +678,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
                   {renderSeeMoreLink('CHALLENGE', challenges.length)}
                 </section>
               )}
-              {articles.length === 0 && recruits.length === 0 && teams.length === 0 && challenges.length === 0 && users.length === 0 && (
+              {articles.length === 0 && recruits.length === 0 && teams.length === 0 && challenges.length === 0 && users.length === 0 && repositories.length === 0 && (
                 <p className="py-16 text-center text-gray-500">검색 결과가 없습니다.</p>
               )}
             </div>
@@ -615,6 +688,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
           {activeTab === 'TEAM' && renderTeams(false)}
           {activeTab === 'CHALLENGE' && renderChallenges(false)}
           {activeTab === 'USER' && renderUsers(false)}
+          {activeTab === 'REPOSITORY' && renderRepositories(false)}
         </div>
       </main>
       <Footer />

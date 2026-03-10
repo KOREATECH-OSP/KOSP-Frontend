@@ -15,8 +15,8 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
   ),
 });
 
-// Python을 SpEL로 변환하는 함수 (0~100% 백분율 표현식)
-function pythonToSpel(python: string): string {
+// Python을 기본 SpEL로 변환하는 함수 (fallback 용도)
+function pythonToBasicSpel(python: string): string {
   if (!python.trim()) return '';
 
   let spel = python;
@@ -29,6 +29,8 @@ function pythonToSpel(python: string): string {
   // Python 불리언을 SpEL로 변환
   spel = spel.replace(/\bTrue\b/g, 'true');
   spel = spel.replace(/\bFalse\b/g, 'false');
+  spel = spel.replace(/\bmin\(/g, 'T(Math).min(');
+  spel = spel.replace(/\bmax\(/g, 'T(Math).max(');
 
   return spel;
 }
@@ -64,6 +66,124 @@ function combinePercentages(parts: string[], operation: 'min' | 'max'): string {
     result = `#${operation}(${result}, ${parts[i]})`;
   }
   return result;
+}
+
+function stripOuterParentheses(expr: string): string {
+  let stripped = expr.trim();
+
+  while (stripped.startsWith('(') && stripped.endsWith(')')) {
+    let depth = 0;
+    let isWrapped = true;
+
+    for (let i = 0; i < stripped.length; i++) {
+      if (stripped[i] === '(') depth++;
+      else if (stripped[i] === ')') depth--;
+
+      if (depth === 0 && i < stripped.length - 1) {
+        isWrapped = false;
+        break;
+      }
+    }
+
+    if (!isWrapped) break;
+    stripped = stripped.slice(1, -1).trim();
+  }
+
+  return stripped;
+}
+
+function splitFunctionArgsTopLevel(argsStr: string): string[] {
+  const args: string[] = [];
+  let depth = 0;
+  let current = '';
+
+  for (let i = 0; i < argsStr.length; i++) {
+    const char = argsStr[i];
+
+    if (char === '(') {
+      depth++;
+      current += char;
+      continue;
+    }
+
+    if (char === ')') {
+      depth--;
+      current += char;
+      continue;
+    }
+
+    if (char === ',' && depth === 0) {
+      if (current.trim()) {
+        args.push(current.trim());
+      }
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.trim()) {
+    args.push(current.trim());
+  }
+
+  return args;
+}
+
+function getFunctionArgs(expr: string, functionNames: string[]): string[] | null {
+  const trimmed = expr.trim();
+
+  for (const functionName of functionNames) {
+    const prefix = `${functionName}(`;
+    if (!trimmed.startsWith(prefix) || !trimmed.endsWith(')')) {
+      continue;
+    }
+
+    let depth = 0;
+    let isWholeFunction = true;
+    let sawOpenParen = false;
+    for (let i = 0; i < trimmed.length; i++) {
+      if (trimmed[i] === '(') {
+        depth++;
+        sawOpenParen = true;
+      } else if (trimmed[i] === ')') {
+        depth--;
+      }
+
+      if (sawOpenParen && depth === 0 && i < trimmed.length - 1) {
+        isWholeFunction = false;
+        break;
+      }
+    }
+
+    if (!isWholeFunction) {
+      continue;
+    }
+
+    const argsString = trimmed.slice(prefix.length, -1);
+    return splitFunctionArgsTopLevel(argsString);
+  }
+
+  return null;
+}
+
+function parseProgressExpression(expr: string): string | null {
+  const args = getFunctionArgs(expr, ['min', 'T(Math).min']);
+  if (!args || args.length !== 2) return null;
+
+  const leftArg = stripOuterParentheses(args[0]);
+  const rightArg = stripOuterParentheses(args[1]);
+  if (!/^100(?:\.0+)?$/.test(rightArg)) return null;
+
+  const progressPattern = new RegExp(
+    `^(${VAR_PATTERN})\\s*\\*\\s*100(?:\\.0+)?\\s*\\/\\s*(\\d+(?:\\.\\d+)?)$`
+  );
+  const match = leftArg.match(progressPattern);
+
+  if (!match) return null;
+
+  const [, variable, target] = match;
+  return `#progress(${variable}, ${target})`;
 }
 
 // 최상위 레벨에서 연산자로 분리 (괄호 내부는 무시)
@@ -109,26 +229,12 @@ function splitByOperatorTopLevel(expr: string, operator: string): string[] {
 // 표현식을 재귀적으로 백분율 SpEL로 변환
 // 우선순위: 괄호 > AND > OR
 function parseExpression(expr: string): string | null {
-  expr = expr.trim();
+  expr = stripOuterParentheses(expr);
   if (!expr) return null;
 
-  // 전체가 괄호로 감싸져 있으면 벗기고 재귀
-  if (expr.startsWith('(') && expr.endsWith(')')) {
-    // 실제로 매칭되는 괄호인지 확인
-    let depth = 0;
-    let isWrapped = true;
-    for (let i = 0; i < expr.length; i++) {
-      if (expr[i] === '(') depth++;
-      else if (expr[i] === ')') depth--;
-      // 중간에 depth가 0이 되면 전체를 감싸는 괄호가 아님
-      if (depth === 0 && i < expr.length - 1) {
-        isWrapped = false;
-        break;
-      }
-    }
-    if (isWrapped) {
-      return parseExpression(expr.slice(1, -1));
-    }
+  const progressExpression = parseProgressExpression(expr);
+  if (progressExpression) {
+    return progressExpression;
   }
 
   // 1단계: OR로 분리 (가장 낮은 우선순위)
@@ -154,7 +260,34 @@ function parseExpression(expr: string): string | null {
   }
 
   // 3단계: 단일 조건
-  return conditionToPercentage(expr);
+  const directCondition = conditionToPercentage(expr);
+  if (directCondition) {
+    return directCondition;
+  }
+
+  const minArgs = getFunctionArgs(expr, ['min', 'T(Math).min']);
+  if (minArgs && minArgs.length > 0) {
+    const minPercentages = minArgs
+      .map((part) => parseExpression(part))
+      .filter((part): part is string => part !== null);
+
+    if (minPercentages.length === minArgs.length) {
+      return combinePercentages(minPercentages, 'min');
+    }
+  }
+
+  const maxArgs = getFunctionArgs(expr, ['max', 'T(Math).max']);
+  if (maxArgs && maxArgs.length > 0) {
+    const maxPercentages = maxArgs
+      .map((part) => parseExpression(part))
+      .filter((part): part is string => part !== null);
+
+    if (maxPercentages.length === maxArgs.length) {
+      return combinePercentages(maxPercentages, 'max');
+    }
+  }
+
+  return null;
 }
 
 // 조건식을 백분율 반환 SpEL로 변환 (0~100)
@@ -163,14 +296,18 @@ function parseExpression(expr: string): string | null {
 function toPercentageSpel(python: string): string {
   if (!python.trim()) return '';
 
-  // 먼저 기본 SpEL 변환 (and → &&, or → ||)
-  const spel = pythonToSpel(python);
+  const normalizedPython = python
+    .replace(/\band\b/g, '&&')
+    .replace(/\bor\b/g, '||')
+    .replace(/\bnot\s+/g, '!')
+    .replace(/\bTrue\b/g, 'true')
+    .replace(/\bFalse\b/g, 'false');
 
   // 재귀적으로 파싱
-  const result = parseExpression(spel);
+  const result = parseExpression(normalizedPython);
 
   // 패턴 매칭 실패 시 기본 SpEL 반환
-  return result || spel;
+  return result || pythonToBasicSpel(python);
 }
 
 // 조건의 의미를 백분율로 해석
@@ -282,6 +419,8 @@ export default function SpelEditor({
           { label: 'and', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'and', detail: '논리 AND (&&)', range },
           { label: 'or', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'or', detail: '논리 OR (||)', range },
           { label: 'not', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'not ', detail: '논리 NOT (!)', range },
+          { label: 'min', kind: monaco.languages.CompletionItemKind.Function, insertText: 'min(${1:a}, ${2:b})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: '최솟값 함수', range },
+          { label: 'max', kind: monaco.languages.CompletionItemKind.Function, insertText: 'max(${1:a}, ${2:b})', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: '최댓값 함수', range },
           { label: 'True', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'True', detail: '참', range },
           { label: 'False', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'False', detail: '거짓', range },
         ];

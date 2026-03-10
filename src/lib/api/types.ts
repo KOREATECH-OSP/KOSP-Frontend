@@ -439,6 +439,22 @@ export interface TeamMemberResponse {
   role: 'LEADER' | 'MEMBER';
 }
 
+export interface TeamBasicInfo {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+  memberCount: number;
+}
+
+export interface TeamInviteResponse {
+  id: number;
+  team: TeamBasicInfo;
+  inviter: AuthorResponse;
+  invitee: AuthorResponse;
+  expiresAt: string;
+  createdAt: string;
+}
+
 export interface TeamDetailResponse {
   id: number;
   name: string;
@@ -584,12 +600,24 @@ export interface UserSearchSummary {
   profileImageUrl: string | null;
 }
 
+export interface RepositorySearchSummary {
+  repoOwner: string;
+  repoName: string;
+  description: string | null;
+  primaryLanguage: string | null;
+  stargazersCount: number;
+  forksCount: number;
+  lastCommitDate: string | null;
+}
+
 export interface GlobalSearchResponse {
   articles: ArticleSummary[];
   recruits: RecruitSummary[];
   teams: TeamSummary[];
   challenges: ChallengeSearchSummary[];
   users: UserSearchSummary[];
+  repositories: RepositorySearchSummary[];
+  meta?: PageMeta;
 }
 
 // ============================================
@@ -642,6 +670,7 @@ export type NotificationType =
   | 'COMMENT_REPORTED'
   | 'CHALLENGE_ACHIEVED'
   | 'POINT_EARNED'
+  | 'TEAM_INVITED'
   | 'SYSTEM';
 
 export interface NotificationResponse {

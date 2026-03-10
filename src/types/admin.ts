@@ -96,7 +96,9 @@ export interface AdminUserListResponse {
 }
 
 export interface AdminUserUpdateRequest {
-  name?: string;
+  name: string;
+  kutEmail: string;
+  kutId: string;
   introduction?: string;
   profileImageUrl?: string;
 }
@@ -248,9 +250,24 @@ export interface ReportProcessRequest {
 // Admin Search Types
 // ============================================
 
+export interface AdminSearchUserSummary {
+  id: number;
+  name: string;
+  email: string;
+  profileImage: string | null;
+}
+
+export interface AdminSearchArticleSummary {
+  id: number;
+  title: string;
+  boardName: string;
+  authorName: string;
+  createdAt: string;
+}
+
 export interface AdminSearchResponse {
-  users?: AdminUserResponse[];
-  articles?: AdminArticleResponse[];
+  users?: AdminSearchUserSummary[];
+  articles?: AdminSearchArticleSummary[];
 }
 
 // ============================================
