@@ -281,7 +281,7 @@ export default function AdminPointsPage() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="이름으로 검색"
+                  placeholder="이름, 학번, 이메일로 검색"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm transition-colors focus:border-gray-400 focus:outline-none"
@@ -315,9 +315,6 @@ export default function AdminPointsPage() {
               />
               탈퇴 회원 제외
             </label>
-            <p className="text-xs text-gray-500">
-              현재 사용자 검색은 이름 기준으로만 지원합니다.
-            </p>
           </div>
         </div>
 
