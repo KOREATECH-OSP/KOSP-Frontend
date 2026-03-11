@@ -52,8 +52,20 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // Keep client uploads narrow if build-time Sentry work is re-enabled later.
+  widenClientFileUpload: false,
+
+  telemetry: false,
+
+  // Disable build-time source map upload and release management in all environments.
+  sourcemaps: {
+    disable: true,
+  },
+
+  release: {
+    create: false,
+    finalize: false,
+  },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
