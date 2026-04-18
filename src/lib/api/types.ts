@@ -621,6 +621,28 @@ export interface GlobalSearchResponse {
 }
 
 // ============================================
+// Title (칭호) Types
+// ============================================
+
+export interface UserTitleResponse {
+  userTitleId: number;
+  titleId: number;
+  titleName: string;
+  description: string;
+  category: string;
+  rarity: string;
+  iconUrl: string | null;
+  isDisplay: boolean;
+  grantSource: string;
+  grantedAt: string;
+}
+
+export interface UserTitleListResponse {
+  titles: UserTitleResponse[];
+  totalCount: number;
+}
+
+// ============================================
 // Report Types
 // ============================================
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { AuthSession } from '@/lib/auth/types';
@@ -44,6 +44,7 @@ import {
   getUserGithubContributionComparison,
   getMyPointHistory,
   getMyApplications,
+  getMyTitles,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
@@ -59,6 +60,7 @@ import type {
   MyPointHistoryResponse,
   MyApplicationResponse,
   BoardResponse,
+  UserTitleResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 
@@ -84,6 +86,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 포인트 & 지원내역 데이터
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
   const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
+
+  // 대표 칭호
+  const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
 
   // 챌린지 달성률
   const [challengeRate, setChallengeRate] = useState<{ completed: number; total: number } | null>(null);
@@ -163,11 +168,18 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setBoards(boardsRes.boards);
 
         if (accessToken) {
-          const challengeRes = await getChallenges({ accessToken }).catch(() => null);
+          const [challengeRes, titlesRes] = await Promise.all([
+            getChallenges({ accessToken }).catch(() => null),
+            getMyTitles({ accessToken }).catch(() => null),
+          ]);
           if (challengeRes) {
             const total = challengeRes.challenges.length;
             const completed = challengeRes.challenges.filter((c) => c.isCompleted).length;
             setChallengeRate({ completed, total });
+          }
+          if (titlesRes) {
+            const found = titlesRes.titles.find((t) => t.isDisplay) ?? null;
+            setDisplayTitle(found);
           }
         }
 
@@ -313,12 +325,37 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               </div>
 
               <h1 className="mb-1 text-xl font-bold text-gray-900">{profile?.name}</h1>
+
+              {/* 대표 칭호 */}
+              {displayTitle && (
+                <div className="mb-2 flex items-center gap-1.5">
+                  {displayTitle.iconUrl && (
+                    <img
+                      src={displayTitle.iconUrl}
+                      alt={displayTitle.titleName}
+                      className="h-4 w-4 object-contain"
+                      onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  )}
+                  <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
+                </div>
+              )}
+
               <p className="mb-2 text-sm text-gray-500">{session.user?.email}</p>
               <p className="break-all text-xs text-gray-400">ID: {userId}</p>
 
               {profile?.introduction && (
                 <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>
               )}
+
+              {/* 이력서 바로가기 */}
+              <Link
+                href="/user/resume"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+              >
+                <FileText className="h-4 w-4" />
+                이력서 보기
+              </Link>
             </div>
 
             {/* 통계 카드 */}
