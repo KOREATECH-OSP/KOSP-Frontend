@@ -38,13 +38,22 @@ function Header({ simple = false, session = null }: HeaderProps) {
     setMobileProfileOpen(false);
     signOutOnce({ callbackUrl: '/' });
   };
+  const handleResume = () => {
+    setMobileProfileOpen(false);
+    router.push('/user/resume');
+  };
   const profileActions = isLoggedIn
     ? [
       { label: "내 정보", action: handleMyInfo },
+      { label: "이력서", action: handleResume },
       { label: "알림", action: handleNotification },
       { label: "로그아웃", action: handleLogout },
     ]
     : [];
+  // 데스크탑 드롭다운에서 Link로 처리하는 항목은 버튼 루프에서 제외
+  const profileActionButtons = profileActions.filter(
+    ({ label }) => label !== "내 정보" && label !== "이력서"
+  );
   const navItems = [
     { href: "/community", label: "커뮤니티" },
     { href: "/team", label: "팀게시판" },
@@ -137,6 +146,17 @@ function Header({ simple = false, session = null }: HeaderProps) {
                                   </Link>
                                 )}
                               </Menu.Item>
+                              <Menu.Item key="이력서">
+                                {({ active }) => (
+                                  <Link
+                                    href="/user/resume"
+                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                      }`}
+                                  >
+                                    이력서
+                                  </Link>
+                                )}
+                              </Menu.Item>
                               {canAccessAdmin && (
                                 <Menu.Item key="관리자">
                                   {({ active }) => (
@@ -150,7 +170,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                                   )}
                                 </Menu.Item>
                               )}
-                              {profileActions.filter(({ label }) => label !== "내 정보").map(({ label, action }) => (
+                              {profileActionButtons.map(({ label, action }) => (
                                 <Menu.Item key={label}>
                                   {({ active }) => (
                                     <button

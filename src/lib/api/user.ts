@@ -19,6 +19,8 @@ import type {
   AuthTokenResponse,
   MyPointHistoryResponse,
   MyApplicationListResponse,
+  UserTitleListResponse,
+  UserTitleResponse,
 } from './types';
 
 interface AuthOptions {
@@ -248,6 +250,41 @@ export async function getMyPointHistory(
       },
     }
   );
+}
+
+// ============================================
+// Title (칭호) APIs
+// ============================================
+
+/**
+ * 특정 유저의 칭호 목록 조회 (공개)
+ */
+export async function getUserTitles(userId: number): Promise<UserTitleListResponse> {
+  return apiClient<UserTitleListResponse>(`/v1/users/${userId}/titles`, {
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 내 칭호 목록 조회 (인증 필요)
+ */
+export async function getMyTitles(auth: AuthOptions): Promise<UserTitleListResponse> {
+  return clientApiClient<UserTitleListResponse>('/v1/users/me/titles', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 대표 칭호 설정 (인증 필요)
+ */
+export async function setDisplayTitle(
+  userTitleId: number,
+  auth: AuthOptions
+): Promise<UserTitleResponse> {
+  return clientApiClient<UserTitleResponse>(`/v1/users/me/titles/${userTitleId}/display`, {
+    method: 'PUT',
+    accessToken: auth.accessToken,
+  });
 }
 
 /**
