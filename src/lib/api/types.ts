@@ -83,6 +83,17 @@ export interface UserSignupRequest {
   kutId: string;
   kutEmail: string;
   password: string;
+  termsVersion?: string;
+}
+
+// ============================================
+// Terms Types
+// ============================================
+
+export interface TermsResponse {
+  id: number;
+  version: string;
+  content: string;
 }
 
 export interface UserUpdateRequest {
