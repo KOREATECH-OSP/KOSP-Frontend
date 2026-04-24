@@ -100,7 +100,7 @@ export function AuthProvider({ children, initialSession = null }: AuthProviderPr
       // tokenManager 이벤트 발생
       window.dispatchEvent(new CustomEvent('sessionChanged', { detail: data.session }));
 
-      return { success: true };
+      return { success: true, needsTermsAgreement: data.needsTermsAgreement ?? false };
     } catch {
       return { success: false, error: '로그인에 실패했습니다' };
     }
@@ -131,7 +131,7 @@ export function AuthProvider({ children, initialSession = null }: AuthProviderPr
 
       window.dispatchEvent(new CustomEvent('sessionChanged', { detail: data.session }));
 
-      return { success: true };
+      return { success: true, needsTermsAgreement: data.needsTermsAgreement ?? false };
     } catch {
       return { success: false, error: '로그인에 실패했습니다' };
     }

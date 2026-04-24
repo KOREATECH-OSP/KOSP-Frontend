@@ -77,6 +77,11 @@ function AuthCallbackContent() {
               return;
             }
 
+            if (result.needsTermsAgreement) {
+              router.replace(`/terms-agreement?callbackUrl=${encodeURIComponent(oauthCallback)}`);
+              return;
+            }
+
             toast.success('로그인되었습니다');
             router.replace(oauthCallback);
           }
