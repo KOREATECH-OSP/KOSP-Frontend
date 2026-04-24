@@ -695,6 +695,26 @@ export interface ChallengeListResponse {
 }
 
 // ============================================
+// Season Ranking Types
+// ============================================
+
+/**
+ * 내 시즌 랭킹 응답 - /v1/seasons/current/rankings/me
+ */
+export interface MySeasonRankingResponse {
+  seasonName: string;
+  endDate: string; // "YYYY-MM-DD"
+  rank: number;
+  totalScore: number;
+  tier: string; // e.g. "BRONZE_4", "SILVER_2", "CHALLENGER"
+  attendanceScore: number;
+  commitScore: number;
+  challengeScore: number;
+  projectScore: number;
+  communityScore: number;
+}
+
+// ============================================
 // Notification Types
 // ============================================
 

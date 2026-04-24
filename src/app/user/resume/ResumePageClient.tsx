@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
+import { useState, useEffect, useCallback, type SyntheticEvent, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -24,6 +24,10 @@ import {
   Globe,
   Copy,
   Check,
+  Code2,
+  Layers,
+  X,
+  Settings,
 } from 'lucide-react';
 import type { AuthSession } from '@/lib/auth/types';
 import {
@@ -44,6 +48,13 @@ import type {
 } from '@/lib/api/types';
 import { useResumeStorage, newId } from './hooks/useResumeStorage';
 import type { LinkItem, EducationItem, CareerItem, ExperienceItem } from './hooks/useResumeStorage';
+
+const RARITY_LABELS: Record<string, string> = {
+  COMMON: '일반',
+  RARE: '희귀',
+  EPIC: '영웅',
+  LEGENDARY: '전설',
+};
 import EditableListSection from './components/EditableListSection';
 import SectionToggleCard from './components/SectionToggleCard';
 
@@ -72,11 +83,14 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     education, setEducation,
     career, setCareer,
     experience, setExperience,
+    jobRole, setJobRole,
+    techStack, setTechStack,
     visibleSections, toggleSection,
     isPublic, setIsPublic,
   } = useResumeStorage(userId);
 
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [techInput, setTechInput] = useState('');
 
   const fetchData = useCallback(async () => {
     if (!userId || !accessToken) return;
@@ -170,6 +184,18 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     RARE: 'bg-blue-100 text-blue-700',
     EPIC: 'bg-purple-100 text-purple-700',
     LEGENDARY: 'bg-amber-100 text-amber-700',
+  };
+
+  const addTechTag = (tag: string) => {
+    const trimmed = tag.trim();
+    if (trimmed && !techStack.includes(trimmed)) {
+      setTechStack([...techStack, trimmed]);
+    }
+    setTechInput('');
+  };
+
+  const removeTechTag = (tag: string) => {
+    setTechStack(techStack.filter((t) => t !== tag));
   };
 
   return (
@@ -378,7 +404,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
         {/* ── 오른쪽 이력서 본문 ── */}
         <div className="lg:col-span-2 space-y-4">
-          {/* 상단 헤더: 이력서 제목 입력 + 인쇄 버튼 */}
+          {/* 상단 헤더: 이력서 제목 입력 + 버튼들 */}
           <div className="print:hidden flex items-center justify-between gap-3">
             <div className="flex flex-1 items-center gap-2">
               <FileText className="h-5 w-5 shrink-0 text-gray-500" />
@@ -390,6 +416,13 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                 className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
               />
             </div>
+            <Link
+              href="/user/edit"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+            >
+              <Settings className="h-4 w-4" />
+              수정하기
+            </Link>
             <button
               type="button"
               onClick={handlePrint}
@@ -449,7 +482,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                         rarityColors[displayTitle.rarity] ?? 'bg-gray-100 text-gray-600'
                       }`}
                     >
-                      {displayTitle.rarity}
+                      {RARITY_LABELS[displayTitle.rarity] ?? displayTitle.rarity}
                     </span>
                   </div>
                 ) : (
@@ -589,7 +622,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                             rarityColors[title.rarity] ?? 'bg-gray-100 text-gray-600'
                           }`}
                         >
-                          {title.rarity}
+                          {RARITY_LABELS[title.rarity] ?? title.rarity}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-gray-500">{title.description}</p>
@@ -646,6 +679,83 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           {/* ── 편집형 섹션 (localStorage 임시저장) ─────────────────── */}
           {draftLoaded && (
             <>
+              {/* 개발 직무 */}
+              {visibleSections.jobRole && (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Code2 className="h-4 w-4 text-gray-500" />
+                      개발 직무
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
+                        임시저장
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="px-6 py-4">
+                    <textarea
+                      rows={3}
+                      value={jobRole}
+                      onChange={(e) => setJobRole(e.target.value)}
+                      placeholder="예: 백엔드 개발자 / Java, Spring Boot 기반 서버 개발 경험 보유"
+                      className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 기술 스택 */}
+              {visibleSections.techStack && (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Layers className="h-4 w-4 text-gray-500" />
+                      기술 스택
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
+                        임시저장
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="px-6 py-4 space-y-3">
+                    {/* 태그 목록 */}
+                    {techStack.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {techStack.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removeTechTag(tag)}
+                              className="ml-0.5 rounded-full hover:text-gray-300 transition-colors"
+                              aria-label={`${tag} 삭제`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {/* 태그 입력 */}
+                    <input
+                      type="text"
+                      value={techInput}
+                      onChange={(e) => setTechInput(e.target.value)}
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addTechTag(techInput);
+                        }
+                      }}
+                      onBlur={() => { if (techInput.trim()) addTechTag(techInput); }}
+                      placeholder="기술명 입력 후 Enter (예: TypeScript, React, Spring Boot)"
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* 링크 */}
               {visibleSections.links && (
                 <EditableListSection
