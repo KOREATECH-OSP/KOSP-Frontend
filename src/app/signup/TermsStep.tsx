@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { getActiveTerms } from '@/lib/api/terms';
 import { TERMS_AGREE_LABEL, TERMS_LOADING_TEXT, TERMS_ERROR_TEXT } from '@/constants/terms';
@@ -8,7 +9,7 @@ import type { TermsResponse } from '@/lib/api/types';
 
 interface TermsStepProps {
   onAgree: (version: string) => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export default function TermsStep({ onAgree, onBack }: TermsStepProps) {
@@ -81,6 +82,18 @@ export default function TermsStep({ onAgree, onBack }: TermsStepProps) {
         <span className="text-[15px] font-medium text-[#191f28]">{TERMS_AGREE_LABEL}</span>
       </label>
 
+      <p className="text-[13px] text-[#8b95a1] text-center">
+        동의 전{' '}
+        <Link
+          href="https://www.koreatech.ac.kr/menu.es?mid=a10903000000"
+          className="text-[#3182f6] hover:underline"
+          target="_blank"
+        >
+          개인정보처리방침
+        </Link>
+        도 확인해주세요.
+      </p>
+
       <div className="space-y-3">
         <button
           type="button"
@@ -94,13 +107,15 @@ export default function TermsStep({ onAgree, onBack }: TermsStepProps) {
         >
           다음
         </button>
-        <button
-          type="button"
-          onClick={onBack}
-          className="w-full h-[54px] bg-[#f2f4f6] text-[#4e5968] text-[16px] font-semibold rounded-2xl hover:bg-[#e5e8eb] transition-colors"
-        >
-          이전으로
-        </button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-full h-[54px] bg-[#f2f4f6] text-[#4e5968] text-[16px] font-semibold rounded-2xl hover:bg-[#e5e8eb] transition-colors"
+          >
+            이전으로
+          </button>
+        )}
       </div>
     </div>
   );

@@ -20,9 +20,9 @@ function CheckIcon() {
 
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   const steps = [
+    { id: 'terms', label: '약관동의' },
     { id: 'github', label: 'GitHub' },
     { id: 'info', label: '정보입력' },
-    { id: 'terms', label: '약관동의' },
     { id: 'verification', label: '인증' },
   ];
 

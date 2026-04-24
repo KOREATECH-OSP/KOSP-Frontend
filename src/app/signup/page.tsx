@@ -23,7 +23,7 @@ import {
 import { signup } from '@/lib/api/user';
 import { ApiException } from '@/lib/api/client';
 
-const SIGNUP_STEPS = ['github', 'info', 'terms', 'verification', 'complete'] as const;
+const SIGNUP_STEPS = ['terms', 'github', 'info', 'verification', 'complete'] as const;
 
 function SignupContent() {
   const router = useRouter();
@@ -75,6 +75,10 @@ function SignupContent() {
       try {
         await validateSignupToken(signupTokenParam);
         setSignupToken(signupTokenParam);
+        const savedTermsVersion = window.sessionStorage.getItem('kosp:signup-terms-version');
+        if (savedTermsVersion) {
+          setAgreedTermsVersion(savedTermsVersion);
+        }
         if (stepParam === 'info') {
           setStep('info');
         } else if (stepParam === 'github') {
@@ -206,12 +210,13 @@ function SignupContent() {
       return;
     }
 
-    setStep('terms');
+    setStep('verification');
   };
 
   const handleTermsAgree = (version: string) => {
     setAgreedTermsVersion(version);
-    setStep('verification');
+    window.sessionStorage.setItem('kosp:signup-terms-version', version);
+    setStep('github');
   };
 
   const handleSignup = async () => {
@@ -239,6 +244,7 @@ function SignupContent() {
         return;
       }
 
+      window.sessionStorage.removeItem('kosp:signup-terms-version');
       setStep('complete');
     } catch (err) {
       if (err instanceof ApiException) {
@@ -317,6 +323,13 @@ function SignupContent() {
         )}
 
         <Funnel step={currentStep}>
+          <Funnel.Step name="terms">
+            <StepIndicator currentStep="terms" />
+            <TermsStep
+              onAgree={handleTermsAgree}
+            />
+          </Funnel.Step>
+
           <Funnel.Step name="github">
             <StepIndicator currentStep="github" />
             <GithubStep
@@ -349,21 +362,13 @@ function SignupContent() {
             />
           </Funnel.Step>
 
-          <Funnel.Step name="terms">
-            <StepIndicator currentStep="terms" />
-            <TermsStep
-              onAgree={handleTermsAgree}
-              onBack={handleBackToInfo}
-            />
-          </Funnel.Step>
-
           <Funnel.Step name="verification">
             <StepIndicator currentStep="verification" />
             <VerificationStep
               formData={formData}
               memberType={memberType}
               onSignup={handleSignup}
-              onBack={handleBackToTerms}
+              onBack={handleBackToInfo}
               isLoading={isLoading}
             />
           </Funnel.Step>
