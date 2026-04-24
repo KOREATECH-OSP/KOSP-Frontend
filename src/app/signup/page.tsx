@@ -33,7 +33,7 @@ function SignupContent() {
   const stepParam = searchParams.get('step');
 
   const [currentStep, setStep] = useFunnel(SIGNUP_STEPS, {
-    initialStep: 'github',
+    initialStep: 'terms',
   });
 
   const [signupToken, setSignupToken] = useState<string | null>(null);
