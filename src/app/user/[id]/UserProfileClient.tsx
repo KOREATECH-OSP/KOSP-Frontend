@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Trophy,
 } from 'lucide-react';
 import {
   getUserPosts,
@@ -32,6 +33,7 @@ import {
   getUserGithubRecentActivity,
   getUserGithubContributionScore,
   getUserGithubContributionComparison,
+  getUserTitles,
 } from '@/lib/api/user';
 import type {
   ArticleResponse,
@@ -41,6 +43,7 @@ import type {
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
   GithubContributionComparisonResponse,
+  UserTitleResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
@@ -72,22 +75,25 @@ export default function UserProfileClient({
   const [comparison, setComparison] = useState<GithubContributionComparisonResponse | null>(null);
 
   const [counts, setCounts] = useState(initialCounts);
+  const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAllRepos, setShowAllRepos] = useState(false);
   const recentRepositoryCount = recentActivity.length;
 
   const fetchGithubData = useCallback(async () => {
-    const [historyRes, activityRes, scoreRes, comparisonRes] = await Promise.all([
+    const [historyRes, activityRes, scoreRes, comparisonRes, titlesRes] = await Promise.all([
       getUserGithubOverallHistory(userId).catch(() => null),
       getUserGithubRecentActivity(userId).catch(() => []),
       getUserGithubContributionScore(userId).catch(() => null),
       getUserGithubContributionComparison(userId).catch(() => null),
+      getUserTitles(userId).catch(() => null),
     ]);
 
     if (historyRes) setOverallHistory(historyRes);
     if (activityRes) setRecentActivity(activityRes);
     if (scoreRes) setContributionScore(scoreRes);
     if (comparisonRes) setComparison(comparisonRes);
+    if (titlesRes) setDisplayTitle(titlesRes.titles.find((t) => t.isDisplay) ?? null);
   }, [userId]);
 
   useEffect(() => {
@@ -186,6 +192,22 @@ export default function UserProfileClient({
               </div>
 
               <h1 className="mb-1 text-xl font-bold text-gray-900">{profile.name}</h1>
+
+              {/* 대표 칭호 (보기 전용) */}
+              {displayTitle && (
+                <div className="mb-2 flex items-center gap-1.5">
+                  {displayTitle.iconUrl && (
+                    <img
+                      src={displayTitle.iconUrl}
+                      alt={displayTitle.titleName}
+                      className="h-4 w-4 object-contain"
+                      onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  )}
+                  <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
+                </div>
+              )}
 
               {profile.introduction && (
                 <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>

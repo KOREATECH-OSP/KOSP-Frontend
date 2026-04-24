@@ -13,7 +13,9 @@ export type SectionKey =
   | 'links'
   | 'education'
   | 'career'
-  | 'experience';
+  | 'experience'
+  | 'jobRole'
+  | 'techStack';
 
 export interface LinkItem {
   id: string;
@@ -52,6 +54,8 @@ const DEFAULT_VISIBLE: VisibleSections = {
   education: true,
   career: true,
   experience: true,
+  jobRole: true,
+  techStack: true,
 };
 
 // ─────────────────────────────────────────
@@ -97,6 +101,10 @@ export interface ResumeStorage {
   setCareer: (v: CareerItem[]) => void;
   experience: ExperienceItem[];
   setExperience: (v: ExperienceItem[]) => void;
+  jobRole: string;
+  setJobRole: (v: string) => void;
+  techStack: string[];
+  setTechStack: (v: string[]) => void;
   visibleSections: VisibleSections;
   toggleSection: (key: SectionKey) => void;
   isPublic: boolean;
@@ -116,6 +124,8 @@ export function useResumeStorage(userId: number | null): ResumeStorage {
   const [education, setEducationState] = useState<EducationItem[]>([]);
   const [career, setCareerState] = useState<CareerItem[]>([]);
   const [experience, setExperienceState] = useState<ExperienceItem[]>([]);
+  const [jobRole, setJobRoleState] = useState('');
+  const [techStack, setTechStackState] = useState<string[]>([]);
   const [visibleSections, setVisibleSectionsState] = useState<VisibleSections>(DEFAULT_VISIBLE);
   const [isPublic, setIsPublicState] = useState(false);
 
@@ -126,6 +136,8 @@ export function useResumeStorage(userId: number | null): ResumeStorage {
     setEducationState(load(`${p}:education`, []));
     setCareerState(load(`${p}:career`, []));
     setExperienceState(load(`${p}:experience`, []));
+    setJobRoleState(load(`${p}:jobRole`, ''));
+    setTechStackState(load(`${p}:techStack`, []));
     setVisibleSectionsState(load(`${p}:visibleSections`, DEFAULT_VISIBLE));
     setIsPublicState(load(`${p}:isPublic`, false));
     setLoaded(true);
@@ -137,11 +149,13 @@ export function useResumeStorage(userId: number | null): ResumeStorage {
   useEffect(() => { if (loaded) save(`${p}:education`, education); }, [education, loaded, p]);
   useEffect(() => { if (loaded) save(`${p}:career`, career); }, [career, loaded, p]);
   useEffect(() => { if (loaded) save(`${p}:experience`, experience); }, [experience, loaded, p]);
+  useEffect(() => { if (loaded) save(`${p}:jobRole`, jobRole); }, [jobRole, loaded, p]);
+  useEffect(() => { if (loaded) save(`${p}:techStack`, techStack); }, [techStack, loaded, p]);
   useEffect(() => { if (loaded) save(`${p}:visibleSections`, visibleSections); }, [visibleSections, loaded, p]);
   useEffect(() => { if (loaded) save(`${p}:isPublic`, isPublic); }, [isPublic, loaded, p]);
 
   const toggleSection = (key: SectionKey) =>
-    setVisibleSectionsState(prev => ({ ...prev, [key]: !prev[key] }));
+    setVisibleSectionsState((prev: VisibleSections) => ({ ...prev, [key]: !prev[key] }));
 
   return {
     loaded,
@@ -155,6 +169,10 @@ export function useResumeStorage(userId: number | null): ResumeStorage {
     setCareer: setCareerState,
     experience,
     setExperience: setExperienceState,
+    jobRole,
+    setJobRole: setJobRoleState,
+    techStack,
+    setTechStack: setTechStackState,
     visibleSections,
     toggleSection,
     isPublic,

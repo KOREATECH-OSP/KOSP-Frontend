@@ -21,6 +21,7 @@ import type {
   MyApplicationListResponse,
   UserTitleListResponse,
   UserTitleResponse,
+  MySeasonRankingResponse,
 } from './types';
 
 interface AuthOptions {
@@ -283,6 +284,15 @@ export async function setDisplayTitle(
 ): Promise<UserTitleResponse> {
   return clientApiClient<UserTitleResponse>(`/v1/users/me/titles/${userTitleId}/display`, {
     method: 'PUT',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 시즌 랭킹 조회 (인증 필요)
+ */
+export async function getMySeasonRanking(auth: AuthOptions): Promise<MySeasonRankingResponse> {
+  return clientApiClient<MySeasonRankingResponse>('/v1/seasons/current/rankings/me', {
     accessToken: auth.accessToken,
   });
 }

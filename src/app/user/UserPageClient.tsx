@@ -45,6 +45,7 @@ import {
   getMyPointHistory,
   getMyApplications,
   getMyTitles,
+  getMySeasonRanking,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
@@ -61,8 +62,140 @@ import type {
   MyApplicationResponse,
   BoardResponse,
   UserTitleResponse,
+  MySeasonRankingResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
+
+// ─── 시즌 랭킹 카드 ───────────────────────────────────────────
+const SEASON_TIER_LABELS: Record<string, string> = {
+  BRONZE_4: '브론즈 4', BRONZE_3: '브론즈 3', BRONZE_2: '브론즈 2', BRONZE_1: '브론즈 1',
+  SILVER_4: '실버 4',   SILVER_3: '실버 3',   SILVER_2: '실버 2',   SILVER_1: '실버 1',
+  GOLD_4:   '골드 4',   GOLD_3:   '골드 3',   GOLD_2:   '골드 2',   GOLD_1:   '골드 1',
+  PLATINUM_4: '플래티넘 4', PLATINUM_3: '플래티넘 3', PLATINUM_2: '플래티넘 2', PLATINUM_1: '플래티넘 1',
+  DIAMOND_4: '다이아몬드 4', DIAMOND_3: '다이아몬드 3', DIAMOND_2: '다이아몬드 2', DIAMOND_1: '다이아몬드 1',
+  MASTER_4: '마스터 4', MASTER_3: '마스터 3', MASTER_2: '마스터 2', MASTER_1: '마스터 1',
+  CHALLENGER: '챌린저',
+};
+
+const SEASON_TIER_THRESHOLDS: Record<string, [number, number]> = {
+  BRONZE_4: [0, 2.5],       BRONZE_3: [2.5, 5],     BRONZE_2: [5, 7.5],       BRONZE_1: [7.5, 10],
+  SILVER_4: [10, 12.5],     SILVER_3: [12.5, 15],   SILVER_2: [15, 17.5],     SILVER_1: [17.5, 20],
+  GOLD_4:   [20, 23.75],    GOLD_3:   [23.75, 27.5], GOLD_2:  [27.5, 31.25],  GOLD_1:   [31.25, 35],
+  PLATINUM_4: [35, 40],     PLATINUM_3: [40, 45],   PLATINUM_2: [45, 50],     PLATINUM_1: [50, 55],
+  DIAMOND_4: [55, 60],      DIAMOND_3: [60, 65],    DIAMOND_2: [65, 70],      DIAMOND_1: [70, 75],
+  MASTER_4: [75, 78.75],    MASTER_3: [78.75, 82.5], MASTER_2: [82.5, 86.25], MASTER_1: [86.25, 90],
+  CHALLENGER: [90, 100],
+};
+
+function getTierColor(tier: string): string {
+  if (tier.startsWith('BRONZE'))   return 'text-amber-700';
+  if (tier.startsWith('SILVER'))   return 'text-slate-500';
+  if (tier.startsWith('GOLD'))     return 'text-yellow-500';
+  if (tier.startsWith('PLATINUM')) return 'text-teal-500';
+  if (tier.startsWith('DIAMOND'))  return 'text-blue-500';
+  if (tier.startsWith('MASTER'))   return 'text-purple-600';
+  if (tier === 'CHALLENGER')       return 'text-rose-500';
+  return 'text-gray-600';
+}
+
+function getTierBarColor(tier: string): string {
+  if (tier.startsWith('BRONZE'))   return 'bg-amber-600';
+  if (tier.startsWith('SILVER'))   return 'bg-slate-400';
+  if (tier.startsWith('GOLD'))     return 'bg-yellow-400';
+  if (tier.startsWith('PLATINUM')) return 'bg-teal-400';
+  if (tier.startsWith('DIAMOND'))  return 'bg-blue-400';
+  if (tier.startsWith('MASTER'))   return 'bg-purple-500';
+  if (tier === 'CHALLENGER')       return 'bg-rose-500';
+  return 'bg-gray-400';
+}
+
+const SEASON_CATEGORIES = [
+  { key: 'attendanceScore', label: '출석',    color: 'bg-blue-400' },
+  { key: 'commitScore',     label: '커밋',    color: 'bg-green-400' },
+  { key: 'challengeScore',  label: '챌린지',  color: 'bg-orange-400' },
+  { key: 'projectScore',    label: '프로젝트', color: 'bg-purple-400' },
+  { key: 'communityScore',  label: '커뮤니티', color: 'bg-pink-400' },
+] as const;
+
+function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
+  const { tier, totalScore, rank, seasonName } = ranking;
+  const [min, max] = SEASON_TIER_THRESHOLDS[tier] ?? [0, 100];
+  const progress = max === min ? 100 : Math.min(100, ((totalScore - min) / (max - min)) * 100);
+  const remaining = max === 100 ? 0 : Math.max(0, max - totalScore);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+      {/* 헤더 */}
+      <div className="border-b border-gray-100 px-5 py-4">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <Trophy className="h-4 w-4 text-gray-500" />
+          시즌 랭킹
+          <span className="ml-auto text-[11px] text-gray-400">{seasonName}</span>
+        </h2>
+      </div>
+
+      <div className="px-5 py-4 space-y-4">
+        {/* 티어 + 순위 */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className={`text-2xl font-bold ${getTierColor(tier)}`}>
+              {SEASON_TIER_LABELS[tier] ?? tier}
+            </p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              총점 {totalScore.toFixed(1)}점
+              {remaining > 0 && (
+                <span className="ml-1.5 text-gray-300">
+                  다음 티어까지 {remaining.toFixed(1)}점
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">내 순위</p>
+            <p className="text-xl font-bold text-gray-900">#{rank}</p>
+          </div>
+        </div>
+
+        {/* 티어 진행 바 */}
+        <div>
+          <div className="mb-1.5 flex justify-between text-[10px] text-gray-400">
+            <span>{min.toFixed(1)}</span>
+            <span>{max === 100 ? 'MAX' : max.toFixed(1)}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${getTierBarColor(tier)}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 5개 카테고리 점수 */}
+        <div className="space-y-2 pt-1">
+          {SEASON_CATEGORIES.map(({ key, label, color }) => {
+            const score = ranking[key];
+            const pct = Math.min(100, (score / 20) * 100);
+            return (
+              <div key={key} className="flex items-center gap-3">
+                <span className="w-14 shrink-0 text-[11px] text-gray-500">{label}</span>
+                <div className="flex-1 overflow-hidden rounded-full bg-gray-100 h-1.5">
+                  <div
+                    className={`h-full rounded-full ${color}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-8 shrink-0 text-right text-[11px] font-medium text-gray-700">
+                  {score.toFixed(1)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────
 
 interface UserPageClientProps {
   session: AuthSession | null;
@@ -89,6 +222,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
   // 대표 칭호
   const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
+
+  // 시즌 랭킹
+  const [seasonRanking, setSeasonRanking] = useState<MySeasonRankingResponse | null>(null);
 
   // 챌린지 달성률
   const [challengeRate, setChallengeRate] = useState<{ completed: number; total: number } | null>(null);
@@ -168,9 +304,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setBoards(boardsRes.boards);
 
         if (accessToken) {
-          const [challengeRes, titlesRes] = await Promise.all([
+          const [challengeRes, titlesRes, seasonRes] = await Promise.all([
             getChallenges({ accessToken }).catch(() => null),
             getMyTitles({ accessToken }).catch(() => null),
+            getMySeasonRanking({ accessToken }).catch(() => null),
           ]);
           if (challengeRes) {
             const total = challengeRes.challenges.length;
@@ -181,6 +318,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
             const found = titlesRes.titles.find((t) => t.isDisplay) ?? null;
             setDisplayTitle(found);
           }
+          if (seasonRes) setSeasonRanking(seasonRes);
         }
 
         await fetchGithubData();
@@ -535,6 +673,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       }}
                     />
                   )}
+
+                  {/* 시즌 랭킹 티어 */}
+                  {seasonRanking && <SeasonRankingCard ranking={seasonRanking} />}
 
                   {/* 점수 상세 */}
                   {contributionScore && (
