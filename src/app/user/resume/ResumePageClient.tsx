@@ -13,10 +13,17 @@ import {
   Star,
   Trophy,
   FileText,
-  Download,
+  Printer,
   ArrowLeft,
   MessageCircle,
   Loader2,
+  LinkIcon,
+  GraduationCap,
+  Briefcase,
+  Lightbulb,
+  Globe,
+  Copy,
+  Check,
 } from 'lucide-react';
 import type { AuthSession } from '@/lib/auth/types';
 import {
@@ -35,6 +42,10 @@ import type {
   GithubContributionScoreResponse,
   UserTitleResponse,
 } from '@/lib/api/types';
+import { useResumeStorage, newId } from './hooks/useResumeStorage';
+import type { LinkItem, EducationItem, CareerItem, ExperienceItem } from './hooks/useResumeStorage';
+import EditableListSection from './components/EditableListSection';
+import SectionToggleCard from './components/SectionToggleCard';
 
 interface ResumePageClientProps {
   session: AuthSession;
@@ -52,6 +63,20 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
   const accessToken = session.accessToken as string | undefined;
+
+  // ── localStorage 기반 편집 상태 ──────────────────────────
+  const {
+    loaded: draftLoaded,
+    resumeTitle, setResumeTitle,
+    links, setLinks,
+    education, setEducation,
+    career, setCareer,
+    experience, setExperience,
+    visibleSections, toggleSection,
+    isPublic, setIsPublic,
+  } = useResumeStorage(userId);
+
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!userId || !accessToken) return;
@@ -91,11 +116,46 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     fetchData();
   }, [fetchData]);
 
-  // TODO: PDF 생성 및 다운로드 구현
-  const handlePdfDownload = () => {
-    // TODO: react-pdf 또는 서버사이드 PDF 생성 연동 예정
-    alert('PDF 다운로드 기능은 준비 중입니다.');
+  const handlePrint = () => {
+    window.print();
   };
+
+  const handleCopyUrl = () => {
+    const url = `${window.location.origin}/resume/${userId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    });
+  };
+
+  // 편집형 섹션 헬퍼 함수들
+  const addLink = () =>
+    setLinks([...links, { id: newId(), label: '', url: '' }]);
+  const removeLink = (id: string) =>
+    setLinks(links.filter((l) => l.id !== id));
+  const updateLink = (id: string, key: string, value: string) =>
+    setLinks(links.map((l) => (l.id === id ? { ...l, [key]: value } : l)) as LinkItem[]);
+
+  const addEducation = () =>
+    setEducation([...education, { id: newId(), school: '', major: '', period: '' }]);
+  const removeEducation = (id: string) =>
+    setEducation(education.filter((e) => e.id !== id));
+  const updateEducation = (id: string, key: string, value: string) =>
+    setEducation(education.map((e) => (e.id === id ? { ...e, [key]: value } : e)) as EducationItem[]);
+
+  const addCareer = () =>
+    setCareer([...career, { id: newId(), company: '', role: '', period: '' }]);
+  const removeCareer = (id: string) =>
+    setCareer(career.filter((c) => c.id !== id));
+  const updateCareer = (id: string, key: string, value: string) =>
+    setCareer(career.map((c) => (c.id === id ? { ...c, [key]: value } : c)) as CareerItem[]);
+
+  const addExperience = () =>
+    setExperience([...experience, { id: newId(), title: '', description: '', period: '' }]);
+  const removeExperience = (id: string) =>
+    setExperience(experience.filter((e) => e.id !== id));
+  const updateExperience = (id: string, key: string, value: string) =>
+    setExperience(experience.map((e) => (e.id === id ? { ...e, [key]: value } : e)) as ExperienceItem[]);
 
   if (isLoading) {
     return (
@@ -126,8 +186,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* ── 왼쪽 사이드바 (기존 마이페이지 사이드바와 동일 구조) ── */}
-        <aside className="lg:col-span-1">
+        {/* ── 왼쪽 사이드바 ── */}
+        <aside className="lg:col-span-1 print:hidden">
           <div className="sticky top-20 space-y-4">
             {/* 프로필 카드 */}
             <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -256,27 +316,93 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                 </div>
               </div>
             </div>
+            {/* 섹션 설정 카드 */}
+            <SectionToggleCard
+              visibleSections={visibleSections}
+              onToggle={toggleSection}
+            />
+
+            {/* 공개설정 카드 */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+                공개 설정
+              </h3>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-700">이력서 공개</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPublic}
+                  onClick={() => setIsPublic(!isPublic)}
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isPublic ? 'bg-gray-900' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      isPublic ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              {isPublic && (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-[11px] text-gray-400">공개 URL</p>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                    <Globe className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    <span className="flex-1 truncate text-[11px] text-gray-500">
+                      {/* TODO: 공개 라우트 (/resume/[userId]) 구현 후 실제 URL로 교체 */}
+                      /resume/{userId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyUrl}
+                      className="shrink-0 text-gray-400 hover:text-gray-700 transition-colors"
+                      aria-label="URL 복사"
+                    >
+                      {copiedUrl ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-amber-600">
+                    ※ 공개 페이지는 준비 중입니다.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
 
         {/* ── 오른쪽 이력서 본문 ── */}
         <div className="lg:col-span-2 space-y-4">
-          {/* 상단 헤더: 제목 + PDF 다운로드 버튼 */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-gray-500" />
-              <h2 className="text-lg font-bold text-gray-900">이력서</h2>
+          {/* 상단 헤더: 이력서 제목 입력 + 인쇄 버튼 */}
+          <div className="print:hidden flex items-center justify-between gap-3">
+            <div className="flex flex-1 items-center gap-2">
+              <FileText className="h-5 w-5 shrink-0 text-gray-500" />
+              <input
+                type="text"
+                value={resumeTitle}
+                onChange={(e) => setResumeTitle(e.target.value)}
+                placeholder="이력서 제목을 입력하세요"
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+              />
             </div>
-            {/* PDF 다운로드 버튼 — UI만 구현, 실제 다운로드는 TODO */}
             <button
               type="button"
-              onClick={handlePdfDownload}
-              className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
+              onClick={handlePrint}
+              className="flex shrink-0 items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
             >
-              <Download className="h-4 w-4" />
-              PDF 다운로드
+              <Printer className="h-4 w-4" />
+              인쇄 / PDF
             </button>
           </div>
+          {/* 인쇄 시에만 보이는 이력서 제목 */}
+          {resumeTitle && (
+            <h2 className="hidden text-2xl font-bold text-gray-900 print:block">{resumeTitle}</h2>
+          )}
 
           {/* 프로필 카드 (이력서 상단) */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -487,7 +613,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           </div>
 
           {/* 챌린지 달성 현황 */}
-          {challengeRate && (
+          {visibleSections.challenge && challengeRate && (
             <div className="rounded-xl border border-gray-200 bg-white p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
@@ -515,6 +641,86 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                   : '진행 중인 챌린지 없음'}
               </p>
             </div>
+          )}
+
+          {/* ── 편집형 섹션 (localStorage 임시저장) ─────────────────── */}
+          {draftLoaded && (
+            <>
+              {/* 링크 */}
+              {visibleSections.links && (
+                <EditableListSection
+                  title="링크"
+                  icon={<LinkIcon className="h-4 w-4 text-gray-500" />}
+                  items={links}
+                  fields={[
+                    { key: 'label', label: '링크 이름', placeholder: '예: GitHub, 블로그', span: 'half' },
+                    { key: 'url', label: 'URL', placeholder: 'https://', span: 'half' },
+                  ]}
+                  addLabel="링크 추가"
+                  emptyMessage="등록된 링크가 없습니다."
+                  onAdd={addLink}
+                  onRemove={removeLink}
+                  onUpdate={updateLink}
+                />
+              )}
+
+              {/* 학력 */}
+              {visibleSections.education && (
+                <EditableListSection
+                  title="학력"
+                  icon={<GraduationCap className="h-4 w-4 text-gray-500" />}
+                  items={education}
+                  fields={[
+                    { key: 'school', label: '학교명', placeholder: '예: 한국기술교육대학교', span: 'half' },
+                    { key: 'major', label: '전공', placeholder: '예: 컴퓨터공학부', span: 'half' },
+                    { key: 'period', label: '기간', placeholder: '예: 2021.03 ~ 2025.02', span: 'full' },
+                  ]}
+                  addLabel="학력 추가"
+                  emptyMessage="등록된 학력이 없습니다."
+                  onAdd={addEducation}
+                  onRemove={removeEducation}
+                  onUpdate={updateEducation}
+                />
+              )}
+
+              {/* 경력 */}
+              {visibleSections.career && (
+                <EditableListSection
+                  title="경력"
+                  icon={<Briefcase className="h-4 w-4 text-gray-500" />}
+                  items={career}
+                  fields={[
+                    { key: 'company', label: '회사명', placeholder: '예: KOREATECH', span: 'half' },
+                    { key: 'role', label: '직무', placeholder: '예: 백엔드 개발', span: 'half' },
+                    { key: 'period', label: '기간', placeholder: '예: 2024.07 ~ 2024.12', span: 'full' },
+                  ]}
+                  addLabel="경력 추가"
+                  emptyMessage="등록된 경력이 없습니다."
+                  onAdd={addCareer}
+                  onRemove={removeCareer}
+                  onUpdate={updateCareer}
+                />
+              )}
+
+              {/* 경험 */}
+              {visibleSections.experience && (
+                <EditableListSection
+                  title="경험 / 프로젝트"
+                  icon={<Lightbulb className="h-4 w-4 text-gray-500" />}
+                  items={experience}
+                  fields={[
+                    { key: 'title', label: '프로젝트명', placeholder: '예: 오픈소스 포털 개발', span: 'half' },
+                    { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
+                    { key: 'description', label: '설명', placeholder: '주요 역할과 기여 내용을 입력하세요.', multiline: true, span: 'full' },
+                  ]}
+                  addLabel="경험 추가"
+                  emptyMessage="등록된 경험이 없습니다."
+                  onAdd={addExperience}
+                  onRemove={removeExperience}
+                  onUpdate={updateExperience}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
