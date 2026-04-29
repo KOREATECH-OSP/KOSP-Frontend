@@ -18,12 +18,14 @@ export type SectionKey =
   | 'techStack';
 
 export interface LinkItem {
+  [key: string]: string;
   id: string;
   label: string;
   url: string;
 }
 
 export interface EducationItem {
+  [key: string]: string;
   id: string;
   school: string;
   major: string;
@@ -31,6 +33,7 @@ export interface EducationItem {
 }
 
 export interface CareerItem {
+  [key: string]: string;
   id: string;
   company: string;
   role: string;
@@ -38,6 +41,7 @@ export interface CareerItem {
 }
 
 export interface ExperienceItem {
+  [key: string]: string;
   id: string;
   title: string;
   description: string;
@@ -111,6 +115,47 @@ export interface ResumeStorage {
   setIsPublic: (v: boolean) => void;
 }
 
+interface ResumeData {
+  loaded: boolean;
+  resumeTitle: string;
+  links: LinkItem[];
+  education: EducationItem[];
+  career: CareerItem[];
+  experience: ExperienceItem[];
+  jobRole: string;
+  techStack: string[];
+  visibleSections: VisibleSections;
+  isPublic: boolean;
+}
+
+function loadAll(p: string): ResumeData {
+  return {
+    loaded: true,
+    resumeTitle: load(`${p}:title`, ''),
+    links: load(`${p}:links`, [] as LinkItem[]),
+    education: load(`${p}:education`, [] as EducationItem[]),
+    career: load(`${p}:career`, [] as CareerItem[]),
+    experience: load(`${p}:experience`, [] as ExperienceItem[]),
+    jobRole: load(`${p}:jobRole`, ''),
+    techStack: load(`${p}:techStack`, [] as string[]),
+    visibleSections: load(`${p}:visibleSections`, DEFAULT_VISIBLE),
+    isPublic: load(`${p}:isPublic`, false),
+  };
+}
+
+const INITIAL_DATA: ResumeData = {
+  loaded: false,
+  resumeTitle: '',
+  links: [],
+  education: [],
+  career: [],
+  experience: [],
+  jobRole: '',
+  techStack: [],
+  visibleSections: DEFAULT_VISIBLE,
+  isPublic: false,
+};
+
 /**
  * 이력서 draft 데이터를 localStorage에 저장·불러오는 훅.
  * 모든 키는 `resume:{userId}:*` 네임스페이스를 사용해 사용자별로 분리된다.
@@ -118,64 +163,49 @@ export interface ResumeStorage {
 export function useResumeStorage(userId: number | null): ResumeStorage {
   const p = userId !== null ? `resume:${userId}` : 'resume:guest';
 
-  const [loaded, setLoaded] = useState(false);
-  const [resumeTitle, setResumeTitleState] = useState('');
-  const [links, setLinksState] = useState<LinkItem[]>([]);
-  const [education, setEducationState] = useState<EducationItem[]>([]);
-  const [career, setCareerState] = useState<CareerItem[]>([]);
-  const [experience, setExperienceState] = useState<ExperienceItem[]>([]);
-  const [jobRole, setJobRoleState] = useState('');
-  const [techStack, setTechStackState] = useState<string[]>([]);
-  const [visibleSections, setVisibleSectionsState] = useState<VisibleSections>(DEFAULT_VISIBLE);
-  const [isPublic, setIsPublicState] = useState(false);
+  const [data, setData] = useState<ResumeData>(INITIAL_DATA);
 
-  // 클라이언트 마운트 시 1회 로드
+  // 클라이언트 마운트 시 1회 로드 (단일 setState 호출로 cascading renders 방지)
   useEffect(() => {
-    setResumeTitleState(load(`${p}:title`, ''));
-    setLinksState(load(`${p}:links`, []));
-    setEducationState(load(`${p}:education`, []));
-    setCareerState(load(`${p}:career`, []));
-    setExperienceState(load(`${p}:experience`, []));
-    setJobRoleState(load(`${p}:jobRole`, ''));
-    setTechStackState(load(`${p}:techStack`, []));
-    setVisibleSectionsState(load(`${p}:visibleSections`, DEFAULT_VISIBLE));
-    setIsPublicState(load(`${p}:isPublic`, false));
-    setLoaded(true);
+    setData(loadAll(p));
   }, [p]);
 
   // 상태 변경 시 자동 저장 (loaded 이후에만)
-  useEffect(() => { if (loaded) save(`${p}:title`, resumeTitle); }, [resumeTitle, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:links`, links); }, [links, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:education`, education); }, [education, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:career`, career); }, [career, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:experience`, experience); }, [experience, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:jobRole`, jobRole); }, [jobRole, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:techStack`, techStack); }, [techStack, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:visibleSections`, visibleSections); }, [visibleSections, loaded, p]);
-  useEffect(() => { if (loaded) save(`${p}:isPublic`, isPublic); }, [isPublic, loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:title`, data.resumeTitle); }, [data.resumeTitle, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:links`, data.links); }, [data.links, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:education`, data.education); }, [data.education, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:career`, data.career); }, [data.career, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:experience`, data.experience); }, [data.experience, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:jobRole`, data.jobRole); }, [data.jobRole, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:techStack`, data.techStack); }, [data.techStack, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:visibleSections`, data.visibleSections); }, [data.visibleSections, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:isPublic`, data.isPublic); }, [data.isPublic, data.loaded, p]);
+
+  const set = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) =>
+    setData(prev => ({ ...prev, [key]: value }));
 
   const toggleSection = (key: SectionKey) =>
-    setVisibleSectionsState((prev: VisibleSections) => ({ ...prev, [key]: !prev[key] }));
+    setData(prev => ({ ...prev, visibleSections: { ...prev.visibleSections, [key]: !prev.visibleSections[key] } }));
 
   return {
-    loaded,
-    resumeTitle,
-    setResumeTitle: setResumeTitleState,
-    links,
-    setLinks: setLinksState,
-    education,
-    setEducation: setEducationState,
-    career,
-    setCareer: setCareerState,
-    experience,
-    setExperience: setExperienceState,
-    jobRole,
-    setJobRole: setJobRoleState,
-    techStack,
-    setTechStack: setTechStackState,
-    visibleSections,
+    loaded: data.loaded,
+    resumeTitle: data.resumeTitle,
+    setResumeTitle: (v) => set('resumeTitle', v),
+    links: data.links,
+    setLinks: (v) => set('links', v),
+    education: data.education,
+    setEducation: (v) => set('education', v),
+    career: data.career,
+    setCareer: (v) => set('career', v),
+    experience: data.experience,
+    setExperience: (v) => set('experience', v),
+    jobRole: data.jobRole,
+    setJobRole: (v) => set('jobRole', v),
+    techStack: data.techStack,
+    setTechStack: (v) => set('techStack', v),
+    visibleSections: data.visibleSections,
     toggleSection,
-    isPublic,
-    setIsPublic: setIsPublicState,
+    isPublic: data.isPublic,
+    setIsPublic: (v) => set('isPublic', v),
   };
 }

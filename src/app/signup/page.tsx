@@ -269,9 +269,6 @@ function SignupContent() {
     setStep('info');
   };
 
-  const handleBackToTerms = () => {
-    setStep('terms');
-  };
 
   if (isTokenVerifying) {
     return (
