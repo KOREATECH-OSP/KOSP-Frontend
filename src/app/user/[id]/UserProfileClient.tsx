@@ -48,6 +48,19 @@ import type {
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 
+const TITLE_CATEGORY_EMOJI: Record<string, string> = {
+  COMMIT: '✏️',
+  STREAK: '🔥',
+  CHALLENGE: '🏆',
+  COLLABORATION: '🤝',
+  COMMUNITY: '💬',
+  INFLUENCE: '⭐',
+  PROJECT: '📁',
+  OPEN_SOURCE: '🐙',
+  SEASON: '🌟',
+  HONOR: '👑',
+};
+
 interface UserProfileClientProps {
   userId: number;
   profile: UserProfileResponse;
@@ -196,15 +209,18 @@ export default function UserProfileClient({
               {/* 대표 칭호 (보기 전용) */}
               {displayTitle && (
                 <div className="mb-2 flex items-center gap-1.5">
-                  {displayTitle.iconUrl && (
+                  {displayTitle.iconUrl ? (
                     <img
                       src={displayTitle.iconUrl}
                       alt={displayTitle.titleName}
                       className="h-4 w-4 object-contain"
                       onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
                     />
+                  ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                    <span className="text-sm leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                  ) : (
+                    <Trophy className="h-3.5 w-3.5 text-amber-500" />
                   )}
-                  <Trophy className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
                 </div>
               )}

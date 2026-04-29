@@ -66,6 +66,20 @@ import type {
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 
+// ─── 칭호 카테고리 이모지 ─────────────────────────────────────
+const TITLE_CATEGORY_EMOJI: Record<string, string> = {
+  COMMIT: '✏️',
+  STREAK: '🔥',
+  CHALLENGE: '🏆',
+  COLLABORATION: '🤝',
+  COMMUNITY: '💬',
+  INFLUENCE: '⭐',
+  PROJECT: '📁',
+  OPEN_SOURCE: '🐙',
+  SEASON: '🌟',
+  HONOR: '👑',
+};
+
 // ─── 시즌 랭킹 카드 ───────────────────────────────────────────
 const SEASON_TIER_LABELS: Record<string, string> = {
   BRONZE_4: '브론즈 4', BRONZE_3: '브론즈 3', BRONZE_2: '브론즈 2', BRONZE_1: '브론즈 1',
@@ -467,13 +481,17 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               {/* 대표 칭호 */}
               {displayTitle && (
                 <div className="mb-2 flex items-center gap-1.5">
-                  {displayTitle.iconUrl && (
+                  {displayTitle.iconUrl ? (
                     <img
                       src={displayTitle.iconUrl}
                       alt={displayTitle.titleName}
                       className="h-4 w-4 object-contain"
                       onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
                     />
+                  ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                    <span className="text-sm leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                  ) : (
+                    <Trophy className="h-4 w-4 text-amber-500" />
                   )}
                   <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
                 </div>
@@ -485,15 +503,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               {profile?.introduction && (
                 <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>
               )}
-
-              {/* 이력서 바로가기 */}
-              <Link
-                href="/user/resume"
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-              >
-                <FileText className="h-4 w-4" />
-                이력서 보기
-              </Link>
             </div>
 
             {/* 통계 카드 */}
@@ -555,6 +564,22 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </div>
               </div>
             </div>
+
+            {/* 팔로우/팔로워 카드 (준비 중) */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h3 className="mb-4 text-sm font-bold text-gray-900">소셜</h3>
+              <div className="flex divide-x divide-gray-100">
+                <div className="flex flex-1 flex-col items-center gap-1 py-1">
+                  <span className="text-xl font-bold text-gray-900">-</span>
+                  <span className="text-xs text-gray-500">팔로워</span>
+                </div>
+                <div className="flex flex-1 flex-col items-center gap-1 py-1">
+                  <span className="text-xl font-bold text-gray-900">-</span>
+                  <span className="text-xs text-gray-500">팔로잉</span>
+                </div>
+              </div>
+              <p className="mt-3 text-center text-[11px] text-gray-400">소셜 기능 준비 중입니다</p>
+            </div>
           </div>
         </aside>
 
@@ -571,7 +596,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     activeTab === tab.key
                       ? 'text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                  } ${index === 0 ? 'rounded-l-lg' : ''}`}
                   style={
                     activeTab === tab.key
                       ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
@@ -582,6 +607,13 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {tab.label}
                 </button>
               ))}
+              <Link
+                href="/user/resume"
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-r-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200"
+              >
+                <FileText className="h-4 w-4" />
+                이력서
+              </Link>
             </div>
           </div>
 
@@ -676,6 +708,45 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
                   {/* 시즌 랭킹 티어 */}
                   {seasonRanking && <SeasonRankingCard ranking={seasonRanking} />}
+
+                  {/* 챌린지 달성 카드 */}
+                  {challengeRate && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                      <div className="border-b border-gray-100 px-5 py-4">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <Trophy className="h-4 w-4 text-gray-500" />
+                          챌린지 달성
+                        </h2>
+                      </div>
+                      <div className="px-5 py-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">
+                              {challengeRate.completed}
+                              <span className="text-sm font-normal text-gray-400"> / {challengeRate.total}</span>
+                            </p>
+                            <p className="mt-0.5 text-xs text-gray-400">완료한 챌린지</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-orange-500">
+                              {challengeRate.total > 0
+                                ? Math.round((challengeRate.completed / challengeRate.total) * 100)
+                                : 0}%
+                            </p>
+                            <p className="text-xs text-gray-400">달성률</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
+                          <div
+                            className="h-full rounded-full bg-orange-400 transition-all duration-500"
+                            style={{
+                              width: `${challengeRate.total > 0 ? (challengeRate.completed / challengeRate.total) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 점수 상세 */}
                   {contributionScore && (

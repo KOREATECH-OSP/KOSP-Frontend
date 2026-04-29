@@ -36,6 +36,7 @@ import {
   getUserGithubContributionScore,
   getMyTitles,
   getMyPointHistory,
+  setDisplayTitle as apiSetDisplayTitle,
 } from '@/lib/api/user';
 import { getChallenges } from '@/lib/api/challenge';
 import { ensureEncodedUrl } from '@/lib/utils';
@@ -54,6 +55,19 @@ const RARITY_LABELS: Record<string, string> = {
   RARE: '희귀',
   EPIC: '영웅',
   LEGENDARY: '전설',
+};
+
+const TITLE_CATEGORY_EMOJI: Record<string, string> = {
+  COMMIT: '✏️',
+  STREAK: '🔥',
+  CHALLENGE: '🏆',
+  COLLABORATION: '🤝',
+  COMMUNITY: '💬',
+  INFLUENCE: '⭐',
+  PROJECT: '📁',
+  OPEN_SOURCE: '🐙',
+  SEASON: '🌟',
+  HONOR: '👑',
 };
 import EditableListSection from './components/EditableListSection';
 import SectionToggleCard from './components/SectionToggleCard';
@@ -91,6 +105,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [techInput, setTechInput] = useState('');
+  const [showTitleModal, setShowTitleModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!userId || !accessToken) return;
@@ -140,6 +155,21 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
     });
+  };
+
+  const handleSetDisplayTitle = async (userTitleId: number) => {
+    if (!accessToken) return;
+    try {
+      await apiSetDisplayTitle(userTitleId, { accessToken });
+      setAllTitles((prev: UserTitleResponse[]) =>
+        prev.map((t: UserTitleResponse) => ({ ...t, isDisplay: t.userTitleId === userTitleId }))
+      );
+      const selected = allTitles.find((t: UserTitleResponse) => t.userTitleId === userTitleId) ?? null;
+      setDisplayTitle(selected ? { ...selected, isDisplay: true } : null);
+      setShowTitleModal(false);
+    } catch (err) {
+      console.error('대표 칭호 변경 실패:', err);
+    }
   };
 
   // 편집형 섹션 헬퍼 함수들
