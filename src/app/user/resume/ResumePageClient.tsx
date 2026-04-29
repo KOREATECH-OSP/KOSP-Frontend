@@ -241,9 +241,9 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         {/* ── 왼쪽 사이드바 ── */}
-        <aside className="lg:col-span-1 print:hidden">
+        <aside className="print:hidden lg:w-60 lg:flex-shrink-0">
           <div className="sticky top-20 space-y-4">
             {/* 프로필 카드 */}
             <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -433,7 +433,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         </aside>
 
         {/* ── 오른쪽 이력서 본문 ── */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="min-w-0 flex-1 space-y-4">
           {/* 상단 헤더: 이력서 제목 입력 + 버튼들 */}
           <div className="print:hidden flex items-center justify-between gap-3">
             <div className="flex flex-1 items-center gap-2">
