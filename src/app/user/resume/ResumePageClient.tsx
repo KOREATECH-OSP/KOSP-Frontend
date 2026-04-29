@@ -48,7 +48,15 @@ import type {
   UserTitleResponse,
 } from '@/lib/api/types';
 import { useResumeStorage, newId } from './hooks/useResumeStorage';
-import type { LinkItem, EducationItem, CareerItem, ExperienceItem } from './hooks/useResumeStorage';
+import type {
+  LinkItem,
+  EducationItem,
+  CareerItem,
+  ExperienceItem,
+  ProjectItem,
+  AwardItem,
+  CertificationItem,
+} from './hooks/useResumeStorage';
 
 const RARITY_LABELS: Record<string, string> = {
   COMMON: '일반',
@@ -93,10 +101,15 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const {
     loaded: draftLoaded,
     resumeTitle, setResumeTitle,
+    headline, setHeadline,
+    bio, setBio,
     links, setLinks,
     education, setEducation,
     career, setCareer,
     experience, setExperience,
+    projects, setProjects,
+    awards, setAwards,
+    certifications, setCertifications,
     jobRole, setJobRole,
     techStack, setTechStack,
     visibleSections, toggleSection,
@@ -227,6 +240,32 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const removeTechTag = (tag: string) => {
     setTechStack(techStack.filter((t) => t !== tag));
   };
+
+  // 프로젝트
+  const addProject = () =>
+    setProjects([...projects, {
+      id: newId(), name: '', period: '', summary: '', role: '',
+      techStack: '', mainFeatures: '', myContributions: '',
+      problemSolving: '', result: '', githubLink: '', deployLink: '',
+      docLink: '', featured: 'false',
+    }]);
+  const removeProject = (id: string) => setProjects(projects.filter((p) => p.id !== id));
+  const updateProject = (id: string, key: string, value: string) =>
+    setProjects(projects.map((p) => (p.id === id ? { ...p, [key]: value } : p)) as ProjectItem[]);
+
+  // 수상 / 성과
+  const addAward = () =>
+    setAwards([...awards, { id: newId(), name: '', organization: '', date: '', relatedProject: '', description: '' }]);
+  const removeAward = (id: string) => setAwards(awards.filter((a) => a.id !== id));
+  const updateAward = (id: string, key: string, value: string) =>
+    setAwards(awards.map((a) => (a.id === id ? { ...a, [key]: value } : a)) as AwardItem[]);
+
+  // 자격증
+  const addCertification = () =>
+    setCertifications([...certifications, { id: newId(), name: '', organization: '', date: '', status: 'ACQUIRED' }]);
+  const removeCertification = (id: string) => setCertifications(certifications.filter((c) => c.id !== id));
+  const updateCertification = (id: string, key: string, value: string) =>
+    setCertifications(certifications.map((c) => (c.id === id ? { ...c, [key]: value } : c)) as CertificationItem[]);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -542,6 +581,49 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
             )}
           </div>
 
+          {/* 한 줄 소개 + 자기소개 */}
+          {draftLoaded && (visibleSections.headline || visibleSections.bio) && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <User className="h-4 w-4 text-gray-500" />
+                  소개
+                  <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
+                </h3>
+              </div>
+              <div className="space-y-4 px-6 py-4">
+                {visibleSections.headline && (
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-medium text-gray-400">한 줄 소개</label>
+                    <input
+                      type="text"
+                      value={headline}
+                      onChange={(e) => setHeadline(e.target.value)}
+                      placeholder="예: Spring Boot 기반 백엔드 개발자, 서비스 기획 경험 보유"
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                )}
+                {visibleSections.bio && (
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-medium text-gray-400">
+                      자기소개
+                      <span className="ml-1 text-gray-300">({bio.length} / 500자)</span>
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      maxLength={500}
+                      placeholder="자신의 경험, 역량, 목표를 자유롭게 작성해주세요. (300~500자 권장)"
+                      className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* GitHub 랭크 카드 */}
           {contributionScore && overallHistory && (
             <GithubRankCard
@@ -845,11 +927,11 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               {/* 경험 */}
               {visibleSections.experience && (
                 <EditableListSection
-                  title="경험 / 프로젝트"
+                  title="경험 / 활동"
                   icon={<Lightbulb className="h-4 w-4 text-gray-500" />}
                   items={experience}
                   fields={[
-                    { key: 'title', label: '프로젝트명', placeholder: '예: 오픈소스 포털 개발', span: 'half' },
+                    { key: 'title', label: '활동명', placeholder: '예: 오픈소스 포털 개발', span: 'half' },
                     { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
                     { key: 'description', label: '설명', placeholder: '주요 역할과 기여 내용을 입력하세요.', multiline: true, span: 'full' },
                   ]}
@@ -858,6 +940,84 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                   onAdd={addExperience}
                   onRemove={removeExperience}
                   onUpdate={updateExperience}
+                />
+              )}
+
+              {/* 프로젝트 (상세) */}
+              {visibleSections.projects && (
+                <EditableListSection
+                  title="프로젝트"
+                  icon={<FolderGit className="h-4 w-4 text-gray-500" />}
+                  items={projects}
+                  fields={[
+                    { key: 'name', label: '프로젝트명', placeholder: '예: 오픈소스 포털', span: 'half' },
+                    { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
+                    { key: 'featured', label: '대표 프로젝트', span: 'half', select: [
+                      { value: 'false', label: '일반' },
+                      { value: 'true', label: '⭐ 대표 프로젝트' },
+                    ]},
+                    { key: 'role', label: '담당 역할', placeholder: '예: 백엔드 개발, API 설계, 팀장', span: 'half' },
+                    { key: 'summary', label: '한 줄 요약', placeholder: '프로젝트를 한 문장으로 설명하세요.', span: 'full' },
+                    { key: 'techStack', label: '사용 기술', placeholder: '예: Java, Spring Boot, MySQL, React', span: 'full' },
+                    { key: 'mainFeatures', label: '주요 기능', placeholder: '프로젝트의 핵심 기능을 설명하세요.', multiline: true, span: 'full' },
+                    { key: 'myContributions', label: '내가 구현한 기능', placeholder: '내가 직접 개발한 기능을 구체적으로 작성하세요.', multiline: true, span: 'full' },
+                    { key: 'problemSolving', label: '문제 해결 경험', placeholder: '개발 중 겪은 문제와 해결 과정을 작성하세요.', multiline: true, span: 'full' },
+                    { key: 'result', label: '결과 / 성과', placeholder: '예: 국가대회 본선 진출, 사용자 200명 달성', span: 'full' },
+                    { key: 'githubLink', label: 'GitHub 링크', placeholder: 'https://github.com/...', span: 'half' },
+                    { key: 'deployLink', label: '배포 링크', placeholder: 'https://...', span: 'half' },
+                    { key: 'docLink', label: '발표/문서 링크', placeholder: '노션, 발표자료 등 URL', span: 'full' },
+                  ]}
+                  addLabel="프로젝트 추가"
+                  emptyMessage="등록된 프로젝트가 없습니다."
+                  onAdd={addProject}
+                  onRemove={removeProject}
+                  onUpdate={updateProject}
+                />
+              )}
+
+              {/* 수상 / 성과 */}
+              {visibleSections.awards && (
+                <EditableListSection
+                  title="수상 / 성과"
+                  icon={<Trophy className="h-4 w-4 text-gray-500" />}
+                  items={awards}
+                  fields={[
+                    { key: 'name', label: '수상명', placeholder: '예: ICT 이노베이션 충청권 대상', span: 'half' },
+                    { key: 'organization', label: '주최 기관', placeholder: '예: 과학기술정보통신부', span: 'half' },
+                    { key: 'date', label: '수상일', placeholder: '예: 2024.11', span: 'half' },
+                    { key: 'relatedProject', label: '관련 프로젝트', placeholder: '예: FarmLink', span: 'half' },
+                    { key: 'description', label: '설명', placeholder: '수상 내용이나 성과를 간략히 설명하세요.', multiline: true, span: 'full' },
+                  ]}
+                  addLabel="수상 추가"
+                  emptyMessage="등록된 수상 내역이 없습니다."
+                  onAdd={addAward}
+                  onRemove={removeAward}
+                  onUpdate={updateAward}
+                />
+              )}
+
+              {/* 자격증 */}
+              {visibleSections.certifications && (
+                <EditableListSection
+                  title="자격증"
+                  icon={<Star className="h-4 w-4 text-gray-500" />}
+                  items={certifications}
+                  fields={[
+                    { key: 'name', label: '자격증명', placeholder: '예: 정보처리기사', span: 'half' },
+                    { key: 'organization', label: '발급 기관', placeholder: '예: 한국산업인력공단', span: 'half' },
+                    { key: 'date', label: '취득일', placeholder: '예: 2024.06', span: 'half' },
+                    { key: 'status', label: '상태', span: 'half', select: [
+                      { value: 'ACQUIRED', label: '취득' },
+                      { value: 'PREPARING', label: '준비 중' },
+                      { value: 'SCHEDULED', label: '예정' },
+                      { value: 'EXPIRED', label: '만료' },
+                    ]},
+                  ]}
+                  addLabel="자격증 추가"
+                  emptyMessage="등록된 자격증이 없습니다."
+                  onAdd={addCertification}
+                  onRemove={removeCertification}
+                  onUpdate={updateCertification}
                 />
               )}
             </>

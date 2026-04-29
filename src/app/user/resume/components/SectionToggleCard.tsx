@@ -8,11 +8,16 @@ interface SectionToggleCardProps {
 }
 
 const SECTION_LABELS: Record<SectionKey, string> = {
+  headline: '한 줄 소개',
+  bio: '자기소개',
   github: 'GitHub 통계',
   titles: '보유 칭호',
   challenge: '챌린지 달성',
   jobRole: '개발 직무',
   techStack: '기술 스택',
+  projects: '프로젝트',
+  awards: '수상 / 성과',
+  certifications: '자격증',
   links: '링크',
   education: '학력',
   career: '경력',
@@ -20,21 +25,22 @@ const SECTION_LABELS: Record<SectionKey, string> = {
 };
 
 const SECTION_ORDER: SectionKey[] = [
+  'headline',
+  'bio',
   'github',
   'titles',
   'challenge',
   'jobRole',
   'techStack',
+  'projects',
+  'awards',
+  'certifications',
   'links',
   'education',
   'career',
   'experience',
 ];
 
-/**
- * 왼쪽 사이드바에 표시되는 섹션 보이기/숨기기 토글 카드.
- * 인쇄 시에는 숨겨진다.
- */
 export default function SectionToggleCard({ visibleSections, onToggle }: SectionToggleCardProps) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 print:hidden">
@@ -45,7 +51,6 @@ export default function SectionToggleCard({ visibleSections, onToggle }: Section
         {SECTION_ORDER.map((key) => (
           <li key={key} className="flex items-center justify-between">
             <span className="text-sm text-gray-700">{SECTION_LABELS[key]}</span>
-            {/* 토글 스위치 */}
             <button
               type="button"
               role="switch"

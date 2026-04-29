@@ -8,6 +8,7 @@ export interface FieldDef {
   placeholder?: string;
   multiline?: boolean;
   span?: 'full' | 'half';
+  select?: { value: string; label: string }[];
 }
 
 interface EditableListSectionProps<T extends { id: string }> {
@@ -27,7 +28,7 @@ interface EditableListSectionProps<T extends { id: string }> {
  * 링크/학력/경력/경험 등 여러 항목을 추가·수정·삭제할 수 있는 공통 섹션 컴포넌트.
  * `fields` 배열로 각 항목의 입력 필드를 정의한다.
  */
-export default function EditableListSection<T extends { id: string; [key: string]: string }>({
+export default function EditableListSection<T extends { id: string }>({
   title,
   icon,
   items,
@@ -91,10 +92,23 @@ export default function EditableListSection<T extends { id: string; [key: string
                     <label className="mb-1 block text-[11px] font-medium text-gray-400">
                       {field.label}
                     </label>
-                    {field.multiline ? (
+                    {field.select ? (
+                      <select
+                        value={(item as Record<string, string>)[field.key] ?? ''}
+                        onChange={(e) => onUpdate(item.id, field.key, e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                      >
+                        {field.placeholder && (
+                          <option value="" disabled>{field.placeholder}</option>
+                        )}
+                        {field.select.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    ) : field.multiline ? (
                       <textarea
                         rows={3}
-                        value={item[field.key] ?? ''}
+                        value={(item as Record<string, string>)[field.key] ?? ''}
                         placeholder={field.placeholder}
                         onChange={(e) => onUpdate(item.id, field.key, e.target.value)}
                         className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
@@ -102,7 +116,7 @@ export default function EditableListSection<T extends { id: string; [key: string
                     ) : (
                       <input
                         type="text"
-                        value={item[field.key] ?? ''}
+                        value={(item as Record<string, string>)[field.key] ?? ''}
                         placeholder={field.placeholder}
                         onChange={(e) => onUpdate(item.id, field.key, e.target.value)}
                         className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
