@@ -64,7 +64,7 @@ function AuthCallbackContent() {
                 );
                 try {
                   const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
-                  router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=github`);
+                  router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}`);
                   return;
                 } catch {
                   setStatus('error');
@@ -91,7 +91,7 @@ function AuthCallbackContent() {
               toast.error('가입되지 않은 GitHub 계정이에요. 회원가입을 진행해주세요.');
               try {
                 const { verificationToken } = await exchangeGithubToken({ githubAccessToken });
-                router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}&step=github`);
+                router.replace(`/signup?signupToken=${encodeURIComponent(verificationToken)}`);
                 return;
               } catch {
                 setStatus('error');
