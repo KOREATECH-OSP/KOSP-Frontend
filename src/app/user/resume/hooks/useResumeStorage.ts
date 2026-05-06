@@ -20,7 +20,8 @@ export type SectionKey =
   | 'links'
   | 'education'
   | 'career'
-  | 'experience';
+  | 'experience'
+  | 'coverLetters';
 
 export interface LinkItem {
   [key: string]: string;
@@ -90,6 +91,13 @@ export interface CertificationItem {
   status: string; // 'ACQUIRED' | 'PREPARING' | 'SCHEDULED' | 'EXPIRED'
 }
 
+export interface CoverLetterItem {
+  [key: string]: string;
+  id: string;
+  title: string;
+  content: string;
+}
+
 export type VisibleSections = Record<SectionKey, boolean>;
 
 const DEFAULT_VISIBLE: VisibleSections = {
@@ -107,6 +115,7 @@ const DEFAULT_VISIBLE: VisibleSections = {
   education: true,
   career: true,
   experience: true,
+  coverLetters: true,
 };
 
 // ─────────────────────────────────────────
@@ -148,6 +157,7 @@ interface ResumeData {
   projects: ProjectItem[];
   awards: AwardItem[];
   certifications: CertificationItem[];
+  coverLetters: CoverLetterItem[];
   jobRole: string;
   techStack: string[];
   visibleSections: VisibleSections;
@@ -167,6 +177,7 @@ function loadAll(p: string): ResumeData {
     projects: load(`${p}:projects`, [] as ProjectItem[]),
     awards: load(`${p}:awards`, [] as AwardItem[]),
     certifications: load(`${p}:certifications`, [] as CertificationItem[]),
+    coverLetters: load(`${p}:coverLetters`, [] as CoverLetterItem[]),
     jobRole: load(`${p}:jobRole`, ''),
     techStack: load(`${p}:techStack`, [] as string[]),
     visibleSections: load(`${p}:visibleSections`, DEFAULT_VISIBLE),
@@ -186,6 +197,7 @@ const INITIAL_DATA: ResumeData = {
   projects: [],
   awards: [],
   certifications: [],
+  coverLetters: [],
   jobRole: '',
   techStack: [],
   visibleSections: DEFAULT_VISIBLE,
@@ -218,6 +230,8 @@ export interface ResumeStorage {
   setAwards: (v: AwardItem[]) => void;
   certifications: CertificationItem[];
   setCertifications: (v: CertificationItem[]) => void;
+  coverLetters: CoverLetterItem[];
+  setCoverLetters: (v: CoverLetterItem[]) => void;
   jobRole: string;
   setJobRole: (v: string) => void;
   techStack: string[];
@@ -253,6 +267,7 @@ export function useResumeStorage(userId: number | null): ResumeStorage {
   useEffect(() => { if (data.loaded) save(`${p}:projects`, data.projects); }, [data.projects, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:awards`, data.awards); }, [data.awards, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:certifications`, data.certifications); }, [data.certifications, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:coverLetters`, data.coverLetters); }, [data.coverLetters, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:jobRole`, data.jobRole); }, [data.jobRole, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:techStack`, data.techStack); }, [data.techStack, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:visibleSections`, data.visibleSections); }, [data.visibleSections, data.loaded, p]);
@@ -286,6 +301,8 @@ export function useResumeStorage(userId: number | null): ResumeStorage {
     setAwards: (v) => set('awards', v),
     certifications: data.certifications,
     setCertifications: (v) => set('certifications', v),
+    coverLetters: data.coverLetters,
+    setCoverLetters: (v) => set('coverLetters', v),
     jobRole: data.jobRole,
     setJobRole: (v) => set('jobRole', v),
     techStack: data.techStack,

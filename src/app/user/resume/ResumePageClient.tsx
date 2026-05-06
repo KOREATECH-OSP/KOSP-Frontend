@@ -56,29 +56,13 @@ import type {
   ProjectItem,
   AwardItem,
   CertificationItem,
+  CoverLetterItem,
 } from './hooks/useResumeStorage';
 
-const RARITY_LABELS: Record<string, string> = {
-  COMMON: '일반',
-  RARE: '희귀',
-  EPIC: '영웅',
-  LEGENDARY: '전설',
-};
-
-const TITLE_CATEGORY_EMOJI: Record<string, string> = {
-  COMMIT: '✏️',
-  STREAK: '🔥',
-  CHALLENGE: '🏆',
-  COLLABORATION: '🤝',
-  COMMUNITY: '💬',
-  INFLUENCE: '⭐',
-  PROJECT: '📁',
-  OPEN_SOURCE: '🐙',
-  SEASON: '🌟',
-  HONOR: '👑',
-};
+import { RARITY_LABELS, RARITY_COLORS, TITLE_CATEGORY_EMOJI } from '@/lib/constants/title';
 import EditableListSection from './components/EditableListSection';
 import SectionToggleCard from './components/SectionToggleCard';
+import FollowCard from './components/FollowCard';
 
 interface ResumePageClientProps {
   session: AuthSession;
@@ -110,6 +94,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     projects, setProjects,
     awards, setAwards,
     certifications, setCertifications,
+    coverLetters, setCoverLetters,
     jobRole, setJobRole,
     techStack, setTechStack,
     visibleSections, toggleSection,
@@ -118,7 +103,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [techInput, setTechInput] = useState('');
-  const [showTitleModal, setShowTitleModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!userId || !accessToken) return;
@@ -179,7 +163,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       );
       const selected = allTitles.find((t: UserTitleResponse) => t.userTitleId === userTitleId) ?? null;
       setDisplayTitle(selected ? { ...selected, isDisplay: true } : null);
-      setShowTitleModal(false);
     } catch (err) {
       console.error('대표 칭호 변경 실패:', err);
     }
@@ -222,13 +205,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     );
   }
 
-  const rarityColors: Record<string, string> = {
-    COMMON: 'bg-gray-100 text-gray-600',
-    RARE: 'bg-blue-100 text-blue-700',
-    EPIC: 'bg-purple-100 text-purple-700',
-    LEGENDARY: 'bg-amber-100 text-amber-700',
-  };
-
   const addTechTag = (tag: string) => {
     const trimmed = tag.trim();
     if (trimmed && !techStack.includes(trimmed)) {
@@ -267,6 +243,13 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const updateCertification = (id: string, key: string, value: string) =>
     setCertifications(certifications.map((c) => (c.id === id ? { ...c, [key]: value } : c)) as CertificationItem[]);
 
+  // 자기소개서
+  const addCoverLetter = () =>
+    setCoverLetters([...coverLetters, { id: newId(), title: '', content: '' }]);
+  const removeCoverLetter = (id: string) => setCoverLetters(coverLetters.filter((c) => c.id !== id));
+  const updateCoverLetter = (id: string, key: string, value: string) =>
+    setCoverLetters(coverLetters.map((c) => (c.id === id ? { ...c, [key]: value } : c)) as CoverLetterItem[]);
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       {/* 상단 뒤로가기 */}
@@ -282,7 +265,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
         {/* ── 왼쪽 사이드바 ── */}
-        <aside className="print:hidden lg:w-60 lg:flex-shrink-0">
+        <aside className="print:hidden lg:w-[280px] lg:flex-shrink-0">
           <div className="sticky top-20 space-y-4">
             {/* 프로필 카드 */}
             <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -411,6 +394,9 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                 </div>
               </div>
             </div>
+            {/* 팔로우 카드 */}
+            <FollowCard />
+
             {/* 섹션 설정 카드 */}
             <SectionToggleCard
               visibleSections={visibleSections}
@@ -430,7 +416,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                   aria-checked={isPublic}
                   onClick={() => setIsPublic(!isPublic)}
                   className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isPublic ? 'bg-gray-900' : 'bg-gray-200'
+                    isPublic ? 'bg-orange-400' : 'bg-gray-200'
                   }`}
                 >
                   <span
@@ -446,7 +432,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                   <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                     <Globe className="h-3.5 w-3.5 shrink-0 text-gray-400" />
                     <span className="flex-1 truncate text-[11px] text-gray-500">
-                      {/* TODO: 공개 라우트 (/resume/[userId]) 구현 후 실제 URL로 교체 */}
                       /resume/{userId}
                     </span>
                     <button
@@ -462,7 +447,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                       )}
                     </button>
                   </div>
-                  <p className="mt-1.5 text-[10px] text-amber-600">
+                  <p className="mt-1.5 text-[10px] text-orange-500">
                     ※ 공개 페이지는 준비 중입니다.
                   </p>
                 </div>
@@ -495,7 +480,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
             <button
               type="button"
               onClick={handlePrint}
-              className="flex shrink-0 items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
+              className="flex shrink-0 items-center gap-2 rounded-xl bg-orange-400 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-500"
             >
               <Printer className="h-4 w-4" />
               인쇄 / PDF
@@ -548,7 +533,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                     </span>
                     <span
                       className={`ml-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        rarityColors[displayTitle.rarity] ?? 'bg-gray-100 text-gray-600'
+                        RARITY_COLORS[displayTitle.rarity] ?? 'bg-gray-100 text-gray-600'
                       }`}
                     >
                       {RARITY_LABELS[displayTitle.rarity] ?? displayTitle.rarity}
@@ -624,250 +609,9 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
             </div>
           )}
 
-          {/* GitHub 랭크 카드 */}
-          {contributionScore && overallHistory && (
-            <GithubRankCard
-              name={profile?.name || '사용자'}
-              profileImage={profile?.profileImage}
-              rank={getRankFromScore(contributionScore.totalScore)}
-              totalScore={contributionScore.totalScore}
-              stats={{
-                commits: overallHistory.totalCommitCount,
-                pullRequests: overallHistory.totalPrCount,
-                issues: overallHistory.totalIssueCount,
-                repositories: overallHistory.contributedRepoCount,
-              }}
-            />
-          )}
-
-          {/* GitHub 기여 요약 */}
-          {overallHistory && (
-            <div className="rounded-xl border border-gray-200 bg-white">
-              <div className="border-b border-gray-100 px-6 py-4">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                  <Github className="h-4 w-4 text-gray-500" />
-                  GitHub 기여 요약
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 divide-x divide-y divide-gray-100 sm:grid-cols-3">
-                {[
-                  { icon: <GitCommit className="h-5 w-5 text-gray-400" />, value: overallHistory.totalCommitCount, label: 'Commits' },
-                  { icon: <GitPullRequest className="h-5 w-5 text-gray-400" />, value: overallHistory.totalPrCount, label: 'Pull Requests' },
-                  { icon: <AlertCircle className="h-5 w-5 text-gray-400" />, value: overallHistory.totalIssueCount, label: 'Issues' },
-                  { icon: <FolderGit className="h-5 w-5 text-gray-400" />, value: overallHistory.contributedRepoCount, label: 'Repositories' },
-                  { icon: <span className="text-emerald-500 font-bold text-sm">+</span>, value: overallHistory.totalAdditions, label: 'Additions' },
-                  { icon: <span className="text-red-500 font-bold text-sm">−</span>, value: overallHistory.totalDeletions, label: 'Deletions' },
-                ].map(({ icon, value, label }) => (
-                  <div key={label} className="flex flex-col items-center justify-center p-4 sm:p-5">
-                    <div className="mb-1.5">{icon}</div>
-                    <div className="text-xl font-bold text-gray-900 sm:text-2xl">
-                      {value.toLocaleString()}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">
-                      {label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 보유 칭호 목록 */}
-          <div className="rounded-xl border border-gray-200 bg-white">
-            <div className="border-b border-gray-100 px-6 py-4">
-              <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                <Trophy className="h-4 w-4 text-gray-500" />
-                보유 칭호
-                <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                  {allTitles.length}
-                </span>
-              </h3>
-            </div>
-
-            {allTitles.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Trophy className="mb-3 h-10 w-10 text-gray-200" />
-                <p className="text-sm text-gray-400">아직 획득한 칭호가 없습니다.</p>
-                <Link
-                  href="/challenge"
-                  className="mt-3 text-xs text-gray-400 underline hover:text-gray-700"
-                >
-                  챌린지에서 칭호를 획득해보세요
-                </Link>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {allTitles.map((title) => (
-                  <div
-                    key={title.userTitleId}
-                    className="flex items-center gap-4 px-6 py-4"
-                  >
-                    {/* 아이콘 */}
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-50">
-                      {title.iconUrl ? (
-                        <img
-                          src={title.iconUrl}
-                          alt={title.titleName}
-                          className="h-6 w-6 object-contain"
-                          onError={(e: SyntheticEvent<HTMLImageElement>) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <Trophy className="h-5 w-5 text-gray-300" />
-                      )}
-                    </div>
-
-                    {/* 칭호 정보 */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900">
-                          {title.titleName}
-                        </span>
-                        {title.isDisplay && (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                            대표
-                          </span>
-                        )}
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            rarityColors[title.rarity] ?? 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {RARITY_LABELS[title.rarity] ?? title.rarity}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-gray-500">{title.description}</p>
-                    </div>
-
-                    {/* 획득일 */}
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-xs text-gray-400">
-                        {new Date(title.grantedAt).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-xs text-gray-300">{title.category}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 챌린지 달성 현황 */}
-          {visibleSections.challenge && challengeRate && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                  <MessageCircle className="h-4 w-4 text-gray-500" />
-                  챌린지 달성 현황
-                </h3>
-                <span className="text-sm font-semibold text-gray-900">
-                  {challengeRate.completed} / {challengeRate.total}
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500"
-                  style={{
-                    width:
-                      challengeRate.total > 0
-                        ? `${Math.round((challengeRate.completed / challengeRate.total) * 100)}%`
-                        : '0%',
-                  }}
-                />
-              </div>
-              <p className="mt-2 text-right text-xs text-gray-400">
-                {challengeRate.total > 0
-                  ? `${Math.round((challengeRate.completed / challengeRate.total) * 100)}% 달성`
-                  : '진행 중인 챌린지 없음'}
-              </p>
-            </div>
-          )}
-
-          {/* ── 편집형 섹션 (localStorage 임시저장) ─────────────────── */}
+          {/* ── 편집형 섹션 (localStorage 임시저장) — 새 순서 ─────── */}
           {draftLoaded && (
             <>
-              {/* 개발 직무 */}
-              {visibleSections.jobRole && (
-                <div className="rounded-xl border border-gray-200 bg-white">
-                  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                      <Code2 className="h-4 w-4 text-gray-500" />
-                      개발 직무
-                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
-                        임시저장
-                      </span>
-                    </h3>
-                  </div>
-                  <div className="px-6 py-4">
-                    <textarea
-                      rows={3}
-                      value={jobRole}
-                      onChange={(e) => setJobRole(e.target.value)}
-                      placeholder="예: 백엔드 개발자 / Java, Spring Boot 기반 서버 개발 경험 보유"
-                      className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 기술 스택 */}
-              {visibleSections.techStack && (
-                <div className="rounded-xl border border-gray-200 bg-white">
-                  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                      <Layers className="h-4 w-4 text-gray-500" />
-                      기술 스택
-                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
-                        임시저장
-                      </span>
-                    </h3>
-                  </div>
-                  <div className="px-6 py-4 space-y-3">
-                    {/* 태그 목록 */}
-                    {techStack.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {techStack.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => removeTechTag(tag)}
-                              className="ml-0.5 rounded-full hover:text-gray-300 transition-colors"
-                              aria-label={`${tag} 삭제`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {/* 태그 입력 */}
-                    <input
-                      type="text"
-                      value={techInput}
-                      onChange={(e) => setTechInput(e.target.value)}
-                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                        if (e.key === 'Enter' || e.key === ',') {
-                          e.preventDefault();
-                          addTechTag(techInput);
-                        }
-                      }}
-                      onBlur={() => { if (techInput.trim()) addTechTag(techInput); }}
-                      placeholder="기술명 입력 후 Enter (예: TypeScript, React, Spring Boot)"
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* 링크 */}
               {visibleSections.links && (
                 <EditableListSection
@@ -924,26 +668,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                 />
               )}
 
-              {/* 경험 */}
-              {visibleSections.experience && (
-                <EditableListSection
-                  title="경험 / 활동"
-                  icon={<Lightbulb className="h-4 w-4 text-gray-500" />}
-                  items={experience}
-                  fields={[
-                    { key: 'title', label: '활동명', placeholder: '예: 오픈소스 포털 개발', span: 'half' },
-                    { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
-                    { key: 'description', label: '설명', placeholder: '주요 역할과 기여 내용을 입력하세요.', multiline: true, span: 'full' },
-                  ]}
-                  addLabel="경험 추가"
-                  emptyMessage="등록된 경험이 없습니다."
-                  onAdd={addExperience}
-                  onRemove={removeExperience}
-                  onUpdate={updateExperience}
-                />
-              )}
-
-              {/* 프로젝트 (상세) */}
+              {/* 프로젝트 */}
               {visibleSections.projects && (
                 <EditableListSection
                   title="프로젝트"
@@ -972,6 +697,25 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                   onAdd={addProject}
                   onRemove={removeProject}
                   onUpdate={updateProject}
+                />
+              )}
+
+              {/* 경험 / 교육이력 */}
+              {visibleSections.experience && (
+                <EditableListSection
+                  title="교육이력 / 활동"
+                  icon={<Lightbulb className="h-4 w-4 text-gray-500" />}
+                  items={experience}
+                  fields={[
+                    { key: 'title', label: '활동명', placeholder: '예: 오픈소스 포털 개발', span: 'half' },
+                    { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
+                    { key: 'description', label: '설명', placeholder: '주요 역할과 기여 내용을 입력하세요.', multiline: true, span: 'full' },
+                  ]}
+                  addLabel="항목 추가"
+                  emptyMessage="등록된 교육이력이 없습니다."
+                  onAdd={addExperience}
+                  onRemove={removeExperience}
+                  onUpdate={updateExperience}
                 />
               )}
 
@@ -1020,7 +764,282 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                   onUpdate={updateCertification}
                 />
               )}
+
+              {/* 자기소개서 */}
+              {visibleSections.coverLetters && (
+                <EditableListSection
+                  title="자기소개서"
+                  icon={<FileText className="h-4 w-4 text-gray-500" />}
+                  items={coverLetters}
+                  fields={[
+                    { key: 'title', label: '문항 제목', placeholder: '예: 지원 동기를 작성해주세요.', span: 'full' },
+                    { key: 'content', label: '내용', placeholder: '자유롭게 작성하세요. (1000자 이내 권장)', multiline: true, span: 'full' },
+                  ]}
+                  addLabel="문항 추가"
+                  emptyMessage="등록된 자기소개서 문항이 없습니다."
+                  onAdd={addCoverLetter}
+                  onRemove={removeCoverLetter}
+                  onUpdate={updateCoverLetter}
+                />
+              )}
+
+              {/* 개발 직무 */}
+              {visibleSections.jobRole && (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Code2 className="h-4 w-4 text-gray-500" />
+                      개발 직무
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
+                        임시저장
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="px-6 py-4">
+                    <textarea
+                      rows={3}
+                      value={jobRole}
+                      onChange={(e) => setJobRole(e.target.value)}
+                      placeholder="예: 백엔드 개발자 / Java, Spring Boot 기반 서버 개발 경험 보유"
+                      className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 기술 스택 */}
+              {visibleSections.techStack && (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Layers className="h-4 w-4 text-gray-500" />
+                      기술 스택
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
+                        임시저장
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="px-6 py-4 space-y-3">
+                    {techStack.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {techStack.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removeTechTag(tag)}
+                              className="ml-0.5 rounded-full hover:text-gray-300 transition-colors"
+                              aria-label={`${tag} 삭제`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <input
+                      type="text"
+                      value={techInput}
+                      onChange={(e) => setTechInput(e.target.value)}
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addTechTag(techInput);
+                        }
+                      }}
+                      onBlur={() => { if (techInput.trim()) addTechTag(techInput); }}
+                      placeholder="기술명 입력 후 Enter (예: TypeScript, React, Spring Boot)"
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
             </>
+          )}
+
+          {/* GitHub 통계 — visibleSections.github 연동 */}
+          {visibleSections.github && (
+            <>
+              {contributionScore && overallHistory && (
+                <GithubRankCard
+                  name={profile?.name || '사용자'}
+                  profileImage={profile?.profileImage}
+                  rank={getRankFromScore(contributionScore.totalScore)}
+                  totalScore={contributionScore.totalScore}
+                  stats={{
+                    commits: overallHistory.totalCommitCount,
+                    pullRequests: overallHistory.totalPrCount,
+                    issues: overallHistory.totalIssueCount,
+                    repositories: overallHistory.contributedRepoCount,
+                  }}
+                />
+              )}
+
+              {overallHistory && (
+                <div className="rounded-xl border border-gray-200 bg-white">
+                  <div className="border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Github className="h-4 w-4 text-gray-500" />
+                      GitHub 기여 요약
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 divide-x divide-y divide-gray-100 sm:grid-cols-3">
+                    {[
+                      { icon: <GitCommit className="h-5 w-5 text-gray-400" />, value: overallHistory.totalCommitCount, label: 'Commits' },
+                      { icon: <GitPullRequest className="h-5 w-5 text-gray-400" />, value: overallHistory.totalPrCount, label: 'Pull Requests' },
+                      { icon: <AlertCircle className="h-5 w-5 text-gray-400" />, value: overallHistory.totalIssueCount, label: 'Issues' },
+                      { icon: <FolderGit className="h-5 w-5 text-gray-400" />, value: overallHistory.contributedRepoCount, label: 'Repositories' },
+                      { icon: <span className="text-emerald-500 font-bold text-sm">+</span>, value: overallHistory.totalAdditions, label: 'Additions' },
+                      { icon: <span className="text-red-500 font-bold text-sm">−</span>, value: overallHistory.totalDeletions, label: 'Deletions' },
+                    ].map(({ icon, value, label }) => (
+                      <div key={label} className="flex flex-col items-center justify-center p-4 sm:p-5">
+                        <div className="mb-1.5">{icon}</div>
+                        <div className="text-xl font-bold text-gray-900 sm:text-2xl">
+                          {value.toLocaleString()}
+                        </div>
+                        <div className="text-[10px] uppercase tracking-wider text-gray-500 sm:text-xs">
+                          {label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* 보유 칭호 목록 — visibleSections.titles 연동 */}
+          {visibleSections.titles && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <Trophy className="h-4 w-4 text-gray-500" />
+                  보유 칭호
+                  <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                    {allTitles.length}
+                  </span>
+                </h3>
+              </div>
+
+              {allTitles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Trophy className="mb-3 h-10 w-10 text-gray-200" />
+                  <p className="text-sm text-gray-400">아직 획득한 칭호가 없습니다.</p>
+                  <Link
+                    href="/challenge"
+                    className="mt-3 text-xs text-gray-400 underline hover:text-gray-700"
+                  >
+                    챌린지에서 칭호를 획득해보세요
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {allTitles.map((title) => (
+                    <div
+                      key={title.userTitleId}
+                      className="flex items-center gap-4 px-6 py-4"
+                    >
+                      {/* 아이콘: iconUrl → 카테고리 이모지 → Trophy */}
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-50 text-lg">
+                        {title.iconUrl ? (
+                          <img
+                            src={title.iconUrl}
+                            alt={title.titleName}
+                            className="h-6 w-6 object-contain"
+                            onError={(e: SyntheticEvent<HTMLImageElement>) => {
+                              const el = e.currentTarget;
+                              el.style.display = 'none';
+                              const parent = el.parentElement;
+                              if (parent) {
+                                parent.textContent = TITLE_CATEGORY_EMOJI[title.category] ?? '🏆';
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span>{TITLE_CATEGORY_EMOJI[title.category] ?? '🏆'}</span>
+                        )}
+                      </div>
+
+                      {/* 칭호 정보 */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {title.titleName}
+                          </span>
+                          {title.isDisplay && (
+                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">
+                              대표
+                            </span>
+                          )}
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                              RARITY_COLORS[title.rarity] ?? 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {RARITY_LABELS[title.rarity] ?? title.rarity}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-gray-500">{title.description}</p>
+                      </div>
+
+                      {/* 대표로 설정 + 획득일 */}
+                      <div className="flex flex-shrink-0 flex-col items-end gap-1.5">
+                        {!title.isDisplay && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetDisplayTitle(title.userTitleId)}
+                            className="rounded-md border border-orange-400 px-2.5 py-1 text-[10px] font-medium text-orange-500 hover:bg-orange-50 transition-colors"
+                          >
+                            대표로 설정
+                          </button>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          {new Date(title.grantedAt).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 챌린지 달성 현황 */}
+          {visibleSections.challenge && challengeRate && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  <MessageCircle className="h-4 w-4 text-gray-500" />
+                  챌린지 달성 현황
+                </h3>
+                <span className="text-sm font-semibold text-gray-900">
+                  {challengeRate.completed} / {challengeRate.total}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500"
+                  style={{
+                    width:
+                      challengeRate.total > 0
+                        ? `${Math.round((challengeRate.completed / challengeRate.total) * 100)}%`
+                        : '0%',
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-right text-xs text-gray-400">
+                {challengeRate.total > 0
+                  ? `${Math.round((challengeRate.completed / challengeRate.total) * 100)}% 달성`
+                  : '진행 중인 챌린지 없음'}
+              </p>
+            </div>
           )}
         </div>
       </div>
