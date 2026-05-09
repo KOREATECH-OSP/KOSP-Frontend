@@ -4,6 +4,7 @@ import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
 import { ApiException } from '@/lib/api/client';
 import { getMySeasonRanking, getMyGithubRanking, getSeasonRankings, getGithubRankings } from '@/lib/api';
+import type { MyGithubRankingResponse } from '@/lib/api/types';
 import { auth } from '@/lib/auth/server';
 
 import RankingPageClient from './RankingPageClient';
@@ -40,8 +41,17 @@ export default async function RankingPage() {
   const myRanking =
     myRankingResult.status === 'fulfilled' ? myRankingResult.value : null;
 
-  const myGithubRanking =
+  // 내 GitHub 랭킹: API 응답 우선, 실패 시 전체 랭킹 목록에서 탐색
+  const myGithubRankingFromApi: MyGithubRankingResponse | null =
     myGithubRankingResult.status === 'fulfilled' ? myGithubRankingResult.value : null;
+
+  const myGithubRanking: MyGithubRankingResponse | null =
+    myGithubRankingFromApi ??
+    (session
+      ? (githubRankings.rankings.find(
+          (e) => e.userId === parseInt(session.user.id)
+        ) ?? null)
+      : null);
 
   return (
     <div className="min-h-screen bg-gray-50">
