@@ -22,6 +22,7 @@ import type {
   UserTitleListResponse,
   UserTitleResponse,
   MySeasonRankingResponse,
+  MyGithubRankingResponse,
   SeasonRankingListResponse,
   GithubRankingListResponse,
 } from './types';
@@ -286,6 +287,15 @@ export async function setDisplayTitle(
 ): Promise<UserTitleResponse> {
   return clientApiClient<UserTitleResponse>(`/v1/users/me/titles/${userTitleId}/display`, {
     method: 'PUT',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 GitHub 기여 점수 기반 랭킹 조회 (인증 필요)
+ */
+export async function getMyGithubRanking(auth: AuthOptions): Promise<MyGithubRankingResponse> {
+  return clientApiClient<MyGithubRankingResponse>('/v1/github/rankings/me', {
     accessToken: auth.accessToken,
   });
 }

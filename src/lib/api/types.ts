@@ -715,6 +715,17 @@ export interface MySeasonRankingResponse {
 }
 
 /**
+ * 내 GitHub 기여 점수 기반 랭킹 응답 - /v1/github/rankings/me
+ */
+export interface MyGithubRankingResponse {
+  rank: number;
+  totalScore: number;
+  activityScore: number;
+  diversityScore: number;
+  impactScore: number;
+}
+
+/**
  * GitHub 기여 점수 기반 랭킹 엔트리 - /v1/github/rankings
  */
 export interface GithubRankingEntry {

@@ -9,6 +9,7 @@ import {
   SeasonRankingEntry,
   SeasonRankingListResponse,
   MySeasonRankingResponse,
+  MyGithubRankingResponse,
   GithubRankingEntry,
   GithubRankingListResponse,
 } from '@/lib/api/types';
@@ -298,6 +299,76 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
   );
 }
 
+// ─── My GitHub Ranking Card ────────────────────────────────────────────────────
+
+function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse }) {
+  const rank = getRankFromScore(myRanking.totalScore);
+  const { badge, label } = GITHUB_TIER_STYLE[rank];
+  const barColor: Record<string, string> = {
+    challenger: 'bg-gradient-to-r from-rose-400 to-pink-400',
+    diamond: 'bg-blue-400',
+    platinum: 'bg-cyan-400',
+    gold: 'bg-yellow-400',
+    silver: 'bg-slate-400',
+    bronze: 'bg-amber-400',
+  };
+
+  const scoreItems = [
+    { label: '활동', value: myRanking.activityScore, max: 3 },
+    { label: '다양성', value: myRanking.diversityScore, max: 1 },
+    { label: '영향력', value: myRanking.impactScore, max: 5 },
+  ];
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-gray-100 px-5 py-3.5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">내 전체 랭킹</p>
+      </div>
+      <div className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-50 text-2xl font-black text-gray-800">
+              #{myRanking.rank}
+            </div>
+            <div>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${badge}`}>
+                {label}
+              </span>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {myRanking.totalScore.toFixed(1)}
+                <span className="ml-1 text-sm font-normal text-gray-400">/ 9pt</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {scoreItems.map((item) => (
+              <div key={item.label} className="text-center">
+                <p className="text-[10px] text-gray-400">{item.label}</p>
+                <p className="text-sm font-semibold text-gray-700">{item.value.toFixed(1)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4">
+          <div className="mb-1.5 flex justify-between text-xs text-gray-500">
+            <span className="font-medium">{label}</span>
+            <span>최대 <strong className="text-gray-700">9pt</strong></span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${barColor[rank]}`}
+              style={{ width: `${(myRanking.totalScore / 9) * 100}%` }}
+            />
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+            <span>0pt</span><span>9pt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Top 3 (시즌) ──────────────────────────────────────────────────────────────
 
 const PODIUM_ORDER = [1, 0, 2] as const;
@@ -392,7 +463,7 @@ function SeasonRankingTable({ entries, myRankPosition }: { entries: SeasonRankin
 
 // ─── GitHub Ranking Table ──────────────────────────────────────────────────────
 
-function GithubRankingTable({ entries }: { entries: GithubRankingEntry[] }) {
+function GithubRankingTable({ entries, myRankPosition }: { entries: GithubRankingEntry[]; myRankPosition?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="hidden sm:grid sm:grid-cols-[56px_1fr_120px_80px_1fr] sm:items-center sm:gap-4 sm:border-b sm:border-gray-100 sm:bg-gray-50 sm:px-4 sm:py-2.5">
@@ -403,9 +474,11 @@ function GithubRankingTable({ entries }: { entries: GithubRankingEntry[] }) {
         <span className="text-xs font-medium text-gray-400">진행도</span>
       </div>
       <ul className="divide-y divide-gray-50">
-        {entries.map((entry) => (
+        {entries.map((entry) => {
+          const isMe = myRankPosition !== undefined && entry.rank === myRankPosition;
+          return (
           <li key={`${entry.rank}-${entry.userId}`}
-            className="grid grid-cols-[40px_1fr] items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:grid-cols-[56px_1fr_120px_80px_1fr] sm:gap-4"
+            className={`grid grid-cols-[40px_1fr] items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:grid-cols-[56px_1fr_120px_80px_1fr] sm:gap-4 ${isMe ? 'bg-blue-50/50 hover:bg-blue-50' : ''}`}
           >
             <span className={`text-sm font-bold ${entry.rank === 1 ? 'text-yellow-500' : entry.rank === 2 ? 'text-slate-500' : entry.rank === 3 ? 'text-amber-600' : 'text-gray-400'}`}>
               {entry.rank}
@@ -413,6 +486,7 @@ function GithubRankingTable({ entries }: { entries: GithubRankingEntry[] }) {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">{entry.userName}</Link>
+                {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
               </div>
               <div className="mt-1 flex items-center gap-2 sm:hidden">
                 <GithubTierBadge score={entry.totalScore} />
@@ -438,6 +512,7 @@ interface RankingPageClientProps {
   initialSeasonRankings: SeasonRankingListResponse;
   initialGithubRankings: GithubRankingListResponse;
   myRanking: MySeasonRankingResponse | null;
+  myGithubRanking: MyGithubRankingResponse | null;
   isAuthenticated: boolean;
 }
 
@@ -445,6 +520,7 @@ export default function RankingPageClient({
   initialSeasonRankings,
   initialGithubRankings,
   myRanking,
+  myGithubRanking,
   isAuthenticated,
 }: RankingPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('season');
@@ -557,11 +633,14 @@ export default function RankingPageClient({
         ))}
       </div>
 
-      {/* 내 랭킹 카드 (시즌 탭만) */}
+      {/* 내 랭킹 카드 */}
       {activeTab === 'season' && myRanking && (
         <div className="mb-6"><MyRankingCard myRanking={myRanking} /></div>
       )}
-      {activeTab === 'season' && !isAuthenticated && (
+      {activeTab === 'github' && myGithubRanking && (
+        <div className="mb-6"><MyGithubRankingCard myRanking={myGithubRanking} /></div>
+      )}
+      {!isAuthenticated && (
         <div className="mb-6 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
           <Info className="h-4 w-4 shrink-0" />
           <span>
@@ -611,7 +690,7 @@ export default function RankingPageClient({
       ) : activeTab === 'season' ? (
         <SeasonRankingTable entries={filteredSeasonEntries} myRankPosition={myRanking?.rank} />
       ) : (
-        <GithubRankingTable entries={filteredGithubEntries} />
+        <GithubRankingTable entries={filteredGithubEntries} myRankPosition={myGithubRanking?.rank} />
       )}
 
       {/* 페이지네이션 */}
