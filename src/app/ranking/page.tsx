@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
 import { ApiException } from '@/lib/api/client';
-import { getMySeasonRanking, getSeasonRankings } from '@/lib/api';
+import { getMySeasonRanking, getSeasonRankings, getGithubRankings } from '@/lib/api';
 import { auth } from '@/lib/auth/server';
 
 import RankingPageClient from './RankingPageClient';
@@ -16,26 +16,26 @@ export const metadata = {
 export default async function RankingPage() {
   const session = await auth();
 
-  const [rankingsResult, myRankingResult] = await Promise.allSettled([
+  const [seasonRankingsResult, githubRankingsResult, myRankingResult] = await Promise.allSettled([
     getSeasonRankings({ page: 0, size: 50 }),
+    getGithubRankings({ page: 0, size: 50 }),
     session
       ? getMySeasonRanking({ accessToken: session.accessToken })
       : Promise.resolve(null),
   ]);
 
-  const rankings =
-    rankingsResult.status === 'fulfilled'
-      ? rankingsResult.value
+  const seasonRankings =
+    seasonRankingsResult.status === 'fulfilled'
+      ? seasonRankingsResult.value
       : { seasonName: '', endDate: '', rankings: [], totalCount: 0, page: 0, size: 50 };
 
+  const githubRankings =
+    githubRankingsResult.status === 'fulfilled'
+      ? githubRankingsResult.value
+      : { rankings: [], totalCount: 0, page: 0, size: 50 };
+
   const myRanking =
-    myRankingResult.status === 'fulfilled'
-      ? myRankingResult.value
-      : myRankingResult.status === 'rejected' &&
-          myRankingResult.reason instanceof ApiException &&
-          myRankingResult.reason.status === 404
-        ? null
-        : null;
+    myRankingResult.status === 'fulfilled' ? myRankingResult.value : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,7 +48,8 @@ export default async function RankingPage() {
         }
       >
         <RankingPageClient
-          initialRankings={rankings}
+          initialSeasonRankings={seasonRankings}
+          initialGithubRankings={githubRankings}
           myRanking={myRanking}
           isAuthenticated={!!session}
         />

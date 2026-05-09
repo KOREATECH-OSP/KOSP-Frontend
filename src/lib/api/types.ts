@@ -715,6 +715,29 @@ export interface MySeasonRankingResponse {
 }
 
 /**
+ * GitHub 기여 점수 기반 랭킹 엔트리 - /v1/github/rankings
+ */
+export interface GithubRankingEntry {
+  rank: number;
+  userId: number;
+  userName: string;
+  totalScore: number;
+  activityScore: number;
+  diversityScore: number;
+  impactScore: number;
+}
+
+/**
+ * GitHub 기여 점수 기반 전체 랭킹 목록 응답
+ */
+export interface GithubRankingListResponse {
+  rankings: GithubRankingEntry[];
+  totalCount: number;
+  page: number;
+  size: number;
+}
+
+/**
  * 전체 시즌 랭킹 엔트리 - /v1/seasons/current/rankings
  */
 export interface SeasonRankingEntry {

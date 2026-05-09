@@ -5,13 +5,29 @@ import Link from 'next/link';
 import { HelpCircle, Search, Trophy, Info, X } from 'lucide-react';
 
 import Pagination from '@/common/components/Pagination';
-import { SeasonRankingEntry, SeasonRankingListResponse, MySeasonRankingResponse } from '@/lib/api/types';
+import {
+  SeasonRankingEntry,
+  SeasonRankingListResponse,
+  MySeasonRankingResponse,
+  GithubRankingEntry,
+  GithubRankingListResponse,
+} from '@/lib/api/types';
 import { apiClient } from '@/lib/api';
 import { getTierInfo, getTierStyle, getTierProgress, getNextTierRemaining } from './tierUtils';
+import { getRankFromScore } from '@/common/components/GithubRankCard';
 
-// ─── Tier Badge ────────────────────────────────────────────────────────────────
+// ─── Tab ───────────────────────────────────────────────────────────────────────
 
-function TierBadge({ tier, size = 'sm' }: { tier: string; size?: 'sm' | 'md' }) {
+type TabType = 'season' | 'github';
+
+const TABS: { id: TabType; label: string; sub: string }[] = [
+  { id: 'season', label: '시즌 랭킹', sub: '활동 점수 기반' },
+  { id: 'github', label: 'GitHub 랭킹', sub: '전체 기간 기여 기반' },
+];
+
+// ─── Tier Badge (시즌) ─────────────────────────────────────────────────────────
+
+function SeasonTierBadge({ tier, size = 'sm' }: { tier: string; size?: 'sm' | 'md' }) {
   const { label } = getTierInfo(tier);
   const { badge } = getTierStyle(tier);
   const sizeClass = size === 'md' ? 'px-2.5 py-1 text-xs font-bold' : 'px-2 py-0.5 text-xs font-semibold';
@@ -22,29 +38,62 @@ function TierBadge({ tier, size = 'sm' }: { tier: string; size?: 'sm' | 'md' }) 
   );
 }
 
-// ─── Score Progress Bar ────────────────────────────────────────────────────────
+// ─── GitHub Tier Badge ─────────────────────────────────────────────────────────
 
-function ScoreBar({ score, tier, showLabel = false }: { score: number; tier: string; showLabel?: boolean }) {
-  const { bar } = getTierStyle(tier);
-  const progress = (score / 100) * 100;
+const GITHUB_TIER_STYLE: Record<string, { badge: string; label: string }> = {
+  challenger: { badge: 'bg-rose-100 text-rose-800 border border-rose-200', label: 'CHALLENGER' },
+  diamond:    { badge: 'bg-blue-100 text-blue-800 border border-blue-200', label: 'DIAMOND' },
+  platinum:   { badge: 'bg-cyan-100 text-cyan-800 border border-cyan-200', label: 'PLATINUM' },
+  gold:       { badge: 'bg-yellow-100 text-yellow-800 border border-yellow-200', label: 'GOLD' },
+  silver:     { badge: 'bg-slate-100 text-slate-700 border border-slate-200', label: 'SILVER' },
+  bronze:     { badge: 'bg-amber-100 text-amber-800 border border-amber-200', label: 'BRONZE' },
+};
+
+function GithubTierBadge({ score, size = 'sm' }: { score: number; size?: 'sm' | 'md' }) {
+  const rank = getRankFromScore(score);
+  const { badge, label } = GITHUB_TIER_STYLE[rank];
+  const sizeClass = size === 'md' ? 'px-2.5 py-1 text-xs font-bold' : 'px-2 py-0.5 text-xs font-semibold';
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${bar}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      {showLabel && (
-        <span className="w-12 text-right text-xs text-gray-500">{score.toFixed(1)}pt</span>
-      )}
+    <span className={`inline-flex items-center rounded-full ${badge} ${sizeClass} tracking-wide`}>
+      {label}
+    </span>
+  );
+}
+
+// ─── Score Bar ─────────────────────────────────────────────────────────────────
+
+function SeasonScoreBar({ score, tier }: { score: number; tier: string }) {
+  const { bar } = getTierStyle(tier);
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+      <div className={`h-full rounded-full transition-all duration-500 ${bar}`} style={{ width: `${score}%` }} />
+    </div>
+  );
+}
+
+function GithubScoreBar({ score }: { score: number }) {
+  const rank = getRankFromScore(score);
+  const barColor: Record<string, string> = {
+    challenger: 'bg-gradient-to-r from-rose-400 to-pink-400',
+    diamond: 'bg-blue-400',
+    platinum: 'bg-cyan-400',
+    gold: 'bg-yellow-400',
+    silver: 'bg-slate-400',
+    bronze: 'bg-amber-400',
+  };
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+      <div
+        className={`h-full rounded-full transition-all duration-500 ${barColor[rank]}`}
+        style={{ width: `${(score / 9) * 100}%` }}
+      />
     </div>
   );
 }
 
 // ─── Ranking Criteria Modal ────────────────────────────────────────────────────
 
-const CRITERIA_ROWS = [
+const SEASON_CRITERIA_ROWS = [
   { category: '출석', criteria: '로그인 시 0.01pt/일 + 스트릭 보너스', cap: '-' },
   { category: '스트릭 보너스', criteria: '7일:1pt / 30일:3pt / 50일:5pt / 100일:10pt', cap: '-' },
   { category: '커밋', criteria: '일 최대 3건 × 0.05pt (매일 04:00 재계산)', cap: '챌린지 합산 35pt' },
@@ -53,7 +102,7 @@ const CRITERIA_ROWS = [
   { category: '커뮤니티', criteria: '게시글 0.5pt/개', cap: '10pt' },
 ];
 
-const TIER_CRITERIA = [
+const SEASON_TIER_CRITERIA = [
   { label: 'BRONZE 4~1', range: '0 ~ 10pt', color: 'bg-amber-100 text-amber-800' },
   { label: 'SILVER 4~1', range: '10 ~ 20pt', color: 'bg-slate-100 text-slate-700' },
   { label: 'GOLD 4~1', range: '20 ~ 35pt', color: 'bg-yellow-100 text-yellow-800' },
@@ -63,58 +112,115 @@ const TIER_CRITERIA = [
   { label: 'CHALLENGER', range: '90pt 이상', color: 'bg-rose-100 text-rose-800' },
 ];
 
-function RankingCriteriaModal({ onClose }: { onClose: () => void }) {
+const GITHUB_TIER_CRITERIA = [
+  { label: 'CHALLENGER', range: '7.5 ~ 9pt', color: 'bg-rose-100 text-rose-800' },
+  { label: 'DIAMOND', range: '6 ~ 7.5pt', color: 'bg-blue-100 text-blue-800' },
+  { label: 'PLATINUM', range: '4.5 ~ 6pt', color: 'bg-cyan-100 text-cyan-800' },
+  { label: 'GOLD', range: '3 ~ 4.5pt', color: 'bg-yellow-100 text-yellow-800' },
+  { label: 'SILVER', range: '1.5 ~ 3pt', color: 'bg-slate-100 text-slate-700' },
+  { label: 'BRONZE', range: '0 ~ 1.5pt', color: 'bg-amber-100 text-amber-800' },
+];
+
+function RankingCriteriaModal({ tab, onClose }: { tab: TabType; onClose: () => void }) {
+  const isGithub = tab === 'github';
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-base font-bold text-gray-900">랭킹 기준 안내</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-          >
+          <h2 className="text-base font-bold text-gray-900">
+            {isGithub ? 'GitHub 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}
+          </h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
-          <p className="mb-4 text-xs text-gray-500">
-            총점 = min(출석 + min(커밋+챌린지, 35) + 프로젝트 + 커뮤니티, <strong>100pt</strong>)
-            &nbsp;·&nbsp;매일 04:00 업데이트
-          </p>
-
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">점수 기준</h3>
-          <div className="mb-5 overflow-hidden rounded-xl border border-gray-100">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">카테고리</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">기준</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">상한</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {CRITERIA_ROWS.map((row) => (
-                  <tr key={row.category} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-700">{row.category}</td>
-                    <td className="px-3 py-2 text-xs text-gray-500">{row.criteria}</td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-500">{row.cap}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isGithub ? (
+            <>
+              <p className="mb-4 text-xs text-gray-500">
+                총점 = 활동 수준(0~3pt) + 활동 다양성(0~1pt) + 활동 영향성(0~5pt) · <strong>최대 9pt</strong>
+              </p>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">점수 기준</h3>
+              <div className="mb-5 overflow-hidden rounded-xl border border-gray-100 text-sm">
+                <div className="bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">활동 수준 (최대 3pt)</div>
+                <div className="divide-y divide-gray-50">
+                  {[
+                    ['3pt', '커밋 100+ AND PR 20+ (단일 저장소 기준)'],
+                    ['2pt', '커밋 30+ AND PR 5+'],
+                    ['1pt', '커밋 5+ OR PR 1+'],
+                  ].map(([pt, desc]) => (
+                    <div key={pt} className="flex justify-between px-3 py-2">
+                      <span className="font-semibold text-gray-700">{pt}</span>
+                      <span className="text-xs text-gray-500">{desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">다양성 점수 (최대 1pt)</div>
+                <div className="divide-y divide-gray-50">
+                  {[
+                    ['1.0pt', '기여 저장소 10개 이상'],
+                    ['0.7pt', '5~9개'],
+                    ['0.4pt', '2~4개'],
+                  ].map(([pt, desc]) => (
+                    <div key={pt} className="flex justify-between px-3 py-2">
+                      <span className="font-semibold text-gray-700">{pt}</span>
+                      <span className="text-xs text-gray-500">{desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">영향력 점수 (최대 5pt)</div>
+                <div className="divide-y divide-gray-50">
+                  {[
+                    ['+2.0pt', '내 소유 저장소 100+ 스타'],
+                    ['+1.5pt', '1000+ 스타 저장소에 PR 머지'],
+                    ['+1.0pt', '머지된 PR로 이슈 10개+ 클로즈'],
+                    ['+0.5pt', '크로스 저장소 PR 머지'],
+                  ].map(([pt, desc]) => (
+                    <div key={pt} className="flex justify-between px-3 py-2">
+                      <span className="font-semibold text-gray-700">{pt}</span>
+                      <span className="text-xs text-gray-500">{desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-4 text-xs text-gray-500">
+                총점 = min(출석 + min(커밋+챌린지, 35) + 프로젝트 + 커뮤니티, <strong>100pt</strong>) · 매일 04:00 업데이트
+              </p>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">점수 기준</h3>
+              <div className="mb-5 overflow-hidden rounded-xl border border-gray-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">카테고리</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">기준</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">상한</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {SEASON_CRITERIA_ROWS.map((row) => (
+                      <tr key={row.category} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">{row.category}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">{row.criteria}</td>
+                        <td className="px-3 py-2 text-right text-xs text-gray-500">{row.cap}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">티어 구간</h3>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {TIER_CRITERIA.map((t) => (
+            {(isGithub ? GITHUB_TIER_CRITERIA : SEASON_TIER_CRITERIA).map((t) => (
               <div key={t.label} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.color}`}>{t.label}</span>
                 <span className="ml-2 text-xs text-gray-500">{t.range}</span>
@@ -127,7 +233,7 @@ function RankingCriteriaModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── My Ranking Card ───────────────────────────────────────────────────────────
+// ─── My Season Ranking Card ────────────────────────────────────────────────────
 
 function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
   const { label, min, max } = getTierInfo(myRanking.tier);
@@ -146,7 +252,7 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-100 px-5 py-3.5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">내 랭킹</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">내 시즌 랭킹</p>
       </div>
       <div className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -155,14 +261,13 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
               #{myRanking.rank}
             </div>
             <div>
-              <TierBadge tier={myRanking.tier} size="md" />
+              <SeasonTierBadge tier={myRanking.tier} size="md" />
               <p className="mt-1 text-2xl font-bold text-gray-900">
                 {myRanking.totalScore.toFixed(1)}
                 <span className="ml-1 text-sm font-normal text-gray-400">/ 100pt</span>
               </p>
             </div>
           </div>
-
           <div className="flex flex-wrap gap-3">
             {scoreItems.map((item) => (
               <div key={item.label} className="text-center">
@@ -172,7 +277,6 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
             ))}
           </div>
         </div>
-
         <div className="mt-4">
           <div className="mb-1.5 flex justify-between text-xs text-gray-500">
             <span className={`font-medium ${text}`}>{label}</span>
@@ -183,38 +287,27 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
             )}
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${bar}`}
-              style={{ width: `${progressInTier}%` }}
-            />
+            <div className={`h-full rounded-full transition-all duration-700 ${bar}`} style={{ width: `${progressInTier}%` }} />
           </div>
           <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-            <span>{min}pt</span>
-            <span>{max}pt</span>
+            <span>{min}pt</span><span>{max}pt</span>
           </div>
         </div>
-
-        {myRanking.seasonName && (
-          <p className="mt-3 text-xs text-gray-400">
-            시즌: {myRanking.seasonName}
-            {myRanking.endDate && ` · 종료일: ${myRanking.endDate}`}
-          </p>
-        )}
       </div>
     </div>
   );
 }
 
-// ─── Top 3 Cards ──────────────────────────────────────────────────────────────
+// ─── Top 3 (시즌) ──────────────────────────────────────────────────────────────
 
-const PODIUM_ORDER = [1, 0, 2] as const; // 2위, 1위, 3위 순서 (중앙 강조)
+const PODIUM_ORDER = [1, 0, 2] as const;
 const MEDAL_CONFIG = [
   { icon: '🥇', bg: 'bg-yellow-50 border-yellow-200', rankText: 'text-yellow-600', heightClass: 'sm:pt-0' },
   { icon: '🥈', bg: 'bg-slate-50 border-slate-200', rankText: 'text-slate-500', heightClass: 'sm:pt-4' },
   { icon: '🥉', bg: 'bg-amber-50 border-amber-200', rankText: 'text-amber-600', heightClass: 'sm:pt-4' },
 ];
 
-function Top3Cards({ entries }: { entries: SeasonRankingEntry[] }) {
+function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRankingEntry[]; type: TabType }) {
   if (entries.length === 0) return null;
   const top3 = entries.slice(0, 3);
 
@@ -222,30 +315,22 @@ function Top3Cards({ entries }: { entries: SeasonRankingEntry[] }) {
     <div className="grid grid-cols-3 gap-3">
       {PODIUM_ORDER.map((dataIdx) => {
         const entry = top3[dataIdx];
-        const rankIdx = dataIdx; // 0=1위, 1=2위, 2=3위
-        const config = MEDAL_CONFIG[rankIdx];
+        const config = MEDAL_CONFIG[dataIdx];
         if (!entry) return <div key={dataIdx} />;
 
         return (
-          <div
-            key={entry.userId}
-            className={`${config.heightClass} flex flex-col items-center`}
-          >
-            <div
-              className={`w-full rounded-2xl border ${config.bg} p-4 text-center transition-shadow hover:shadow-md`}
-            >
+          <div key={entry.userId} className={`${config.heightClass} flex flex-col items-center`}>
+            <div className={`w-full rounded-2xl border ${config.bg} p-4 text-center transition-shadow hover:shadow-md`}>
               <div className="text-2xl">{config.icon}</div>
-              <div className={`mt-1 text-xs font-bold ${config.rankText}`}>
-                {entry.rank}위
-              </div>
-              <Link
-                href={`/user/${entry.userId}`}
-                className="mt-2 block truncate text-sm font-bold text-gray-800 hover:text-blue-600"
-              >
+              <div className={`mt-1 text-xs font-bold ${config.rankText}`}>{entry.rank}위</div>
+              <Link href={`/user/${entry.userId}`} className="mt-2 block truncate text-sm font-bold text-gray-800 hover:text-blue-600">
                 {entry.userName}
               </Link>
               <div className="mt-1.5 flex justify-center">
-                <TierBadge tier={entry.tier} />
+                {type === 'season'
+                  ? <SeasonTierBadge tier={(entry as SeasonRankingEntry).tier} />
+                  : <GithubTierBadge score={(entry as GithubRankingEntry).totalScore} />
+                }
               </div>
               <p className="mt-2 text-base font-black text-gray-900">
                 {entry.totalScore.toFixed(1)}
@@ -259,15 +344,9 @@ function Top3Cards({ entries }: { entries: SeasonRankingEntry[] }) {
   );
 }
 
-// ─── Ranking Table ─────────────────────────────────────────────────────────────
+// ─── Season Ranking Table ──────────────────────────────────────────────────────
 
-function RankingTable({
-  entries,
-  myRankPosition,
-}: {
-  entries: SeasonRankingEntry[];
-  myRankPosition?: number;
-}) {
+function SeasonRankingTable({ entries, myRankPosition }: { entries: SeasonRankingEntry[]; myRankPosition?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="hidden sm:grid sm:grid-cols-[56px_1fr_140px_100px_1fr] sm:items-center sm:gap-4 sm:border-b sm:border-gray-100 sm:bg-gray-50 sm:px-4 sm:py-2.5">
@@ -277,72 +356,32 @@ function RankingTable({
         <span className="text-right text-xs font-medium text-gray-400">점수</span>
         <span className="text-xs font-medium text-gray-400">진행도</span>
       </div>
-
       <ul className="divide-y divide-gray-50">
         {entries.map((entry) => {
           const isMe = myRankPosition !== undefined && entry.rank === myRankPosition;
           return (
-            <li
-              key={`${entry.rank}-${entry.userId}`}
-              className={`grid grid-cols-[40px_1fr] items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:grid-cols-[56px_1fr_140px_100px_1fr] sm:gap-4 ${
-                isMe ? 'bg-blue-50/50 hover:bg-blue-50' : ''
-              }`}
+            <li key={`${entry.rank}-${entry.userId}`}
+              className={`grid grid-cols-[40px_1fr] items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:grid-cols-[56px_1fr_140px_100px_1fr] sm:gap-4 ${isMe ? 'bg-blue-50/50 hover:bg-blue-50' : ''}`}
             >
-              {/* 순위 */}
-              <span
-                className={`text-sm font-bold ${
-                  entry.rank === 1
-                    ? 'text-yellow-500'
-                    : entry.rank === 2
-                      ? 'text-slate-500'
-                      : entry.rank === 3
-                        ? 'text-amber-600'
-                        : 'text-gray-400'
-                }`}
-              >
+              <span className={`text-sm font-bold ${entry.rank === 1 ? 'text-yellow-500' : entry.rank === 2 ? 'text-slate-500' : entry.rank === 3 ? 'text-amber-600' : 'text-gray-400'}`}>
                 {entry.rank}
               </span>
-
-              {/* 사용자 + 모바일 서브정보 */}
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link
-                    href={`/user/${entry.userId}`}
-                    className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600"
-                  >
-                    {entry.userName}
-                  </Link>
-                  {isMe && (
-                    <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
-                      나
-                    </span>
-                  )}
+                  <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">{entry.userName}</Link>
+                  {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
                 </div>
-                {/* 모바일에만 보이는 서브정보 */}
                 <div className="mt-1 flex items-center gap-2 sm:hidden">
-                  <TierBadge tier={entry.tier} />
+                  <SeasonTierBadge tier={entry.tier} />
                   <span className="text-xs font-semibold text-gray-600">{entry.totalScore.toFixed(1)}pt</span>
                 </div>
-                <div className="mt-1 sm:hidden">
-                  <ScoreBar score={entry.totalScore} tier={entry.tier} />
-                </div>
+                <div className="mt-1 sm:hidden"><SeasonScoreBar score={entry.totalScore} tier={entry.tier} /></div>
               </div>
-
-              {/* 티어 (데스크탑) */}
-              <div className="hidden sm:block">
-                <TierBadge tier={entry.tier} />
-              </div>
-
-              {/* 점수 (데스크탑) */}
+              <div className="hidden sm:block"><SeasonTierBadge tier={entry.tier} /></div>
               <span className="hidden text-right text-sm font-bold text-gray-800 sm:block">
-                {entry.totalScore.toFixed(1)}
-                <span className="text-xs font-normal text-gray-400">pt</span>
+                {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
               </span>
-
-              {/* 진행도 (데스크탑) */}
-              <div className="hidden sm:block">
-                <ScoreBar score={entry.totalScore} tier={entry.tier} />
-              </div>
+              <div className="hidden sm:block"><SeasonScoreBar score={entry.totalScore} tier={entry.tier} /></div>
             </li>
           );
         })}
@@ -351,94 +390,182 @@ function RankingTable({
   );
 }
 
-// ─── Main Page Client ──────────────────────────────────────────────────────────
+// ─── GitHub Ranking Table ──────────────────────────────────────────────────────
+
+function GithubRankingTable({ entries }: { entries: GithubRankingEntry[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div className="hidden sm:grid sm:grid-cols-[56px_1fr_120px_80px_1fr] sm:items-center sm:gap-4 sm:border-b sm:border-gray-100 sm:bg-gray-50 sm:px-4 sm:py-2.5">
+        <span className="text-xs font-medium text-gray-400">순위</span>
+        <span className="text-xs font-medium text-gray-400">사용자</span>
+        <span className="text-xs font-medium text-gray-400">티어</span>
+        <span className="text-right text-xs font-medium text-gray-400">총점</span>
+        <span className="text-xs font-medium text-gray-400">진행도</span>
+      </div>
+      <ul className="divide-y divide-gray-50">
+        {entries.map((entry) => (
+          <li key={`${entry.rank}-${entry.userId}`}
+            className="grid grid-cols-[40px_1fr] items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:grid-cols-[56px_1fr_120px_80px_1fr] sm:gap-4"
+          >
+            <span className={`text-sm font-bold ${entry.rank === 1 ? 'text-yellow-500' : entry.rank === 2 ? 'text-slate-500' : entry.rank === 3 ? 'text-amber-600' : 'text-gray-400'}`}>
+              {entry.rank}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">{entry.userName}</Link>
+              </div>
+              <div className="mt-1 flex items-center gap-2 sm:hidden">
+                <GithubTierBadge score={entry.totalScore} />
+                <span className="text-xs font-semibold text-gray-600">{entry.totalScore.toFixed(1)}pt</span>
+              </div>
+              <div className="mt-1 sm:hidden"><GithubScoreBar score={entry.totalScore} /></div>
+            </div>
+            <div className="hidden sm:block"><GithubTierBadge score={entry.totalScore} /></div>
+            <span className="hidden text-right text-sm font-bold text-gray-800 sm:block">
+              {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
+            </span>
+            <div className="hidden sm:block"><GithubScoreBar score={entry.totalScore} /></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ─── Main ──────────────────────────────────────────────────────────────────────
 
 interface RankingPageClientProps {
-  initialRankings: SeasonRankingListResponse;
+  initialSeasonRankings: SeasonRankingListResponse;
+  initialGithubRankings: GithubRankingListResponse;
   myRanking: MySeasonRankingResponse | null;
   isAuthenticated: boolean;
 }
 
 export default function RankingPageClient({
-  initialRankings,
+  initialSeasonRankings,
+  initialGithubRankings,
   myRanking,
   isAuthenticated,
 }: RankingPageClientProps) {
-  const [rankings, setRankings] = useState(initialRankings);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<TabType>('season');
+  const [seasonRankings, setSeasonRankings] = useState(initialSeasonRankings);
+  const [githubRankings, setGithubRankings] = useState(initialGithubRankings);
+  const [seasonPage, setSeasonPage] = useState(1);
+  const [githubPage, setGithubPage] = useState(1);
   const [search, setSearch] = useState('');
   const [showCriteria, setShowCriteria] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const totalPages = Math.ceil(rankings.totalCount / (rankings.size || 50));
+  const seasonTotalPages = Math.ceil(seasonRankings.totalCount / (seasonRankings.size || 50));
+  const githubTotalPages = Math.ceil(githubRankings.totalCount / (githubRankings.size || 50));
 
-  const filteredEntries = useMemo(() => {
-    if (!search.trim()) return rankings.rankings;
-    return rankings.rankings.filter((e) =>
-      e.userName.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [rankings.rankings, search]);
+  const filteredSeasonEntries = useMemo(() => {
+    if (!search.trim()) return seasonRankings.rankings;
+    return seasonRankings.rankings.filter((e) => e.userName.toLowerCase().includes(search.toLowerCase()));
+  }, [seasonRankings.rankings, search]);
 
-  const handlePageChange = async (page: number) => {
+  const filteredGithubEntries = useMemo(() => {
+    if (!search.trim()) return githubRankings.rankings;
+    return githubRankings.rankings.filter((e) => e.userName.toLowerCase().includes(search.toLowerCase()));
+  }, [githubRankings.rankings, search]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setSearch('');
+  };
+
+  const handleSeasonPageChange = async (page: number) => {
     setIsLoading(true);
     try {
       const data = await apiClient<SeasonRankingListResponse>(
         `/v1/seasons/current/rankings?page=${page - 1}&size=50`,
         { cache: 'no-store' },
       );
-      setRankings(data);
-      setCurrentPage(page);
+      setSeasonRankings(data);
+      setSeasonPage(page);
       setSearch('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch {
-      // 실패 시 현재 페이지 유지
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { /* 실패 시 현재 페이지 유지 */ }
+    finally { setIsLoading(false); }
   };
 
-  const top3 = initialRankings.rankings.slice(0, 3);
+  const handleGithubPageChange = async (page: number) => {
+    setIsLoading(true);
+    try {
+      const data = await apiClient<GithubRankingListResponse>(
+        `/v1/github/rankings?page=${page - 1}&size=50`,
+        { cache: 'no-store' },
+      );
+      setGithubRankings(data);
+      setGithubPage(page);
+      setSearch('');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch { /* 실패 시 현재 페이지 유지 */ }
+    finally { setIsLoading(false); }
+  };
+
+  const top3 = activeTab === 'season'
+    ? initialSeasonRankings.rankings.slice(0, 3)
+    : initialGithubRankings.rankings.slice(0, 3);
+
+  const totalCount = activeTab === 'season' ? seasonRankings.totalCount : githubRankings.totalCount;
+  const filteredEntries = activeTab === 'season' ? filteredSeasonEntries : filteredGithubEntries;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       {/* 헤더 */}
-      <div className="mb-6">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">시즌 랭킹</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              출석 · 커밋 · 챌린지 · 프로젝트 · 커뮤니티 활동 점수 기준
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">랭킹</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {activeTab === 'season'
+              ? '출석 · 커밋 · 챌린지 · 프로젝트 · 커뮤니티 활동 점수 기준'
+              : '전체 기간 GitHub 활동 · 다양성 · 영향력 점수 기준'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {activeTab === 'season' && (
             <span className="flex items-center gap-1 text-xs text-gray-400">
               <Info className="h-3.5 w-3.5" />
               매일 04:00 업데이트
             </span>
-            <button
-              onClick={() => setShowCriteria(true)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-              랭킹 기준
-            </button>
-          </div>
+          )}
+          <button
+            onClick={() => setShowCriteria(true)}
+            className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            랭킹 기준
+          </button>
         </div>
       </div>
 
-      {/* 내 랭킹 카드 */}
-      {myRanking && (
-        <div className="mb-6">
-          <MyRankingCard myRanking={myRanking} />
-        </div>
+      {/* 탭 */}
+      <div className="mb-6 inline-flex rounded-xl bg-gray-100 p-1">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              activeTab === tab.id
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 내 랭킹 카드 (시즌 탭만) */}
+      {activeTab === 'season' && myRanking && (
+        <div className="mb-6"><MyRankingCard myRanking={myRanking} /></div>
       )}
-      {!isAuthenticated && (
+      {activeTab === 'season' && !isAuthenticated && (
         <div className="mb-6 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
           <Info className="h-4 w-4 shrink-0" />
           <span>
-            <Link href="/login" className="font-medium text-blue-600 hover:underline">
-              로그인
-            </Link>
+            <Link href="/login" className="font-medium text-blue-600 hover:underline">로그인</Link>
             하면 내 랭킹을 확인할 수 있어요.
           </span>
         </div>
@@ -451,7 +578,7 @@ export default function RankingPageClient({
             <Trophy className="h-4 w-4 text-yellow-500" />
             <h2 className="text-sm font-semibold text-gray-700">TOP 3</h2>
           </div>
-          <Top3Cards entries={top3} />
+          <Top3Cards entries={top3} type={activeTab} />
         </div>
       )}
 
@@ -467,10 +594,8 @@ export default function RankingPageClient({
             className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
           />
         </div>
-        {rankings.totalCount > 0 && (
-          <span className="shrink-0 text-xs text-gray-400">
-            총 {rankings.totalCount.toLocaleString()}명
-          </span>
+        {totalCount > 0 && (
+          <span className="shrink-0 text-xs text-gray-400">총 {totalCount.toLocaleString()}명</span>
         )}
       </div>
 
@@ -483,23 +608,25 @@ export default function RankingPageClient({
         <div className="rounded-xl border border-gray-100 bg-white py-16 text-center text-sm text-gray-400">
           {search ? `'${search}' 검색 결과가 없습니다.` : '랭킹 데이터가 없습니다.'}
         </div>
+      ) : activeTab === 'season' ? (
+        <SeasonRankingTable entries={filteredSeasonEntries} myRankPosition={myRanking?.rank} />
       ) : (
-        <RankingTable entries={filteredEntries} myRankPosition={myRanking?.rank} />
+        <GithubRankingTable entries={filteredGithubEntries} />
       )}
 
       {/* 페이지네이션 */}
-      {!search && totalPages > 1 && (
+      {!search && activeTab === 'season' && seasonTotalPages > 1 && (
         <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+          <Pagination currentPage={seasonPage} totalPages={seasonTotalPages} onPageChange={handleSeasonPageChange} />
+        </div>
+      )}
+      {!search && activeTab === 'github' && githubTotalPages > 1 && (
+        <div className="mt-6">
+          <Pagination currentPage={githubPage} totalPages={githubTotalPages} onPageChange={handleGithubPageChange} />
         </div>
       )}
 
-      {/* 랭킹 기준 모달 */}
-      {showCriteria && <RankingCriteriaModal onClose={() => setShowCriteria(false)} />}
+      {showCriteria && <RankingCriteriaModal tab={activeTab} onClose={() => setShowCriteria(false)} />}
     </main>
   );
 }
