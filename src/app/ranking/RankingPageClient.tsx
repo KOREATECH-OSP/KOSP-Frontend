@@ -22,7 +22,7 @@ type TabType = 'season' | 'github';
 
 const TABS: { id: TabType; label: string; sub: string }[] = [
   { id: 'season', label: '시즌 랭킹', sub: '활동 점수 기반' },
-  { id: 'github', label: 'GitHub 랭킹', sub: '전체 기간 기여 기반' },
+  { id: 'github', label: '전체 랭킹', sub: '전체 기간 기여 기반' },
 ];
 
 // ─── Tier Badge (시즌) ─────────────────────────────────────────────────────────
@@ -132,7 +132,7 @@ function RankingCriteriaModal({ tab, onClose }: { tab: TabType; onClose: () => v
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="text-base font-bold text-gray-900">
-            {isGithub ? 'GitHub 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}
+            {isGithub ? '전체 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}
           </h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <X className="h-5 w-5" />
