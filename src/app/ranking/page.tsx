@@ -26,7 +26,7 @@ export default async function RankingPage() {
   const rankings =
     rankingsResult.status === 'fulfilled'
       ? rankingsResult.value
-      : { entries: [], totalElements: 0, totalPages: 0, currentPage: 0, size: 50 };
+      : { seasonName: '', endDate: '', rankings: [], totalCount: 0, page: 0, size: 50 };
 
   const myRanking =
     myRankingResult.status === 'fulfilled'

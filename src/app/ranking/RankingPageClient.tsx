@@ -370,12 +370,14 @@ export default function RankingPageClient({
   const [showCriteria, setShowCriteria] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const totalPages = Math.ceil(rankings.totalCount / (rankings.size || 50));
+
   const filteredEntries = useMemo(() => {
-    if (!search.trim()) return rankings.entries;
-    return rankings.entries.filter((e) =>
+    if (!search.trim()) return rankings.rankings;
+    return rankings.rankings.filter((e) =>
       e.userName.toLowerCase().includes(search.toLowerCase()),
     );
-  }, [rankings.entries, search]);
+  }, [rankings.rankings, search]);
 
   const handlePageChange = async (page: number) => {
     setIsLoading(true);
@@ -395,7 +397,7 @@ export default function RankingPageClient({
     }
   };
 
-  const top3 = initialRankings.entries.slice(0, 3);
+  const top3 = initialRankings.rankings.slice(0, 3);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -465,9 +467,9 @@ export default function RankingPageClient({
             className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
           />
         </div>
-        {rankings.totalElements > 0 && (
+        {rankings.totalCount > 0 && (
           <span className="shrink-0 text-xs text-gray-400">
-            총 {rankings.totalElements.toLocaleString()}명
+            총 {rankings.totalCount.toLocaleString()}명
           </span>
         )}
       </div>
@@ -486,11 +488,11 @@ export default function RankingPageClient({
       )}
 
       {/* 페이지네이션 */}
-      {!search && rankings.totalPages > 1 && (
+      {!search && totalPages > 1 && (
         <div className="mt-6">
           <Pagination
             currentPage={currentPage}
-            totalPages={rankings.totalPages}
+            totalPages={totalPages}
             onPageChange={handlePageChange}
           />
         </div>

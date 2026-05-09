@@ -729,10 +729,11 @@ export interface SeasonRankingEntry {
  * 전체 시즌 랭킹 목록 응답
  */
 export interface SeasonRankingListResponse {
-  entries: SeasonRankingEntry[];
-  totalElements: number;
-  totalPages: number;
-  currentPage: number;
+  seasonName: string;
+  endDate: string;
+  rankings: SeasonRankingEntry[];
+  totalCount: number;
+  page: number;
   size: number;
 }
 
