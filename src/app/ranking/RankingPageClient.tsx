@@ -500,7 +500,8 @@ function GithubRankingTable({ entries, myRankPosition }: { entries: GithubRankin
             </span>
             <div className="hidden sm:block"><GithubScoreBar score={entry.totalScore} /></div>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );
