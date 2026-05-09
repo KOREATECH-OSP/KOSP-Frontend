@@ -22,6 +22,7 @@ import type {
   UserTitleListResponse,
   UserTitleResponse,
   MySeasonRankingResponse,
+  SeasonRankingListResponse,
 } from './types';
 
 interface AuthOptions {
@@ -295,6 +296,21 @@ export async function getMySeasonRanking(auth: AuthOptions): Promise<MySeasonRan
   return clientApiClient<MySeasonRankingResponse>('/v1/seasons/current/rankings/me', {
     accessToken: auth.accessToken,
   });
+}
+
+/**
+ * 시즌 전체 랭킹 조회 (공개 API)
+ */
+export async function getSeasonRankings(params?: {
+  page?: number;
+  size?: number;
+}): Promise<SeasonRankingListResponse> {
+  const page = params?.page ?? 0;
+  const size = params?.size ?? 50;
+  return apiClient<SeasonRankingListResponse>(
+    `/v1/seasons/current/rankings?page=${page}&size=${size}`,
+    { cache: 'no-store' },
+  );
 }
 
 /**

@@ -714,6 +714,28 @@ export interface MySeasonRankingResponse {
   communityScore: number;
 }
 
+/**
+ * 전체 시즌 랭킹 엔트리 - /v1/seasons/current/rankings
+ */
+export interface SeasonRankingEntry {
+  rank: number;
+  userId: number;
+  userName: string;
+  totalScore: number;
+  tier: string; // e.g. "BRONZE_4", "GOLD_2", "CHALLENGER"
+}
+
+/**
+ * 전체 시즌 랭킹 목록 응답
+ */
+export interface SeasonRankingListResponse {
+  entries: SeasonRankingEntry[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  size: number;
+}
+
 // ============================================
 // Notification Types
 // ============================================
