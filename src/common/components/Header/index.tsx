@@ -62,7 +62,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
   ];
 
   return (
-    <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50`}>
+    <nav className={`bg-white border-b border-gray-200/70 sticky top-0 z-50 print:hidden`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-[50px]">
           <div className="flex items-center gap-6 md:gap-10">

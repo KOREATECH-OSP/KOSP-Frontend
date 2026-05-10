@@ -654,6 +654,31 @@ export interface UserTitleListResponse {
 }
 
 // ============================================
+// Title Catalog Types (전체 칭호 목록)
+// ============================================
+
+export interface TitleConditionInfo {
+  conditionType: string;
+  thresholdValue: number;
+  description: string | null;
+}
+
+export interface TitleDetailResponse {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  rarity: string;
+  iconUrl: string | null;
+  conditions: TitleConditionInfo[];
+}
+
+export interface TitleCatalogListResponse {
+  titles: TitleDetailResponse[];
+  totalCount: number;
+}
+
+// ============================================
 // Report Types
 // ============================================
 
@@ -804,3 +829,104 @@ export interface NotificationListResponse {
 export interface UnreadCountResponse {
   count: number;
 }
+
+// ============================================
+// Resume Types
+// ============================================
+
+export interface ResumeLinkItem {
+  id: string;
+  label: string;
+  url: string;
+}
+
+export interface ResumeEducationItem {
+  id: string;
+  school: string;
+  major: string;
+  period: string;
+}
+
+export interface ResumeCareerItem {
+  id: string;
+  company: string;
+  role: string;
+  period: string;
+}
+
+export interface ResumeExperienceItem {
+  id: string;
+  title: string;
+  description: string;
+  period: string;
+}
+
+export interface ResumeProjectItem {
+  id: string;
+  name: string;
+  period: string;
+  summary: string;
+  role: string;
+  techStack: string;
+  mainFeatures: string;
+  myContributions: string;
+  problemSolving: string;
+  result: string;
+  githubLink: string;
+  deployLink: string;
+  docLink: string;
+  featured: string;
+}
+
+export interface ResumeAwardItem {
+  id: string;
+  name: string;
+  organization: string;
+  date: string;
+  relatedProject: string;
+  description: string;
+}
+
+export interface ResumeCertificationItem {
+  id: string;
+  name: string;
+  organization: string;
+  date: string;
+  /** 'ACQUIRED' | 'EXPIRED' */
+  status: string;
+}
+
+export interface ResumeCoverLetterItem {
+  id: string;
+  title: string;
+  content: string;
+}
+
+/** 서버에 저장/조회되는 이력서 데이터 구조 */
+export interface ResumeData {
+  resumeTitle: string;
+  headline: string;
+  bio: string;
+  jobRole: string;
+  techStack: string[];
+  links: ResumeLinkItem[];
+  education: ResumeEducationItem[];
+  career: ResumeCareerItem[];
+  experience: ResumeExperienceItem[];
+  projects: ResumeProjectItem[];
+  awards: ResumeAwardItem[];
+  certifications: ResumeCertificationItem[];
+  coverLetters: ResumeCoverLetterItem[];
+  isPublic: boolean;
+}
+
+/** GET /v1/users/me/resume 응답 */
+export interface ResumeResponse {
+  userId: number;
+  /** 저장된 이력서가 없으면 null */
+  resumeData: ResumeData | null;
+  updatedAt: string | null;
+}
+
+/** POST /v1/users/me/resume 요청 */
+export type ResumeSaveRequest = ResumeData;

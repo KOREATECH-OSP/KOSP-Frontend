@@ -64,7 +64,7 @@ export default function EditableListSection<T extends { id: string }>({
       </div>
 
       {/* 항목 목록 */}
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-gray-200">
         {items.length === 0 ? (
           <div className="flex items-center justify-center py-10">
             <p className="text-sm text-gray-400">{emptyMessage}</p>

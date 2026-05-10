@@ -25,6 +25,9 @@ import type {
   MyGithubRankingResponse,
   SeasonRankingListResponse,
   GithubRankingListResponse,
+  ResumeResponse,
+  ResumeSaveRequest,
+  TitleCatalogListResponse,
 } from './types';
 
 interface AuthOptions {
@@ -337,6 +340,55 @@ export async function getSeasonRankings(params?: {
     `/v1/seasons/current/rankings?page=${page}&size=${size}`,
     { cache: 'no-store' },
   );
+}
+
+// ============================================
+// Resume APIs (이력서)
+// ============================================
+
+/**
+ * 활성화된 전체 칭호 목록 조회 (인증 불필요)
+ * 칭호명, 등급, 카테고리, 달성 조건 포함
+ */
+export async function getAllTitles(): Promise<TitleCatalogListResponse> {
+  return apiClient<TitleCatalogListResponse>('/v1/titles', {
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 특정 사용자의 공개 이력서 조회 (인증 불필요)
+ * 비공개이거나 없으면 404 ApiException 발생
+ */
+export async function getPublicResume(userId: number): Promise<ResumeResponse> {
+  return apiClient<ResumeResponse>(`/v1/users/${userId}/resume`, {
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 내 이력서 조회
+ * 저장된 이력서가 없으면 resumeData: null 반환
+ */
+export async function getMyResume(auth: AuthOptions): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>('/v1/users/me/resume', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 이력서 저장 (upsert)
+ * 이미 있으면 update, 없으면 create
+ */
+export async function saveMyResume(
+  data: ResumeSaveRequest,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>('/v1/users/me/resume', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
 }
 
 /**

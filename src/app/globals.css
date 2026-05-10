@@ -192,3 +192,36 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* ── 이력서 인쇄/PDF 전용 ── */
+@media print {
+  /* 사이트 공통 UI 숨김 */
+  header,
+  footer,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* 인쇄 제외 요소 (print:hidden 보완) */
+  [data-print="hidden"],
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* 이력서 영역 전체 폭 활용 */
+  body {
+    background: white !important;
+  }
+
+  #resume-print-area {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 페이지 여백 */
+  @page {
+    margin: 15mm 12mm;
+  }
+}
