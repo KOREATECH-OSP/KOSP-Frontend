@@ -191,21 +191,20 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     setIsCreatingResume(true);
     setShowResumeDropdown(false);
     try {
-      const newResume = await createResume(
-        { resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
-          links: [], education: [], career: [], experience: [], projects: [],
-          awards: [], certifications: [], coverLetters: [], isPublic: false },
-        { accessToken }
-      );
+      const emptyResume = {
+        resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
+        links: [], education: [], career: [], experience: [], projects: [],
+        awards: [], certifications: [], coverLetters: [], isPublic: false,
+        visibleSections: DEFAULT_VISIBLE_SECTIONS,
+      };
+      const newResume = await createResume(emptyResume, { accessToken });
       if (newResume.resumeId) {
         setResumeId(newResume.resumeId);
         // 목록 갱신
         const list = await getMyResumes({ accessToken });
         setResumeList(list.resumes);
         // 새 이력서 빈 상태로 초기화
-        applyResumeData({ resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '',
-          techStack: [], links: [], education: [], career: [], experience: [], projects: [],
-          awards: [], certifications: [], coverLetters: [], isPublic: false });
+        applyResumeData(emptyResume);
       }
     } finally {
       setIsCreatingResume(false);
@@ -877,15 +876,11 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       </div>
       {/* /main container */}
 
-      {/* ── 하단 고정 저장 바 (인쇄 제외) ───────────────────────────
-          TODO: 백엔드 이력서 저장 API 구현 후 handleSave를 서버 저장으로 교체.
-                현재는 localStorage 자동저장 확인 용도 (toast 피드백만 제공).
-      ────────────────────────────────────────────────────────── */}
+      {/* ── 하단 고정 저장 바 (인쇄 제외) ─────────────────────────── */}
       <div className="print:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
           <p className="text-xs text-gray-400 hidden sm:block">
-            변경사항은 브라우저에 임시저장됩니다.
-            {/* TODO: 서버 저장 API 연결 후 이 문구 제거 */}
+            편집 중인 내용은 브라우저에 임시저장되며, 저장하기 버튼으로 서버에 반영됩니다.
           </p>
           <div className="flex items-center gap-3 ml-auto">
             <PdfDownloadButton
