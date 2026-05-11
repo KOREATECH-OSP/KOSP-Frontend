@@ -31,6 +31,7 @@ import {
   Link as LinkIcon,
   Users,
   Trophy,
+  Lock,
 } from 'lucide-react';
 import Pagination from '@/common/components/Pagination';
 import {
@@ -1528,8 +1529,29 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               return true;
             });
 
+            const ownedCount = myTitles.length;
+            const totalCount = allTitles.length;
+
             return (
               <div className="space-y-4">
+                {/* 보유 현황 요약 */}
+                {totalCount > 0 && (
+                  <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-5 py-3">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    <p className="text-sm text-gray-700">
+                      <span className="font-bold text-gray-900">{ownedCount}</span>
+                      <span className="text-gray-400"> / {totalCount}</span>
+                      <span className="ml-1 text-gray-500">칭호 보유 중</span>
+                    </p>
+                    <div className="ml-auto h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                        style={{ width: `${totalCount > 0 ? (ownedCount / totalCount) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* 필터 바 */}
                 <div className="flex flex-wrap gap-2">
                   {CATEGORY_FILTERS.map((f) => (
@@ -1537,9 +1559,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       key={f.key}
                       type="button"
                       onClick={() => setTitleFilter(f.key)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                         titleFilter === f.key
-                          ? 'bg-orange-400 text-white'
+                          ? 'bg-orange-400 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -1548,23 +1570,24 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   ))}
                 </div>
 
+                {/* 빈 상태 */}
                 {allTitles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
                     <Trophy className="mb-3 h-12 w-12 text-gray-200" />
-                    <p className="text-gray-500">칭호 목록을 불러오지 못했습니다.</p>
+                    <p className="text-sm text-gray-500">칭호 목록을 불러오지 못했습니다.</p>
                   </div>
                 ) : filteredTitles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
                     <Trophy className="mb-3 h-12 w-12 text-gray-200" />
-                    <p className="text-gray-500">해당하는 칭호가 없습니다.</p>
+                    <p className="text-sm text-gray-500">해당하는 칭호가 없습니다.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredTitles.map((title) => {
                       const userTitle = myTitles.find((mt) => mt.titleId === title.id);
                       const isOwned = !!userTitle;
                       const isDisplayTitle = userTitle?.isDisplay ?? false;
-                      const imgSrc = getTitleImage(title.name, title.iconUrl);
+                      const imgSrc = getTitleImage(title.code, title.iconUrl);
                       const categoryEmoji = TITLE_CATEGORY_EMOJI[title.category] ?? '🏅';
                       const rarityLabel = RARITY_LABELS[title.rarity] ?? title.rarity;
                       const rarityColor = RARITY_COLORS[title.rarity] ?? 'bg-gray-100 text-gray-600';
@@ -1572,82 +1595,109 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       return (
                         <div
                           key={title.id}
-                          className={`rounded-xl border bg-white p-4 transition-all ${
-                            isOwned
+                          className={`flex flex-col rounded-xl border bg-white p-4 transition-all ${
+                            isDisplayTitle
+                              ? 'border-orange-200 shadow-[0_0_0_2px_rgba(251,146,60,0.2)]'
+                              : isOwned
                               ? 'border-gray-200 shadow-sm'
-                              : 'border-gray-100 opacity-50'
+                              : 'border-gray-100 bg-gray-50/50 grayscale'
                           }`}
                         >
-                          {/* 상단: 이미지 + 이름 + 뱃지 */}
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-2xl">
-                              {imgSrc ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={imgSrc}
-                                  alt={title.name}
-                                  className="h-10 w-10 object-contain"
-                                />
-                              ) : (
-                                <span>{categoryEmoji}</span>
-                              )}
-                            </div>
+                          {/* 이미지 영역 (80×80, 중앙 정렬) */}
+                          <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center">
+                            {/* 보유 시: 밝은 원형 배경 */}
+                            <div className={`absolute inset-0 rounded-full ${
+                              isOwned ? 'bg-orange-50' : 'bg-gray-100'
+                            }`} />
 
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <p className="truncate text-sm font-semibold text-gray-900">
-                                  {title.name}
-                                </p>
-                                {isDisplayTitle && (
-                                  <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-600">
-                                    대표
-                                  </span>
-                                )}
-                                {isOwned && !isDisplayTitle && (
-                                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
-                                    보유
-                                  </span>
-                                )}
-                                {!isOwned && (
-                                  <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-400">
-                                    미획득
-                                  </span>
-                                )}
+                            {imgSrc ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={imgSrc}
+                                alt={`${title.name} 칭호`}
+                                className={`relative h-16 w-16 object-contain transition-all ${
+                                  isOwned ? '' : 'opacity-30'
+                                }`}
+                              />
+                            ) : (
+                              <span className={`relative text-3xl leading-none ${
+                                isOwned ? '' : 'opacity-30'
+                              }`}>
+                                {categoryEmoji}
+                              </span>
+                            )}
+
+                            {/* 미획득: 잠금 오버레이 */}
+                            {!isOwned && (
+                              <div className="absolute inset-0 flex items-center justify-center rounded-full">
+                                <Lock className="h-5 w-5 text-gray-400" />
                               </div>
-                              <div className="mt-1 flex items-center gap-1.5">
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${rarityColor}`}>
-                                  {rarityLabel}
-                                </span>
-                                <span className="text-[10px] text-gray-400">
-                                  {categoryEmoji} {title.category}
-                                </span>
+                            )}
+
+                            {/* 대표 칭호: 왕관 뱃지 */}
+                            {isDisplayTitle && (
+                              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-400 shadow-sm">
+                                <span className="text-[10px] leading-none">★</span>
                               </div>
-                            </div>
+                            )}
+                          </div>
+
+                          {/* 칭호명 + 뱃지 */}
+                          <div className="mb-1 flex flex-wrap items-center justify-center gap-1.5">
+                            <p className={`text-center text-sm font-semibold ${
+                              isOwned ? 'text-gray-900' : 'text-gray-400'
+                            }`}>
+                              {title.name}
+                            </p>
+                          </div>
+
+                          {/* 등급 + 상태 뱃지 */}
+                          <div className="mb-2 flex items-center justify-center gap-1.5">
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${rarityColor}`}>
+                              {rarityLabel}
+                            </span>
+                            {isDisplayTitle && (
+                              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-600">
+                                대표 칭호
+                              </span>
+                            )}
+                            {isOwned && !isDisplayTitle && (
+                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                                보유
+                              </span>
+                            )}
+                            {!isOwned && (
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-400">
+                                미획득
+                              </span>
+                            )}
                           </div>
 
                           {/* 설명 */}
-                          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                          <p className={`mb-2 text-center text-[11px] leading-relaxed ${
+                            isOwned ? 'text-gray-500' : 'text-gray-300'
+                          }`}>
                             {title.description}
                           </p>
 
                           {/* 달성 조건 */}
                           {title.conditions.length > 0 && (
-                            <div className="mt-2 space-y-0.5">
+                            <div className="mb-3 space-y-0.5 rounded-lg bg-gray-50 px-3 py-2">
                               {title.conditions.map((cond, i) => (
-                                <p key={i} className="text-[11px] text-gray-400">
-                                  조건: {cond.description ?? `${cond.conditionType} ≥ ${cond.thresholdValue}`}
+                                <p key={i} className="text-center text-[11px] text-gray-400">
+                                  {cond.description ?? `${cond.conditionType} ≥ ${cond.thresholdValue}`}
                                 </p>
                               ))}
                             </div>
                           )}
 
-                          {/* 대표 설정 버튼 (보유 중이고 대표가 아닌 경우만) */}
+                          {/* 대표 설정 버튼 — 보유 중이고 대표가 아닌 경우만 */}
                           {isOwned && !isDisplayTitle && (
                             <button
                               type="button"
                               onClick={() => handleSetDisplayTitle(userTitle.userTitleId)}
                               disabled={displayTitleLoading}
-                              className="mt-3 w-full rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                              className="mt-auto w-full rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 disabled:opacity-50"
                             >
                               대표로 설정
                             </button>

@@ -75,6 +75,11 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    name: '칭호 관리',
+    href: '/admin/titles',
+    icon: Trophy,
+  },
+  {
     name: '포인트 관리',
     href: '/admin/points',
     icon: Coins,

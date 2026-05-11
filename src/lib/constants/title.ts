@@ -20,42 +20,44 @@ export const RARITY_LABELS: Record<string, string> = {
   LEGENDARY: '전설',
 };
 
-// ── 칭호 등급별 색상 (쉬움=빨강 → 어려움=초록 방향) ─────────────
+// ── 칭호 등급별 색상 ──────────────────────────────────────────
 export const RARITY_COLORS: Record<string, string> = {
-  COMMON: 'bg-red-100 text-red-600',
-  RARE: 'bg-amber-100 text-amber-700',
-  EPIC: 'bg-blue-100 text-blue-700',
-  LEGENDARY: 'bg-emerald-100 text-emerald-700',
+  COMMON: 'bg-gray-100 text-gray-600',
+  RARE: 'bg-blue-100 text-blue-700',
+  EPIC: 'bg-purple-100 text-purple-700',
+  LEGENDARY: 'bg-amber-100 text-amber-700',
 };
 
 // ── 칭호 이미지 경로 매핑 ─────────────────────────────────────────
-// 이미지 파일 위치: public/images/titles/{파일명}
-// 이미지가 없는 칭호는 null → 카테고리 이모지 또는 기본 아이콘 fallback
+// 이미지 파일 위치: public/images/titles/{code}.png
+// 권장 크기: 128×128 PNG 또는 SVG
+// 키는 Title.code 기준 (영문 슬러그, V11 migration 이후)
 //
-// 추가 방법:
-//   1. public/images/titles/ 에 이미지 파일 배치 (권장: 64×64 PNG/SVG)
-//   2. 아래 TITLE_IMAGE_MAP에 titleName → '/images/titles/파일명' 형태로 추가
-//
-// TODO: 코룡이 캐릭터 기반 칭호 이미지 파일이 준비되면 아래에 경로 추가
-export const TITLE_IMAGE_MAP: Record<string, string | null> = {
-  '첫 줄의 개척자': null,   // TODO: '/images/titles/pioneer.png'
-  '저장의 습관가': null,    // TODO: '/images/titles/habit.png'
-  '기록의 설계자': null,    // TODO: '/images/titles/architect.png'
-  '리듬을 지키는 자': null, // TODO: '/images/titles/rhythm.png'
-  '루틴의 수호자': null,    // TODO: '/images/titles/routine.png'
-  '도전의 선봉장': null,    // TODO: '/images/titles/challenger.png'
-  '완주의 추적자': null,    // TODO: '/images/titles/finisher.png'
-  '지식의 전달자': null,    // TODO: '/images/titles/mentor.png'
-  '합의의 설계자': null,    // TODO: '/images/titles/collaborator.png'
+// 이미지 파일이 준비되면 주석을 해제하고 실제 경로를 지정하세요.
+export const TITLE_IMAGE_MAP: Record<string, string> = {
+  // 'first-commit':        '/images/titles/first-commit.png',
+  // 'commit-habit':        '/images/titles/commit-habit.png',
+  // 'commit-architect':    '/images/titles/commit-architect.png',
+  // 'streak-keeper':       '/images/titles/streak-keeper.png',
+  // 'routine-guardian':    '/images/titles/routine-guardian.png',
+  // 'challenge-vanguard':  '/images/titles/challenge-vanguard.png',
+  // 'completion-tracker':  '/images/titles/completion-tracker.png',
+  // 'knowledge-messenger': '/images/titles/knowledge-messenger.png',
+  // 'consensus-architect': '/images/titles/consensus-architect.png',
 };
 
 /**
  * 칭호 이미지 경로 반환.
- * - DB의 iconUrl이 있으면 우선 사용
- * - 없으면 TITLE_IMAGE_MAP에서 정적 경로 반환
- * - 정적 경로도 없으면 null 반환 → 호출측에서 이모지 또는 기본 아이콘으로 fallback
+ *
+ * 우선순위:
+ *   1. API에서 내려오는 iconUrl (DB에 직접 저장된 URL — 관리자가 설정)
+ *   2. TITLE_IMAGE_MAP[titleCode] (정적 매핑)
+ *   3. null → 호출측에서 카테고리 이모지로 fallback
+ *
+ * @param titleCode 칭호 코드 (Title.code, 영문 슬러그)
+ * @param iconUrl   API 응답의 iconUrl (nullable)
  */
-export function getTitleImage(titleName: string, iconUrl?: string | null): string | null {
+export function getTitleImage(titleCode: string, iconUrl?: string | null): string | null {
   if (iconUrl) return iconUrl;
-  return TITLE_IMAGE_MAP[titleName] ?? null;
+  return TITLE_IMAGE_MAP[titleCode] ?? null;
 }

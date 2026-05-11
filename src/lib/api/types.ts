@@ -665,6 +665,7 @@ export interface TitleConditionInfo {
 
 export interface TitleDetailResponse {
   id: number;
+  code: string;
   name: string;
   description: string;
   category: string;
@@ -918,6 +919,8 @@ export interface ResumeData {
   certifications: ResumeCertificationItem[];
   coverLetters: ResumeCoverLetterItem[];
   isPublic: boolean;
+  /** 이력서에 표시할 섹션 목록. 키: SECTION_ANCHORS의 id 값. undefined이면 전체 표시. */
+  visibleSections?: Record<string, boolean>;
 }
 
 /** GET /v1/users/me/resume 응답 */

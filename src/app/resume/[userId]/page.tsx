@@ -74,6 +74,7 @@ export default async function PublicResumePage({ params }: Props) {
           data={resumeData}
           profileImageUrl={profileImageUrl}
           resumeTitle={resumeTitle}
+          visibleSections={resumeData.visibleSections}
         />
       </main>
     </div>

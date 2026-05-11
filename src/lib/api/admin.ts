@@ -744,3 +744,23 @@ export async function updateAdminContact(
     accessToken: auth.accessToken,
   });
 }
+
+
+// ============================================
+// Admin Title Image APIs
+// ============================================
+
+/**
+ * 칭호 아이콘 URL 수정 (관리자 전용)
+ */
+export async function adminUpdateTitleImage(
+  titleId: number,
+  iconUrl: string | null,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/titles/${titleId}/image`, {
+    method: 'PATCH',
+    body: { iconUrl },
+    accessToken: auth.accessToken,
+  });
+}

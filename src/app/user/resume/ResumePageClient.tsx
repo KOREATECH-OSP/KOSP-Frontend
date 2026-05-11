@@ -55,6 +55,13 @@ const SECTION_ANCHORS = [
   { id: 'sec-coverLetters',  label: '자기소개서' },
 ] as const;
 
+type SectionId = typeof SECTION_ANCHORS[number]['id'];
+
+// 기본값: 전체 섹션 표시
+const DEFAULT_VISIBLE_SECTIONS: Record<SectionId, boolean> = Object.fromEntries(
+  SECTION_ANCHORS.map(({ id }) => [id, true])
+) as Record<SectionId, boolean>;
+
 interface ResumePageClientProps {
   session: AuthSession;
 }
@@ -65,6 +72,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>(DEFAULT_VISIBLE_SECTIONS);
 
   const accessToken = session.accessToken ?? null;
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
@@ -117,6 +126,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         if (d.awards !== undefined) setAwards(d.awards as unknown as AwardItem[]);
         if (d.certifications !== undefined) setCertifications(d.certifications as unknown as CertificationItem[]);
         if (d.coverLetters !== undefined) setCoverLetters(d.coverLetters as unknown as CoverLetterItem[]);
+        if (d.isPublic !== undefined) setIsPublic(d.isPublic);
+        if (d.visibleSections) setVisibleSections({ ...DEFAULT_VISIBLE_SECTIONS, ...d.visibleSections });
       }
     } finally {
       setIsLoading(false);
@@ -148,7 +159,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
             awards,
             certifications,
             coverLetters,
-            isPublic: false,
+            isPublic,
+            visibleSections,
           },
           { accessToken }
         );
@@ -165,10 +177,12 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   const handlePrint = () => window.print();
 
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  const toggleSection = (id: string) =>
+    setVisibleSections((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const selectAllSections = () => setVisibleSections(DEFAULT_VISIBLE_SECTIONS);
+  const deselectAllSections = () =>
+    setVisibleSections(Object.fromEntries(SECTION_ANCHORS.map(({ id }) => [id, false])));
 
   // ── 편집 헬퍼 ────────────────────────────────────────────────
   const addLink = () => setLinks([...links, { id: newId(), label: '', url: '' }]);
@@ -280,19 +294,43 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           <h2 className="hidden text-2xl font-bold text-gray-900 print:block mb-6">{resumeTitle}</h2>
         )}
 
-        {/* 섹션 내비게이션 필터 칩 (인쇄 제외) */}
-        <div className="mb-6 print:hidden overflow-x-auto">
-          <div className="flex gap-2 pb-1 min-w-max sm:flex-wrap sm:min-w-0">
-            {SECTION_ANCHORS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => scrollToSection(id)}
-                className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 whitespace-nowrap hover:border-orange-400 hover:text-orange-500 transition-colors"
-              >
-                {label}
-              </button>
-            ))}
+        {/* 섹션 포함/제외 토글 (인쇄 제외) */}
+        <div className="mb-6 print:hidden">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">이력서에 포함할 섹션 선택</span>
+            <button
+              type="button"
+              onClick={selectAllSections}
+              className="text-xs text-orange-500 hover:underline"
+            >
+              전체 포함
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              type="button"
+              onClick={deselectAllSections}
+              className="text-xs text-gray-400 hover:underline"
+            >
+              전체 제외
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <div className="flex gap-2 pb-1 min-w-max sm:flex-wrap sm:min-w-0">
+              {SECTION_ANCHORS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleSection(id)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors ${
+                    visibleSections[id]
+                      ? 'border-orange-400 bg-orange-50 text-orange-500'
+                      : 'border-gray-200 bg-white text-gray-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -300,7 +338,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         <div id="resume-print-area" className="space-y-4">
 
           {/* 기본정보 */}
-          <section id="sec-basic" className="rounded-xl border border-gray-200 bg-white p-6">
+          {visibleSections['sec-basic'] && <section id="sec-basic" className="rounded-xl border border-gray-200 bg-white p-6">
             <div className="flex items-center gap-5">
               {/* 프로필 사진 */}
               <div className="h-20 w-20 flex-shrink-0">
@@ -328,283 +366,305 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                 )}
               </div>
             </div>
-          </section>
+          </section>}
 
           {/* draftLoaded 이후 편집 섹션 */}
           {draftLoaded && (
             <>
               {/* 간단소개 */}
-              <section id="sec-bio" className="rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-100 px-6 py-4">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                    <User className="h-4 w-4 text-gray-500" />
-                    간단소개
-                    <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
-                  </h3>
-                </div>
-                <div className="space-y-4 px-6 py-4">
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium text-gray-400">한 줄 소개</label>
-                    <input
-                      type="text"
-                      value={headline}
-                      onChange={(e) => setHeadline(e.target.value)}
-                      placeholder="예: Spring Boot 기반 백엔드 개발자, 서비스 기획 경험 보유"
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
-                    />
+              {visibleSections['sec-bio'] && (
+                <section id="sec-bio" className="rounded-xl border border-gray-200 bg-white">
+                  <div className="border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <User className="h-4 w-4 text-gray-500" />
+                      간단소개
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
+                    </h3>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-medium text-gray-400">
-                      자기소개
-                      <span className="ml-1 text-gray-300">({bio.length} / 500자)</span>
-                    </label>
+                  <div className="space-y-4 px-6 py-4">
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-medium text-gray-400">한 줄 소개</label>
+                      <input
+                        type="text"
+                        value={headline}
+                        onChange={(e) => setHeadline(e.target.value)}
+                        placeholder="예: Spring Boot 기반 백엔드 개발자, 서비스 기획 경험 보유"
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-medium text-gray-400">
+                        자기소개
+                        <span className="ml-1 text-gray-300">({bio.length} / 500자)</span>
+                      </label>
+                      <textarea
+                        rows={5}
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        maxLength={500}
+                        placeholder="자신의 경험, 역량, 목표를 자유롭게 작성해주세요. (300~500자 권장)"
+                        className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* 개발 직무 */}
+              {visibleSections['sec-jobRole'] && (
+                <section id="sec-jobRole" className="rounded-xl border border-gray-200 bg-white">
+                  <div className="border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Code2 className="h-4 w-4 text-gray-500" />
+                      개발 직무
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
+                    </h3>
+                  </div>
+                  <div className="px-6 py-4">
                     <textarea
-                      rows={5}
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      maxLength={500}
-                      placeholder="자신의 경험, 역량, 목표를 자유롭게 작성해주세요. (300~500자 권장)"
+                      rows={3}
+                      value={jobRole}
+                      onChange={(e) => setJobRole(e.target.value)}
+                      placeholder="예: 백엔드 개발자 / Java, Spring Boot 기반 서버 개발 경험 보유"
                       className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
                     />
                   </div>
-                </div>
-              </section>
-
-              {/* 개발 직무 */}
-              <section id="sec-jobRole" className="rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-100 px-6 py-4">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                    <Code2 className="h-4 w-4 text-gray-500" />
-                    개발 직무
-                    <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
-                  </h3>
-                </div>
-                <div className="px-6 py-4">
-                  <textarea
-                    rows={3}
-                    value={jobRole}
-                    onChange={(e) => setJobRole(e.target.value)}
-                    placeholder="예: 백엔드 개발자 / Java, Spring Boot 기반 서버 개발 경험 보유"
-                    className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
-                  />
-                </div>
-              </section>
+                </section>
+              )}
 
               {/* 기술 스택 */}
-              <section id="sec-techStack" className="rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-100 px-6 py-4">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                    <Layers className="h-4 w-4 text-gray-500" />
-                    기술 스택
-                    <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
-                  </h3>
-                </div>
-                <div className="px-6 py-4 space-y-3">
-                  {techStack.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {techStack.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => removeTechTag(tag)}
-                            className="ml-0.5 rounded-full hover:text-gray-300 transition-colors"
-                            aria-label={`${tag} 삭제`}
+              {visibleSections['sec-techStack'] && (
+                <section id="sec-techStack" className="rounded-xl border border-gray-200 bg-white">
+                  <div className="border-b border-gray-100 px-6 py-4">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                      <Layers className="h-4 w-4 text-gray-500" />
+                      기술 스택
+                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
+                    </h3>
+                  </div>
+                  <div className="px-6 py-4 space-y-3">
+                    {techStack.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {techStack.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
                           >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <input
-                    type="text"
-                    value={techInput}
-                    onChange={(e) => setTechInput(e.target.value)}
-                    onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-                      if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
-                        addTechTag(techInput);
-                      }
-                    }}
-                    onBlur={() => { if (techInput.trim()) addTechTag(techInput); }}
-                    placeholder="기술명 입력 후 Enter (예: TypeScript, React, Spring Boot)"
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
-                  />
-                </div>
-              </section>
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removeTechTag(tag)}
+                              className="ml-0.5 rounded-full hover:text-gray-300 transition-colors"
+                              aria-label={`${tag} 삭제`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <input
+                      type="text"
+                      value={techInput}
+                      onChange={(e) => setTechInput(e.target.value)}
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addTechTag(techInput);
+                        }
+                      }}
+                      onBlur={() => { if (techInput.trim()) addTechTag(techInput); }}
+                      placeholder="기술명 입력 후 Enter (예: TypeScript, React, Spring Boot)"
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                </section>
+              )}
 
               {/* 링크 */}
-              <div id="sec-links">
-                <EditableListSection
-                  title="링크"
-                  icon={<LinkIcon className="h-4 w-4 text-gray-500" />}
-                  items={links}
-                  fields={[
-                    { key: 'label', label: '링크 이름', placeholder: '예: GitHub, 블로그, 포트폴리오', span: 'half' },
-                    { key: 'url', label: 'URL', placeholder: 'https://', span: 'half' },
-                  ]}
-                  addLabel="링크 추가"
-                  emptyMessage="등록된 링크가 없습니다."
-                  onAdd={addLink}
-                  onRemove={removeLink}
-                  onUpdate={updateLink}
-                />
-              </div>
+              {visibleSections['sec-links'] && (
+                <div id="sec-links">
+                  <EditableListSection
+                    title="링크"
+                    icon={<LinkIcon className="h-4 w-4 text-gray-500" />}
+                    items={links}
+                    fields={[
+                      { key: 'label', label: '링크 이름', placeholder: '예: GitHub, 블로그, 포트폴리오', span: 'half' },
+                      { key: 'url', label: 'URL', placeholder: 'https://', span: 'half' },
+                    ]}
+                    addLabel="링크 추가"
+                    emptyMessage="등록된 링크가 없습니다."
+                    onAdd={addLink}
+                    onRemove={removeLink}
+                    onUpdate={updateLink}
+                  />
+                </div>
+              )}
 
               {/* 학력 */}
-              <div id="sec-education">
-                <EditableListSection
-                  title="학력"
-                  icon={<GraduationCap className="h-4 w-4 text-gray-500" />}
-                  items={education}
-                  fields={[
-                    { key: 'school', label: '학교명', placeholder: '예: 한국기술교육대학교', span: 'half' },
-                    { key: 'major', label: '전공', placeholder: '예: 컴퓨터공학부', span: 'half' },
-                    { key: 'period', label: '재학 기간', placeholder: '예: 2021.03 ~ 2025.02', span: 'full' },
-                  ]}
-                  addLabel="학력 추가"
-                  emptyMessage="등록된 학력이 없습니다."
-                  onAdd={addEducation}
-                  onRemove={removeEducation}
-                  onUpdate={updateEducation}
-                />
-              </div>
+              {visibleSections['sec-education'] && (
+                <div id="sec-education">
+                  <EditableListSection
+                    title="학력"
+                    icon={<GraduationCap className="h-4 w-4 text-gray-500" />}
+                    items={education}
+                    fields={[
+                      { key: 'school', label: '학교명', placeholder: '예: 한국기술교육대학교', span: 'half' },
+                      { key: 'major', label: '전공', placeholder: '예: 컴퓨터공학부', span: 'half' },
+                      { key: 'period', label: '재학 기간', placeholder: '예: 2021.03 ~ 2025.02', span: 'full' },
+                    ]}
+                    addLabel="학력 추가"
+                    emptyMessage="등록된 학력이 없습니다."
+                    onAdd={addEducation}
+                    onRemove={removeEducation}
+                    onUpdate={updateEducation}
+                  />
+                </div>
+              )}
 
               {/* 경력 */}
-              <div id="sec-career">
-                <EditableListSection
-                  title="경력"
-                  icon={<Briefcase className="h-4 w-4 text-gray-500" />}
-                  items={career}
-                  fields={[
-                    { key: 'company', label: '회사명', placeholder: '예: KOREATECH', span: 'half' },
-                    { key: 'role', label: '직무', placeholder: '예: 백엔드 개발', span: 'half' },
-                    { key: 'period', label: '근무 기간', placeholder: '예: 2024.07 ~ 2024.12', span: 'full' },
-                  ]}
-                  addLabel="경력 추가"
-                  emptyMessage="등록된 경력이 없습니다."
-                  onAdd={addCareer}
-                  onRemove={removeCareer}
-                  onUpdate={updateCareer}
-                />
-              </div>
+              {visibleSections['sec-career'] && (
+                <div id="sec-career">
+                  <EditableListSection
+                    title="경력"
+                    icon={<Briefcase className="h-4 w-4 text-gray-500" />}
+                    items={career}
+                    fields={[
+                      { key: 'company', label: '회사명', placeholder: '예: KOREATECH', span: 'half' },
+                      { key: 'role', label: '직무', placeholder: '예: 백엔드 개발', span: 'half' },
+                      { key: 'period', label: '근무 기간', placeholder: '예: 2024.07 ~ 2024.12', span: 'full' },
+                    ]}
+                    addLabel="경력 추가"
+                    emptyMessage="등록된 경력이 없습니다."
+                    onAdd={addCareer}
+                    onRemove={removeCareer}
+                    onUpdate={updateCareer}
+                  />
+                </div>
+              )}
 
               {/* 프로젝트 */}
-              <div id="sec-projects">
-                <EditableListSection
-                  title="프로젝트"
-                  icon={<FolderGit className="h-4 w-4 text-gray-500" />}
-                  items={projects}
-                  fields={[
-                    { key: 'name', label: '프로젝트명', placeholder: '예: 오픈소스 포털', span: 'half' },
-                    { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
-                    { key: 'featured', label: '대표 프로젝트', span: 'half', select: [
-                      { value: 'false', label: '일반' },
-                      { value: 'true', label: '⭐ 대표 프로젝트' },
-                    ]},
-                    { key: 'role', label: '담당 역할', placeholder: '예: 백엔드 개발, API 설계, 팀장', span: 'half' },
-                    { key: 'summary', label: '한 줄 요약', placeholder: '프로젝트를 한 문장으로 설명하세요.', span: 'full' },
-                    { key: 'techStack', label: '사용 기술', placeholder: '예: Java, Spring Boot, MySQL, React', span: 'full' },
-                    { key: 'mainFeatures', label: '주요 기능', placeholder: '프로젝트의 핵심 기능을 설명하세요.', multiline: true, span: 'full' },
-                    { key: 'myContributions', label: '내가 구현한 기능', placeholder: '내가 직접 개발한 기능을 구체적으로 작성하세요.', multiline: true, span: 'full' },
-                    { key: 'problemSolving', label: '문제 해결 경험', placeholder: '개발 중 겪은 문제와 해결 과정을 작성하세요.', multiline: true, span: 'full' },
-                    { key: 'result', label: '결과 / 성과', placeholder: '예: 국가대회 본선 진출, 사용자 200명 달성', span: 'full' },
-                    { key: 'githubLink', label: 'GitHub 링크', placeholder: 'https://github.com/...', span: 'half' },
-                    { key: 'deployLink', label: '배포 링크', placeholder: 'https://...', span: 'half' },
-                    { key: 'docLink', label: '발표/문서 링크', placeholder: '노션, 발표자료 등 URL', span: 'full' },
-                  ]}
-                  addLabel="프로젝트 추가"
-                  emptyMessage="등록된 프로젝트가 없습니다."
-                  onAdd={addProject}
-                  onRemove={removeProject}
-                  onUpdate={updateProject}
-                />
-              </div>
+              {visibleSections['sec-projects'] && (
+                <div id="sec-projects">
+                  <EditableListSection
+                    title="프로젝트"
+                    icon={<FolderGit className="h-4 w-4 text-gray-500" />}
+                    items={projects}
+                    fields={[
+                      { key: 'name', label: '프로젝트명', placeholder: '예: 오픈소스 포털', span: 'half' },
+                      { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
+                      { key: 'featured', label: '대표 프로젝트', span: 'half', select: [
+                        { value: 'false', label: '일반' },
+                        { value: 'true', label: '⭐ 대표 프로젝트' },
+                      ]},
+                      { key: 'role', label: '담당 역할', placeholder: '예: 백엔드 개발, API 설계, 팀장', span: 'half' },
+                      { key: 'summary', label: '한 줄 요약', placeholder: '프로젝트를 한 문장으로 설명하세요.', span: 'full' },
+                      { key: 'techStack', label: '사용 기술', placeholder: '예: Java, Spring Boot, MySQL, React', span: 'full' },
+                      { key: 'mainFeatures', label: '주요 기능', placeholder: '프로젝트의 핵심 기능을 설명하세요.', multiline: true, span: 'full' },
+                      { key: 'myContributions', label: '내가 구현한 기능', placeholder: '내가 직접 개발한 기능을 구체적으로 작성하세요.', multiline: true, span: 'full' },
+                      { key: 'problemSolving', label: '문제 해결 경험', placeholder: '개발 중 겪은 문제와 해결 과정을 작성하세요.', multiline: true, span: 'full' },
+                      { key: 'result', label: '결과 / 성과', placeholder: '예: 국가대회 본선 진출, 사용자 200명 달성', span: 'full' },
+                      { key: 'githubLink', label: 'GitHub 링크', placeholder: 'https://github.com/...', span: 'half' },
+                      { key: 'deployLink', label: '배포 링크', placeholder: 'https://...', span: 'half' },
+                      { key: 'docLink', label: '발표/문서 링크', placeholder: '노션, 발표자료 등 URL', span: 'full' },
+                    ]}
+                    addLabel="프로젝트 추가"
+                    emptyMessage="등록된 프로젝트가 없습니다."
+                    onAdd={addProject}
+                    onRemove={removeProject}
+                    onUpdate={updateProject}
+                  />
+                </div>
+              )}
 
               {/* 교육이력 / 활동 */}
-              <div id="sec-experience">
-                <EditableListSection
-                  title="교육이력 / 활동"
-                  icon={<Lightbulb className="h-4 w-4 text-gray-500" />}
-                  items={experience}
-                  fields={[
-                    { key: 'title', label: '활동명', placeholder: '예: SW중심대학 해커톤, 오픈소스 기여', span: 'half' },
-                    { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
-                    { key: 'description', label: '설명', placeholder: '주요 역할과 기여 내용을 입력하세요.', multiline: true, span: 'full' },
-                  ]}
-                  addLabel="항목 추가"
-                  emptyMessage="등록된 교육이력/활동이 없습니다."
-                  onAdd={addExperience}
-                  onRemove={removeExperience}
-                  onUpdate={updateExperience}
-                />
-              </div>
+              {visibleSections['sec-experience'] && (
+                <div id="sec-experience">
+                  <EditableListSection
+                    title="교육이력 / 활동"
+                    icon={<Lightbulb className="h-4 w-4 text-gray-500" />}
+                    items={experience}
+                    fields={[
+                      { key: 'title', label: '활동명', placeholder: '예: SW중심대학 해커톤, 오픈소스 기여', span: 'half' },
+                      { key: 'period', label: '기간', placeholder: '예: 2024.03 ~ 2024.06', span: 'half' },
+                      { key: 'description', label: '설명', placeholder: '주요 역할과 기여 내용을 입력하세요.', multiline: true, span: 'full' },
+                    ]}
+                    addLabel="항목 추가"
+                    emptyMessage="등록된 교육이력/활동이 없습니다."
+                    onAdd={addExperience}
+                    onRemove={removeExperience}
+                    onUpdate={updateExperience}
+                  />
+                </div>
+              )}
 
               {/* 수상이력 */}
-              <div id="sec-awards">
-                <EditableListSection
-                  title="수상이력"
-                  icon={<Trophy className="h-4 w-4 text-gray-500" />}
-                  items={awards}
-                  fields={[
-                    { key: 'name', label: '수상명', placeholder: '예: ICT 이노베이션 충청권 대상', span: 'half' },
-                    { key: 'organization', label: '주최 기관', placeholder: '예: 과학기술정보통신부', span: 'half' },
-                    { key: 'date', label: '수상일', placeholder: '예: 2024.11', span: 'half' },
-                    { key: 'relatedProject', label: '관련 프로젝트', placeholder: '예: FarmLink', span: 'half' },
-                    { key: 'description', label: '설명', placeholder: '수상 내용이나 성과를 간략히 설명하세요.', multiline: true, span: 'full' },
-                  ]}
-                  addLabel="수상 추가"
-                  emptyMessage="등록된 수상 내역이 없습니다."
-                  onAdd={addAward}
-                  onRemove={removeAward}
-                  onUpdate={updateAward}
-                />
-              </div>
+              {visibleSections['sec-awards'] && (
+                <div id="sec-awards">
+                  <EditableListSection
+                    title="수상이력"
+                    icon={<Trophy className="h-4 w-4 text-gray-500" />}
+                    items={awards}
+                    fields={[
+                      { key: 'name', label: '수상명', placeholder: '예: ICT 이노베이션 충청권 대상', span: 'half' },
+                      { key: 'organization', label: '주최 기관', placeholder: '예: 과학기술정보통신부', span: 'half' },
+                      { key: 'date', label: '수상일', placeholder: '예: 2024.11', span: 'half' },
+                      { key: 'relatedProject', label: '관련 프로젝트', placeholder: '예: FarmLink', span: 'half' },
+                      { key: 'description', label: '설명', placeholder: '수상 내용이나 성과를 간략히 설명하세요.', multiline: true, span: 'full' },
+                    ]}
+                    addLabel="수상 추가"
+                    emptyMessage="등록된 수상 내역이 없습니다."
+                    onAdd={addAward}
+                    onRemove={removeAward}
+                    onUpdate={updateAward}
+                  />
+                </div>
+              )}
 
-              {/* 자격증 — 상태값: 취득(ACQUIRED) / 만료(EXPIRED) 2종만 */}
-              <div id="sec-certifications">
-                <EditableListSection
-                  title="자격증"
-                  icon={<Star className="h-4 w-4 text-gray-500" />}
-                  items={certifications}
-                  fields={[
-                    { key: 'name', label: '자격증명', placeholder: '예: 정보처리기사', span: 'half' },
-                    { key: 'organization', label: '발급 기관', placeholder: '예: 한국산업인력공단', span: 'half' },
-                    { key: 'date', label: '취득일', placeholder: '예: 2024.06', span: 'half' },
-                    { key: 'status', label: '상태', span: 'half', select: [
-                      { value: 'ACQUIRED', label: '취득' },
-                      { value: 'EXPIRED',  label: '만료' },
-                    ]},
-                  ]}
-                  addLabel="자격증 추가"
-                  emptyMessage="등록된 자격증이 없습니다."
-                  onAdd={addCertification}
-                  onRemove={removeCertification}
-                  onUpdate={updateCertification}
-                />
-              </div>
+              {/* 자격증 */}
+              {visibleSections['sec-certifications'] && (
+                <div id="sec-certifications">
+                  <EditableListSection
+                    title="자격증"
+                    icon={<Star className="h-4 w-4 text-gray-500" />}
+                    items={certifications}
+                    fields={[
+                      { key: 'name', label: '자격증명', placeholder: '예: 정보처리기사', span: 'half' },
+                      { key: 'organization', label: '발급 기관', placeholder: '예: 한국산업인력공단', span: 'half' },
+                      { key: 'date', label: '취득일', placeholder: '예: 2024.06', span: 'half' },
+                      { key: 'status', label: '상태', span: 'half', select: [
+                        { value: 'ACQUIRED', label: '취득' },
+                        { value: 'EXPIRED',  label: '만료' },
+                      ]},
+                    ]}
+                    addLabel="자격증 추가"
+                    emptyMessage="등록된 자격증이 없습니다."
+                    onAdd={addCertification}
+                    onRemove={removeCertification}
+                    onUpdate={updateCertification}
+                  />
+                </div>
+              )}
 
               {/* 자기소개서 */}
-              <div id="sec-coverLetters">
-                <EditableListSection
-                  title="자기소개서"
-                  icon={<FileText className="h-4 w-4 text-gray-500" />}
-                  items={coverLetters}
-                  fields={[
-                    { key: 'title', label: '문항 제목', placeholder: '예: 지원 동기를 작성해주세요.', span: 'full' },
-                    { key: 'content', label: '내용', placeholder: '자유롭게 작성하세요. (1000자 이내 권장)', multiline: true, span: 'full' },
-                  ]}
-                  addLabel="문항 추가"
-                  emptyMessage="등록된 자기소개서 문항이 없습니다."
-                  onAdd={addCoverLetter}
-                  onRemove={removeCoverLetter}
-                  onUpdate={updateCoverLetter}
-                />
-              </div>
+              {visibleSections['sec-coverLetters'] && (
+                <div id="sec-coverLetters">
+                  <EditableListSection
+                    title="자기소개서"
+                    icon={<FileText className="h-4 w-4 text-gray-500" />}
+                    items={coverLetters}
+                    fields={[
+                      { key: 'title', label: '문항 제목', placeholder: '예: 지원 동기를 작성해주세요.', span: 'full' },
+                      { key: 'content', label: '내용', placeholder: '자유롭게 작성하세요. (1000자 이내 권장)', multiline: true, span: 'full' },
+                    ]}
+                    addLabel="문항 추가"
+                    emptyMessage="등록된 자기소개서 문항이 없습니다."
+                    onAdd={addCoverLetter}
+                    onRemove={removeCoverLetter}
+                    onUpdate={updateCoverLetter}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
