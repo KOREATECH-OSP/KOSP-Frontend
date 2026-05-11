@@ -244,16 +244,26 @@ export interface ResumeStorage {
 
 /**
  * 이력서 draft 데이터를 localStorage에 저장·불러오는 훅.
- * 모든 키는 `resume:{userId}:*` 네임스페이스를 사용해 사용자별로 분리된다.
+ * 키는 `resume:{userId}:{resumeId}` 네임스페이스를 사용해 이력서별로 분리된다.
+ * resumeId가 null이면 `resume:{userId}` (기본 이력서 슬롯)를 사용한다.
  */
-export function useResumeStorage(userId: number | null): ResumeStorage {
-  const p = userId !== null ? `resume:${userId}` : 'resume:guest';
+export function useResumeStorage(userId: number | null, resumeId: number | null = null): ResumeStorage {
+  const p = userId !== null
+    ? resumeId !== null ? `resume:${userId}:${resumeId}` : `resume:${userId}`
+    : 'resume:guest';
 
   const [data, setData] = useState<ResumeData>(INITIAL_DATA);
 
-  // 클라이언트 마운트 시 1회 로드 (단일 setState 호출로 cascading renders 방지)
+  // p(접두사)가 바뀌면 해당 슬롯에서 로드.
+  // 해당 슬롯에 저장된 데이터가 없으면 현재 상태를 유지(서버 데이터 보존).
   useEffect(() => {
-    setData(loadAll(p));
+    const hasData = typeof window !== 'undefined' && localStorage.getItem(`${p}:title`) !== null;
+    if (hasData) {
+      setData(loadAll(p));
+    } else {
+      // 새 키(이력서 전환 직후 등): 현재 편집 상태 유지하고 loaded만 보장
+      setData(prev => ({ ...prev, loaded: true }));
+    }
   }, [p]);
 
   // 상태 변경 시 자동 저장 (loaded 이후에만)

@@ -109,7 +109,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     coverLetters, setCoverLetters,
     jobRole, setJobRole,
     techStack, setTechStack,
-  } = useResumeStorage(userId);
+  } = useResumeStorage(userId, resumeId);
 
   const [techInput, setTechInput] = useState('');
 
@@ -581,7 +581,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                     <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
                       <User className="h-4 w-4 text-gray-500" />
                       간단소개
-                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
                     </h3>
                   </div>
                   <div className="space-y-4 px-6 py-4">
@@ -620,7 +619,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                     <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
                       <Code2 className="h-4 w-4 text-gray-500" />
                       개발 직무
-                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
                     </h3>
                   </div>
                   <div className="px-6 py-4">
@@ -642,7 +640,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                     <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
                       <Layers className="h-4 w-4 text-gray-500" />
                       기술 스택
-                      <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">임시저장</span>
                     </h3>
                   </div>
                   <div className="px-6 py-4 space-y-3">
