@@ -6,7 +6,6 @@ import Image from 'next/image';
 import {
   User,
   FileText,
-  Printer,
   ArrowLeft,
   Loader2,
   LinkIcon,
@@ -21,11 +20,19 @@ import {
   Star,
   Save,
   Check,
+  Plus,
+  Trash2,
+  ChevronDown,
 } from 'lucide-react';
+import PdfDownloadButton from '@/common/components/PdfDownloadButton';
 import type { AuthSession } from '@/lib/auth/types';
-import { getUserProfile, getMyResume, saveMyResume } from '@/lib/api/user';
+import {
+  getUserProfile, getMyResume, saveMyResume,
+  getMyResumes, createResume, updateResumeById,
+  deleteResumeById, setDefaultResume,
+} from '@/lib/api/user';
 import { ensureEncodedUrl } from '@/lib/utils';
-import type { UserProfileResponse } from '@/lib/api/types';
+import type { UserProfileResponse, ResumeSummaryResponse } from '@/lib/api/types';
 import { useResumeStorage, newId } from './hooks/useResumeStorage';
 import type {
   LinkItem,
@@ -75,6 +82,14 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const [isPublic, setIsPublic] = useState(false);
   const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>(DEFAULT_VISIBLE_SECTIONS);
 
+  // ── 다중 이력서 상태 ──────────────────────────────────────────
+  const [resumeId, setResumeId] = useState<number | null>(null);
+  const [resumeList, setResumeList] = useState<ResumeSummaryResponse[]>([]);
+  const [showResumeDropdown, setShowResumeDropdown] = useState(false);
+  const [isCreatingResume, setIsCreatingResume] = useState(false);
+  const [isDeletingResume, setIsDeletingResume] = useState(false);
+  const [isSettingDefault, setIsSettingDefault] = useState(false);
+
   const accessToken = session.accessToken ?? null;
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
 
@@ -98,72 +113,169 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   const [techInput, setTechInput] = useState('');
 
+  // ── 이력서 데이터를 상태에 반영하는 헬퍼 ─────────────────────
+  const applyResumeData = useCallback((d: {
+    resumeTitle?: string; headline?: string; bio?: string; jobRole?: string;
+    techStack?: string[]; links?: unknown; education?: unknown; career?: unknown;
+    experience?: unknown; projects?: unknown; awards?: unknown; certifications?: unknown;
+    coverLetters?: unknown; isPublic?: boolean; visibleSections?: Record<string, boolean>;
+  }) => {
+    if (d.resumeTitle !== undefined) setResumeTitle(d.resumeTitle);
+    if (d.headline !== undefined) setHeadline(d.headline);
+    if (d.bio !== undefined) setBio(d.bio);
+    if (d.jobRole !== undefined) setJobRole(d.jobRole);
+    if (d.techStack !== undefined) setTechStack(d.techStack);
+    if (d.links !== undefined) setLinks(d.links as unknown as LinkItem[]);
+    if (d.education !== undefined) setEducation(d.education as unknown as EducationItem[]);
+    if (d.career !== undefined) setCareer(d.career as unknown as CareerItem[]);
+    if (d.experience !== undefined) setExperience(d.experience as unknown as ExperienceItem[]);
+    if (d.projects !== undefined) setProjects(d.projects as unknown as ProjectItem[]);
+    if (d.awards !== undefined) setAwards(d.awards as unknown as AwardItem[]);
+    if (d.certifications !== undefined) setCertifications(d.certifications as unknown as CertificationItem[]);
+    if (d.coverLetters !== undefined) setCoverLetters(d.coverLetters as unknown as CoverLetterItem[]);
+    if (d.isPublic !== undefined) setIsPublic(d.isPublic);
+    if (d.visibleSections) setVisibleSections({ ...DEFAULT_VISIBLE_SECTIONS, ...d.visibleSections });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── 초기 데이터 로딩: 서버 → localStorage → 빈값 순서 ────────
   const fetchData = useCallback(async () => {
     if (!userId) { setIsLoading(false); return; }
     try {
-      const [profileData, resumeData] = await Promise.all([
+      const [profileData, resumeData, listData] = await Promise.all([
         getUserProfile(userId).catch(() => null),
-        accessToken
-          ? getMyResume({ accessToken }).catch(() => null)
-          : Promise.resolve(null),
+        accessToken ? getMyResume({ accessToken }).catch(() => null) : Promise.resolve(null),
+        accessToken ? getMyResumes({ accessToken }).catch(() => null) : Promise.resolve(null),
       ]);
       if (profileData) setProfile(profileData);
-
-      // 서버에 저장된 이력서가 있으면 각 상태를 서버 값으로 초기화
+      if (listData) setResumeList(listData.resumes);
       if (resumeData?.resumeData) {
-        const d = resumeData.resumeData;
-        if (d.resumeTitle !== undefined) setResumeTitle(d.resumeTitle);
-        if (d.headline !== undefined) setHeadline(d.headline);
-        if (d.bio !== undefined) setBio(d.bio);
-        if (d.jobRole !== undefined) setJobRole(d.jobRole);
-        if (d.techStack !== undefined) setTechStack(d.techStack);
-        if (d.links !== undefined) setLinks(d.links as unknown as LinkItem[]);
-        if (d.education !== undefined) setEducation(d.education as unknown as EducationItem[]);
-        if (d.career !== undefined) setCareer(d.career as unknown as CareerItem[]);
-        if (d.experience !== undefined) setExperience(d.experience as unknown as ExperienceItem[]);
-        if (d.projects !== undefined) setProjects(d.projects as unknown as ProjectItem[]);
-        if (d.awards !== undefined) setAwards(d.awards as unknown as AwardItem[]);
-        if (d.certifications !== undefined) setCertifications(d.certifications as unknown as CertificationItem[]);
-        if (d.coverLetters !== undefined) setCoverLetters(d.coverLetters as unknown as CoverLetterItem[]);
-        if (d.isPublic !== undefined) setIsPublic(d.isPublic);
-        if (d.visibleSections) setVisibleSections({ ...DEFAULT_VISIBLE_SECTIONS, ...d.visibleSections });
+        if (resumeData.resumeId) setResumeId(resumeData.resumeId);
+        applyResumeData(resumeData.resumeData);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [userId, accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, accessToken, applyResumeData]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── 저장하기: 서버 저장 → 성공/실패 토스트, localStorage는 백업으로 유지 ──
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!showResumeDropdown) return;
+    const handler = () => setShowResumeDropdown(false);
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, [showResumeDropdown]);
+
+  // ── 이력서 전환 ───────────────────────────────────────────────
+  const handleSwitchResume = async (id: number) => {
+    if (!accessToken || id === resumeId) { setShowResumeDropdown(false); return; }
+    setShowResumeDropdown(false);
+    setIsLoading(true);
+    try {
+      const res = await getMyResumes({ accessToken });
+      // 선택한 이력서의 전체 데이터는 단건 API로 로드
+      const { getMyResumeById } = await import('@/lib/api/user');
+      const detail = await getMyResumeById(id, { accessToken });
+      setResumeId(id);
+      setResumeList(res.resumes);
+      if (detail.resumeData) applyResumeData(detail.resumeData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── 새 이력서 생성 ────────────────────────────────────────────
+  const handleCreateResume = async () => {
+    if (!accessToken || isCreatingResume) return;
+    setIsCreatingResume(true);
+    setShowResumeDropdown(false);
+    try {
+      const newResume = await createResume(
+        { resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
+          links: [], education: [], career: [], experience: [], projects: [],
+          awards: [], certifications: [], coverLetters: [], isPublic: false },
+        { accessToken }
+      );
+      if (newResume.resumeId) {
+        setResumeId(newResume.resumeId);
+        // 목록 갱신
+        const list = await getMyResumes({ accessToken });
+        setResumeList(list.resumes);
+        // 새 이력서 빈 상태로 초기화
+        applyResumeData({ resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '',
+          techStack: [], links: [], education: [], career: [], experience: [], projects: [],
+          awards: [], certifications: [], coverLetters: [], isPublic: false });
+      }
+    } finally {
+      setIsCreatingResume(false);
+    }
+  };
+
+  // ── 이력서 삭제 ───────────────────────────────────────────────
+  const handleDeleteResume = async () => {
+    if (!accessToken || !resumeId || isDeletingResume) return;
+    if (!confirm('이 이력서를 삭제하시겠습니까? 삭제된 이력서는 복구할 수 없습니다.')) return;
+    setIsDeletingResume(true);
+    try {
+      await deleteResumeById(resumeId, { accessToken });
+      // 목록 갱신 후 기본 이력서로 전환
+      const list = await getMyResumes({ accessToken });
+      setResumeList(list.resumes);
+      const defaultResume = list.resumes.find((r) => r.isDefault) ?? list.resumes[0] ?? null;
+      if (defaultResume) {
+        const { getMyResumeById } = await import('@/lib/api/user');
+        const detail = await getMyResumeById(defaultResume.resumeId, { accessToken });
+        setResumeId(defaultResume.resumeId);
+        if (detail.resumeData) applyResumeData(detail.resumeData);
+      } else {
+        setResumeId(null);
+        applyResumeData({ resumeTitle: '', headline: '', bio: '', jobRole: '',
+          techStack: [], links: [], education: [], career: [], experience: [], projects: [],
+          awards: [], certifications: [], coverLetters: [], isPublic: false });
+      }
+    } finally {
+      setIsDeletingResume(false);
+    }
+  };
+
+  // ── 기본 이력서 설정 ──────────────────────────────────────────
+  const handleSetDefaultResume = async () => {
+    if (!accessToken || !resumeId || isSettingDefault) return;
+    setIsSettingDefault(true);
+    try {
+      await setDefaultResume(resumeId, { accessToken });
+      const list = await getMyResumes({ accessToken });
+      setResumeList(list.resumes);
+    } finally {
+      setIsSettingDefault(false);
+    }
+  };
+
+  // ── 저장하기: resumeId가 있으면 해당 이력서 업데이트, 없으면 기본 이력서 upsert ──
   const handleSave = async () => {
     if (isSaving) return;
     setSaveError(false);
     setIsSaving(true);
 
+    const payload = {
+      resumeTitle, headline, bio, jobRole, techStack,
+      links, education, career, experience, projects,
+      awards, certifications, coverLetters, isPublic, visibleSections,
+    };
+
     try {
       if (accessToken) {
-        await saveMyResume(
-          {
-            resumeTitle,
-            headline,
-            bio,
-            jobRole,
-            techStack,
-            links,
-            education,
-            career,
-            experience,
-            projects,
-            awards,
-            certifications,
-            coverLetters,
-            isPublic,
-            visibleSections,
-          },
-          { accessToken }
-        );
+        let saved;
+        if (resumeId) {
+          saved = await updateResumeById(resumeId, payload, { accessToken });
+        } else {
+          saved = await saveMyResume(payload, { accessToken });
+          if (saved.resumeId) setResumeId(saved.resumeId);
+        }
+        // 목록 업데이트 (제목·공개 여부 변경 반영)
+        const list = await getMyResumes({ accessToken });
+        setResumeList(list.resumes);
       }
       setSavedToast(true);
       setTimeout(() => setSavedToast(false), 2500);
@@ -175,7 +287,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     }
   };
 
-  const handlePrint = () => window.print();
+  // handlePrint는 PdfDownloadButton으로 대체됨
 
   const toggleSection = (id: string) =>
     setVisibleSections((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -267,10 +379,105 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           </Link>
         </div>
 
+        {/* ── 이력서 선택 드롭다운 (인쇄 제외) ──────────────── */}
+        <div className="mb-3 print:hidden relative">
+          <div className="flex items-center gap-2">
+            {/* 현재 이력서 선택 버튼 */}
+            <button
+              type="button"
+              onClick={() => setShowResumeDropdown((prev) => !prev)}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors min-w-0 max-w-xs"
+            >
+              <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+              <span className="truncate">
+                {resumeList.find((r) => r.resumeId === resumeId)?.resumeTitle ||
+                  resumeTitle ||
+                  '이력서'}
+              </span>
+              {resumeList.find((r) => r.resumeId === resumeId)?.isDefault && (
+                <Star className="h-3 w-3 shrink-0 text-orange-400 fill-orange-400" />
+              )}
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+            </button>
+
+            {/* 새 이력서 버튼 */}
+            <button
+              type="button"
+              onClick={handleCreateResume}
+              disabled={isCreatingResume}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
+              title="새 이력서 만들기"
+            >
+              {isCreatingResume ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              새 이력서
+            </button>
+
+            {/* 현재 이력서 기본 설정 버튼 (기본이 아닌 경우만) */}
+            {resumeId && !resumeList.find((r) => r.resumeId === resumeId)?.isDefault && (
+              <button
+                type="button"
+                onClick={handleSetDefaultResume}
+                disabled={isSettingDefault}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
+                title="기본 이력서로 설정"
+              >
+                {isSettingDefault ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
+                기본으로
+              </button>
+            )}
+
+            {/* 삭제 버튼 (이력서가 2개 이상일 때만) */}
+            {resumeId && resumeList.length > 1 && (
+              <button
+                type="button"
+                onClick={handleDeleteResume}
+                disabled={isDeletingResume}
+                className="flex items-center gap-1 rounded-lg border border-red-100 px-2.5 py-1.5 text-xs font-medium text-red-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
+                title="이 이력서 삭제"
+              >
+                {isDeletingResume ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              </button>
+            )}
+          </div>
+
+          {/* 드롭다운 패널 */}
+          {showResumeDropdown && (
+            <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-gray-200 bg-white shadow-lg py-1">
+              {resumeList.map((r) => (
+                <button
+                  key={r.resumeId}
+                  type="button"
+                  onClick={() => handleSwitchResume(r.resumeId)}
+                  className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors ${
+                    r.resumeId === resumeId ? 'bg-orange-50' : ''
+                  }`}
+                >
+                  <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+                  <span className="flex-1 truncate text-gray-700">
+                    {r.resumeTitle || '(제목 없음)'}
+                  </span>
+                  {r.isDefault && (
+                    <span className="shrink-0 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-600">
+                      기본
+                    </span>
+                  )}
+                  {!r.isPublic && (
+                    <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400">
+                      비공개
+                    </span>
+                  )}
+                  {r.resumeId === resumeId && (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-orange-400" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* 상단 컨트롤 바 (인쇄 제외) */}
         <div className="mb-4 print:hidden flex items-center justify-between gap-3">
           <div className="flex flex-1 items-center gap-2">
-            <FileText className="h-5 w-5 shrink-0 text-gray-500" />
             <input
               type="text"
               value={resumeTitle}
@@ -279,14 +486,11 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
             />
           </div>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-orange-400 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-500"
-          >
-            <Printer className="h-4 w-4" />
-            인쇄 / PDF
-          </button>
+          <PdfDownloadButton
+            targetId="resume-print-area"
+            fileName={resumeTitle || '이력서'}
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-orange-400 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-500 disabled:opacity-60"
+          />
         </div>
 
         {/* 인쇄 시에만 표시되는 이력서 제목 */}
@@ -684,14 +888,11 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
             {/* TODO: 서버 저장 API 연결 후 이 문구 제거 */}
           </p>
           <div className="flex items-center gap-3 ml-auto">
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="print:hidden flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              인쇄
-            </button>
+            <PdfDownloadButton
+              targetId="resume-print-area"
+              fileName={resumeTitle || '이력서'}
+              className="print:hidden flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
+            />
             <button
               type="button"
               onClick={handleSave}

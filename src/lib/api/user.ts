@@ -26,6 +26,7 @@ import type {
   SeasonRankingListResponse,
   GithubRankingListResponse,
   ResumeResponse,
+  ResumeListResponse,
   ResumeSaveRequest,
   TitleCatalogListResponse,
 } from './types';
@@ -387,6 +388,74 @@ export async function saveMyResume(
   return clientApiClient<ResumeResponse>('/v1/users/me/resume', {
     method: 'POST',
     body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// 다중 이력서 APIs
+// ============================================
+
+/** 내 전체 이력서 목록 조회 */
+export async function getMyResumes(auth: AuthOptions): Promise<ResumeListResponse> {
+  return clientApiClient<ResumeListResponse>('/v1/users/me/resumes', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 새 이력서 생성 */
+export async function createResume(
+  data: ResumeSaveRequest,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>('/v1/users/me/resumes', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 특정 이력서 단건 조회 */
+export async function getMyResumeById(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>(`/v1/users/me/resumes/${resumeId}`, {
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 특정 이력서 수정 */
+export async function updateResumeById(
+  resumeId: number,
+  data: ResumeSaveRequest,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>(`/v1/users/me/resumes/${resumeId}`, {
+    method: 'PUT',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 특정 이력서 삭제 */
+export async function deleteResumeById(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/users/me/resumes/${resumeId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 기본 이력서 설정 */
+export async function setDefaultResume(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>(`/v1/users/me/resumes/${resumeId}/default`, {
+    method: 'PATCH',
     accessToken: auth.accessToken,
   });
 }

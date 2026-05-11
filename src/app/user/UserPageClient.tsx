@@ -1691,8 +1691,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             </div>
                           )}
 
-                          {/* 대표 설정 버튼 — 보유 중이고 대표가 아닌 경우만 */}
-                          {isOwned && !isDisplayTitle && (
+                          {/* 대표 설정 버튼 — 실제 보유 중(userTitle 정의됨)이고 대표가 아닌 경우만
+                              userTitle을 직접 guard로 사용해 TypeScript 타입 내로우잉 보장 */}
+                          {userTitle != null && !isDisplayTitle && (
                             <button
                               type="button"
                               onClick={() => handleSetDisplayTitle(userTitle.userTitleId)}

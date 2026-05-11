@@ -923,12 +923,29 @@ export interface ResumeData {
   visibleSections?: Record<string, boolean>;
 }
 
-/** GET /v1/users/me/resume 응답 */
+/** GET /v1/users/me/resume, GET /v1/users/me/resumes/:id 응답 */
 export interface ResumeResponse {
+  resumeId: number | null;
   userId: number;
+  isDefault: boolean;
   /** 저장된 이력서가 없으면 null */
   resumeData: ResumeData | null;
   updatedAt: string | null;
+}
+
+/** GET /v1/users/me/resumes 목록 항목 */
+export interface ResumeSummaryResponse {
+  resumeId: number;
+  resumeTitle: string | null;
+  isDefault: boolean;
+  isPublic: boolean;
+  updatedAt: string;
+}
+
+/** GET /v1/users/me/resumes 응답 */
+export interface ResumeListResponse {
+  resumes: ResumeSummaryResponse[];
+  totalCount: number;
 }
 
 /** POST /v1/users/me/resume 요청 */

@@ -64,7 +64,7 @@ export default async function PublicResumePage({ params }: Props) {
           <h1 className="text-sm font-semibold text-gray-900 truncate">
             {resumeTitle}
           </h1>
-          <PrintButton />
+          <PrintButton resumeTitle={resumeTitle} />
         </div>
       </div>
 
