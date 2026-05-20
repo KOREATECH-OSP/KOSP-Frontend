@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 
 import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
-import { ApiException } from '@/lib/api/client';
 import { getMySeasonRanking, getMyGithubRanking, getSeasonRankings, getGithubRankings } from '@/lib/api';
 import type { MyGithubRankingResponse } from '@/lib/api/types';
 import { auth } from '@/lib/auth/server';

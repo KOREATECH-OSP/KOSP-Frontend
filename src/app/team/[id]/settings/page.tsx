@@ -280,7 +280,6 @@ export default function TeamSettingsPage() {
                 {formSections.map((section, index) => {
                   const sectionStatus = getSectionStatus(section.id);
                   const isActive = activeSection === section.id;
-                  const Icon = section.icon;
 
                   return (
                     <button

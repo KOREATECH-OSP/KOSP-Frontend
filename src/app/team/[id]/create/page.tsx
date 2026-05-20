@@ -330,7 +330,6 @@ export default function CreateRecruitPage() {
                 {formSections.map((section, index) => {
                   const sectionStatus = getSectionStatus(section.id);
                   const isActive = activeSection === section.id;
-                  const Icon = section.icon;
 
                   return (
                     <button

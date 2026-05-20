@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 
 // ─────────────────────────────────────────
 // 타입 정의
@@ -258,12 +258,14 @@ export function useResumeStorage(userId: number | null, resumeId: number | null 
   // 해당 슬롯에 저장된 데이터가 없으면 현재 상태를 유지(서버 데이터 보존).
   useEffect(() => {
     const hasData = typeof window !== 'undefined' && localStorage.getItem(`${p}:title`) !== null;
-    if (hasData) {
-      setData(loadAll(p));
-    } else {
-      // 새 키(이력서 전환 직후 등): 현재 편집 상태 유지하고 loaded만 보장
-      setData(prev => ({ ...prev, loaded: true }));
-    }
+    startTransition(() => {
+      if (hasData) {
+        setData(loadAll(p));
+      } else {
+        // 새 키(이력서 전환 직후 등): 현재 편집 상태 유지하고 loaded만 보장
+        setData(prev => ({ ...prev, loaded: true }));
+      }
+    });
   }, [p]);
 
   // 상태 변경 시 자동 저장 (loaded 이후에만)
