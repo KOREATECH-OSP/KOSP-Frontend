@@ -378,28 +378,28 @@ function ShieldBadge({ rank }: { rank: number }) {
   const gid = `sg${rank}`;
 
   return (
-    <svg width="40" height="46" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor={light} />
           <stop offset="100%" stopColor={base}  />
         </linearGradient>
       </defs>
-      {/* 방패 외형: 상단 둥근 모서리 + 하단 뾰족 */}
+      {/* 배지 외형: 상단 역삼각형 탭 + 하단 뾰족 */}
       <path
-        d="M6 0 L34 0 Q40 0 40 6 L40 30 L20 46 L0 30 L0 6 Q0 0 6 0 Z"
+        d="M20 0 L26 10 L34 10 Q40 10 40 16 L40 32 L20 48 L0 32 L0 16 Q0 10 6 10 L14 10 Z"
         fill={`url(#${gid})`}
       />
       {/* 상단 하이라이트 */}
       <path
-        d="M6 0 L34 0 Q40 0 40 6 L40 16 Q20 22 0 16 L0 6 Q0 0 6 0 Z"
+        d="M20 0 L26 10 L34 10 Q40 10 40 16 L40 22 Q20 28 0 22 L0 16 Q0 10 6 10 L14 10 Z"
         fill="white"
         fillOpacity="0.15"
       />
       {/* 숫자 */}
       <text
         x="20"
-        y="23"
+        y="31"
         textAnchor="middle"
         dominantBaseline="middle"
         fill="white"
