@@ -43,6 +43,7 @@ import type {
   AwardItem,
   CertificationItem,
   CoverLetterItem,
+  CustomSectionItem,
 } from './hooks/useResumeStorage';
 import EditableListSection from './components/EditableListSection';
 
@@ -85,7 +86,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   // ── 다중 이력서 상태 ──────────────────────────────────────────
   const [resumeId, setResumeId] = useState<number | null>(null);
   const [resumeList, setResumeList] = useState<ResumeSummaryResponse[]>([]);
-  const [showResumeDropdown, setShowResumeDropdown] = useState(false);
+  const [resumeTabPage, setResumeTabPage] = useState(0); // 탭 페이지 (10개씩)
   const [isCreatingResume, setIsCreatingResume] = useState(false);
   const [isDeletingResume, setIsDeletingResume] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState(false);
@@ -107,6 +108,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     awards, setAwards,
     certifications, setCertifications,
     coverLetters, setCoverLetters,
+    customSections, setCustomSections,
     jobRole, setJobRole,
     techStack, setTechStack,
   } = useResumeStorage(userId, resumeId);
@@ -118,7 +120,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     resumeTitle?: string; headline?: string; bio?: string; jobRole?: string;
     techStack?: string[]; links?: unknown; education?: unknown; career?: unknown;
     experience?: unknown; projects?: unknown; awards?: unknown; certifications?: unknown;
-    coverLetters?: unknown; isPublic?: boolean; visibleSections?: Record<string, boolean>;
+    coverLetters?: unknown; customSections?: unknown; isPublic?: boolean; visibleSections?: Record<string, boolean>;
   }) => {
     if (d.resumeTitle !== undefined) setResumeTitle(d.resumeTitle);
     if (d.headline !== undefined) setHeadline(d.headline);
@@ -133,6 +135,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     if (d.awards !== undefined) setAwards(d.awards as unknown as AwardItem[]);
     if (d.certifications !== undefined) setCertifications(d.certifications as unknown as CertificationItem[]);
     if (d.coverLetters !== undefined) setCoverLetters(d.coverLetters as unknown as CoverLetterItem[]);
+    if (d.customSections !== undefined) setCustomSections(d.customSections as unknown as CustomSectionItem[]);
     if (d.isPublic !== undefined) setIsPublic(d.isPublic);
     if (d.visibleSections) setVisibleSections({ ...DEFAULT_VISIBLE_SECTIONS, ...d.visibleSections });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -159,18 +162,9 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    if (!showResumeDropdown) return;
-    const handler = () => setShowResumeDropdown(false);
-    document.addEventListener('click', handler, true);
-    return () => document.removeEventListener('click', handler, true);
-  }, [showResumeDropdown]);
-
   // ── 이력서 전환 ───────────────────────────────────────────────
   const handleSwitchResume = async (id: number) => {
-    if (!accessToken || id === resumeId) { setShowResumeDropdown(false); return; }
-    setShowResumeDropdown(false);
+    if (!accessToken || id === resumeId) return;
     setIsLoading(true);
     try {
       const res = await getMyResumes({ accessToken });
@@ -189,7 +183,6 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const handleCreateResume = async () => {
     if (!accessToken || isCreatingResume) return;
     setIsCreatingResume(true);
-    setShowResumeDropdown(false);
     try {
       const emptyResume = {
         resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
@@ -203,6 +196,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         // 목록 갱신
         const list = await getMyResumes({ accessToken });
         setResumeList(list.resumes);
+        // 새 이력서가 추가됐으므로 마지막 탭 페이지로 이동
+        setResumeTabPage(Math.floor((list.resumes.length - 1) / 10));
         // 새 이력서 빈 상태로 초기화
         applyResumeData(emptyResume);
       }
@@ -260,7 +255,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     const payload = {
       resumeTitle, headline, bio, jobRole, techStack,
       links, education, career, experience, projects,
-      awards, certifications, coverLetters, isPublic, visibleSections,
+      awards, certifications, coverLetters, customSections, isPublic, visibleSections,
     };
 
     try {
@@ -378,101 +373,112 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           </Link>
         </div>
 
-        {/* ── 이력서 선택 드롭다운 (인쇄 제외) ──────────────── */}
-        <div className="mb-3 print:hidden relative">
-          <div className="flex items-center gap-2">
-            {/* 현재 이력서 선택 버튼 */}
-            <button
-              type="button"
-              onClick={() => setShowResumeDropdown((prev) => !prev)}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors min-w-0 max-w-xs"
-            >
-              <FileText className="h-4 w-4 shrink-0 text-gray-400" />
-              <span className="truncate">
-                {resumeList.find((r) => r.resumeId === resumeId)?.resumeTitle ||
-                  resumeTitle ||
-                  '이력서'}
-              </span>
-              {resumeList.find((r) => r.resumeId === resumeId)?.isDefault && (
-                <Star className="h-3 w-3 shrink-0 text-orange-400 fill-orange-400" />
-              )}
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-            </button>
+        {/* ── 이력서 탭 (인쇄 제외) ──────────────────────────── */}
+        {resumeList.length > 0 && (() => {
+          const TAB_PAGE_SIZE = 10;
+          const totalPages = Math.ceil(resumeList.length / TAB_PAGE_SIZE);
+          const pageResumes = resumeList.slice(
+            resumeTabPage * TAB_PAGE_SIZE,
+            (resumeTabPage + 1) * TAB_PAGE_SIZE,
+          );
+          return (
+            <div className="mb-3 print:hidden">
+              {/* 탭 목록 */}
+              <div className="flex items-center gap-1 flex-wrap">
+                {/* 이전 페이지 */}
+                {resumeTabPage > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setResumeTabPage((p) => p - 1)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5 rotate-90" />
+                  </button>
+                )}
 
-            {/* 새 이력서 버튼 */}
-            <button
-              type="button"
-              onClick={handleCreateResume}
-              disabled={isCreatingResume}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
-              title="새 이력서 만들기"
-            >
-              {isCreatingResume ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-              새 이력서
-            </button>
+                {pageResumes.map((r) => {
+                  const isActive = r.resumeId === resumeId;
+                  return (
+                    <button
+                      key={r.resumeId}
+                      type="button"
+                      onClick={() => handleSwitchResume(r.resumeId)}
+                      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors max-w-[180px] ${
+                        isActive
+                          ? 'border-orange-400 bg-orange-50 text-orange-600 font-medium'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <FileText className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-orange-400' : 'text-gray-400'}`} />
+                      <span className="truncate max-w-[120px]">
+                        {r.resumeTitle || '(제목 없음)'}
+                      </span>
+                      {r.isDefault && (
+                        <Star className={`h-3 w-3 shrink-0 ${isActive ? 'text-orange-400 fill-orange-400' : 'text-gray-300 fill-gray-300'}`} />
+                      )}
+                    </button>
+                  );
+                })}
 
-            {/* 현재 이력서 기본 설정 버튼 (기본이 아닌 경우만) */}
-            {resumeId && !resumeList.find((r) => r.resumeId === resumeId)?.isDefault && (
-              <button
-                type="button"
-                onClick={handleSetDefaultResume}
-                disabled={isSettingDefault}
-                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
-                title="기본 이력서로 설정"
-              >
-                {isSettingDefault ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
-                기본으로
-              </button>
-            )}
+                {/* 다음 페이지 */}
+                {resumeTabPage < totalPages - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setResumeTabPage((p) => p + 1)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
+                  </button>
+                )}
 
-            {/* 삭제 버튼 (이력서가 2개 이상일 때만) */}
-            {resumeId && resumeList.length > 1 && (
-              <button
-                type="button"
-                onClick={handleDeleteResume}
-                disabled={isDeletingResume}
-                className="flex items-center gap-1 rounded-lg border border-red-100 px-2.5 py-1.5 text-xs font-medium text-red-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
-                title="이 이력서 삭제"
-              >
-                {isDeletingResume ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-              </button>
-            )}
-          </div>
-
-          {/* 드롭다운 패널 */}
-          {showResumeDropdown && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-gray-200 bg-white shadow-lg py-1">
-              {resumeList.map((r) => (
+                {/* 새 이력서 버튼 */}
                 <button
-                  key={r.resumeId}
                   type="button"
-                  onClick={() => handleSwitchResume(r.resumeId)}
-                  className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors ${
-                    r.resumeId === resumeId ? 'bg-orange-50' : ''
-                  }`}
+                  onClick={handleCreateResume}
+                  disabled={isCreatingResume}
+                  className="flex h-8 items-center gap-1 rounded-lg border border-dashed border-gray-300 px-2.5 text-xs font-medium text-gray-400 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
+                  title="새 이력서 만들기"
                 >
-                  <FileText className="h-4 w-4 shrink-0 text-gray-400" />
-                  <span className="flex-1 truncate text-gray-700">
-                    {r.resumeTitle || '(제목 없음)'}
-                  </span>
-                  {r.isDefault && (
-                    <span className="shrink-0 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-600">
-                      기본
-                    </span>
-                  )}
-                  {!r.isPublic && (
-                    <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400">
-                      비공개
-                    </span>
-                  )}
-                  {r.resumeId === resumeId && (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-orange-400" />
-                  )}
+                  {isCreatingResume ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  새 이력서
                 </button>
-              ))}
+              </div>
+
+              {/* 선택된 이력서 액션 버튼 (탭 아래) */}
+              {resumeId && (
+                <div className="mt-1.5 flex items-center gap-2">
+                  {!resumeList.find((r) => r.resumeId === resumeId)?.isDefault && (
+                    <button
+                      type="button"
+                      onClick={handleSetDefaultResume}
+                      disabled={isSettingDefault}
+                      className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-orange-500 transition-colors disabled:opacity-50"
+                    >
+                      {isSettingDefault ? <Loader2 className="h-3 w-3 animate-spin" /> : <Star className="h-3 w-3" />}
+                      기본으로 설정
+                    </button>
+                  )}
+                  {resumeList.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteResume}
+                      disabled={isDeletingResume}
+                      className="flex items-center gap-1 text-[11px] text-red-300 hover:text-red-500 transition-colors disabled:opacity-50"
+                    >
+                      {isDeletingResume ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                      이 이력서 삭제
+                    </button>
+                  )}
+                  {totalPages > 1 && (
+                    <span className="ml-auto text-[11px] text-gray-300">
+                      {resumeTabPage + 1} / {totalPages} 페이지
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* 상단 컨트롤 바 (인쇄 제외) */}
         <div className="mb-4 print:hidden flex items-center justify-between gap-3">
@@ -883,6 +889,94 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               )}
             </>
           )}
+
+          {/* ── 커스텀 섹션 ─────────────────────────────── */}
+          {customSections.map((section) => (
+            <section key={section.id} className="rounded-xl border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-2">
+                <input
+                  type="text"
+                  value={section.title}
+                  onChange={(e) => setCustomSections(
+                    customSections.map((s) => s.id === section.id ? { ...s, title: e.target.value } : s)
+                  )}
+                  placeholder="섹션 이름을 입력하세요"
+                  className="flex-1 text-sm font-bold text-gray-900 bg-transparent focus:outline-none placeholder-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCustomSections(customSections.filter((s) => s.id !== section.id))}
+                  className="shrink-0 rounded-lg border border-red-100 px-2.5 py-1 text-xs text-red-400 hover:bg-red-50 hover:border-red-300 transition-colors"
+                >
+                  섹션 삭제
+                </button>
+              </div>
+              <div className="px-6 py-4 space-y-3">
+                {section.fields.map((field) => (
+                  <div key={field.id} className="flex items-start gap-2">
+                    <input
+                      type="text"
+                      value={field.label}
+                      onChange={(e) => setCustomSections(
+                        customSections.map((s) => s.id === section.id
+                          ? { ...s, fields: s.fields.map((f) => f.id === field.id ? { ...f, label: e.target.value } : f) }
+                          : s)
+                      )}
+                      placeholder="항목명"
+                      className="w-28 shrink-0 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={field.value}
+                      onChange={(e) => setCustomSections(
+                        customSections.map((s) => s.id === section.id
+                          ? { ...s, fields: s.fields.map((f) => f.id === field.id ? { ...f, value: e.target.value } : f) }
+                          : s)
+                      )}
+                      placeholder="내용"
+                      className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs text-gray-700 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomSections(
+                        customSections.map((s) => s.id === section.id
+                          ? { ...s, fields: s.fields.filter((f) => f.id !== field.id) }
+                          : s)
+                      )}
+                      className="shrink-0 rounded-lg border border-gray-100 p-1.5 text-gray-300 hover:border-gray-300 hover:text-gray-500 transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCustomSections(
+                    customSections.map((s) => s.id === section.id
+                      ? { ...s, fields: [...s.fields, { id: newId(), label: '', value: '' }] }
+                      : s)
+                  )}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-orange-500 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  항목 추가
+                </button>
+              </div>
+            </section>
+          ))}
+
+          {/* 커스텀 섹션 추가 버튼 */}
+          <button
+            type="button"
+            onClick={() => setCustomSections([
+              ...customSections,
+              { id: newId(), title: '', fields: [{ id: newId(), label: '', value: '' }] },
+            ])}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 py-3 text-sm text-gray-400 hover:border-orange-300 hover:text-orange-500 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            항목 추가 (커스텀 섹션)
+          </button>
         </div>
         {/* /resume-print-area */}
 

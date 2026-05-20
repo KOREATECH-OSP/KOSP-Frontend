@@ -903,6 +903,20 @@ export interface ResumeCoverLetterItem {
   content: string;
 }
 
+/** 커스텀 섹션 내 개별 필드 */
+export interface ResumeCustomField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/** 사용자 정의 이력서 섹션 */
+export interface ResumeCustomSection {
+  id: string;
+  title: string;
+  fields: ResumeCustomField[];
+}
+
 /** 서버에 저장/조회되는 이력서 데이터 구조 */
 export interface ResumeData {
   resumeTitle: string;
@@ -918,6 +932,8 @@ export interface ResumeData {
   awards: ResumeAwardItem[];
   certifications: ResumeCertificationItem[];
   coverLetters: ResumeCoverLetterItem[];
+  /** 사용자 정의 커스텀 섹션 */
+  customSections?: ResumeCustomSection[];
   isPublic: boolean;
   /** 이력서에 표시할 섹션 목록. 키: SECTION_ANCHORS의 id 값. undefined이면 전체 표시. */
   visibleSections?: Record<string, boolean>;

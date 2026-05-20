@@ -128,14 +128,14 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 학력 ─────────────────────────────────────────── */}
-      {show('sec-education') && data.education && data.education.length > 0 && (
+      {show('sec-education') && data.education?.filter((e) => e.school).length > 0 && (
         <Section title="학력">
           <div className="space-y-4">
-            {data.education.map((edu, i) => (
+            {data.education.filter((e) => e.school).map((edu, i) => (
               <div key={edu.id ?? i}>
                 {i > 0 && <Divider />}
-                <p className="text-sm font-semibold text-gray-900">{edu.school || '-'}</p>
-                <p className="mt-0.5 text-sm text-gray-500">{edu.major}</p>
+                <p className="text-sm font-semibold text-gray-900">{edu.school}</p>
+                {edu.major && <p className="mt-0.5 text-sm text-gray-500">{edu.major}</p>}
                 {edu.period && <p className="mt-0.5 text-xs text-gray-400">{edu.period}</p>}
               </div>
             ))}
@@ -144,14 +144,14 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 경력 ─────────────────────────────────────────── */}
-      {show('sec-career') && data.career && data.career.length > 0 && (
+      {show('sec-career') && data.career?.filter((c) => c.company).length > 0 && (
         <Section title="경력">
           <div className="space-y-4">
-            {data.career.map((c, i) => (
+            {data.career.filter((c) => c.company).map((c, i) => (
               <div key={c.id ?? i}>
                 {i > 0 && <Divider />}
-                <p className="text-sm font-semibold text-gray-900">{c.company || '-'}</p>
-                <p className="mt-0.5 text-sm text-gray-500">{c.role}</p>
+                <p className="text-sm font-semibold text-gray-900">{c.company}</p>
+                {c.role && <p className="mt-0.5 text-sm text-gray-500">{c.role}</p>}
                 {c.period && <p className="mt-0.5 text-xs text-gray-400">{c.period}</p>}
               </div>
             ))}
@@ -160,15 +160,15 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 프로젝트 ─────────────────────────────────────── */}
-      {show('sec-projects') && data.projects && data.projects.length > 0 && (
+      {show('sec-projects') && data.projects?.filter((p) => p.name).length > 0 && (
         <Section title="프로젝트">
           <div className="space-y-6">
-            {data.projects.map((proj, i) => (
+            {data.projects.filter((p) => p.name).map((proj, i) => (
               <div key={proj.id ?? i}>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-900">
-                    {proj.name || '-'}
+                    {proj.name}
                     {proj.featured === 'true' && <span className="ml-2 text-xs text-orange-500">★ 대표</span>}
                   </p>
                   {proj.period && <span className="shrink-0 text-xs text-gray-400">{proj.period}</span>}
@@ -223,14 +223,14 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 교육이력 ─────────────────────────────────────── */}
-      {show('sec-experience') && data.experience && data.experience.length > 0 && (
+      {show('sec-experience') && data.experience?.filter((e) => e.title).length > 0 && (
         <Section title="교육이력">
           <div className="space-y-4">
-            {data.experience.map((exp, i) => (
+            {data.experience.filter((e) => e.title).map((exp, i) => (
               <div key={exp.id ?? i}>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900">{exp.title || '-'}</p>
+                  <p className="text-sm font-semibold text-gray-900">{exp.title}</p>
                   {exp.period && <span className="shrink-0 text-xs text-gray-400">{exp.period}</span>}
                 </div>
                 {exp.description && (
@@ -243,14 +243,14 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 수상이력 ─────────────────────────────────────── */}
-      {show('sec-awards') && data.awards && data.awards.length > 0 && (
+      {show('sec-awards') && data.awards?.filter((a) => a.name).length > 0 && (
         <Section title="수상이력">
           <div className="space-y-4">
-            {data.awards.map((award, i) => (
+            {data.awards.filter((a) => a.name).map((award, i) => (
               <div key={award.id ?? i}>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900">{award.name || '-'}</p>
+                  <p className="text-sm font-semibold text-gray-900">{award.name}</p>
                   {award.date && <span className="shrink-0 text-xs text-gray-400">{award.date}</span>}
                 </div>
                 {award.organization && <p className="mt-0.5 text-xs text-gray-500">{award.organization}</p>}
@@ -264,13 +264,13 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 자격증 ───────────────────────────────────────── */}
-      {show('sec-certifications') && data.certifications && data.certifications.length > 0 && (
+      {show('sec-certifications') && data.certifications?.filter((c) => c.name).length > 0 && (
         <Section title="자격증">
           <div className="space-y-3">
-            {data.certifications.map((cert, i) => (
+            {data.certifications.filter((c) => c.name).map((cert, i) => (
               <div key={cert.id ?? i} className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{cert.name || '-'}</p>
+                  <p className="text-sm font-medium text-gray-900">{cert.name}</p>
                   {cert.organization && <p className="text-xs text-gray-500">{cert.organization}</p>}
                 </div>
                 <div className="text-right shrink-0 ml-4">
@@ -288,21 +288,37 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 자기소개서 ───────────────────────────────────── */}
-      {show('sec-coverLetters') && data.coverLetters && data.coverLetters.length > 0 && (
+      {show('sec-coverLetters') && data.coverLetters?.filter((cl) => cl.content).length > 0 && (
         <Section title="자기소개서">
           <div className="space-y-6">
-            {data.coverLetters.map((cl, i) => (
+            {data.coverLetters.filter((cl) => cl.content).map((cl, i) => (
               <div key={cl.id ?? i}>
                 {i > 0 && <Divider />}
                 {cl.title && <p className="mb-2 text-sm font-semibold text-gray-900">{cl.title}</p>}
                 <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {cl.content || '-'}
+                  {cl.content}
                 </p>
               </div>
             ))}
           </div>
         </Section>
       )}
+
+      {/* ── 커스텀 섹션 ─────────────────────────────────── */}
+      {data.customSections?.filter((s) => s.title && s.fields.some((f) => f.label || f.value)).map((section) => (
+        <Section key={section.id} title={section.title}>
+          <div className="space-y-2">
+            {section.fields.filter((f) => f.label || f.value).map((field) => (
+              <div key={field.id} className="flex items-start gap-3">
+                {field.label && (
+                  <span className="w-24 shrink-0 text-xs font-medium text-gray-500 pt-0.5">{field.label}</span>
+                )}
+                <span className={`text-sm text-gray-700 ${!field.label ? '' : ''}`}>{field.value}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      ))}
     </div>
   );
 }

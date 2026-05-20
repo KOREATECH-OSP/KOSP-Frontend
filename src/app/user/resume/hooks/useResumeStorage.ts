@@ -98,6 +98,18 @@ export interface CoverLetterItem {
   content: string;
 }
 
+export interface CustomFieldItem {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface CustomSectionItem {
+  id: string;
+  title: string;
+  fields: CustomFieldItem[];
+}
+
 export type VisibleSections = Record<SectionKey, boolean>;
 
 const DEFAULT_VISIBLE: VisibleSections = {
@@ -158,6 +170,7 @@ interface ResumeData {
   awards: AwardItem[];
   certifications: CertificationItem[];
   coverLetters: CoverLetterItem[];
+  customSections: CustomSectionItem[];
   jobRole: string;
   techStack: string[];
   visibleSections: VisibleSections;
@@ -178,6 +191,7 @@ function loadAll(p: string): ResumeData {
     awards: load(`${p}:awards`, [] as AwardItem[]),
     certifications: load(`${p}:certifications`, [] as CertificationItem[]),
     coverLetters: load(`${p}:coverLetters`, [] as CoverLetterItem[]),
+    customSections: load(`${p}:customSections`, [] as CustomSectionItem[]),
     jobRole: load(`${p}:jobRole`, ''),
     techStack: load(`${p}:techStack`, [] as string[]),
     visibleSections: load(`${p}:visibleSections`, DEFAULT_VISIBLE),
@@ -198,6 +212,7 @@ const INITIAL_DATA: ResumeData = {
   awards: [],
   certifications: [],
   coverLetters: [],
+  customSections: [],
   jobRole: '',
   techStack: [],
   visibleSections: DEFAULT_VISIBLE,
@@ -232,6 +247,8 @@ export interface ResumeStorage {
   setCertifications: (v: CertificationItem[]) => void;
   coverLetters: CoverLetterItem[];
   setCoverLetters: (v: CoverLetterItem[]) => void;
+  customSections: CustomSectionItem[];
+  setCustomSections: (v: CustomSectionItem[]) => void;
   jobRole: string;
   setJobRole: (v: string) => void;
   techStack: string[];
@@ -280,6 +297,7 @@ export function useResumeStorage(userId: number | null, resumeId: number | null 
   useEffect(() => { if (data.loaded) save(`${p}:awards`, data.awards); }, [data.awards, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:certifications`, data.certifications); }, [data.certifications, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:coverLetters`, data.coverLetters); }, [data.coverLetters, data.loaded, p]);
+  useEffect(() => { if (data.loaded) save(`${p}:customSections`, data.customSections); }, [data.customSections, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:jobRole`, data.jobRole); }, [data.jobRole, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:techStack`, data.techStack); }, [data.techStack, data.loaded, p]);
   useEffect(() => { if (data.loaded) save(`${p}:visibleSections`, data.visibleSections); }, [data.visibleSections, data.loaded, p]);
@@ -315,6 +333,8 @@ export function useResumeStorage(userId: number | null, resumeId: number | null 
     setCertifications: (v) => set('certifications', v),
     coverLetters: data.coverLetters,
     setCoverLetters: (v) => set('coverLetters', v),
+    customSections: data.customSections,
+    setCustomSections: (v) => set('customSections', v),
     jobRole: data.jobRole,
     setJobRole: (v) => set('jobRole', v),
     techStack: data.techStack,

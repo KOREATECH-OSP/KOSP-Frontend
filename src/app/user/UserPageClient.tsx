@@ -124,7 +124,7 @@ const SEASON_CATEGORIES = [
   { key: 'communityScore',  label: '커뮤니티', color: 'bg-pink-400' },
 ] as const;
 
-function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
+function SeasonRankingCard({ ranking, displayTitle }: { ranking: MySeasonRankingResponse; displayTitle: UserTitleResponse | null }) {
   const { tier, totalScore, rank, seasonName } = ranking;
   const [min, max] = SEASON_TIER_THRESHOLDS[tier] ?? [0, 100];
   const progress = max === min ? 100 : Math.min(100, ((totalScore - min) / (max - min)) * 100);
@@ -142,7 +142,7 @@ function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
       </div>
 
       <div className="px-5 py-4 space-y-4">
-        {/* 티어 + 순위 */}
+        {/* 티어 + 순위 + 대표 칭호 */}
         <div className="flex items-center justify-between">
           <div>
             <p className={`text-2xl font-bold ${getTierColor(tier)}`}>
@@ -156,6 +156,19 @@ function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
                 </span>
               )}
             </p>
+            {displayTitle && (
+              <div className="mt-1.5 flex items-center gap-1">
+                {displayTitle.iconUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={displayTitle.iconUrl} alt={displayTitle.titleName} className="h-3.5 w-3.5 object-contain" />
+                ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                  <span className="text-xs">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                ) : (
+                  <Trophy className="h-3 w-3 text-amber-400" />
+                )}
+                <span className="text-[11px] text-amber-600 font-medium">{displayTitle.titleName}</span>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-400">내 순위</p>
@@ -549,53 +562,58 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </Link>
               </div>
 
-              <h1 className="mb-1 text-xl font-bold text-gray-900">{profile?.name}</h1>
+              {/* 이름 + 대표 칭호 (같은 줄) */}
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-gray-900">{profile?.name}</h1>
+                {displayTitle && (
+                  <div className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5">
+                    {displayTitle.iconUrl ? (
+                      <img
+                        src={displayTitle.iconUrl}
+                        alt={displayTitle.titleName}
+                        className="h-3.5 w-3.5 object-contain"
+                        onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                      <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                    ) : (
+                      <Trophy className="h-3 w-3 text-amber-500" />
+                    )}
+                    <span className="text-[11px] font-medium text-amber-600">{displayTitle.titleName}</span>
+                  </div>
+                )}
+              </div>
 
-              {/* 대표 칭호 */}
-              {displayTitle && (
-                <div className="mb-2 flex items-center gap-1.5">
-                  {displayTitle.iconUrl ? (
-                    <img
-                      src={displayTitle.iconUrl}
-                      alt={displayTitle.titleName}
-                      className="h-4 w-4 object-contain"
-                      onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
-                    <span className="text-sm leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
-                  ) : (
-                    <Trophy className="h-4 w-4 text-amber-500" />
-                  )}
-                  <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
-                </div>
-              )}
-
-              {/* 보유 칭호 미리보기 (최대 5개) */}
+              {/* 보유 칭호 전체 (대표 강조 + 나머지) */}
               {myTitles.length > 0 && (
-                <div className="mb-3 flex items-center gap-1.5">
-                  {myTitles.slice(0, 5).map((t) => (
-                    <div
-                      key={t.userTitleId}
-                      title={t.titleName}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 bg-gray-50 text-sm overflow-hidden"
-                    >
-                      {t.iconUrl ? (
-                        <img
-                          src={t.iconUrl}
-                          alt={t.titleName}
-                          className="h-full w-full object-cover"
-                          onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
-                        TITLE_CATEGORY_EMOJI[t.category]
-                      ) : (
-                        '🏅'
-                      )}
-                    </div>
-                  ))}
-                  {myTitles.length > 5 && (
-                    <span className="text-[11px] text-gray-400">+{myTitles.length - 5}</span>
-                  )}
+                <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                  {myTitles.map((t) => {
+                    const isRep = t.isDisplay;
+                    return (
+                      <div
+                        key={t.userTitleId}
+                        title={`${t.titleName}${isRep ? ' (대표)' : ''}`}
+                        className={`flex items-center justify-center overflow-hidden rounded-full border text-sm transition-all ${
+                          isRep
+                            ? 'h-10 w-10 border-amber-300 bg-amber-50 shadow-[0_0_0_2px_#fbbf24]'
+                            : 'h-7 w-7 border-gray-100 bg-gray-50'
+                        }`}
+                      >
+                        {t.iconUrl ? (
+                          <img
+                            src={t.iconUrl}
+                            alt={t.titleName}
+                            className="h-full w-full object-cover"
+                            onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
+                          TITLE_CATEGORY_EMOJI[t.category]
+                        ) : (
+                          '🏅'
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -865,7 +883,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   )}
 
                   {/* 시즌 랭킹 티어 */}
-                  {seasonRanking && <SeasonRankingCard ranking={seasonRanking} />}
+                  {seasonRanking && <SeasonRankingCard ranking={seasonRanking} displayTitle={displayTitle} />}
 
                   {/* 챌린지 달성 카드 */}
                   {challengeRate && (

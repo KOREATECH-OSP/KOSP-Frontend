@@ -38,7 +38,7 @@ export default function PdfDownloadButton({
 
     setIsGenerating(true);
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
         import('html2canvas'),
         import('jspdf'),
       ]);
