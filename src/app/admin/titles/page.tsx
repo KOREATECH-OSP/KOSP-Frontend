@@ -111,6 +111,18 @@ export default function AdminTitlesPage() {
           className="hidden"
         />
 
+        {/* 이미지 업로드 가이드라인 */}
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-800">
+          <p className="mb-2 font-semibold">이미지 업로드 가이드라인</p>
+          <ul className="list-disc space-y-1 pl-5 text-blue-700">
+            <li>권장 크기: <span className="font-medium">128 × 128 px</span> (정사각형 1:1 비율)</li>
+            <li>허용 형식: <span className="font-medium">PNG · JPG · WebP</span></li>
+            <li>최대 파일 크기: <span className="font-medium">5 MB</span></li>
+            <li>이미지는 칭호 목록, 프로필 카드, 이력서에서 <span className="font-medium">56 × 56 px</span> 크기로 표시됩니다.</li>
+            <li>이미지를 비워두면 카테고리 이모지가 대신 표시됩니다.</li>
+          </ul>
+        </div>
+
         {/* 칭호 목록 */}
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
           <div className="border-b border-gray-100 px-6 py-4">

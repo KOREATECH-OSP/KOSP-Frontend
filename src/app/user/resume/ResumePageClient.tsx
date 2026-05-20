@@ -621,9 +621,25 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                       개발 직무
                     </h3>
                   </div>
-                  <div className="px-6 py-4">
+                  <div className="px-6 py-4 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {['프론트엔드 개발자', '백엔드 개발자', '풀스택 개발자', 'DevOps / 인프라', 'AI / ML 엔지니어', '모바일 개발자'].map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setJobRole(chip)}
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                            jobRole === chip
+                              ? 'border-orange-400 bg-orange-50 text-orange-600'
+                              : 'border-gray-200 bg-white text-gray-500 hover:border-orange-300 hover:text-orange-500'
+                          }`}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={jobRole}
                       onChange={(e) => setJobRole(e.target.value)}
                       placeholder="예: 백엔드 개발자 / Java, Spring Boot 기반 서버 개발 경험 보유"

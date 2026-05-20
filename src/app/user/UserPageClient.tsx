@@ -570,6 +570,35 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </div>
               )}
 
+              {/* 보유 칭호 미리보기 (최대 5개) */}
+              {myTitles.length > 0 && (
+                <div className="mb-3 flex items-center gap-1.5">
+                  {myTitles.slice(0, 5).map((t) => (
+                    <div
+                      key={t.userTitleId}
+                      title={t.titleName}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 bg-gray-50 text-sm overflow-hidden"
+                    >
+                      {t.iconUrl ? (
+                        <img
+                          src={t.iconUrl}
+                          alt={t.titleName}
+                          className="h-full w-full object-cover"
+                          onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
+                        TITLE_CATEGORY_EMOJI[t.category]
+                      ) : (
+                        '🏅'
+                      )}
+                    </div>
+                  ))}
+                  {myTitles.length > 5 && (
+                    <span className="text-[11px] text-gray-400">+{myTitles.length - 5}</span>
+                  )}
+                </div>
+              )}
+
               <p className="mb-2 text-sm text-gray-500">{session.user?.email}</p>
               <p className="break-all text-xs text-gray-400">ID: {userId}</p>
 
