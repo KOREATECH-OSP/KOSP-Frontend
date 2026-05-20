@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { HelpCircle, Search, Trophy, Info, X } from 'lucide-react';
 
-import Pagination from '@/common/components/Pagination';
 import {
   SeasonRankingEntry,
   SeasonRankingListResponse,
@@ -369,13 +368,36 @@ function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse
   );
 }
 
-// ─── Top 3 (시즌) ──────────────────────────────────────────────────────────────
+// ─── Medal Badge ───────────────────────────────────────────────────────────────
+
+function MedalBadge({ rank }: { rank: 1 | 2 | 3 }) {
+  const color = rank === 1 ? '#EAB308' : rank === 2 ? '#9CA3AF' : '#D97706';
+  const darkColor = rank === 1 ? '#CA8A04' : rank === 2 ? '#6B7280' : '#B45309';
+  return (
+    <svg width="52" height="60" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Left ribbon */}
+      <path d="M26 24 L14 2 L22 2 L30 20Z" fill={darkColor} />
+      <path d="M26 24 L12 2 L20 2 L28 20Z" fill={color} />
+      {/* Right ribbon */}
+      <path d="M26 24 L38 2 L30 2 L22 20Z" fill={darkColor} />
+      <path d="M26 24 L40 2 L32 2 L24 20Z" fill={color} />
+      {/* Circle shadow */}
+      <circle cx="26" cy="42" r="17" fill={darkColor} />
+      {/* Circle */}
+      <circle cx="26" cy="41" r="17" fill={color} />
+      {/* Number */}
+      <text x="26" y="47" textAnchor="middle" fill="white" fontSize="18" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif">{rank}</text>
+    </svg>
+  );
+}
+
+// ─── Top 3 ─────────────────────────────────────────────────────────────────────
 
 const PODIUM_ORDER = [1, 0, 2] as const;
 const MEDAL_CONFIG = [
-  { icon: '🥇', bg: 'bg-yellow-50 border-yellow-400', rankText: 'text-yellow-600', heightClass: 'sm:pt-0' },
-  { icon: '🥈', bg: 'bg-gray-100 border-gray-400', rankText: 'text-gray-500', heightClass: 'sm:pt-6' },
-  { icon: '🥉', bg: 'bg-orange-50 border-orange-400', rankText: 'text-orange-700', heightClass: 'sm:pt-6' },
+  { bg: 'bg-yellow-50 border-yellow-400', rankText: 'text-yellow-600', heightClass: 'sm:pt-0' },
+  { bg: 'bg-gray-50 border-gray-300', rankText: 'text-gray-500', heightClass: 'sm:pt-8' },
+  { bg: 'bg-orange-50 border-orange-400', rankText: 'text-orange-700', heightClass: 'sm:pt-8' },
 ];
 
 function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRankingEntry[]; type: TabType }) {
@@ -390,14 +412,14 @@ function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRa
         if (!entry) return <div key={dataIdx} />;
 
         return (
-          <div key={entry.userId} className={`${config.heightClass} flex flex-col items-center`}>
-            <div className={`w-full rounded-2xl border-2 ${config.bg} p-4 text-center transition-shadow hover:shadow-md`}>
-              <div className="text-4xl">{config.icon}</div>
-              <div className={`mt-1.5 text-lg font-extrabold ${config.rankText}`}>{entry.rank}위</div>
+          <div key={entry.userId} className={`${config.heightClass} flex flex-col`}>
+            <div className={`flex h-full flex-col items-center rounded-2xl border-2 ${config.bg} px-4 pb-5 pt-4 text-center transition-shadow hover:shadow-md`}>
+              <MedalBadge rank={(entry.rank as 1 | 2 | 3)} />
+              <div className={`mt-2 text-xl font-extrabold ${config.rankText}`}>{entry.rank}위</div>
               <Link href={`/user/${entry.userId}`} className="mt-1 block truncate text-base font-bold text-gray-800 hover:text-blue-600">
                 {entry.userName}
               </Link>
-              <div className="mt-1.5 flex justify-center">
+              <div className="mt-2 flex justify-center">
                 {type === 'season'
                   ? <SeasonTierBadge tier={(entry as SeasonRankingEntry).tier} />
                   : <GithubTierBadge score={(entry as GithubRankingEntry).totalScore} />
@@ -533,8 +555,7 @@ export default function RankingPageClient({
   const [showCriteria, setShowCriteria] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const seasonTotalPages = Math.ceil(seasonRankings.totalCount / (seasonRankings.size || 50));
-  const githubTotalPages = Math.ceil(githubRankings.totalCount / (githubRankings.size || 50));
+  const TOTAL_PAGES = 5;
 
   const filteredSeasonEntries = useMemo(() => {
     if (!search.trim()) return seasonRankings.rankings;
@@ -555,7 +576,7 @@ export default function RankingPageClient({
     setIsLoading(true);
     try {
       const data = await apiClient<SeasonRankingListResponse>(
-        `/v1/seasons/current/rankings?page=${page - 1}&size=50`,
+        `/v1/seasons/current/rankings?page=${page - 1}&size=10`,
         { cache: 'no-store' },
       );
       setSeasonRankings(data);
@@ -570,7 +591,7 @@ export default function RankingPageClient({
     setIsLoading(true);
     try {
       const data = await apiClient<GithubRankingListResponse>(
-        `/v1/github/rankings?page=${page - 1}&size=50`,
+        `/v1/github/rankings?page=${page - 1}&size=10`,
         { cache: 'no-store' },
       );
       setGithubRankings(data);
@@ -704,14 +725,25 @@ export default function RankingPageClient({
       )}
 
       {/* 페이지네이션 */}
-      {!search && activeTab === 'season' && seasonTotalPages > 1 && (
-        <div className="mt-6">
-          <Pagination currentPage={seasonPage} totalPages={seasonTotalPages} onPageChange={handleSeasonPageChange} />
-        </div>
-      )}
-      {!search && activeTab === 'github' && githubTotalPages > 1 && (
-        <div className="mt-6">
-          <Pagination currentPage={githubPage} totalPages={githubTotalPages} onPageChange={handleGithubPageChange} />
+      {!search && (
+        <div className="mt-6 flex justify-center gap-1">
+          {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((page) => {
+            const currentPage = activeTab === 'season' ? seasonPage : githubPage;
+            const handlePageChange = activeTab === 'season' ? handleSeasonPageChange : handleGithubPageChange;
+            return (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === page
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
         </div>
       )}
 

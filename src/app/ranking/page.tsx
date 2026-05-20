@@ -17,8 +17,8 @@ export default async function RankingPage() {
   const session = await auth();
 
   const [seasonRankingsResult, githubRankingsResult, myRankingResult, myGithubRankingResult] = await Promise.allSettled([
-    getSeasonRankings({ page: 0, size: 50 }),
-    getGithubRankings({ page: 0, size: 50 }),
+    getSeasonRankings({ page: 0, size: 10 }),
+    getGithubRankings({ page: 0, size: 10 }),
     session
       ? getMySeasonRanking({ accessToken: session.accessToken })
       : Promise.resolve(null),
@@ -30,12 +30,12 @@ export default async function RankingPage() {
   const seasonRankings =
     seasonRankingsResult.status === 'fulfilled'
       ? seasonRankingsResult.value
-      : { seasonName: '', endDate: '', rankings: [], totalCount: 0, page: 0, size: 50 };
+      : { seasonName: '', endDate: '', rankings: [], totalCount: 0, page: 0, size: 10 };
 
   const githubRankings =
     githubRankingsResult.status === 'fulfilled'
       ? githubRankingsResult.value
-      : { rankings: [], totalCount: 0, page: 0, size: 50 };
+      : { rankings: [], totalCount: 0, page: 0, size: 10 };
 
   const myRanking =
     myRankingResult.status === 'fulfilled' ? myRankingResult.value : null;
