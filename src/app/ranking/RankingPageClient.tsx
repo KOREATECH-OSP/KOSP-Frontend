@@ -258,8 +258,8 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
       <div className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-50 text-2xl font-black text-gray-800">
-              #{myRanking.rank}
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-50 text-xl font-black text-gray-800">
+              {myRanking.rank}위
             </div>
             <div>
               <SeasonTierBadge tier={myRanking.tier} size="md" />
@@ -269,7 +269,7 @@ function MyRankingCard({ myRanking }: { myRanking: MySeasonRankingResponse }) {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-5 gap-2">
             {scoreItems.map((item) => (
               <div key={item.label} className="text-center">
                 <p className="text-[10px] text-gray-400">{item.label}</p>
@@ -327,8 +327,8 @@ function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse
       <div className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-50 text-2xl font-black text-gray-800">
-              #{myRanking.rank}
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-50 text-xl font-black text-gray-800">
+              {myRanking.rank}위
             </div>
             <div>
               <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${badge}`}>
@@ -373,9 +373,9 @@ function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse
 
 const PODIUM_ORDER = [1, 0, 2] as const;
 const MEDAL_CONFIG = [
-  { icon: '🥇', bg: 'bg-yellow-50 border-yellow-200', rankText: 'text-yellow-600', heightClass: 'sm:pt-0' },
-  { icon: '🥈', bg: 'bg-slate-50 border-slate-200', rankText: 'text-slate-500', heightClass: 'sm:pt-4' },
-  { icon: '🥉', bg: 'bg-amber-50 border-amber-200', rankText: 'text-amber-600', heightClass: 'sm:pt-4' },
+  { icon: '🥇', bg: 'bg-yellow-50 border-yellow-400', rankText: 'text-yellow-600', heightClass: 'sm:pt-0' },
+  { icon: '🥈', bg: 'bg-gray-100 border-gray-400', rankText: 'text-gray-500', heightClass: 'sm:pt-6' },
+  { icon: '🥉', bg: 'bg-orange-50 border-orange-400', rankText: 'text-orange-700', heightClass: 'sm:pt-6' },
 ];
 
 function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRankingEntry[]; type: TabType }) {
@@ -391,10 +391,10 @@ function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRa
 
         return (
           <div key={entry.userId} className={`${config.heightClass} flex flex-col items-center`}>
-            <div className={`w-full rounded-2xl border ${config.bg} p-4 text-center transition-shadow hover:shadow-md`}>
-              <div className="text-2xl">{config.icon}</div>
-              <div className={`mt-1 text-xs font-bold ${config.rankText}`}>{entry.rank}위</div>
-              <Link href={`/user/${entry.userId}`} className="mt-2 block truncate text-sm font-bold text-gray-800 hover:text-blue-600">
+            <div className={`w-full rounded-2xl border-2 ${config.bg} p-4 text-center transition-shadow hover:shadow-md`}>
+              <div className="text-4xl">{config.icon}</div>
+              <div className={`mt-1.5 text-lg font-extrabold ${config.rankText}`}>{entry.rank}위</div>
+              <Link href={`/user/${entry.userId}`} className="mt-1 block truncate text-base font-bold text-gray-800 hover:text-blue-600">
                 {entry.userName}
               </Link>
               <div className="mt-1.5 flex justify-center">
@@ -403,9 +403,9 @@ function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRa
                   : <GithubTierBadge score={(entry as GithubRankingEntry).totalScore} />
                 }
               </div>
-              <p className="mt-2 text-base font-black text-gray-900">
+              <p className="mt-2 text-xl font-black text-gray-900">
                 {entry.totalScore.toFixed(1)}
-                <span className="text-xs font-normal text-gray-400">pt</span>
+                <span className="text-sm font-normal text-gray-400">pt</span>
               </p>
             </div>
           </div>
@@ -424,7 +424,7 @@ function SeasonRankingTable({ entries, myRankPosition }: { entries: SeasonRankin
         <span className="text-xs font-medium text-gray-400">순위</span>
         <span className="text-xs font-medium text-gray-400">사용자</span>
         <span className="text-xs font-medium text-gray-400">티어</span>
-        <span className="text-right text-xs font-medium text-gray-400">점수</span>
+        <span className="text-xs font-medium text-gray-400">점수</span>
         <span className="text-xs font-medium text-gray-400">진행도</span>
       </div>
       <ul className="divide-y divide-gray-50">
@@ -449,7 +449,7 @@ function SeasonRankingTable({ entries, myRankPosition }: { entries: SeasonRankin
                 <div className="mt-1 sm:hidden"><SeasonScoreBar score={entry.totalScore} tier={entry.tier} /></div>
               </div>
               <div className="hidden sm:block"><SeasonTierBadge tier={entry.tier} /></div>
-              <span className="hidden text-right text-sm font-bold text-gray-800 sm:block">
+              <span className="hidden text-sm font-bold text-gray-800 sm:block">
                 {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
               </span>
               <div className="hidden sm:block"><SeasonScoreBar score={entry.totalScore} tier={entry.tier} /></div>
@@ -470,7 +470,7 @@ function GithubRankingTable({ entries, myRankPosition }: { entries: GithubRankin
         <span className="text-xs font-medium text-gray-400">순위</span>
         <span className="text-xs font-medium text-gray-400">사용자</span>
         <span className="text-xs font-medium text-gray-400">티어</span>
-        <span className="text-right text-xs font-medium text-gray-400">총점</span>
+        <span className="text-xs font-medium text-gray-400">총점</span>
         <span className="text-xs font-medium text-gray-400">진행도</span>
       </div>
       <ul className="divide-y divide-gray-50">
@@ -495,7 +495,7 @@ function GithubRankingTable({ entries, myRankPosition }: { entries: GithubRankin
               <div className="mt-1 sm:hidden"><GithubScoreBar score={entry.totalScore} /></div>
             </div>
             <div className="hidden sm:block"><GithubTierBadge score={entry.totalScore} /></div>
-            <span className="hidden text-right text-sm font-bold text-gray-800 sm:block">
+            <span className="hidden text-sm font-bold text-gray-800 sm:block">
               {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
             </span>
             <div className="hidden sm:block"><GithubScoreBar score={entry.totalScore} /></div>
@@ -635,11 +635,17 @@ export default function RankingPageClient({
       </div>
 
       {/* 내 랭킹 카드 */}
-      {activeTab === 'season' && myRanking && (
-        <div className="mb-6"><MyRankingCard myRanking={myRanking} /></div>
+      {(activeTab === 'season' && myRanking) && (
+        <div className="mb-6">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">내 랭킹</h2>
+          <MyRankingCard myRanking={myRanking} />
+        </div>
       )}
-      {activeTab === 'github' && myGithubRanking && (
-        <div className="mb-6"><MyGithubRankingCard myRanking={myGithubRanking} /></div>
+      {(activeTab === 'github' && myGithubRanking) && (
+        <div className="mb-6">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">내 랭킹</h2>
+          <MyGithubRankingCard myRanking={myGithubRanking} />
+        </div>
       )}
       {!isAuthenticated && (
         <div className="mb-6 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
@@ -656,11 +662,14 @@ export default function RankingPageClient({
         <div className="mb-6">
           <div className="mb-3 flex items-center gap-2">
             <Trophy className="h-4 w-4 text-yellow-500" />
-            <h2 className="text-sm font-semibold text-gray-700">TOP 3</h2>
+            <h2 className="text-sm font-semibold text-gray-700">전체 랭킹 TOP 3</h2>
           </div>
           <Top3Cards entries={top3} type={activeTab} />
         </div>
       )}
+
+      {/* 전체 랭킹 */}
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">전체 랭킹</h2>
 
       {/* 검색 */}
       <div className="mb-4 flex items-center gap-3">
