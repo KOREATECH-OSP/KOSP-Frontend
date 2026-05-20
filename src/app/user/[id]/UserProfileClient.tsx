@@ -204,26 +204,27 @@ export default function UserProfileClient({
                 </div>
               </div>
 
-              <h1 className="mb-1 text-xl font-bold text-gray-900">{profile.name}</h1>
-
-              {/* 대표 칭호 (보기 전용) */}
-              {displayTitle && (
-                <div className="mb-2 flex items-center gap-1.5">
-                  {displayTitle.iconUrl ? (
-                    <img
-                      src={displayTitle.iconUrl}
-                      alt={displayTitle.titleName}
-                      className="h-4 w-4 object-contain"
-                      onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
-                    <span className="text-sm leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
-                  ) : (
-                    <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                  )}
-                  <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
-                </div>
-              )}
+              <div className="mb-1 flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-gray-900">{profile.name}</h1>
+                {/* 대표 칭호 (보기 전용) */}
+                {displayTitle && (
+                  <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 border border-amber-100">
+                    {displayTitle.iconUrl ? (
+                      <img
+                        src={displayTitle.iconUrl}
+                        alt={displayTitle.titleName}
+                        className="h-3.5 w-3.5 object-contain"
+                        onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                      <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                    ) : (
+                      <Trophy className="h-3 w-3 text-amber-500" />
+                    )}
+                    <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
+                  </div>
+                )}
+              </div>
 
               {profile.introduction && (
                 <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>

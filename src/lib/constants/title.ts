@@ -10,6 +10,7 @@ export const TITLE_CATEGORY_EMOJI: Record<string, string> = {
   OPEN_SOURCE: '🐙',
   SEASON: '🌟',
   HONOR: '👑',
+  ATTENDANCE: '📅',
 };
 
 // ── 칭호 등급 한글 라벨 ─────────────────────────────────────────

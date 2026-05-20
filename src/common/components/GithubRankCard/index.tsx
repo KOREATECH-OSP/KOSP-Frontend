@@ -3,6 +3,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Github, GitCommit, GitPullRequest, AlertCircle, FolderGit, HelpCircle, X } from 'lucide-react';
+import type { UserTitleResponse } from '@/lib/api/types';
+import { TITLE_CATEGORY_EMOJI } from '@/lib/constants/title';
 
 export type RankType = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'challenger';
 
@@ -24,6 +26,7 @@ interface GithubRankCardProps {
   totalScore: number;
   maxScore?: number;
   tierLabel?: string;
+  displayTitle?: UserTitleResponse | null;
   stats: {
     commits: number;
     pullRequests: number;
@@ -112,6 +115,7 @@ export default function GithubRankCard({
   rank,
   totalScore,
   tierLabel,
+  displayTitle,
   stats,
 }: GithubRankCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -266,6 +270,17 @@ export default function GithubRankCard({
                 <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-md sm:text-2xl">
                   {name}
                 </h2>
+                {displayTitle && (
+                  <div className="mt-1 flex items-center gap-1">
+                    {displayTitle.iconUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={displayTitle.iconUrl} alt={displayTitle.titleName} className="h-3.5 w-3.5 object-contain" />
+                    ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                      <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                    ) : null}
+                    <span className="text-xs font-medium text-amber-300">{displayTitle.titleName}</span>
+                  </div>
+                )}
                 {username && (
                   <p className="text-sm font-light tracking-wide text-slate-400">@{username}</p>
                 )}

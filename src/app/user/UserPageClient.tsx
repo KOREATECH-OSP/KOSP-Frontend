@@ -124,7 +124,7 @@ const SEASON_CATEGORIES = [
   { key: 'communityScore',  label: '커뮤니티', color: 'bg-pink-400' },
 ] as const;
 
-function SeasonRankingCard({ ranking, displayTitle }: { ranking: MySeasonRankingResponse; displayTitle: UserTitleResponse | null }) {
+function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
   const { tier, totalScore, rank, seasonName } = ranking;
   const [min, max] = SEASON_TIER_THRESHOLDS[tier] ?? [0, 100];
   const progress = max === min ? 100 : Math.min(100, ((totalScore - min) / (max - min)) * 100);
@@ -142,7 +142,7 @@ function SeasonRankingCard({ ranking, displayTitle }: { ranking: MySeasonRanking
       </div>
 
       <div className="px-5 py-4 space-y-4">
-        {/* 티어 + 순위 + 대표 칭호 */}
+        {/* 티어 + 순위 */}
         <div className="flex items-center justify-between">
           <div>
             <p className={`text-2xl font-bold ${getTierColor(tier)}`}>
@@ -156,19 +156,6 @@ function SeasonRankingCard({ ranking, displayTitle }: { ranking: MySeasonRanking
                 </span>
               )}
             </p>
-            {displayTitle && (
-              <div className="mt-1.5 flex items-center gap-1">
-                {displayTitle.iconUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={displayTitle.iconUrl} alt={displayTitle.titleName} className="h-3.5 w-3.5 object-contain" />
-                ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
-                  <span className="text-xs">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
-                ) : (
-                  <Trophy className="h-3 w-3 text-amber-400" />
-                )}
-                <span className="text-[11px] text-amber-600 font-medium">{displayTitle.titleName}</span>
-              </div>
-            )}
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-400">내 순위</p>
@@ -873,6 +860,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       profileImage={profile?.profileImage}
                       rank={getRankFromScore(contributionScore.totalScore)}
                       totalScore={contributionScore.totalScore}
+                      displayTitle={displayTitle}
                       stats={{
                         commits: overallHistory.totalCommitCount,
                         pullRequests: overallHistory.totalPrCount,
@@ -883,7 +871,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   )}
 
                   {/* 시즌 랭킹 티어 */}
-                  {seasonRanking && <SeasonRankingCard ranking={seasonRanking} displayTitle={displayTitle} />}
+                  {seasonRanking && <SeasonRankingCard ranking={seasonRanking} />}
 
                   {/* 챌린지 달성 카드 */}
                   {challengeRate && (
