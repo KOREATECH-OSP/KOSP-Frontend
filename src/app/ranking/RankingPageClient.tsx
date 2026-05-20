@@ -373,17 +373,37 @@ function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse
 // ─── Shield Badge ──────────────────────────────────────────────────────────────
 
 function ShieldBadge({ rank }: { rank: number }) {
-  const color = rank === 1 ? '#F59E0B' : rank === 2 ? '#9CA3AF' : '#B45309';
+  const base  = rank === 1 ? '#F5B731' : rank === 2 ? '#9CA3AF' : '#B45309';
+  const light = rank === 1 ? '#FCCF50' : rank === 2 ? '#C9CDD4' : '#D4824A';
+  const gid = `sg${rank}`;
+
   return (
-    <svg width="34" height="38" viewBox="0 0 34 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0 0 H34 V22 L17 38 L0 22 Z" fill={color} />
+    <svg width="40" height="46" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor={light} />
+          <stop offset="100%" stopColor={base}  />
+        </linearGradient>
+      </defs>
+      {/* 방패 외형: 상단 둥근 모서리 + 하단 뾰족 */}
+      <path
+        d="M6 0 L34 0 Q40 0 40 6 L40 30 L20 46 L0 30 L0 6 Q0 0 6 0 Z"
+        fill={`url(#${gid})`}
+      />
+      {/* 상단 하이라이트 */}
+      <path
+        d="M6 0 L34 0 Q40 0 40 6 L40 16 Q20 22 0 16 L0 6 Q0 0 6 0 Z"
+        fill="white"
+        fillOpacity="0.15"
+      />
+      {/* 숫자 */}
       <text
-        x="17"
-        y="20"
+        x="20"
+        y="23"
         textAnchor="middle"
         dominantBaseline="middle"
         fill="white"
-        fontSize="14"
+        fontSize="16"
         fontWeight="900"
         fontFamily="system-ui, -apple-system, sans-serif"
       >
