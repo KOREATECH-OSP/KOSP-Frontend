@@ -370,69 +370,71 @@ function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse
 
 // ─── Medal Badge ───────────────────────────────────────────────────────────────
 
-function MedalBadge({ rank }: { rank: 1 | 2 | 3 }) {
-  const color = rank === 1 ? '#EAB308' : rank === 2 ? '#9CA3AF' : '#D97706';
-  const darkColor = rank === 1 ? '#CA8A04' : rank === 2 ? '#6B7280' : '#B45309';
+// ─── Shield Badge ──────────────────────────────────────────────────────────────
+
+function ShieldBadge({ rank }: { rank: number }) {
+  const color = rank === 1 ? '#F59E0B' : rank === 2 ? '#9CA3AF' : '#B45309';
   return (
-    <svg width="52" height="60" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Left ribbon */}
-      <path d="M26 24 L14 2 L22 2 L30 20Z" fill={darkColor} />
-      <path d="M26 24 L12 2 L20 2 L28 20Z" fill={color} />
-      {/* Right ribbon */}
-      <path d="M26 24 L38 2 L30 2 L22 20Z" fill={darkColor} />
-      <path d="M26 24 L40 2 L32 2 L24 20Z" fill={color} />
-      {/* Circle shadow */}
-      <circle cx="26" cy="42" r="17" fill={darkColor} />
-      {/* Circle */}
-      <circle cx="26" cy="41" r="17" fill={color} />
-      {/* Number */}
-      <text x="26" y="47" textAnchor="middle" fill="white" fontSize="18" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif">{rank}</text>
+    <svg width="34" height="38" viewBox="0 0 34 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0 H34 V22 L17 38 L0 22 Z" fill={color} />
+      <text
+        x="17"
+        y="20"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="white"
+        fontSize="14"
+        fontWeight="900"
+        fontFamily="system-ui, -apple-system, sans-serif"
+      >
+        {rank}
+      </text>
     </svg>
   );
 }
 
-// ─── Top 3 ─────────────────────────────────────────────────────────────────────
-
-const PODIUM_ORDER = [1, 0, 2] as const;
-const MEDAL_CONFIG = [
-  { bg: 'bg-yellow-50 border-yellow-400', rankText: 'text-yellow-600', heightClass: 'sm:pt-0' },
-  { bg: 'bg-gray-50 border-gray-300', rankText: 'text-gray-500', heightClass: 'sm:pt-8' },
-  { bg: 'bg-orange-50 border-orange-400', rankText: 'text-orange-700', heightClass: 'sm:pt-8' },
-];
+// ─── Top 3 상위권 카드 ──────────────────────────────────────────────────────────
 
 function Top3Cards({ entries, type }: { entries: SeasonRankingEntry[] | GithubRankingEntry[]; type: TabType }) {
   if (entries.length === 0) return null;
   const top3 = entries.slice(0, 3);
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {PODIUM_ORDER.map((dataIdx) => {
-        const entry = top3[dataIdx];
-        const config = MEDAL_CONFIG[dataIdx];
-        if (!entry) return <div key={dataIdx} />;
-
-        return (
-          <div key={entry.userId} className={`${config.heightClass} flex flex-col`}>
-            <div className={`flex h-full flex-col items-center rounded-2xl border-2 ${config.bg} px-4 pb-5 pt-4 text-center transition-shadow hover:shadow-md`}>
-              <MedalBadge rank={(entry.rank as 1 | 2 | 3)} />
-              <div className={`mt-2 text-xl font-extrabold ${config.rankText}`}>{entry.rank}위</div>
-              <Link href={`/user/${entry.userId}`} className="mt-1 block truncate text-base font-bold text-gray-800 hover:text-blue-600">
-                {entry.userName}
+    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      {/* 카드 헤더 */}
+      <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3.5">
+        <Trophy className="h-4 w-4 text-yellow-500" />
+        <span className="text-sm font-semibold text-gray-700">전체 랭킹 상위권</span>
+      </div>
+      {/* 3분할 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3">
+        {top3.map((entry, idx) => (
+          <div
+            key={entry.userId}
+            className={`flex items-center gap-4 px-6 py-5 ${
+              idx < top3.length - 1 ? 'border-b border-gray-100 sm:border-b-0 sm:border-r' : ''
+            }`}
+          >
+            {/* 프로필 이미지 */}
+            <div className="h-14 w-14 shrink-0 rounded-full bg-gray-100" />
+            {/* 티어 + 이름 */}
+            <div className="min-w-0 flex-1">
+              {type === 'season'
+                ? <SeasonTierBadge tier={(entry as SeasonRankingEntry).tier} />
+                : <GithubTierBadge score={(entry as GithubRankingEntry).totalScore} />
+              }
+              <Link
+                href={`/user/${entry.userId}`}
+                className="mt-1 block truncate text-sm font-bold text-gray-800 hover:text-blue-600"
+              >
+                {entry.userName || '이름 없음'}
               </Link>
-              <div className="mt-2 flex justify-center">
-                {type === 'season'
-                  ? <SeasonTierBadge tier={(entry as SeasonRankingEntry).tier} />
-                  : <GithubTierBadge score={(entry as GithubRankingEntry).totalScore} />
-                }
-              </div>
-              <p className="mt-2 text-xl font-black text-gray-900">
-                {entry.totalScore.toFixed(1)}
-                <span className="text-sm font-normal text-gray-400">pt</span>
-              </p>
             </div>
+            {/* 순위 방패 */}
+            <ShieldBadge rank={entry.rank} />
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
@@ -678,13 +680,9 @@ export default function RankingPageClient({
         </div>
       )}
 
-      {/* Top 3 */}
+      {/* Top 3 상위권 */}
       {top3.length > 0 && (
         <div className="mb-6">
-          <div className="mb-3 flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-yellow-500" />
-            <h2 className="text-sm font-semibold text-gray-700">전체 랭킹 TOP 3</h2>
-          </div>
           <Top3Cards entries={top3} type={activeTab} />
         </div>
       )}
