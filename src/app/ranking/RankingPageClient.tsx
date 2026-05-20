@@ -373,9 +373,59 @@ function MyGithubRankingCard({ myRanking }: { myRanking: MyGithubRankingResponse
 // ─── Shield Badge ──────────────────────────────────────────────────────────────
 
 function ShieldBadge({ rank }: { rank: number }) {
-  const base  = rank === 1 ? '#F5B731' : rank === 2 ? '#9CA3AF' : '#B45309';
-  const light = rank === 1 ? '#FCCF50' : rank === 2 ? '#C9CDD4' : '#D4824A';
-  const gid = `sg${rank}`;
+  /* ── 1위: 육각형 방패 메달 ── */
+  if (rank === 1) {
+    return (
+      <svg width="46" height="54" viewBox="0 0 46 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#FFE566" />
+            <stop offset="50%"  stopColor="#F5B731" />
+            <stop offset="100%" stopColor="#C88400" />
+          </linearGradient>
+          <linearGradient id="g1h" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="white" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="white" stopOpacity="0"    />
+          </linearGradient>
+        </defs>
+        {/* 외형: 평평한 상단 + 각진 어깨 + 직선 측면 + 하단 방패 포인트 */}
+        <path
+          d="M11 2 L35 2 L46 13 L46 38 L23 54 L0 38 L0 13 Z"
+          fill="url(#g1)"
+        />
+        {/* 내부 테두리 — 메달 음각 효과 */}
+        <path
+          d="M14 6 L32 6 L41 15 L41 36 L23 49 L5 36 L5 15 Z"
+          fill="none"
+          stroke="rgba(255,255,255,0.30)"
+          strokeWidth="1.2"
+        />
+        {/* 상단 하이라이트 */}
+        <path
+          d="M11 2 L35 2 L46 13 L46 20 Q23 27 0 20 L0 13 Z"
+          fill="url(#g1h)"
+        />
+        {/* 숫자 1 */}
+        <text
+          x="23"
+          y="34"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="white"
+          fontSize="22"
+          fontWeight="900"
+          fontFamily="system-ui, -apple-system, sans-serif"
+        >
+          1
+        </text>
+      </svg>
+    );
+  }
+
+  /* ── 2·3위: 역삼각형 탭 방패 ── */
+  const base  = rank === 2 ? '#9CA3AF' : '#B45309';
+  const light = rank === 2 ? '#C9CDD4' : '#D4824A';
+  const gid   = `sg${rank}`;
 
   return (
     <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -385,18 +435,15 @@ function ShieldBadge({ rank }: { rank: number }) {
           <stop offset="100%" stopColor={base}  />
         </linearGradient>
       </defs>
-      {/* 배지 외형: 상단 역삼각형 탭 + 하단 뾰족 */}
       <path
         d="M20 0 L26 10 L34 10 Q40 10 40 16 L40 32 L20 48 L0 32 L0 16 Q0 10 6 10 L14 10 Z"
         fill={`url(#${gid})`}
       />
-      {/* 상단 하이라이트 */}
       <path
         d="M20 0 L26 10 L34 10 Q40 10 40 16 L40 22 Q20 28 0 22 L0 16 Q0 10 6 10 L14 10 Z"
         fill="white"
         fillOpacity="0.15"
       />
-      {/* 숫자 */}
       <text
         x="20"
         y="31"
