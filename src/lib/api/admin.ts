@@ -1,4 +1,5 @@
 import { ApiException, clientApiClient } from './client';
+import { API_BASE_URL } from './config';
 import type {
   PermissionResponse,
   PermissionListResponse,
@@ -751,7 +752,7 @@ export async function updateAdminContact(
 // ============================================
 
 /**
- * 칭호 아이콘 URL 수정 (관리자 전용)
+ * 칭호 아이콘 URL 수정 (URL 직접 입력, 관리자 전용)
  */
 export async function adminUpdateTitleImage(
   titleId: number,
@@ -763,4 +764,35 @@ export async function adminUpdateTitleImage(
     body: { iconUrl },
     accessToken: auth.accessToken,
   });
+}
+
+/**
+ * 칭호 이미지 파일 업로드 (관리자 전용)
+ * multipart/form-data 전송 — clientApiClient 대신 fetch 직접 사용
+ */
+export async function adminUploadTitleImage(
+  titleId: number,
+  file: File,
+  auth: AuthOptions
+): Promise<{ iconUrl: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/v1/admin/titles/${titleId}/image`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${auth.accessToken}`,
+    },
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    let message = `업로드 실패 (${response.status})`;
+    try { message = JSON.parse(text).message ?? message; } catch { /* ignore */ }
+    throw new ApiException(response.status, message);
+  }
+
+  return response.json() as Promise<{ iconUrl: string }>;
 }
