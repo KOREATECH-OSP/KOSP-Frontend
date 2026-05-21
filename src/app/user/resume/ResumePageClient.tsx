@@ -25,6 +25,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import PdfDownloadButton from '@/common/components/PdfDownloadButton';
+import ResumeReadOnlyView from './components/ResumeReadOnlyView';
 import type { AuthSession } from '@/lib/auth/types';
 import {
   getUserProfile, getMyResume, saveMyResume,
@@ -32,7 +33,7 @@ import {
   deleteResumeById, setDefaultResume,
 } from '@/lib/api/user';
 import { ensureEncodedUrl } from '@/lib/utils';
-import type { UserProfileResponse, ResumeSummaryResponse } from '@/lib/api/types';
+import type { UserProfileResponse, ResumeSummaryResponse, ResumeData } from '@/lib/api/types';
 import { useResumeStorage, newId } from './hooks/useResumeStorage';
 import type {
   LinkItem,
@@ -543,8 +544,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           </div>
         </div>
 
-        {/* ── 이력서 본문 (출력 대상) ────────────────────────────── */}
-        <div id="resume-print-area" className="space-y-4">
+        {/* ── 이력서 본문 (편집 영역) ─────────────────────────────── */}
+        <div className="space-y-4">
 
           {/* 기본정보 */}
           {visibleSections['sec-basic'] && <section id="sec-basic" className="rounded-xl border border-gray-200 bg-white p-6">
@@ -982,6 +983,41 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
       </div>
       {/* /main container */}
+
+      {/* ── PDF 캡처 전용 숨김 렌더링 영역 ──────────────────────────
+           position:fixed + left:-9999px → 뷰포트 밖에 위치하므로 사용자에게 보이지 않음.
+           html2canvas는 getBoundingClientRect() 기준으로 해당 영역을 캡처하므로 정상 동작.
+           ResumeReadOnlyView 루트 div에 id="resume-print-area"가 있어 PdfDownloadButton이 바로 타겟팅함. */}
+      {draftLoaded && (
+        <div
+          aria-hidden="true"
+          style={{ position: 'fixed', left: '-9999px', top: 0, width: '794px', pointerEvents: 'none' }}
+        >
+          <ResumeReadOnlyView
+            data={{
+              resumeTitle,
+              headline,
+              bio,
+              jobRole,
+              techStack,
+              links: links as ResumeData['links'],
+              education: education as ResumeData['education'],
+              career: career as ResumeData['career'],
+              experience: experience as ResumeData['experience'],
+              projects: projects as ResumeData['projects'],
+              awards: awards as ResumeData['awards'],
+              certifications: certifications as ResumeData['certifications'],
+              coverLetters: coverLetters as ResumeData['coverLetters'],
+              customSections: customSections as ResumeData['customSections'],
+              isPublic,
+              visibleSections,
+            }}
+            profileImageUrl={profile?.profileImage ?? null}
+            resumeTitle={resumeTitle}
+            visibleSections={visibleSections}
+          />
+        </div>
+      )}
 
       {/* ── 하단 고정 저장 바 (인쇄 제외) ─────────────────────────── */}
       <div className="print:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg">

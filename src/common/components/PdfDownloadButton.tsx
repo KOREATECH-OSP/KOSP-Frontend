@@ -44,12 +44,32 @@ export default function PdfDownloadButton({
       ]);
 
       // 캡처 시점에 target element를 ref로 고정 (active window 무관)
+      // onclone: off-screen(left:-9999px) 요소를 body에 직접 붙여 (0,0)에서 캡처
+      const captureWidth = target.offsetWidth || 794;
+      const captureHeight = target.offsetHeight;
+
       const canvas = await html2canvas(target, {
         scale: 2,          // 고해상도
         useCORS: true,     // 외부 이미지 허용
         allowTaint: false,
         logging: false,
         backgroundColor: '#ffffff',
+        x: 0,
+        y: 0,
+        width: captureWidth,
+        height: captureHeight,
+        onclone: (_clonedDoc: Document, clonedElement: HTMLElement) => {
+          const body = _clonedDoc.body;
+          body.appendChild(clonedElement);
+          Array.from(body.children).forEach(child => {
+            if (child !== clonedElement) {
+              (child as HTMLElement).style.display = 'none';
+            }
+          });
+          clonedElement.style.cssText =
+            `position:static!important;left:0!important;top:0!important;` +
+            `width:${captureWidth}px!important;margin:0!important;padding:0!important;`;
+        },
       });
 
       const imgData = canvas.toDataURL('image/png');
