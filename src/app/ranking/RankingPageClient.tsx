@@ -281,12 +281,17 @@ type AnyEntry = SeasonRankingEntry | GithubRankingEntry;
 function PodiumItem({ entry, type }: { entry: AnyEntry; type: TabType }) {
   const rank = entry.rank;
   const isFirst = rank === 1;
+  const size = isFirst ? 'h-14 w-14' : 'h-11 w-11';
   return (
     <div className="flex flex-col items-center">
       {/* 뱃지 + 아바타 + 이름 */}
       <div className="flex flex-col items-center gap-2 mb-2">
         <RankBadge rank={rank} size={isFirst ? 44 : 36} />
-        <div className={`rounded-full bg-gray-200 ${isFirst ? 'h-14 w-14' : 'h-11 w-11'}`} />
+        {entry.profileImageUrl ? (
+          <img src={entry.profileImageUrl} alt={entry.userName} className={`${size} rounded-full object-cover`} />
+        ) : (
+          <div className={`${size} rounded-full bg-gray-200`} />
+        )}
         <Link
           href={`/user/${entry.userId}`}
           className={`font-bold text-gray-800 hover:text-blue-600 truncate max-w-[100px] text-center ${isFirst ? 'text-sm' : 'text-xs'}`}
@@ -338,7 +343,11 @@ function SeasonRankRow({ entry, isMe }: { entry: SeasonRankingEntry; isMe: boole
     >
       <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
       <div className="flex min-w-0 items-center gap-2.5">
-        <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+        {entry.profileImageUrl ? (
+          <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+        ) : (
+          <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+        )}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">
@@ -363,7 +372,11 @@ function GithubRankRow({ entry, isMe }: { entry: GithubRankingEntry; isMe: boole
     >
       <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
       <div className="flex min-w-0 items-center gap-2.5">
-        <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+        {entry.profileImageUrl ? (
+          <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+        ) : (
+          <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+        )}
         <div className="flex items-center gap-1.5 min-w-0">
           <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">
             {entry.userName}

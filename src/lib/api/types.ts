@@ -758,6 +758,7 @@ export interface GithubRankingEntry {
   rank: number;
   userId: number;
   userName: string;
+  profileImageUrl: string | null;
   totalScore: number;
   activityScore: number;
   diversityScore: number;
@@ -781,6 +782,7 @@ export interface SeasonRankingEntry {
   rank: number;
   userId: number;
   userName: string;
+  profileImageUrl: string | null;
   totalScore: number;
   tier: string; // e.g. "BRONZE_4", "GOLD_2", "CHALLENGER"
 }
