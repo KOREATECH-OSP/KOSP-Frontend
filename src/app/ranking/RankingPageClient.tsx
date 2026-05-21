@@ -320,8 +320,7 @@ function Podium({ entries, type }: { entries: AnyEntry[]; type: TabType }) {
   const byRank = Object.fromEntries(entries.slice(0, 3).map((e) => [e.rank, e]));
   return (
     <div className="px-6 pt-5 pb-0">
-      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">🥇 상위권</p>
-      <div className="flex items-end justify-center gap-3">
+<div className="flex items-end justify-center gap-3">
         {PODIUM_ORDER.map((rank) =>
           byRank[rank] ? <PodiumItem key={rank} entry={byRank[rank]} type={type} /> : null
         )}
