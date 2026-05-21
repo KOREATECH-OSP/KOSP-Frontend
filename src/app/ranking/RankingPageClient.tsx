@@ -287,11 +287,13 @@ function PodiumItem({ entry, type }: { entry: AnyEntry; type: TabType }) {
       {/* 뱃지 + 아바타 + 이름 */}
       <div className="flex flex-col items-center gap-2 mb-2">
         <RankBadge rank={rank} size={isFirst ? 44 : 36} />
-        {entry.profileImageUrl ? (
-          <img src={entry.profileImageUrl} alt={entry.userName} className={`${size} rounded-full object-cover`} />
-        ) : (
-          <div className={`${size} rounded-full bg-gray-200`} />
-        )}
+        <Link href={`/user/${entry.userId}`}>
+          {entry.profileImageUrl ? (
+            <img src={entry.profileImageUrl} alt={entry.userName} className={`${size} rounded-full object-cover`} />
+          ) : (
+            <div className={`${size} rounded-full bg-gray-200`} />
+          )}
+        </Link>
         <Link
           href={`/user/${entry.userId}`}
           className={`font-bold text-gray-800 hover:text-blue-600 truncate max-w-[100px] text-center ${isFirst ? 'text-sm' : 'text-xs'}`}
@@ -338,56 +340,64 @@ const RANK_COLOR: Record<number, string> = {
 
 function SeasonRankRow({ entry, isMe }: { entry: SeasonRankingEntry; isMe: boolean }) {
   return (
-    <li className={`grid grid-cols-[48px_1fr_130px_90px] items-center gap-3 px-5 py-3 transition-colors
-      ${isMe ? 'bg-amber-50 hover:bg-amber-50/80' : 'hover:bg-gray-50'}`}
-    >
-      <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
-      <div className="flex min-w-0 items-center gap-2.5">
-        {entry.profileImageUrl ? (
-          <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
-        ) : (
-          <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
-        )}
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">
-              {entry.userName}
-            </Link>
-            {isMe && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">나</span>}
+    <li>
+      <Link
+        href={`/user/${entry.userId}`}
+        className={`grid grid-cols-[48px_1fr_130px_90px] items-center gap-3 px-5 py-3 transition-colors
+          ${isMe ? 'bg-amber-50 hover:bg-amber-50/80' : 'hover:bg-gray-50'}`}
+      >
+        <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          {entry.profileImageUrl ? (
+            <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+          ) : (
+            <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-sm font-semibold text-gray-800">
+                {entry.userName}
+              </span>
+              {isMe && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">나</span>}
+            </div>
           </div>
         </div>
-      </div>
-      <div><SeasonTierBadge tier={entry.tier} /></div>
-      <span className="text-sm font-bold text-gray-800">
-        {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
-      </span>
+        <div><SeasonTierBadge tier={entry.tier} /></div>
+        <span className="text-sm font-bold text-gray-800">
+          {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
+        </span>
+      </Link>
     </li>
   );
 }
 
 function GithubRankRow({ entry, isMe }: { entry: GithubRankingEntry; isMe: boolean }) {
   return (
-    <li className={`grid grid-cols-[48px_1fr_130px_90px] items-center gap-3 px-5 py-3 transition-colors
-      ${isMe ? 'bg-amber-50 hover:bg-amber-50/80' : 'hover:bg-gray-50'}`}
-    >
-      <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
-      <div className="flex min-w-0 items-center gap-2.5">
-        {entry.profileImageUrl ? (
-          <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
-        ) : (
-          <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
-        )}
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Link href={`/user/${entry.userId}`} className="truncate text-sm font-semibold text-gray-800 hover:text-blue-600">
-            {entry.userName}
-          </Link>
-          {isMe && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">나</span>}
+    <li>
+      <Link
+        href={`/user/${entry.userId}`}
+        className={`grid grid-cols-[48px_1fr_130px_90px] items-center gap-3 px-5 py-3 transition-colors
+          ${isMe ? 'bg-amber-50 hover:bg-amber-50/80' : 'hover:bg-gray-50'}`}
+      >
+        <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          {entry.profileImageUrl ? (
+            <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+          ) : (
+            <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+          )}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="truncate text-sm font-semibold text-gray-800">
+              {entry.userName}
+            </span>
+            {isMe && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">나</span>}
+          </div>
         </div>
-      </div>
-      <div><GithubTierBadge score={entry.totalScore} /></div>
-      <span className="text-sm font-bold text-gray-800">
-        {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
-      </span>
+        <div><GithubTierBadge score={entry.totalScore} /></div>
+        <span className="text-sm font-bold text-gray-800">
+          {entry.totalScore.toFixed(1)}<span className="text-xs font-normal text-gray-400">pt</span>
+        </span>
+      </Link>
     </li>
   );
 }

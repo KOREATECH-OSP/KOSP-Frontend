@@ -34,6 +34,7 @@ import {
   getUserGithubContributionScore,
   getUserGithubContributionComparison,
   getUserTitles,
+  getPublicResume,
 } from '@/lib/api/user';
 import type {
   ArticleResponse,
@@ -44,7 +45,9 @@ import type {
   GithubContributionScoreResponse,
   GithubContributionComparisonResponse,
   UserTitleResponse,
+  ResumeData,
 } from '@/lib/api/types';
+import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 
@@ -70,7 +73,7 @@ interface UserProfileClientProps {
   };
 }
 
-type TabType = '활동' | '작성글' | '댓글';
+type TabType = '활동' | '작성글' | '댓글' | '이력서';
 
 export default function UserProfileClient({
   userId,
@@ -90,6 +93,11 @@ export default function UserProfileClient({
   const [counts, setCounts] = useState(initialCounts);
   const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 이력서 상태
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [resumeLoaded, setResumeLoaded] = useState(false);
+  const [resumePrivate, setResumePrivate] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
   const recentRepositoryCount = recentActivity.length;
 
@@ -136,6 +144,16 @@ export default function UserProfileClient({
           const res = await getUserComments(userId);
           setComments(res.comments);
           setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
+        } else if (activeTab === '이력서' && !resumeLoaded) {
+          try {
+            const res = await getPublicResume(userId);
+            setResumeData(res.resumeData);
+            setResumePrivate(false);
+          } catch {
+            setResumePrivate(true);
+          } finally {
+            setResumeLoaded(true);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch tab data:', error);
@@ -167,6 +185,7 @@ export default function UserProfileClient({
     { key: '활동', label: '활동', icon: <Activity className="h-4 w-4" /> },
     { key: '작성글', label: '작성한 글', icon: <FileText className="h-4 w-4" /> },
     { key: '댓글', label: '작성한 댓글', icon: <MessageCircle className="h-4 w-4" /> },
+    { key: '이력서', label: '이력서', icon: <FileText className="h-4 w-4" /> },
   ];
 
   return (
@@ -636,6 +655,28 @@ export default function UserProfileClient({
                     </Link>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* 이력서 탭 */}
+          {activeTab === '이력서' && (
+            <div>
+              {!resumeLoaded ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : resumePrivate || !resumeData ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
+                  <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-sm font-medium text-gray-500">비공개 이력서입니다.</p>
+                </div>
+              ) : (
+                <ResumeReadOnlyView
+                  data={resumeData}
+                  profileImageUrl={profile.profileImage}
+                  visibleSections={resumeData.visibleSections}
+                />
               )}
             </div>
           )}
