@@ -427,8 +427,6 @@ export default function RankingPageClient({
   const [showCriteria, setShowCriteria] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const TOTAL_PAGES = 5;
-
   const filteredSeasonEntries = useMemo(() => {
     if (!search.trim()) return seasonRankings.rankings;
     return seasonRankings.rankings.filter((e) => e.userName.toLowerCase().includes(search.toLowerCase()));
@@ -467,6 +465,12 @@ export default function RankingPageClient({
   const filteredEntries = activeTab === 'season' ? filteredSeasonEntries : filteredGithubEntries;
   const currentPage = activeTab === 'season' ? seasonPage : githubPage;
   const handlePageChange = activeTab === 'season' ? handleSeasonPageChange : handleGithubPageChange;
+  const totalPages = Math.max(1, Math.ceil(totalCount / 10));
+
+  // 현재 페이지 기준 최대 5개 페이지 번호 윈도우
+  const pageWindowStart = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+  const pageWindowEnd = Math.min(totalPages, pageWindowStart + 4);
+  const pageNumbers = Array.from({ length: pageWindowEnd - pageWindowStart + 1 }, (_, i) => pageWindowStart + i);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -571,9 +575,27 @@ export default function RankingPageClient({
       </div>
 
       {/* 페이지네이션 */}
-      {!search && (
-        <div className="mt-6 flex justify-center gap-1">
-          {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((page) => (
+      {!search && totalPages > 1 && (
+        <div className="mt-6 flex justify-center items-center gap-1">
+          {/* 첫 페이지 */}
+          <button
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === 1}
+            className="h-9 px-2 rounded-lg text-sm font-medium transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {'<<'}
+          </button>
+          {/* 이전 페이지 */}
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-9 px-2 rounded-lg text-sm font-medium transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {'<'}
+          </button>
+
+          {/* 페이지 번호 */}
+          {pageNumbers.map((page) => (
             <button
               key={page}
               onClick={() => handlePageChange(page)}
@@ -584,6 +606,23 @@ export default function RankingPageClient({
               {page}
             </button>
           ))}
+
+          {/* 다음 페이지 */}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-9 px-2 rounded-lg text-sm font-medium transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {'>'}
+          </button>
+          {/* 마지막 페이지 */}
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            className="h-9 px-2 rounded-lg text-sm font-medium transition-colors text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {'>>'}
+          </button>
         </div>
       )}
 
