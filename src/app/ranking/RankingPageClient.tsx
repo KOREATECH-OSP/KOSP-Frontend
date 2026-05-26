@@ -487,6 +487,35 @@ export default function RankingPageClient({
         </button>
       </div>
 
+      {/* 사이드바 + 메인 콘텐츠 */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
+
+        {/* 사이드바 */}
+        <aside className="lg:block">
+          <div className="sticky top-24 space-y-1">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">랭킹</p>
+            {([
+              { key: 'season', label: '시즌 랭킹' },
+              { key: 'github', label: '전체 랭킹' },
+            ] as { key: TabType; label: string }[]).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handleTabChange(key as TabType)}
+                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                  activeTab === key
+                    ? 'bg-gray-100 text-gray-900 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        {/* 메인 콘텐츠 */}
+        <div>
+
       {/* 내 랭킹 배너 */}
       {!isAuthenticated && (
         <div className="mb-5 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
@@ -501,34 +530,24 @@ export default function RankingPageClient({
         <div className="mb-5"><MyGithubBanner myRanking={myGithubRanking} /></div>
       )}
 
-      {/* 메인 카드: 포디움 + 탭 + 테이블 */}
+      {/* 메인 카드: 포디움 + 테이블 */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
 
-        {/* 포디움 */}
-        <Podium entries={top3} type={activeTab} />
-
-        {/* 탭 바 (포디움 아래, 테이블 위) */}
-        <div className="mt-5 flex items-center justify-between border-t border-gray-100 px-5 py-3">
-          <div className="inline-flex rounded-xl bg-gray-100 p-1 gap-1">
-            {(['season', 'github'] as TabType[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-all ${
-                  activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
-              </button>
-            ))}
-          </div>
+        {/* 카드 헤더: 탭 이름 + 총 인원 */}
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <h2 className="text-sm font-semibold text-gray-900">
+            {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
+          </h2>
           {totalCount > 0 && (
             <span className="text-xs text-gray-400">총 {totalCount.toLocaleString()}명</span>
           )}
         </div>
 
+        {/* 포디움 */}
+        <Podium entries={top3} type={activeTab} />
+
         {/* 검색 */}
-        <div className="px-5 pb-3">
+        <div className="px-5 pt-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -622,6 +641,9 @@ export default function RankingPageClient({
           </button>
         </div>
       )}
+
+        </div> {/* /메인 콘텐츠 끝 */}
+      </div> {/* /grid 끝 */}
 
       {showCriteria && <RankingCriteriaModal tab={activeTab} onClose={() => setShowCriteria(false)} />}
     </main>
