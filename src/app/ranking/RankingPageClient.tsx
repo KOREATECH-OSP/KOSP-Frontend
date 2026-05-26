@@ -188,7 +188,7 @@ function MySeasonBanner({ myRanking }: { myRanking: MySeasonRankingResponse }) {
   const progress = getTierProgress(myRanking.tier, myRanking.totalScore);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5">
+    <div className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
@@ -236,7 +236,7 @@ function MyGithubBanner({ myRanking }: { myRanking: MyGithubRankingResponse }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5">
+    <div className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
@@ -469,17 +469,18 @@ export default function RankingPageClient({
   const totalPages = Math.max(1, Math.ceil(totalCount / 10));
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 
       {/* 헤더 */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">🏆 랭킹</h1>
-          <p className="mt-1 text-sm text-gray-400">매일 04:00 업데이트</p>
+          <p className="mt-1 text-sm text-gray-500">매일 04:00 업데이트</p>
         </div>
         <button
           onClick={() => setShowCriteria(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50"
+          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
           <HelpCircle className="h-3.5 w-3.5" />
           랭킹 기준
@@ -501,7 +502,7 @@ export default function RankingPageClient({
       )}
 
       {/* 메인 카드: 포디움 + 탭 + 테이블 */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
 
         {/* 포디움 */}
         <Podium entries={top3} type={activeTab} />
@@ -624,5 +625,6 @@ export default function RankingPageClient({
 
       {showCriteria && <RankingCriteriaModal tab={activeTab} onClose={() => setShowCriteria(false)} />}
     </main>
+    </div>
   );
 }
