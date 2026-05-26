@@ -465,12 +465,8 @@ export default function RankingPageClient({
   const filteredEntries = activeTab === 'season' ? filteredSeasonEntries : filteredGithubEntries;
   const currentPage = activeTab === 'season' ? seasonPage : githubPage;
   const handlePageChange = activeTab === 'season' ? handleSeasonPageChange : handleGithubPageChange;
+  const TOTAL_PAGES = 5;
   const totalPages = Math.max(1, Math.ceil(totalCount / 10));
-
-  // 현재 페이지 기준 최대 5개 페이지 번호 윈도우
-  const pageWindowStart = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-  const pageWindowEnd = Math.min(totalPages, pageWindowStart + 4);
-  const pageNumbers = Array.from({ length: pageWindowEnd - pageWindowStart + 1 }, (_, i) => pageWindowStart + i);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -575,7 +571,7 @@ export default function RankingPageClient({
       </div>
 
       {/* 페이지네이션 */}
-      {!search && totalPages > 1 && (
+      {!search && (
         <div className="mt-6 flex justify-center items-center gap-1">
           {/* 첫 페이지 */}
           <button
@@ -594,8 +590,8 @@ export default function RankingPageClient({
             {'<'}
           </button>
 
-          {/* 페이지 번호 */}
-          {pageNumbers.map((page) => (
+          {/* 1~5 고정 페이지 번호 */}
+          {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => handlePageChange(page)}
