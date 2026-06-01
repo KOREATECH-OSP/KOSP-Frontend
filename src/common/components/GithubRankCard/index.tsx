@@ -273,8 +273,10 @@ export default function GithubRankCard({
                 {displayTitle && (
                   <div className="mt-1 flex items-center gap-1">
                     {displayTitle.iconUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={displayTitle.iconUrl} alt={displayTitle.titleName} className="h-3.5 w-3.5 object-contain" />
+                      <span className="inline-flex h-3.5 w-3.5 overflow-hidden rounded-full">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={displayTitle.iconUrl} alt={displayTitle.titleName} className="h-full w-full object-contain" />
+                      </span>
                     ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
                       <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
                     ) : null}

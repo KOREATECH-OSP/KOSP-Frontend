@@ -229,12 +229,14 @@ export default function UserProfileClient({
                 {displayTitle && (
                   <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 border border-amber-100">
                     {displayTitle.iconUrl ? (
-                      <img
-                        src={displayTitle.iconUrl}
-                        alt={displayTitle.titleName}
-                        className="h-3.5 w-3.5 object-contain"
-                        onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                      />
+                      <span className="inline-flex h-3.5 w-3.5 overflow-hidden rounded-full">
+                        <img
+                          src={displayTitle.iconUrl}
+                          alt={displayTitle.titleName}
+                          className="h-full w-full object-contain"
+                          onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </span>
                     ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
                       <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
                     ) : (

@@ -276,6 +276,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
   // 이력서 공개 설정
   const [resumeIsPublic, setResumeIsPublic] = useState<boolean | null>(null);
+  const [resumeExists, setResumeExists] = useState(false);
   const [resumePublicLoading, setResumePublicLoading] = useState(false);
   const [resumePublicCopied, setResumePublicCopied] = useState(false);
 
@@ -308,23 +309,31 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     try {
       // 기존 이력서 데이터를 가져온 후 isPublic만 반전시켜 저장
       const current = await getMyResume({ accessToken }).catch(() => null);
-      const currentData = current?.resumeData;
+
+      // 저장된 이력서가 없으면 토글 불가
+      if (!current?.resumeId || !current?.resumeData) {
+        return;
+      }
+
+      const currentData = current.resumeData;
       const nextPublic = !resumeIsPublic;
       await saveMyResume(
         {
-          resumeTitle: currentData?.resumeTitle ?? '',
-          headline: currentData?.headline ?? '',
-          bio: currentData?.bio ?? '',
-          jobRole: currentData?.jobRole ?? '',
-          techStack: currentData?.techStack ?? [],
-          links: currentData?.links ?? [],
-          education: currentData?.education ?? [],
-          career: currentData?.career ?? [],
-          experience: currentData?.experience ?? [],
-          projects: currentData?.projects ?? [],
-          awards: currentData?.awards ?? [],
-          certifications: currentData?.certifications ?? [],
-          coverLetters: currentData?.coverLetters ?? [],
+          resumeTitle: currentData.resumeTitle ?? '',
+          headline: currentData.headline ?? '',
+          bio: currentData.bio ?? '',
+          jobRole: currentData.jobRole ?? '',
+          techStack: currentData.techStack ?? [],
+          links: currentData.links ?? [],
+          education: currentData.education ?? [],
+          career: currentData.career ?? [],
+          experience: currentData.experience ?? [],
+          projects: currentData.projects ?? [],
+          awards: currentData.awards ?? [],
+          certifications: currentData.certifications ?? [],
+          coverLetters: currentData.coverLetters ?? [],
+          customSections: currentData.customSections ?? [],
+          visibleSections: currentData.visibleSections,
           isPublic: nextPublic,
         },
         { accessToken }
@@ -403,7 +412,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
             setMyTitles(titlesRes.titles);
           }
           if (seasonRes) setSeasonRanking(seasonRes);
-          if (resumeRes) setResumeIsPublic(resumeRes.resumeData?.isPublic ?? false);
+          if (resumeRes) {
+            setResumeExists(!!resumeRes.resumeId && !!resumeRes.resumeData);
+            setResumeIsPublic(resumeRes.resumeData?.isPublic ?? false);
+          }
           if (allTitlesRes) setAllTitles(allTitlesRes.titles);
         }
 
@@ -555,12 +567,14 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 {displayTitle && (
                   <div className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5">
                     {displayTitle.iconUrl ? (
-                      <img
-                        src={displayTitle.iconUrl}
-                        alt={displayTitle.titleName}
-                        className="h-3.5 w-3.5 object-contain"
-                        onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                      />
+                      <span className="inline-flex h-3.5 w-3.5 overflow-hidden rounded-full">
+                        <img
+                          src={displayTitle.iconUrl}
+                          alt={displayTitle.titleName}
+                          className="h-full w-full object-contain"
+                          onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </span>
                     ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
                       <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
                     ) : (
@@ -682,10 +696,18 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   </h2>
                 </div>
                 <div className="px-5 py-4 space-y-3">
+                  {/* 이력서 없을 때 안내 */}
+                  {resumeIsPublic !== null && !resumeExists && (
+                    <p className="text-xs text-gray-400 text-center py-1">
+                      저장된 이력서가 없습니다.{' '}
+                      <a href="/user/resume" className="text-orange-500 hover:underline">이력서 작성하기</a>
+                    </p>
+                  )}
+
                   {/* 공개 여부 토글 */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className={`text-sm font-medium ${resumeExists ? 'text-gray-900' : 'text-gray-400'}`}>
                         {resumeIsPublic ? '공개 중' : '비공개'}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -697,8 +719,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     <button
                       type="button"
                       onClick={handleToggleResumePublic}
-                      disabled={resumePublicLoading || resumeIsPublic === null}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+                      disabled={resumePublicLoading || resumeIsPublic === null || !resumeExists}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
                         resumeIsPublic ? 'bg-orange-400' : 'bg-gray-200'
                       }`}
                     >
