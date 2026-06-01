@@ -1547,14 +1547,20 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           {/* 칭호 탭 */}
           {activeTab === '칭호' && (() => {
             const CATEGORY_FILTERS = [
-              { key: '전체', label: '전체' },
-              { key: '보유', label: '보유' },
-              { key: '미획득', label: '미획득' },
-              { key: 'COMMIT', label: '커밋' },
-              { key: 'STREAK', label: '연속' },
-              { key: 'CHALLENGE', label: '챌린지' },
-              { key: 'COMMUNITY', label: '커뮤니티' },
-              { key: 'COLLABORATION', label: '협업' },
+              { key: '전체',         label: '전체' },
+              { key: '보유',         label: '보유' },
+              { key: '미획득',       label: '미획득' },
+              { key: 'COMMIT',       label: '✏️ 커밋' },
+              { key: 'STREAK',       label: '🔥 꾸준함' },
+              { key: 'CHALLENGE',    label: '🏆 챌린지' },
+              { key: 'COLLABORATION',label: '🤝 협업' },
+              { key: 'COMMUNITY',    label: '💬 커뮤니티' },
+              { key: 'INFLUENCE',    label: '⭐ 영향력' },
+              { key: 'PROJECT',      label: '📁 프로젝트' },
+              { key: 'OPEN_SOURCE',  label: '🐙 오픈소스' },
+              { key: 'SEASON',       label: '🌟 시즌' },
+              { key: 'HONOR',        label: '👑 명예' },
+              { key: 'ATTENDANCE',   label: '📅 출석' },
             ];
 
             const filteredTitles = allTitles.filter((title) => {
@@ -1587,14 +1593,15 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   </div>
                 )}
 
-                {/* 필터 바 */}
-                <div className="flex flex-wrap gap-2">
+                {/* 필터 바 (카테고리 많아질수록 가로 스크롤) */}
+                <div className="overflow-x-auto pb-1 -mx-1 px-1">
+                  <div className="flex gap-2 min-w-max sm:flex-wrap sm:min-w-0">
                   {CATEGORY_FILTERS.map((f) => (
                     <button
                       key={f.key}
                       type="button"
                       onClick={() => setTitleFilter(f.key)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                         titleFilter === f.key
                           ? 'bg-orange-400 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -1603,6 +1610,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       {f.label}
                     </button>
                   ))}
+                  </div>
                 </div>
 
                 {/* 빈 상태 */}
