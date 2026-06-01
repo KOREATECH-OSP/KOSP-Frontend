@@ -62,6 +62,7 @@ const TITLE_CATEGORY_EMOJI: Record<string, string> = {
   OPEN_SOURCE: '🐙',
   SEASON: '🌟',
   HONOR: '👑',
+  ATTENDANCE: '📅',
 };
 
 interface UserProfileClientProps {
@@ -137,13 +138,13 @@ export default function UserProfileClient({
         if (activeTab === '활동') {
           await fetchGithubData();
         } else if (activeTab === '작성글') {
-          const res = await getUserPosts(userId);
-          setPosts(res.posts);
-          setCounts((prev) => ({ ...prev, posts: res.pagination.totalItems }));
+          const res = await getUserPosts(userId).catch(() => null);
+          setPosts(res?.posts ?? []);
+          setCounts((prev) => ({ ...prev, posts: res?.pagination?.totalItems ?? prev.posts }));
         } else if (activeTab === '댓글') {
-          const res = await getUserComments(userId);
-          setComments(res.comments);
-          setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
+          const res = await getUserComments(userId).catch(() => null);
+          setComments(res?.comments ?? []);
+          setCounts((prev) => ({ ...prev, comments: res?.meta?.totalItems ?? prev.comments }));
         } else if (activeTab === '이력서' && !resumeLoaded) {
           try {
             const res = await getPublicResume(userId);
