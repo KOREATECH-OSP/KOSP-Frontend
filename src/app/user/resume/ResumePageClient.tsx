@@ -78,6 +78,7 @@ interface ResumePageClientProps {
 export default function ResumePageClient({ session }: ResumePageClientProps) {
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -123,21 +124,21 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     experience?: unknown; projects?: unknown; awards?: unknown; certifications?: unknown;
     coverLetters?: unknown; customSections?: unknown; isPublic?: boolean; visibleSections?: Record<string, boolean>;
   }) => {
-    if (d.resumeTitle !== undefined) setResumeTitle(d.resumeTitle);
-    if (d.headline !== undefined) setHeadline(d.headline);
-    if (d.bio !== undefined) setBio(d.bio);
-    if (d.jobRole !== undefined) setJobRole(d.jobRole);
-    if (d.techStack !== undefined) setTechStack(d.techStack);
-    if (d.links !== undefined) setLinks(d.links as unknown as LinkItem[]);
-    if (d.education !== undefined) setEducation(d.education as unknown as EducationItem[]);
-    if (d.career !== undefined) setCareer(d.career as unknown as CareerItem[]);
-    if (d.experience !== undefined) setExperience(d.experience as unknown as ExperienceItem[]);
-    if (d.projects !== undefined) setProjects(d.projects as unknown as ProjectItem[]);
-    if (d.awards !== undefined) setAwards(d.awards as unknown as AwardItem[]);
-    if (d.certifications !== undefined) setCertifications(d.certifications as unknown as CertificationItem[]);
-    if (d.coverLetters !== undefined) setCoverLetters(d.coverLetters as unknown as CoverLetterItem[]);
-    if (d.customSections !== undefined) setCustomSections(d.customSections as unknown as CustomSectionItem[]);
-    if (d.isPublic !== undefined) setIsPublic(d.isPublic);
+    if (d.resumeTitle !== undefined) setResumeTitle(d.resumeTitle ?? '');
+    if (d.headline !== undefined) setHeadline(d.headline ?? '');
+    if (d.bio !== undefined) setBio(d.bio ?? '');
+    if (d.jobRole !== undefined) setJobRole(d.jobRole ?? '');
+    if (d.techStack !== undefined) setTechStack((d.techStack as unknown as string[]) ?? []);
+    if (d.links !== undefined) setLinks((d.links as unknown as LinkItem[]) ?? []);
+    if (d.education !== undefined) setEducation((d.education as unknown as EducationItem[]) ?? []);
+    if (d.career !== undefined) setCareer((d.career as unknown as CareerItem[]) ?? []);
+    if (d.experience !== undefined) setExperience((d.experience as unknown as ExperienceItem[]) ?? []);
+    if (d.projects !== undefined) setProjects((d.projects as unknown as ProjectItem[]) ?? []);
+    if (d.awards !== undefined) setAwards((d.awards as unknown as AwardItem[]) ?? []);
+    if (d.certifications !== undefined) setCertifications((d.certifications as unknown as CertificationItem[]) ?? []);
+    if (d.coverLetters !== undefined) setCoverLetters((d.coverLetters as unknown as CoverLetterItem[]) ?? []);
+    if (d.customSections !== undefined) setCustomSections((d.customSections as unknown as CustomSectionItem[]) ?? []);
+    if (d.isPublic !== undefined) setIsPublic(d.isPublic ?? false);
     if (d.visibleSections) setVisibleSections({ ...DEFAULT_VISIBLE_SECTIONS, ...d.visibleSections });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -151,11 +152,14 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         accessToken ? getMyResumes({ accessToken }).catch(() => null) : Promise.resolve(null),
       ]);
       if (profileData) setProfile(profileData);
-      if (listData) setResumeList(listData.resumes);
+      if (listData?.resumes) setResumeList(listData.resumes);
       if (resumeData?.resumeData) {
         if (resumeData.resumeId) setResumeId(resumeData.resumeId);
-        applyResumeData(resumeData.resumeData);
+        applyResumeData(resumeData.resumeData as unknown as Record<string, unknown>);
       }
+    } catch (err) {
+      console.error('[ResumePageClient] 초기 로딩 오류:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -352,6 +356,27 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     return (
       <div className="flex min-h-[500px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-[500px] flex-col items-center justify-center gap-4 text-center px-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+          <FileText className="h-8 w-8 text-red-300" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-700">이력서를 불러오는 데 실패했습니다.</p>
+          <p className="mt-1 text-xs text-gray-400">잠시 후 다시 시도해 주세요.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setLoadError(false); setIsLoading(true); fetchData(); }}
+          className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          다시 시도
+        </button>
       </div>
     );
   }

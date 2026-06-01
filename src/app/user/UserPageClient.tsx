@@ -1639,37 +1639,37 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                           }`}
                         >
                           {/* 이미지 영역 (80×80, 중앙 정렬) */}
-                          <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center">
-                            {/* 보유 시: 밝은 원형 배경 */}
-                            <div className={`absolute inset-0 rounded-full ${
+                          <div className="relative mx-auto mb-3 h-20 w-20">
+                            {/* 원형 클립 컨테이너: overflow-hidden으로 이미지 배경을 원형에 맞게 클리핑 */}
+                            <div className={`absolute inset-0 overflow-hidden rounded-full ${
                               isOwned ? 'bg-orange-50' : 'bg-gray-100'
-                            }`} />
-
-                            {imgSrc ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={imgSrc}
-                                alt={`${title.name} 칭호`}
-                                className={`relative h-16 w-16 object-contain transition-all ${
+                            }`}>
+                              {imgSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={imgSrc}
+                                  alt={`${title.name} 칭호`}
+                                  className={`h-full w-full object-contain transition-all ${
+                                    isOwned ? '' : 'opacity-30'
+                                  }`}
+                                />
+                              ) : (
+                                <span className={`flex h-full w-full items-center justify-center text-3xl leading-none ${
                                   isOwned ? '' : 'opacity-30'
-                                }`}
-                              />
-                            ) : (
-                              <span className={`relative text-3xl leading-none ${
-                                isOwned ? '' : 'opacity-30'
-                              }`}>
-                                {categoryEmoji}
-                              </span>
-                            )}
+                                }`}>
+                                  {categoryEmoji}
+                                </span>
+                              )}
 
-                            {/* 미획득: 잠금 오버레이 */}
-                            {!isOwned && (
-                              <div className="absolute inset-0 flex items-center justify-center rounded-full">
-                                <Lock className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
+                              {/* 미획득: 잠금 오버레이 */}
+                              {!isOwned && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Lock className="h-5 w-5 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
 
-                            {/* 대표 칭호: 왕관 뱃지 */}
+                            {/* 대표 칭호: 왕관 뱃지 (overflow-hidden 밖에 위치해 잘리지 않음) */}
                             {isDisplayTitle && (
                               <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-400 shadow-sm">
                                 <span className="text-[10px] leading-none">★</span>
