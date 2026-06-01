@@ -382,13 +382,13 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setProfile(profileData);
 
         const [postsRes, commentsRes, boardsRes] = await Promise.all([
-          getUserPosts(userId),
-          getUserComments(userId),
+          getUserPosts(userId).catch(() => null),
+          getUserComments(userId).catch(() => null),
           getBoards().catch(() => ({ boards: [] })),
         ]);
         setCounts({
-          posts: postsRes.pagination.totalItems,
-          comments: commentsRes.meta.totalItems,
+          posts: postsRes?.pagination?.totalItems ?? 0,
+          comments: commentsRes?.meta?.totalItems ?? 0,
           bookmarks: 0,
         });
         setBoards(boardsRes.boards);
@@ -439,32 +439,36 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           await fetchGithubData();
         } else if (activeTab === '포인트') {
           if (accessToken) {
-            const res = await getMyPointHistory({ accessToken }, pointPage, 10);
-            setPointHistory(res);
-            setPointTotalPages(res.meta?.totalPages || 1);
+            const res = await getMyPointHistory({ accessToken }, pointPage, 10).catch(() => null);
+            if (res) {
+              setPointHistory(res);
+              setPointTotalPages(res.meta?.totalPages || 1);
+            }
           }
         } else if (activeTab === '지원내역') {
           if (accessToken) {
-            const res = await getMyApplications({ accessToken }, applicationPage, 10);
-            setApplications(res.applications);
-            setApplicationTotalPages(res.meta?.totalPages || 1);
-            setApplicationTotalItems(res.meta?.totalItems || 0);
+            const res = await getMyApplications({ accessToken }, applicationPage, 10).catch(() => null);
+            if (res) {
+              setApplications(res.applications ?? []);
+              setApplicationTotalPages(res.meta?.totalPages || 1);
+              setApplicationTotalItems(res.meta?.totalItems || 0);
+            }
           }
         } else if (activeTab === '작성글') {
-          const res = await getUserPosts(userId, postPage, 10);
-          setPosts(res.posts);
-          setPostTotalPages(res.pagination.totalPages || 1);
-          setCounts((prev) => ({ ...prev, posts: res.pagination.totalItems }));
+          const res = await getUserPosts(userId, postPage, 10).catch(() => null);
+          setPosts(res?.posts ?? []);
+          setPostTotalPages(res?.pagination?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, posts: res?.pagination?.totalItems ?? prev.posts }));
         } else if (activeTab === '댓글') {
-          const res = await getUserComments(userId, commentPage, 10);
-          setComments(res.comments);
-          setCommentTotalPages(res.meta.totalPages || 1);
-          setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
+          const res = await getUserComments(userId, commentPage, 10).catch(() => null);
+          setComments(res?.comments ?? []);
+          setCommentTotalPages(res?.meta?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, comments: res?.meta?.totalItems ?? prev.comments }));
         } else if (activeTab === '즐겨찾기') {
-          const res = await getUserBookmarks(userId, bookmarkPage, 10);
-          setBookmarks(res.posts);
-          setBookmarkTotalPages(res.pagination?.totalPages || 1);
-          setCounts((prev) => ({ ...prev, bookmarks: res.pagination?.totalItems || res.posts.length }));
+          const res = await getUserBookmarks(userId, bookmarkPage, 10).catch(() => null);
+          setBookmarks(res?.posts ?? []);
+          setBookmarkTotalPages(res?.pagination?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, bookmarks: res?.pagination?.totalItems || res?.posts?.length || 0 }));
         }
       } catch (error) {
         console.error('Failed to fetch tab data:', error);
