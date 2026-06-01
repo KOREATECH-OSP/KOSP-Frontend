@@ -37,6 +37,8 @@ function LoginContent() {
 
       if (!result.success) {
         toast.error(result.error || '이메일 또는 비밀번호가 올바르지 않습니다');
+      } else if (result.needsTermsAgreement) {
+        router.push(`/terms-agreement?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       } else {
         toast.success('로그인되었습니다');
         router.push(callbackUrl);

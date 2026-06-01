@@ -6,6 +6,7 @@ import { COOKIE_NAMES } from '@/lib/auth/cookies';
 const PROTECTED_ROUTES = [
   '/admin',
   '/user/edit',
+  '/user/resume',
   '/team/create',
   '/community/write',
 ];
@@ -31,6 +32,7 @@ export const config = {
     // 보호된 라우트
     '/admin/:path*',
     '/user/edit/:path*',
+    '/user/resume/:path*',
     '/team/create/:path*',
     '/community/write/:path*',
   ],

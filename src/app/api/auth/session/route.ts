@@ -199,7 +199,10 @@ export async function POST(request: NextRequest) {
       accessTokenExpires,
     };
 
-    const response = NextResponse.json({ session });
+    const response = NextResponse.json({
+      session,
+      needsTermsAgreement: tokens.needsTermsAgreement ?? false,
+    });
 
     // httpOnly 쿠키 설정
     response.cookies.set(COOKIE_NAMES.ACCESS_TOKEN, tokens.accessToken, {

@@ -83,6 +83,17 @@ export interface UserSignupRequest {
   kutId: string;
   kutEmail: string;
   password: string;
+  termsVersion?: string;
+}
+
+// ============================================
+// Terms Types
+// ============================================
+
+export interface TermsResponse {
+  id: number;
+  version: string;
+  content: string;
 }
 
 export interface UserUpdateRequest {
@@ -621,6 +632,54 @@ export interface GlobalSearchResponse {
 }
 
 // ============================================
+// Title (칭호) Types
+// ============================================
+
+export interface UserTitleResponse {
+  userTitleId: number;
+  titleId: number;
+  titleName: string;
+  description: string;
+  category: string;
+  rarity: string;
+  iconUrl: string | null;
+  isDisplay: boolean;
+  grantSource: string;
+  grantedAt: string;
+}
+
+export interface UserTitleListResponse {
+  titles: UserTitleResponse[];
+  totalCount: number;
+}
+
+// ============================================
+// Title Catalog Types (전체 칭호 목록)
+// ============================================
+
+export interface TitleConditionInfo {
+  conditionType: string;
+  thresholdValue: number;
+  description: string | null;
+}
+
+export interface TitleDetailResponse {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  category: string;
+  rarity: string;
+  iconUrl: string | null;
+  conditions: TitleConditionInfo[];
+}
+
+export interface TitleCatalogListResponse {
+  titles: TitleDetailResponse[];
+  totalCount: number;
+}
+
+// ============================================
 // Report Types
 // ============================================
 
@@ -662,6 +721,85 @@ export interface ChallengeListResponse {
 }
 
 // ============================================
+// Season Ranking Types
+// ============================================
+
+/**
+ * 내 시즌 랭킹 응답 - /v1/seasons/current/rankings/me
+ */
+export interface MySeasonRankingResponse {
+  seasonName: string;
+  endDate: string; // "YYYY-MM-DD"
+  rank: number;
+  totalScore: number;
+  tier: string; // e.g. "BRONZE_4", "SILVER_2", "CHALLENGER"
+  attendanceScore: number;
+  commitScore: number;
+  challengeScore: number;
+  projectScore: number;
+  communityScore: number;
+}
+
+/**
+ * 내 GitHub 기여 점수 기반 랭킹 응답 - /v1/github/rankings/me
+ */
+export interface MyGithubRankingResponse {
+  rank: number;
+  totalScore: number;
+  activityScore: number;
+  diversityScore: number;
+  impactScore: number;
+}
+
+/**
+ * GitHub 기여 점수 기반 랭킹 엔트리 - /v1/github/rankings
+ */
+export interface GithubRankingEntry {
+  rank: number;
+  userId: number;
+  userName: string;
+  profileImageUrl: string | null;
+  totalScore: number;
+  activityScore: number;
+  diversityScore: number;
+  impactScore: number;
+}
+
+/**
+ * GitHub 기여 점수 기반 전체 랭킹 목록 응답
+ */
+export interface GithubRankingListResponse {
+  rankings: GithubRankingEntry[];
+  totalCount: number;
+  page: number;
+  size: number;
+}
+
+/**
+ * 전체 시즌 랭킹 엔트리 - /v1/seasons/current/rankings
+ */
+export interface SeasonRankingEntry {
+  rank: number;
+  userId: number;
+  userName: string;
+  profileImageUrl: string | null;
+  totalScore: number;
+  tier: string; // e.g. "BRONZE_4", "GOLD_2", "CHALLENGER"
+}
+
+/**
+ * 전체 시즌 랭킹 목록 응답
+ */
+export interface SeasonRankingListResponse {
+  seasonName: string;
+  endDate: string;
+  rankings: SeasonRankingEntry[];
+  totalCount: number;
+  page: number;
+  size: number;
+}
+
+// ============================================
 // Notification Types
 // ============================================
 
@@ -694,3 +832,139 @@ export interface NotificationListResponse {
 export interface UnreadCountResponse {
   count: number;
 }
+
+// ============================================
+// Resume Types
+// ============================================
+
+export interface ResumeLinkItem {
+  id: string;
+  label: string;
+  url: string;
+}
+
+export interface ResumeEducationItem {
+  id: string;
+  school: string;
+  major: string;
+  period: string;
+}
+
+export interface ResumeCareerItem {
+  id: string;
+  company: string;
+  role: string;
+  period: string;
+}
+
+export interface ResumeExperienceItem {
+  id: string;
+  title: string;
+  description: string;
+  period: string;
+}
+
+export interface ResumeProjectItem {
+  id: string;
+  name: string;
+  period: string;
+  summary: string;
+  role: string;
+  techStack: string;
+  mainFeatures: string;
+  myContributions: string;
+  problemSolving: string;
+  result: string;
+  githubLink: string;
+  deployLink: string;
+  docLink: string;
+  featured: string;
+}
+
+export interface ResumeAwardItem {
+  id: string;
+  name: string;
+  organization: string;
+  date: string;
+  relatedProject: string;
+  description: string;
+}
+
+export interface ResumeCertificationItem {
+  id: string;
+  name: string;
+  organization: string;
+  date: string;
+  /** 'ACQUIRED' | 'EXPIRED' */
+  status: string;
+}
+
+export interface ResumeCoverLetterItem {
+  id: string;
+  title: string;
+  content: string;
+}
+
+/** 커스텀 섹션 내 개별 필드 */
+export interface ResumeCustomField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/** 사용자 정의 이력서 섹션 */
+export interface ResumeCustomSection {
+  id: string;
+  title: string;
+  fields: ResumeCustomField[];
+}
+
+/** 서버에 저장/조회되는 이력서 데이터 구조 */
+export interface ResumeData {
+  resumeTitle: string;
+  headline: string;
+  bio: string;
+  jobRole: string;
+  techStack: string[];
+  links: ResumeLinkItem[];
+  education: ResumeEducationItem[];
+  career: ResumeCareerItem[];
+  experience: ResumeExperienceItem[];
+  projects: ResumeProjectItem[];
+  awards: ResumeAwardItem[];
+  certifications: ResumeCertificationItem[];
+  coverLetters: ResumeCoverLetterItem[];
+  /** 사용자 정의 커스텀 섹션 */
+  customSections?: ResumeCustomSection[];
+  isPublic: boolean;
+  /** 이력서에 표시할 섹션 목록. 키: SECTION_ANCHORS의 id 값. undefined이면 전체 표시. */
+  visibleSections?: Record<string, boolean>;
+}
+
+/** GET /v1/users/me/resume, GET /v1/users/me/resumes/:id 응답 */
+export interface ResumeResponse {
+  resumeId: number | null;
+  userId: number;
+  isDefault: boolean;
+  /** 저장된 이력서가 없으면 null */
+  resumeData: ResumeData | null;
+  updatedAt: string | null;
+}
+
+/** GET /v1/users/me/resumes 목록 항목 */
+export interface ResumeSummaryResponse {
+  resumeId: number;
+  resumeTitle: string | null;
+  isDefault: boolean;
+  isPublic: boolean;
+  updatedAt: string;
+}
+
+/** GET /v1/users/me/resumes 응답 */
+export interface ResumeListResponse {
+  resumes: ResumeSummaryResponse[];
+  totalCount: number;
+}
+
+/** POST /v1/users/me/resume 요청 */
+export type ResumeSaveRequest = ResumeData;

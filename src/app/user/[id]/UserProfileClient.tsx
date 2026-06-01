@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Trophy,
 } from 'lucide-react';
 import {
   getUserPosts,
@@ -32,6 +33,8 @@ import {
   getUserGithubRecentActivity,
   getUserGithubContributionScore,
   getUserGithubContributionComparison,
+  getUserTitles,
+  getPublicResume,
 } from '@/lib/api/user';
 import type {
   ArticleResponse,
@@ -41,9 +44,26 @@ import type {
   GithubRecentActivityResponse,
   GithubContributionScoreResponse,
   GithubContributionComparisonResponse,
+  UserTitleResponse,
+  ResumeData,
 } from '@/lib/api/types';
+import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
+
+const TITLE_CATEGORY_EMOJI: Record<string, string> = {
+  COMMIT: '✏️',
+  STREAK: '🔥',
+  CHALLENGE: '🏆',
+  COLLABORATION: '🤝',
+  COMMUNITY: '💬',
+  INFLUENCE: '⭐',
+  PROJECT: '📁',
+  OPEN_SOURCE: '🐙',
+  SEASON: '🌟',
+  HONOR: '👑',
+  ATTENDANCE: '📅',
+};
 
 interface UserProfileClientProps {
   userId: number;
@@ -54,7 +74,7 @@ interface UserProfileClientProps {
   };
 }
 
-type TabType = '활동' | '작성글' | '댓글';
+type TabType = '활동' | '작성글' | '댓글' | '이력서';
 
 export default function UserProfileClient({
   userId,
@@ -72,22 +92,30 @@ export default function UserProfileClient({
   const [comparison, setComparison] = useState<GithubContributionComparisonResponse | null>(null);
 
   const [counts, setCounts] = useState(initialCounts);
+  const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 이력서 상태
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [resumeLoaded, setResumeLoaded] = useState(false);
+  const [resumePrivate, setResumePrivate] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
   const recentRepositoryCount = recentActivity.length;
 
   const fetchGithubData = useCallback(async () => {
-    const [historyRes, activityRes, scoreRes, comparisonRes] = await Promise.all([
+    const [historyRes, activityRes, scoreRes, comparisonRes, titlesRes] = await Promise.all([
       getUserGithubOverallHistory(userId).catch(() => null),
       getUserGithubRecentActivity(userId).catch(() => []),
       getUserGithubContributionScore(userId).catch(() => null),
       getUserGithubContributionComparison(userId).catch(() => null),
+      getUserTitles(userId).catch(() => null),
     ]);
 
     if (historyRes) setOverallHistory(historyRes);
     if (activityRes) setRecentActivity(activityRes);
     if (scoreRes) setContributionScore(scoreRes);
     if (comparisonRes) setComparison(comparisonRes);
+    if (titlesRes) setDisplayTitle(titlesRes.titles.find((t) => t.isDisplay) ?? null);
   }, [userId]);
 
   useEffect(() => {
@@ -110,13 +138,23 @@ export default function UserProfileClient({
         if (activeTab === '활동') {
           await fetchGithubData();
         } else if (activeTab === '작성글') {
-          const res = await getUserPosts(userId);
-          setPosts(res.posts);
-          setCounts((prev) => ({ ...prev, posts: res.pagination.totalItems }));
+          const res = await getUserPosts(userId).catch(() => null);
+          setPosts(res?.posts ?? []);
+          setCounts((prev) => ({ ...prev, posts: res?.pagination?.totalItems ?? prev.posts }));
         } else if (activeTab === '댓글') {
-          const res = await getUserComments(userId);
-          setComments(res.comments);
-          setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
+          const res = await getUserComments(userId).catch(() => null);
+          setComments(res?.comments ?? []);
+          setCounts((prev) => ({ ...prev, comments: res?.meta?.totalItems ?? prev.comments }));
+        } else if (activeTab === '이력서' && !resumeLoaded) {
+          try {
+            const res = await getPublicResume(userId);
+            setResumeData(res.resumeData);
+            setResumePrivate(false);
+          } catch {
+            setResumePrivate(true);
+          } finally {
+            setResumeLoaded(true);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch tab data:', error);
@@ -148,6 +186,7 @@ export default function UserProfileClient({
     { key: '활동', label: '활동', icon: <Activity className="h-4 w-4" /> },
     { key: '작성글', label: '작성한 글', icon: <FileText className="h-4 w-4" /> },
     { key: '댓글', label: '작성한 댓글', icon: <MessageCircle className="h-4 w-4" /> },
+    { key: '이력서', label: '이력서', icon: <FileText className="h-4 w-4" /> },
   ];
 
   return (
@@ -185,7 +224,29 @@ export default function UserProfileClient({
                 </div>
               </div>
 
-              <h1 className="mb-1 text-xl font-bold text-gray-900">{profile.name}</h1>
+              <div className="mb-1 flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-gray-900">{profile.name}</h1>
+                {/* 대표 칭호 (보기 전용) */}
+                {displayTitle && (
+                  <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 border border-amber-100">
+                    {displayTitle.iconUrl ? (
+                      <span className="inline-flex h-3.5 w-3.5 overflow-hidden rounded-full">
+                        <img
+                          src={displayTitle.iconUrl}
+                          alt={displayTitle.titleName}
+                          className="h-full w-full object-contain"
+                          onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </span>
+                    ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                      <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                    ) : (
+                      <Trophy className="h-3 w-3 text-amber-500" />
+                    )}
+                    <span className="text-xs font-medium text-amber-600">{displayTitle.titleName}</span>
+                  </div>
+                )}
+              </div>
 
               {profile.introduction && (
                 <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>
@@ -597,6 +658,28 @@ export default function UserProfileClient({
                     </Link>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* 이력서 탭 */}
+          {activeTab === '이력서' && (
+            <div>
+              {!resumeLoaded ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : resumePrivate || !resumeData ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
+                  <FileText className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-sm font-medium text-gray-500">비공개 이력서입니다.</p>
+                </div>
+              ) : (
+                <ResumeReadOnlyView
+                  data={resumeData}
+                  profileImageUrl={profile.profileImage}
+                  visibleSections={resumeData.visibleSections}
+                />
               )}
             </div>
           )}

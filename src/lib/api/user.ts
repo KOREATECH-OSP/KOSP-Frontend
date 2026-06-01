@@ -19,6 +19,16 @@ import type {
   AuthTokenResponse,
   MyPointHistoryResponse,
   MyApplicationListResponse,
+  UserTitleListResponse,
+  UserTitleResponse,
+  MySeasonRankingResponse,
+  MyGithubRankingResponse,
+  SeasonRankingListResponse,
+  GithubRankingListResponse,
+  ResumeResponse,
+  ResumeListResponse,
+  ResumeSaveRequest,
+  TitleCatalogListResponse,
 } from './types';
 
 interface AuthOptions {
@@ -248,6 +258,206 @@ export async function getMyPointHistory(
       },
     }
   );
+}
+
+// ============================================
+// Title (칭호) APIs
+// ============================================
+
+/**
+ * 특정 유저의 칭호 목록 조회 (공개)
+ */
+export async function getUserTitles(userId: number): Promise<UserTitleListResponse> {
+  return apiClient<UserTitleListResponse>(`/v1/users/${userId}/titles`, {
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 내 칭호 목록 조회 (인증 필요)
+ */
+export async function getMyTitles(auth: AuthOptions): Promise<UserTitleListResponse> {
+  return clientApiClient<UserTitleListResponse>('/v1/users/me/titles', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 대표 칭호 설정 (인증 필요)
+ */
+export async function setDisplayTitle(
+  userTitleId: number,
+  auth: AuthOptions
+): Promise<UserTitleResponse> {
+  return clientApiClient<UserTitleResponse>(`/v1/users/me/titles/${userTitleId}/display`, {
+    method: 'PUT',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 GitHub 기여 점수 기반 랭킹 조회 (인증 필요)
+ */
+export async function getMyGithubRanking(auth: AuthOptions): Promise<MyGithubRankingResponse> {
+  return clientApiClient<MyGithubRankingResponse>('/v1/github/rankings/me', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 시즌 랭킹 조회 (인증 필요)
+ */
+export async function getMySeasonRanking(auth: AuthOptions): Promise<MySeasonRankingResponse> {
+  return clientApiClient<MySeasonRankingResponse>('/v1/seasons/current/rankings/me', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * GitHub 기여 점수 기반 전체 랭킹 조회 (공개 API)
+ */
+export async function getGithubRankings(params?: {
+  page?: number;
+  size?: number;
+}): Promise<GithubRankingListResponse> {
+  const page = params?.page ?? 0;
+  const size = params?.size ?? 50;
+  return apiClient<GithubRankingListResponse>(
+    `/v1/github/rankings?page=${page}&size=${size}`,
+    { cache: 'no-store' },
+  );
+}
+
+/**
+ * 시즌 전체 랭킹 조회 (공개 API)
+ */
+export async function getSeasonRankings(params?: {
+  page?: number;
+  size?: number;
+}): Promise<SeasonRankingListResponse> {
+  const page = params?.page ?? 0;
+  const size = params?.size ?? 50;
+  return apiClient<SeasonRankingListResponse>(
+    `/v1/seasons/current/rankings?page=${page}&size=${size}`,
+    { cache: 'no-store' },
+  );
+}
+
+// ============================================
+// Resume APIs (이력서)
+// ============================================
+
+/**
+ * 활성화된 전체 칭호 목록 조회 (인증 불필요)
+ * 칭호명, 등급, 카테고리, 달성 조건 포함
+ */
+export async function getAllTitles(): Promise<TitleCatalogListResponse> {
+  return apiClient<TitleCatalogListResponse>('/v1/titles', {
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 특정 사용자의 공개 이력서 조회 (인증 불필요)
+ * 비공개이거나 없으면 404 ApiException 발생
+ */
+export async function getPublicResume(userId: number): Promise<ResumeResponse> {
+  return apiClient<ResumeResponse>(`/v1/users/${userId}/resume`, {
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 내 이력서 조회
+ * 저장된 이력서가 없으면 resumeData: null 반환
+ */
+export async function getMyResume(auth: AuthOptions): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>('/v1/users/me/resume', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 이력서 저장 (upsert)
+ * 이미 있으면 update, 없으면 create
+ */
+export async function saveMyResume(
+  data: ResumeSaveRequest,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>('/v1/users/me/resume', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// 다중 이력서 APIs
+// ============================================
+
+/** 내 전체 이력서 목록 조회 */
+export async function getMyResumes(auth: AuthOptions): Promise<ResumeListResponse> {
+  return clientApiClient<ResumeListResponse>('/v1/users/me/resumes', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 새 이력서 생성 */
+export async function createResume(
+  data: ResumeSaveRequest,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>('/v1/users/me/resumes', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 특정 이력서 단건 조회 */
+export async function getMyResumeById(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>(`/v1/users/me/resumes/${resumeId}`, {
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 특정 이력서 수정 */
+export async function updateResumeById(
+  resumeId: number,
+  data: ResumeSaveRequest,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>(`/v1/users/me/resumes/${resumeId}`, {
+    method: 'PUT',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 특정 이력서 삭제 */
+export async function deleteResumeById(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/users/me/resumes/${resumeId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 기본 이력서 설정 */
+export async function setDefaultResume(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<ResumeResponse> {
+  return clientApiClient<ResumeResponse>(`/v1/users/me/resumes/${resumeId}/default`, {
+    method: 'PATCH',
+    accessToken: auth.accessToken,
+  });
 }
 
 /**

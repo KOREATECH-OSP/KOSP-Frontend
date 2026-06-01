@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import StepIndicator from './StepIndicator';
 import GithubStep from './GithubStep';
 import InfoStep from './InfoStep';
+import TermsStep from './TermsStep';
 import VerificationStep from './VerificationStep';
 import CompleteStep from './CompleteStep';
 import { useFunnel, Funnel } from '@/common/hooks/useFunnel';
@@ -22,7 +23,7 @@ import {
 import { signup } from '@/lib/api/user';
 import { ApiException } from '@/lib/api/client';
 
-const SIGNUP_STEPS = ['github', 'info', 'verification', 'complete'] as const;
+const SIGNUP_STEPS = ['terms', 'github', 'info', 'verification', 'complete'] as const;
 
 function SignupContent() {
   const router = useRouter();
@@ -32,10 +33,11 @@ function SignupContent() {
   const stepParam = searchParams.get('step');
 
   const [currentStep, setStep] = useFunnel(SIGNUP_STEPS, {
-    initialStep: 'github',
+    initialStep: 'terms',
   });
 
   const [signupToken, setSignupToken] = useState<string | null>(null);
+  const [agreedTermsVersion, setAgreedTermsVersion] = useState<string | null>(null);
   const [isTokenVerifying, setIsTokenVerifying] = useState(!!signupTokenParam);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [memberType, setMemberType] = useState<'student' | 'staff'>('student');
@@ -73,6 +75,10 @@ function SignupContent() {
       try {
         await validateSignupToken(signupTokenParam);
         setSignupToken(signupTokenParam);
+        const savedTermsVersion = window.sessionStorage.getItem('kosp:signup-terms-version');
+        if (savedTermsVersion) {
+          setAgreedTermsVersion(savedTermsVersion);
+        }
         if (stepParam === 'info') {
           setStep('info');
         } else if (stepParam === 'github') {
@@ -207,6 +213,12 @@ function SignupContent() {
     setStep('verification');
   };
 
+  const handleTermsAgree = (version: string) => {
+    setAgreedTermsVersion(version);
+    window.sessionStorage.setItem('kosp:signup-terms-version', version);
+    setStep('github');
+  };
+
   const handleSignup = async () => {
     if (!signupToken) {
       toast.error('GitHub 연동이 필요해요');
@@ -221,6 +233,7 @@ function SignupContent() {
         kutId: formData.studentId,
         kutEmail: formData.email,
         password: formData.password,
+        termsVersion: agreedTermsVersion ?? undefined,
       }, signupToken);
 
       const result = await loginWithTokens(tokenResponse.accessToken, tokenResponse.refreshToken);
@@ -231,6 +244,7 @@ function SignupContent() {
         return;
       }
 
+      window.sessionStorage.removeItem('kosp:signup-terms-version');
       setStep('complete');
     } catch (err) {
       if (err instanceof ApiException) {
@@ -254,6 +268,7 @@ function SignupContent() {
   const handleBackToInfo = () => {
     setStep('info');
   };
+
 
   if (isTokenVerifying) {
     return (
@@ -305,6 +320,13 @@ function SignupContent() {
         )}
 
         <Funnel step={currentStep}>
+          <Funnel.Step name="terms">
+            <StepIndicator currentStep="terms" />
+            <TermsStep
+              onAgree={handleTermsAgree}
+            />
+          </Funnel.Step>
+
           <Funnel.Step name="github">
             <StepIndicator currentStep="github" />
             <GithubStep

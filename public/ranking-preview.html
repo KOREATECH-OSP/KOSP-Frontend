@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>랭킹 시안 C</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; }
+
+    /* ── 헤더 ── */
+    .page-header {
+      background: white;
+      border-bottom: 1px solid #f1f5f9;
+      padding: 20px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-header h1 { font-size: 22px; font-weight: 800; color: #0f172a; }
+    .page-header p { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+    .btn-criteria {
+      border: 1px solid #e2e8f0; background: white; border-radius: 8px;
+      padding: 7px 13px; font-size: 12px; color: #64748b; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ── 바디 ── */
+    .body { max-width: 860px; margin: 0 auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── 내 랭킹 배너 ── */
+    .my-rank {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border: 1px solid #fde68a; border-radius: 14px;
+      padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .my-rank-left { display: flex; align-items: center; gap: 14px; }
+    .my-rank-num { font-size: 30px; font-weight: 900; color: #92400e; line-height: 1; }
+    .my-rank-label { font-size: 11px; font-weight: 600; color: #b45309; }
+    .my-rank-info { font-size: 13px; font-weight: 700; color: #92400e; }
+    .my-rank-sub { font-size: 11px; color: #d97706; margin-top: 2px; }
+    .my-rank-right { text-align: right; }
+    .my-rank-score { font-size: 26px; font-weight: 900; color: #92400e; }
+    .my-rank-max { font-size: 11px; color: #d97706; margin-top: 2px; }
+
+    /* 진행 바 */
+    .my-rank-bar-wrap { margin-top: 12px; }
+    .my-rank-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: #d97706; margin-bottom: 5px; }
+    .my-rank-bar-track { height: 6px; background: #fde68a; border-radius: 99px; overflow: hidden; }
+    .my-rank-bar-fill { height: 100%; width: 62%; background: linear-gradient(90deg, #f0a800, #d97706); border-radius: 99px; }
+
+    /* ── 포디움 ── */
+    .podium-section {
+      background: white; border-radius: 16px;
+      border: 1px solid #f1f5f9; overflow: hidden;
+    }
+    .podium-section-title {
+      padding: 14px 20px 0;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .podium-wrap {
+      display: flex; align-items: flex-end; justify-content: center;
+      gap: 8px; padding: 20px 24px 0;
+    }
+    .podium-col { display: flex; flex-direction: column; align-items: center; }
+    .podium-info { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 10px; }
+    .podium-avatar { border-radius: 50%; background: #e2e8f0; flex-shrink: 0; }
+    .podium-name { font-size: 12px; font-weight: 700; color: #0f172a; }
+    .podium-score { font-size: 11px; color: #94a3b8; }
+    .podium-block {
+      border-radius: 10px 10px 0 0; width: 130px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 900; color: rgba(255,255,255,0.35);
+    }
+    .p1 { height: 88px; background: linear-gradient(180deg, #f0a800, #d4890a); }
+    .p2 { height: 60px; background: linear-gradient(180deg, #94a3b8, #64748b); }
+    .p3 { height: 44px; background: linear-gradient(180deg, #c2813a, #9a5f22); }
+
+    /* ── 탭 (포디움 아래, 테이블 위) ── */
+    .tab-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 0; border-top: 1px solid #f8fafc;
+    }
+    .tabs {
+      display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px;
+    }
+    .tabs button {
+      padding: 7px 18px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: #94a3b8; background: transparent; transition: all .15s;
+    }
+    .tabs button.active { background: white; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .tab-count { font-size: 12px; color: #94a3b8; }
+
+    /* ── 검색 ── */
+    .search-wrap {
+      padding: 12px 20px 14px; border-top: 1px solid #f8fafc;
+    }
+    .search-input {
+      width: 100%; padding: 8px 14px 8px 36px;
+      border: 1px solid #e2e8f0; border-radius: 9px;
+      font-size: 13px; color: #0f172a; background: #f8fafc;
+      outline: none;
+    }
+    .search-wrap { position: relative; }
+    .search-icon { position: absolute; left: 34px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+
+    /* ── 랭킹 테이블 ── */
+    .table-wrap { border-top: 1px solid #f8fafc; }
+    .table-header {
+      display: grid; grid-template-columns: 52px 1fr 120px 80px;
+      padding: 10px 20px; background: #f8fafc;
+      font-size: 11px; color: #94a3b8; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .table-row {
+      display: grid; grid-template-columns: 52px 1fr 120px 80px;
+      padding: 13px 20px; border-top: 1px solid #f8fafc; align-items: center;
+      transition: background .1s;
+    }
+    .table-row:hover { background: #f8fafc; }
+    .table-row.is-me { background: #fffbeb; }
+    .table-row.is-me:hover { background: #fef9ee; }
+
+    .rank-num { font-size: 14px; font-weight: 800; color: #cbd5e1; }
+    .rank-num.gold   { color: #f0a800; }
+    .rank-num.silver { color: #94a3b8; }
+    .rank-num.bronze { color: #b45309; }
+
+    .user { display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: #f1f5f9; flex-shrink: 0; }
+    .user-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+    .me-tag { font-size: 10px; background: #fef3c7; color: #d97706; padding: 1px 6px; border-radius: 99px; font-weight: 700; margin-left: 4px; }
+
+    .tier-pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+    .t-gold     { background: #fef9c3; color: #a16207; }
+    .t-plat     { background: #e0f2fe; color: #0369a1; }
+    .t-silver   { background: #f1f5f9; color: #475569; }
+    .t-bronze   { background: #fef3e2; color: #92400e; }
+
+    .score { font-size: 13px; font-weight: 800; color: #0f172a; }
+    .score small { font-weight: 400; color: #94a3b8; font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="page-header">
+  <div>
+    <h1>🏆 랭킹</h1>
+    <p>매일 04:00 업데이트</p>
+  </div>
+  <button class="btn-criteria">ℹ 랭킹 기준</button>
+</div>
+
+<div class="body">
+
+  <!-- 내 랭킹 배너 -->
+  <div class="my-rank">
+    <div class="my-rank-left">
+      <div>
+        <div class="my-rank-label">내 순위</div>
+        <div class="my-rank-num">7위</div>
+      </div>
+      <div>
+        <div class="my-rank-info">나의 시즌 랭킹</div>
+        <div class="my-rank-sub">GOLD 2 · 다음 티어까지 3.2pt</div>
+        <div class="my-rank-bar-wrap">
+          <div class="my-rank-bar-track" style="width:180px;margin-top:8px;">
+            <div class="my-rank-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="my-rank-right">
+      <div class="my-rank-score">62.8pt</div>
+      <div class="my-rank-max">/ 100pt</div>
+    </div>
+  </div>
+
+  <!-- 포디움 + 탭 + 테이블 (하나의 카드) -->
+  <div class="podium-section">
+
+    <!-- 포디움 -->
+    <div class="podium-section-title">🥇 상위권</div>
+    <div class="podium-wrap">
+      <!-- 2위 -->
+      <div class="podium-col">
+        <div class="podium-info">
+          <svg viewBox="0 0 100 115" width="34" height="40"><path d="M 50 10 C 60 11.5,93 22,95 32 C 95 44,95 60,93 78 C 86 94,69 107,50 112 C 31 107,14 94,7 78 C 5 60,5 44,5 32 C 7 22,40 11.5,50 10 Z" fill="#9CA3AF"/><text x="50" y="58" text-anchor="middle" dominant-baseline="central" fill="white" font-weight="bold" font-size="54" font-family="-apple-system,sans-serif">2</text></svg>
+          <div class="podium-avatar" style="width:44px;height:44px;"></div>
+          <div class="podium-name">김민준</div>
+          <div class="podium-score">87.4pt</div>
+        </div>
+        <div class="podium-block p2">2</div>
+      </div>
+      <!-- 1위 -->
+      <div class="podium-col">
+        <div class="podium-info">
+          <svg viewBox="0 0 100 115" width="44" height="51"><path d="M 50 10 C 60 11.5,93 22,95 32 C 95 44,95 60,93 78 C 86 94,69 107,50 112 C 31 107,14 94,7 78 C 5 60,5 44,5 32 C 7 22,40 11.5,50 10 Z" fill="#F0A800"/><text x="50" y="58" text-anchor="middle" dominant-baseline="central" fill="white" font-weight="bold" font-size="54" font-family="-apple-system,sans-serif">1</text></svg>
+          <div class="podium-avatar" style="width:56px;height:56px;"></div>
+          <div class="podium-name" style="font-size:14px;font-weight:800;">박서연</div>
+          <div class="podium-score" style="color:#f0a800;font-weight:700;">96.2pt</div>
+        </div>
+        <div class="podium-block p1">1</div>
+      </div>
+      <!-- 3위 -->
+      <div class="podium-col">
+        <div class="podium-info">
+          <svg viewBox="0 0 100 115" width="34" height="40"><path d="M 50 10 C 60 11.5,93 22,95 32 C 95 44,95 60,93 78 C 86 94,69 107,50 112 C 31 107,14 94,7 78 C 5 60,5 44,5 32 C 7 22,40 11.5,50 10 Z" fill="#B45309"/><text x="50" y="58" text-anchor="middle" dominant-baseline="central" fill="white" font-weight="bold" font-size="54" font-family="-apple-system,sans-serif">3</text></svg>
+          <div class="podium-avatar" style="width:44px;height:44px;"></div>
+          <div class="podium-name">이도현</div>
+          <div class="podium-score">81.8pt</div>
+        </div>
+        <div class="podium-block p3">3</div>
+      </div>
+    </div>
+
+    <!-- 탭 (포디움 아래, 테이블 바로 위) -->
+    <div class="tab-bar">
+      <div class="tabs">
+        <button class="active">시즌 랭킹</button>
+        <button>전체 랭킹</button>
+      </div>
+      <span class="tab-count">총 284명</span>
+    </div>
+
+    <!-- 검색 -->
+    <div class="search-wrap" style="padding:12px 20px 0;">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" placeholder="사용자 검색..." />
+    </div>
+
+    <!-- 테이블 -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <span>순위</span><span>사용자</span><span>티어</span><span>점수</span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num gold">1</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">박서연</span></div>
+        <span><span class="tier-pill t-gold">GOLD 1</span></span>
+        <span class="score">96.2<small>pt</small></span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num silver">2</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">김민준</span></div>
+        <span><span class="tier-pill t-plat">PLATINUM 2</span></span>
+        <span class="score">87.4<small>pt</small></span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num bronze">3</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">이도현</span></div>
+        <span><span class="tier-pill t-plat">PLATINUM 1</span></span>
+        <span class="score">81.8<small>pt</small></span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num">4</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">최유나</span></div>
+        <span><span class="tier-pill t-silver">SILVER 1</span></span>
+        <span class="score">74.1<small>pt</small></span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num">5</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">정승우</span></div>
+        <span><span class="tier-pill t-silver">SILVER 2</span></span>
+        <span class="score">68.5<small>pt</small></span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num">6</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">한지수</span></div>
+        <span><span class="tier-pill t-silver">SILVER 3</span></span>
+        <span class="score">65.3<small>pt</small></span>
+      </div>
+      <!-- 내 행 -->
+      <div class="table-row is-me">
+        <span class="rank-num" style="color:#d97706;">7</span>
+        <div class="user">
+          <div class="user-avatar" style="background:#fde68a;"></div>
+          <span class="user-name">나<span class="me-tag">나</span></span>
+        </div>
+        <span><span class="tier-pill" style="background:#fef9c3;color:#a16207;">GOLD 2</span></span>
+        <span class="score" style="color:#d97706;">62.8<small>pt</small></span>
+      </div>
+      <div class="table-row">
+        <span class="rank-num">8</span>
+        <div class="user"><div class="user-avatar"></div><span class="user-name">오지훈</span></div>
+        <span><span class="tier-pill t-bronze">BRONZE 1</span></span>
+        <span class="score">61.3<small>pt</small></span>
+      </div>
+    </div>
+
+  </div><!-- /podium-section -->
+
+</div><!-- /body -->
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { AuthSession } from '@/lib/auth/types';
@@ -31,6 +31,7 @@ import {
   Link as LinkIcon,
   Users,
   Trophy,
+  Lock,
 } from 'lucide-react';
 import Pagination from '@/common/components/Pagination';
 import {
@@ -44,6 +45,12 @@ import {
   getUserGithubContributionComparison,
   getMyPointHistory,
   getMyApplications,
+  getMyTitles,
+  setDisplayTitle as setDisplayTitleApi,
+  getMySeasonRanking,
+  getMyResume,
+  saveMyResume,
+  getAllTitles,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
@@ -59,14 +66,149 @@ import type {
   MyPointHistoryResponse,
   MyApplicationResponse,
   BoardResponse,
+  UserTitleResponse,
+  MySeasonRankingResponse,
+  TitleDetailResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
+import { TITLE_CATEGORY_EMOJI, RARITY_LABELS, RARITY_COLORS, getTitleImage } from '@/lib/constants/title';
+
+// ─── 시즌 랭킹 카드 ───────────────────────────────────────────
+const SEASON_TIER_LABELS: Record<string, string> = {
+  BRONZE_4: '브론즈 4', BRONZE_3: '브론즈 3', BRONZE_2: '브론즈 2', BRONZE_1: '브론즈 1',
+  SILVER_4: '실버 4',   SILVER_3: '실버 3',   SILVER_2: '실버 2',   SILVER_1: '실버 1',
+  GOLD_4:   '골드 4',   GOLD_3:   '골드 3',   GOLD_2:   '골드 2',   GOLD_1:   '골드 1',
+  PLATINUM_4: '플래티넘 4', PLATINUM_3: '플래티넘 3', PLATINUM_2: '플래티넘 2', PLATINUM_1: '플래티넘 1',
+  DIAMOND_4: '다이아몬드 4', DIAMOND_3: '다이아몬드 3', DIAMOND_2: '다이아몬드 2', DIAMOND_1: '다이아몬드 1',
+  MASTER_4: '마스터 4', MASTER_3: '마스터 3', MASTER_2: '마스터 2', MASTER_1: '마스터 1',
+  CHALLENGER: '챌린저',
+};
+
+const SEASON_TIER_THRESHOLDS: Record<string, [number, number]> = {
+  BRONZE_4: [0, 2.5],       BRONZE_3: [2.5, 5],     BRONZE_2: [5, 7.5],       BRONZE_1: [7.5, 10],
+  SILVER_4: [10, 12.5],     SILVER_3: [12.5, 15],   SILVER_2: [15, 17.5],     SILVER_1: [17.5, 20],
+  GOLD_4:   [20, 23.75],    GOLD_3:   [23.75, 27.5], GOLD_2:  [27.5, 31.25],  GOLD_1:   [31.25, 35],
+  PLATINUM_4: [35, 40],     PLATINUM_3: [40, 45],   PLATINUM_2: [45, 50],     PLATINUM_1: [50, 55],
+  DIAMOND_4: [55, 60],      DIAMOND_3: [60, 65],    DIAMOND_2: [65, 70],      DIAMOND_1: [70, 75],
+  MASTER_4: [75, 78.75],    MASTER_3: [78.75, 82.5], MASTER_2: [82.5, 86.25], MASTER_1: [86.25, 90],
+  CHALLENGER: [90, 100],
+};
+
+function getTierColor(tier: string): string {
+  if (tier.startsWith('BRONZE'))   return 'text-amber-700';
+  if (tier.startsWith('SILVER'))   return 'text-slate-500';
+  if (tier.startsWith('GOLD'))     return 'text-yellow-500';
+  if (tier.startsWith('PLATINUM')) return 'text-teal-500';
+  if (tier.startsWith('DIAMOND'))  return 'text-blue-500';
+  if (tier.startsWith('MASTER'))   return 'text-purple-600';
+  if (tier === 'CHALLENGER')       return 'text-rose-500';
+  return 'text-gray-600';
+}
+
+function getTierBarColor(tier: string): string {
+  if (tier.startsWith('BRONZE'))   return 'bg-amber-600';
+  if (tier.startsWith('SILVER'))   return 'bg-slate-400';
+  if (tier.startsWith('GOLD'))     return 'bg-yellow-400';
+  if (tier.startsWith('PLATINUM')) return 'bg-teal-400';
+  if (tier.startsWith('DIAMOND'))  return 'bg-blue-400';
+  if (tier.startsWith('MASTER'))   return 'bg-purple-500';
+  if (tier === 'CHALLENGER')       return 'bg-rose-500';
+  return 'bg-gray-400';
+}
+
+const SEASON_CATEGORIES = [
+  { key: 'attendanceScore', label: '출석',    color: 'bg-blue-400' },
+  { key: 'commitScore',     label: '커밋',    color: 'bg-green-400' },
+  { key: 'challengeScore',  label: '챌린지',  color: 'bg-orange-400' },
+  { key: 'projectScore',    label: '프로젝트', color: 'bg-purple-400' },
+  { key: 'communityScore',  label: '커뮤니티', color: 'bg-pink-400' },
+] as const;
+
+function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
+  const { tier, totalScore, rank, seasonName } = ranking;
+  const [min, max] = SEASON_TIER_THRESHOLDS[tier] ?? [0, 100];
+  const progress = max === min ? 100 : Math.min(100, ((totalScore - min) / (max - min)) * 100);
+  const remaining = max === 100 ? 0 : Math.max(0, max - totalScore);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+      {/* 헤더 */}
+      <div className="border-b border-gray-100 px-5 py-4">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <Trophy className="h-4 w-4 text-gray-500" />
+          시즌 랭킹
+          <span className="ml-auto text-[11px] text-gray-400">{seasonName}</span>
+        </h2>
+      </div>
+
+      <div className="px-5 py-4 space-y-4">
+        {/* 티어 + 순위 */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className={`text-2xl font-bold ${getTierColor(tier)}`}>
+              {SEASON_TIER_LABELS[tier] ?? tier}
+            </p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              총점 {totalScore.toFixed(1)}점
+              {remaining > 0 && (
+                <span className="ml-1.5 text-gray-300">
+                  다음 티어까지 {remaining.toFixed(1)}점
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">내 순위</p>
+            <p className="text-xl font-bold text-gray-900">#{rank}</p>
+          </div>
+        </div>
+
+        {/* 티어 진행 바 */}
+        <div>
+          <div className="mb-1.5 flex justify-between text-[10px] text-gray-400">
+            <span>{min.toFixed(1)}</span>
+            <span>{max === 100 ? 'MAX' : max.toFixed(1)}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${getTierBarColor(tier)}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 5개 카테고리 점수 */}
+        <div className="space-y-2 pt-1">
+          {SEASON_CATEGORIES.map(({ key, label, color }) => {
+            const score = ranking[key];
+            const pct = Math.min(100, (score / 20) * 100);
+            return (
+              <div key={key} className="flex items-center gap-3">
+                <span className="w-14 shrink-0 text-[11px] text-gray-500">{label}</span>
+                <div className="flex-1 overflow-hidden rounded-full bg-gray-100 h-1.5">
+                  <div
+                    className={`h-full rounded-full ${color}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-8 shrink-0 text-right text-[11px] font-medium text-gray-700">
+                  {score.toFixed(1)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────
 
 interface UserPageClientProps {
   session: AuthSession | null;
 }
 
-type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기';
+type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기' | '칭호';
 
 export default function UserPageClient({ session }: UserPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('활동');
@@ -84,6 +226,12 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 포인트 & 지원내역 데이터
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
   const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
+
+  // 대표 칭호
+  const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
+
+  // 시즌 랭킹
+  const [seasonRanking, setSeasonRanking] = useState<MySeasonRankingResponse | null>(null);
 
   // 챌린지 달성률
   const [challengeRate, setChallengeRate] = useState<{ completed: number; total: number } | null>(null);
@@ -117,6 +265,21 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [showAllRepos, setShowAllRepos] = useState(false);
   const recentRepositoryCount = recentActivity.length;
 
+  // 전체 칭호 목록 (카탈로그)
+  const [allTitles, setAllTitles] = useState<TitleDetailResponse[]>([]);
+  // 내 보유 칭호 목록
+  const [myTitles, setMyTitles] = useState<UserTitleResponse[]>([]);
+  // 칭호 탭 필터
+  const [titleFilter, setTitleFilter] = useState<string>('전체');
+  // 칭호 대표 설정 로딩
+  const [displayTitleLoading, setDisplayTitleLoading] = useState(false);
+
+  // 이력서 공개 설정
+  const [resumeIsPublic, setResumeIsPublic] = useState<boolean | null>(null);
+  const [resumeExists, setResumeExists] = useState(false);
+  const [resumePublicLoading, setResumePublicLoading] = useState(false);
+  const [resumePublicCopied, setResumePublicCopied] = useState(false);
+
   // 지원내역 모달 상태
   const [selectedApplication, setSelectedApplication] = useState<MyApplicationResponse | null>(null);
 
@@ -139,6 +302,74 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     if (comparisonRes) setComparison(comparisonRes);
   }, [userId]);
 
+  // ── 이력서 공개 설정 핸들러 ──────────────────────────────────
+  const handleToggleResumePublic = async () => {
+    if (!accessToken || resumePublicLoading) return;
+    setResumePublicLoading(true);
+    try {
+      // 기존 이력서 데이터를 가져온 후 isPublic만 반전시켜 저장
+      const current = await getMyResume({ accessToken }).catch(() => null);
+
+      // 저장된 이력서가 없으면 토글 불가
+      if (!current?.resumeId || !current?.resumeData) {
+        return;
+      }
+
+      const currentData = current.resumeData;
+      const nextPublic = !resumeIsPublic;
+      await saveMyResume(
+        {
+          resumeTitle: currentData.resumeTitle ?? '',
+          headline: currentData.headline ?? '',
+          bio: currentData.bio ?? '',
+          jobRole: currentData.jobRole ?? '',
+          techStack: currentData.techStack ?? [],
+          links: currentData.links ?? [],
+          education: currentData.education ?? [],
+          career: currentData.career ?? [],
+          experience: currentData.experience ?? [],
+          projects: currentData.projects ?? [],
+          awards: currentData.awards ?? [],
+          certifications: currentData.certifications ?? [],
+          coverLetters: currentData.coverLetters ?? [],
+          customSections: currentData.customSections ?? [],
+          visibleSections: currentData.visibleSections,
+          isPublic: nextPublic,
+        },
+        { accessToken }
+      );
+      setResumeIsPublic(nextPublic);
+    } catch {
+      // 실패 시 상태 유지
+    } finally {
+      setResumePublicLoading(false);
+    }
+  };
+
+  const handleCopyResumeUrl = () => {
+    if (!userId) return;
+    const url = `${window.location.origin}/resume/${userId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setResumePublicCopied(true);
+      setTimeout(() => setResumePublicCopied(false), 2000);
+    });
+  };
+
+  // ── 대표 칭호 설정 핸들러 ──────────────────────────────────────
+  const handleSetDisplayTitle = async (userTitleId: number) => {
+    if (!accessToken || displayTitleLoading) return;
+    setDisplayTitleLoading(true);
+    try {
+      const updated = await setDisplayTitleApi(userTitleId, { accessToken });
+      setMyTitles((prev) => prev.map((t) => ({ ...t, isDisplay: t.userTitleId === userTitleId })));
+      setDisplayTitle(updated);
+    } catch {
+      // 실패 시 상태 유지
+    } finally {
+      setDisplayTitleLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!userId) {
       setIsLoading(false);
@@ -151,24 +382,41 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setProfile(profileData);
 
         const [postsRes, commentsRes, boardsRes] = await Promise.all([
-          getUserPosts(userId),
-          getUserComments(userId),
+          getUserPosts(userId).catch(() => null),
+          getUserComments(userId).catch(() => null),
           getBoards().catch(() => ({ boards: [] })),
         ]);
         setCounts({
-          posts: postsRes.pagination.totalItems,
-          comments: commentsRes.meta.totalItems,
+          posts: postsRes?.pagination?.totalItems ?? 0,
+          comments: commentsRes?.meta?.totalItems ?? 0,
           bookmarks: 0,
         });
         setBoards(boardsRes.boards);
 
         if (accessToken) {
-          const challengeRes = await getChallenges({ accessToken }).catch(() => null);
+          const [challengeRes, titlesRes, seasonRes, resumeRes, allTitlesRes] = await Promise.all([
+            getChallenges({ accessToken }).catch(() => null),
+            getMyTitles({ accessToken }).catch(() => null),
+            getMySeasonRanking({ accessToken }).catch(() => null),
+            getMyResume({ accessToken }).catch(() => null),
+            getAllTitles().catch(() => null),
+          ]);
           if (challengeRes) {
             const total = challengeRes.challenges.length;
             const completed = challengeRes.challenges.filter((c) => c.isCompleted).length;
             setChallengeRate({ completed, total });
           }
+          if (titlesRes) {
+            const found = titlesRes.titles.find((t) => t.isDisplay) ?? null;
+            setDisplayTitle(found);
+            setMyTitles(titlesRes.titles);
+          }
+          if (seasonRes) setSeasonRanking(seasonRes);
+          if (resumeRes) {
+            setResumeExists(!!resumeRes.resumeId && !!resumeRes.resumeData);
+            setResumeIsPublic(resumeRes.resumeData?.isPublic ?? false);
+          }
+          if (allTitlesRes) setAllTitles(allTitlesRes.titles);
         }
 
         await fetchGithubData();
@@ -191,32 +439,36 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           await fetchGithubData();
         } else if (activeTab === '포인트') {
           if (accessToken) {
-            const res = await getMyPointHistory({ accessToken }, pointPage, 10);
-            setPointHistory(res);
-            setPointTotalPages(res.meta?.totalPages || 1);
+            const res = await getMyPointHistory({ accessToken }, pointPage, 10).catch(() => null);
+            if (res) {
+              setPointHistory(res);
+              setPointTotalPages(res.meta?.totalPages || 1);
+            }
           }
         } else if (activeTab === '지원내역') {
           if (accessToken) {
-            const res = await getMyApplications({ accessToken }, applicationPage, 10);
-            setApplications(res.applications);
-            setApplicationTotalPages(res.meta?.totalPages || 1);
-            setApplicationTotalItems(res.meta?.totalItems || 0);
+            const res = await getMyApplications({ accessToken }, applicationPage, 10).catch(() => null);
+            if (res) {
+              setApplications(res.applications ?? []);
+              setApplicationTotalPages(res.meta?.totalPages || 1);
+              setApplicationTotalItems(res.meta?.totalItems || 0);
+            }
           }
         } else if (activeTab === '작성글') {
-          const res = await getUserPosts(userId, postPage, 10);
-          setPosts(res.posts);
-          setPostTotalPages(res.pagination.totalPages || 1);
-          setCounts((prev) => ({ ...prev, posts: res.pagination.totalItems }));
+          const res = await getUserPosts(userId, postPage, 10).catch(() => null);
+          setPosts(res?.posts ?? []);
+          setPostTotalPages(res?.pagination?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, posts: res?.pagination?.totalItems ?? prev.posts }));
         } else if (activeTab === '댓글') {
-          const res = await getUserComments(userId, commentPage, 10);
-          setComments(res.comments);
-          setCommentTotalPages(res.meta.totalPages || 1);
-          setCounts((prev) => ({ ...prev, comments: res.meta.totalItems }));
+          const res = await getUserComments(userId, commentPage, 10).catch(() => null);
+          setComments(res?.comments ?? []);
+          setCommentTotalPages(res?.meta?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, comments: res?.meta?.totalItems ?? prev.comments }));
         } else if (activeTab === '즐겨찾기') {
-          const res = await getUserBookmarks(userId, bookmarkPage, 10);
-          setBookmarks(res.posts);
-          setBookmarkTotalPages(res.pagination?.totalPages || 1);
-          setCounts((prev) => ({ ...prev, bookmarks: res.pagination?.totalItems || res.posts.length }));
+          const res = await getUserBookmarks(userId, bookmarkPage, 10).catch(() => null);
+          setBookmarks(res?.posts ?? []);
+          setBookmarkTotalPages(res?.pagination?.totalPages || 1);
+          setCounts((prev) => ({ ...prev, bookmarks: res?.pagination?.totalItems || res?.posts?.length || 0 }));
         }
       } catch (error) {
         console.error('Failed to fetch tab data:', error);
@@ -278,6 +530,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     { key: '작성글', label: '작성글', icon: <Edit className="h-4 w-4" /> },
     { key: '댓글', label: '댓글', icon: <MessageCircle className="h-4 w-4" /> },
     { key: '즐겨찾기', label: '저장', icon: <Bookmark className="h-4 w-4" /> },
+    { key: '칭호', label: '칭호', icon: <Trophy className="h-4 w-4" /> },
   ];
 
   return (
@@ -312,7 +565,63 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </Link>
               </div>
 
-              <h1 className="mb-1 text-xl font-bold text-gray-900">{profile?.name}</h1>
+              {/* 이름 + 대표 칭호 (같은 줄) */}
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-gray-900">{profile?.name}</h1>
+                {displayTitle && (
+                  <div className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5">
+                    {displayTitle.iconUrl ? (
+                      <span className="inline-flex h-3.5 w-3.5 overflow-hidden rounded-full">
+                        <img
+                          src={displayTitle.iconUrl}
+                          alt={displayTitle.titleName}
+                          className="h-full w-full object-contain"
+                          onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </span>
+                    ) : displayTitle.category && TITLE_CATEGORY_EMOJI[displayTitle.category] ? (
+                      <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
+                    ) : (
+                      <Trophy className="h-3 w-3 text-amber-500" />
+                    )}
+                    <span className="text-[11px] font-medium text-amber-600">{displayTitle.titleName}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 보유 칭호 전체 (대표 강조 + 나머지) */}
+              {myTitles.length > 0 && (
+                <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                  {myTitles.map((t) => {
+                    const isRep = t.isDisplay;
+                    return (
+                      <div
+                        key={t.userTitleId}
+                        title={`${t.titleName}${isRep ? ' (대표)' : ''}`}
+                        className={`flex items-center justify-center overflow-hidden rounded-full border text-sm transition-all ${
+                          isRep
+                            ? 'h-10 w-10 border-amber-300 bg-amber-50 shadow-[0_0_0_2px_#fbbf24]'
+                            : 'h-7 w-7 border-gray-100 bg-gray-50'
+                        }`}
+                      >
+                        {t.iconUrl ? (
+                          <img
+                            src={t.iconUrl}
+                            alt={t.titleName}
+                            className="h-full w-full object-cover"
+                            onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
+                          TITLE_CATEGORY_EMOJI[t.category]
+                        ) : (
+                          '🏅'
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <p className="mb-2 text-sm text-gray-500">{session.user?.email}</p>
               <p className="break-all text-xs text-gray-400">ID: {userId}</p>
 
@@ -380,6 +689,86 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 </div>
               </div>
             </div>
+
+            {/* 이력서 공개 설정 카드 */}
+            {accessToken && (
+              <div className="rounded-xl border border-gray-200 bg-white">
+                <div className="border-b border-gray-100 px-5 py-4">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <FileText className="h-4 w-4 text-gray-500" />
+                    이력서 공개 설정
+                  </h2>
+                </div>
+                <div className="px-5 py-4 space-y-3">
+                  {/* 이력서 없을 때 안내 */}
+                  {resumeIsPublic !== null && !resumeExists && (
+                    <p className="text-xs text-gray-400 text-center py-1">
+                      저장된 이력서가 없습니다.{' '}
+                      <a href="/user/resume" className="text-orange-500 hover:underline">이력서 작성하기</a>
+                    </p>
+                  )}
+
+                  {/* 공개 여부 토글 */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`text-sm font-medium ${resumeExists ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {resumeIsPublic ? '공개 중' : '비공개'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {resumeIsPublic
+                          ? '누구나 공개 URL로 볼 수 있습니다.'
+                          : '본인만 이력서를 볼 수 있습니다.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleResumePublic}
+                      disabled={resumePublicLoading || resumeIsPublic === null || !resumeExists}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
+                        resumeIsPublic ? 'bg-orange-400' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                          resumeIsPublic ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* 공개 URL 복사 / 미리보기 */}
+                  {resumeIsPublic && userId && (
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleCopyResumeUrl}
+                        className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        {resumePublicCopied ? '복사됨!' : 'URL 복사'}
+                      </button>
+                      <a
+                        href={`/resume/${userId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 rounded-lg border border-gray-200 py-1.5 text-center text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        미리보기
+                      </a>
+                    </div>
+                  )}
+
+                  {/* 이력서 작성 링크 */}
+                  <Link
+                    href="/user/resume"
+                    className="block w-full rounded-lg bg-orange-400 py-1.5 text-center text-xs font-medium text-white hover:bg-orange-500 transition-colors"
+                  >
+                    이력서 작성하기
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* 팔로우/팔로워 카드 — TODO: 팔로우/팔로워 API 구현 후 활성화 */}
           </div>
         </aside>
 
@@ -396,7 +785,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     activeTab === tab.key
                       ? 'text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
+                  } ${index === 0 ? 'rounded-l-lg' : ''}`}
                   style={
                     activeTab === tab.key
                       ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
@@ -407,6 +796,13 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {tab.label}
                 </button>
               ))}
+              <Link
+                href="/user/resume"
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-r-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200"
+              >
+                <FileText className="h-4 w-4" />
+                이력서
+              </Link>
             </div>
           </div>
 
@@ -490,6 +886,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       profileImage={profile?.profileImage}
                       rank={getRankFromScore(contributionScore.totalScore)}
                       totalScore={contributionScore.totalScore}
+                      displayTitle={displayTitle}
                       stats={{
                         commits: overallHistory.totalCommitCount,
                         pullRequests: overallHistory.totalPrCount,
@@ -497,6 +894,48 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                         repositories: recentRepositoryCount,
                       }}
                     />
+                  )}
+
+                  {/* 시즌 랭킹 티어 */}
+                  {seasonRanking && <SeasonRankingCard ranking={seasonRanking} />}
+
+                  {/* 챌린지 달성 카드 */}
+                  {challengeRate && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                      <div className="border-b border-gray-100 px-5 py-4">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <Trophy className="h-4 w-4 text-gray-500" />
+                          챌린지 달성
+                        </h2>
+                      </div>
+                      <div className="px-5 py-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">
+                              {challengeRate.completed}
+                              <span className="text-sm font-normal text-gray-400"> / {challengeRate.total}</span>
+                            </p>
+                            <p className="mt-0.5 text-xs text-gray-400">완료한 챌린지</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-orange-500">
+                              {challengeRate.total > 0
+                                ? Math.round((challengeRate.completed / challengeRate.total) * 100)
+                                : 0}%
+                            </p>
+                            <p className="text-xs text-gray-400">달성률</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
+                          <div
+                            className="h-full rounded-full bg-orange-400 transition-all duration-500"
+                            style={{
+                              width: `${challengeRate.total > 0 ? (challengeRate.completed / challengeRate.total) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   {/* 점수 상세 */}
@@ -1130,6 +1569,217 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               )}
             </div>
           )}
+
+          {/* 칭호 탭 */}
+          {activeTab === '칭호' && (() => {
+            const CATEGORY_FILTERS = [
+              { key: '전체',         label: '전체' },
+              { key: '보유',         label: '보유' },
+              { key: '미획득',       label: '미획득' },
+              { key: 'COMMIT',       label: '✏️ 커밋' },
+              { key: 'STREAK',       label: '🔥 꾸준함' },
+              { key: 'CHALLENGE',    label: '🏆 챌린지' },
+              { key: 'COLLABORATION',label: '🤝 협업' },
+              { key: 'COMMUNITY',    label: '💬 커뮤니티' },
+              { key: 'INFLUENCE',    label: '⭐ 영향력' },
+              { key: 'PROJECT',      label: '📁 프로젝트' },
+              { key: 'OPEN_SOURCE',  label: '🐙 오픈소스' },
+              { key: 'SEASON',       label: '🌟 시즌' },
+              { key: 'HONOR',        label: '👑 명예' },
+              { key: 'ATTENDANCE',   label: '📅 출석' },
+            ];
+
+            const filteredTitles = allTitles.filter((title) => {
+              if (titleFilter === '보유') return myTitles.some((mt) => mt.titleId === title.id);
+              if (titleFilter === '미획득') return !myTitles.some((mt) => mt.titleId === title.id);
+              if (titleFilter !== '전체') return title.category === titleFilter;
+              return true;
+            });
+
+            const ownedCount = myTitles.length;
+            const totalCount = allTitles.length;
+
+            return (
+              <div className="space-y-4">
+                {/* 보유 현황 요약 */}
+                {totalCount > 0 && (
+                  <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-5 py-3">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    <p className="text-sm text-gray-700">
+                      <span className="font-bold text-gray-900">{ownedCount}</span>
+                      <span className="text-gray-400"> / {totalCount}</span>
+                      <span className="ml-1 text-gray-500">칭호 보유 중</span>
+                    </p>
+                    <div className="ml-auto h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                        style={{ width: `${totalCount > 0 ? (ownedCount / totalCount) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 필터 바 (카테고리 많아질수록 가로 스크롤) */}
+                <div className="overflow-x-auto pb-1 -mx-1 px-1">
+                  <div className="flex gap-2 min-w-max sm:flex-wrap sm:min-w-0">
+                  {CATEGORY_FILTERS.map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setTitleFilter(f.key)}
+                      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                        titleFilter === f.key
+                          ? 'bg-orange-400 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                  </div>
+                </div>
+
+                {/* 빈 상태 */}
+                {allTitles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
+                    <Trophy className="mb-3 h-12 w-12 text-gray-200" />
+                    <p className="text-sm text-gray-500">칭호 목록을 불러오지 못했습니다.</p>
+                  </div>
+                ) : filteredTitles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
+                    <Trophy className="mb-3 h-12 w-12 text-gray-200" />
+                    <p className="text-sm text-gray-500">해당하는 칭호가 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredTitles.map((title) => {
+                      const userTitle = myTitles.find((mt) => mt.titleId === title.id);
+                      const isOwned = !!userTitle;
+                      const isDisplayTitle = userTitle?.isDisplay ?? false;
+                      const imgSrc = getTitleImage(title.code, title.iconUrl);
+                      const categoryEmoji = TITLE_CATEGORY_EMOJI[title.category] ?? '🏅';
+                      const rarityLabel = RARITY_LABELS[title.rarity] ?? title.rarity;
+                      const rarityColor = RARITY_COLORS[title.rarity] ?? 'bg-gray-100 text-gray-600';
+
+                      return (
+                        <div
+                          key={title.id}
+                          className={`flex flex-col rounded-xl border bg-white p-4 transition-all ${
+                            isDisplayTitle
+                              ? 'border-orange-200 shadow-[0_0_0_2px_rgba(251,146,60,0.2)]'
+                              : isOwned
+                              ? 'border-gray-200 shadow-sm'
+                              : 'border-gray-100 bg-gray-50/50 grayscale'
+                          }`}
+                        >
+                          {/* 이미지 영역 (80×80, 중앙 정렬) */}
+                          <div className="relative mx-auto mb-3 h-20 w-20">
+                            {/* 원형 클립 컨테이너: overflow-hidden으로 이미지 배경을 원형에 맞게 클리핑 */}
+                            <div className={`absolute inset-0 overflow-hidden rounded-full ${
+                              isOwned ? 'bg-orange-50' : 'bg-gray-100'
+                            }`}>
+                              {imgSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={imgSrc}
+                                  alt={`${title.name} 칭호`}
+                                  className={`h-full w-full object-contain transition-all ${
+                                    isOwned ? '' : 'opacity-30'
+                                  }`}
+                                />
+                              ) : (
+                                <span className={`flex h-full w-full items-center justify-center text-3xl leading-none ${
+                                  isOwned ? '' : 'opacity-30'
+                                }`}>
+                                  {categoryEmoji}
+                                </span>
+                              )}
+
+                              {/* 미획득: 잠금 오버레이 */}
+                              {!isOwned && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Lock className="h-5 w-5 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 대표 칭호: 왕관 뱃지 (overflow-hidden 밖에 위치해 잘리지 않음) */}
+                            {isDisplayTitle && (
+                              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-400 shadow-sm">
+                                <span className="text-[10px] leading-none">★</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 칭호명 + 뱃지 */}
+                          <div className="mb-1 flex flex-wrap items-center justify-center gap-1.5">
+                            <p className={`text-center text-sm font-semibold ${
+                              isOwned ? 'text-gray-900' : 'text-gray-400'
+                            }`}>
+                              {title.name}
+                            </p>
+                          </div>
+
+                          {/* 등급 + 상태 뱃지 */}
+                          <div className="mb-2 flex items-center justify-center gap-1.5">
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${rarityColor}`}>
+                              {rarityLabel}
+                            </span>
+                            {isDisplayTitle && (
+                              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-600">
+                                대표 칭호
+                              </span>
+                            )}
+                            {isOwned && !isDisplayTitle && (
+                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                                보유
+                              </span>
+                            )}
+                            {!isOwned && (
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-400">
+                                미획득
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 설명 */}
+                          <p className={`mb-2 text-center text-[11px] leading-relaxed ${
+                            isOwned ? 'text-gray-500' : 'text-gray-300'
+                          }`}>
+                            {title.description}
+                          </p>
+
+                          {/* 달성 조건 */}
+                          {title.conditions.length > 0 && (
+                            <div className="mb-3 space-y-0.5 rounded-lg bg-gray-50 px-3 py-2">
+                              {title.conditions.map((cond, i) => (
+                                <p key={i} className="text-center text-[11px] text-gray-400">
+                                  {cond.description ?? `${cond.conditionType} ≥ ${cond.thresholdValue}`}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 대표 설정 버튼 — 실제 보유 중(userTitle 정의됨)이고 대표가 아닌 경우만
+                              userTitle을 직접 guard로 사용해 TypeScript 타입 내로우잉 보장 */}
+                          {userTitle != null && !isDisplayTitle && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDisplayTitle(userTitle.userTitleId)}
+                              disabled={displayTitleLoading}
+                              className="mt-auto w-full rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 disabled:opacity-50"
+                            >
+                              대표로 설정
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

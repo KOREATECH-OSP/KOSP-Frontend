@@ -1,4 +1,4 @@
-type SignupStep = 'github' | 'info' | 'verification' | 'complete';
+type SignupStep = 'github' | 'info' | 'terms' | 'verification' | 'complete';
 
 interface StepIndicatorProps {
   currentStep: SignupStep;
@@ -20,13 +20,14 @@ function CheckIcon() {
 
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   const steps = [
+    { id: 'terms', label: '약관동의' },
     { id: 'github', label: 'GitHub' },
     { id: 'info', label: '정보입력' },
     { id: 'verification', label: '인증' },
   ];
 
   const getStepIndex = (step: SignupStep) => {
-    if (step === 'complete') return 3;
+    if (step === 'complete') return 4;
     return steps.findIndex(s => s.id === step);
   };
 
