@@ -704,7 +704,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {resumeIsPublic !== null && !resumeExists && (
                     <p className="text-xs text-gray-400 text-center py-1">
                       저장된 이력서가 없습니다.{' '}
-                      <a href="/user/resume" className="text-orange-500 hover:underline">이력서 작성하기</a>
+                      <Link href="/user/resume" className="text-orange-500 hover:underline">이력서 작성하기</Link>
                     </p>
                   )}
 
