@@ -472,8 +472,39 @@ export default function RankingPageClient({
     <div className="min-h-screen bg-gray-50">
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 
-      {/* 헤더 */}
-      <div className="mb-6 flex items-start justify-between">
+      {/* 사이드바 + 메인 콘텐츠 */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
+
+        {/* 사이드바 */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <h2 className="text-base font-bold text-gray-900 mb-4 px-2">랭킹</h2>
+            <div className="flex lg:flex-col gap-1">
+              {([
+                { key: 'season', label: '시즌 랭킹' },
+                { key: 'github', label: '전체 랭킹' },
+              ] as { key: TabType; label: string }[]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleTabChange(key as TabType)}
+                  className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === key
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* 메인 콘텐츠 */}
+        <div>
+
+      {/* 제목 + 우측 버튼 */}
+      <div className="mb-5 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
@@ -498,35 +529,6 @@ export default function RankingPageClient({
           </button>
         </div>
       </div>
-
-      {/* 사이드바 + 메인 콘텐츠 */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
-
-        {/* 사이드바 */}
-        <aside className="lg:block">
-          <div className="sticky top-24 space-y-1">
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">랭킹</p>
-            {([
-              { key: 'season', label: '시즌 랭킹' },
-              { key: 'github', label: '전체 랭킹' },
-            ] as { key: TabType; label: string }[]).map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => handleTabChange(key as TabType)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                  activeTab === key
-                    ? 'bg-gray-100 text-gray-900 font-semibold'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </aside>
-
-        {/* 메인 콘텐츠 */}
-        <div>
 
       {/* 내 랭킹 배너 */}
       {!isAuthenticated && (
