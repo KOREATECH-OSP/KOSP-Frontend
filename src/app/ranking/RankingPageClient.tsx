@@ -270,9 +270,9 @@ function MyGithubBanner({ myRanking }: { myRanking: MyGithubRankingResponse }) {
 // ─── Podium ────────────────────────────────────────────────────────────────────
 
 const PODIUM_BAR: Record<number, string> = {
-  1: 'h-20 bg-gradient-to-b from-[#F0A800] to-[#d4890a]',
-  2: 'h-14 bg-gradient-to-b from-[#94a3b8] to-[#64748b]',
-  3: 'h-10 bg-gradient-to-b from-[#c2813a] to-[#9a5f22]',
+  1: 'h-20 bg-gradient-to-b from-[#FFD11A] to-[#e6b800]',
+  2: 'h-14 bg-gradient-to-b from-[#D0D0D0] to-[#b0b0b0]',
+  3: 'h-10 bg-gradient-to-b from-[#AC7636] to-[#8a5a1e]',
 };
 const PODIUM_ORDER = [2, 1, 3]; // 시상대 순서: 2위 왼쪽, 1위 가운데, 3위 오른쪽
 
@@ -296,7 +296,7 @@ function PodiumItem({ entry, type }: { entry: AnyEntry; type: TabType }) {
         </Link>
         <Link
           href={`/user/${entry.userId}`}
-          className={`font-bold text-gray-800 hover:text-blue-600 truncate max-w-[100px] text-center ${isFirst ? 'text-sm' : 'text-xs'}`}
+          className={`font-bold text-gray-800 hover:text-blue-600 truncate max-w-[100px] text-center ${isFirst ? 'text-base' : 'text-sm'}`}
         >
           {entry.userName || '이름 없음'}
         </Link>
@@ -308,7 +308,7 @@ function PodiumItem({ entry, type }: { entry: AnyEntry; type: TabType }) {
         </p>
       </div>
       {/* 포디움 블록 */}
-      <div className={`w-28 rounded-t-xl flex items-center justify-center font-black text-white/30 text-lg ${PODIUM_BAR[rank]}`}>
+      <div className={`w-28 rounded-t-xl flex items-center justify-center font-black text-white text-lg ${PODIUM_BAR[rank]}`}>
         {rank}
       </div>
     </div>
@@ -332,9 +332,9 @@ function Podium({ entries, type }: { entries: AnyEntry[]; type: TabType }) {
 // ─── Ranking Table Row ─────────────────────────────────────────────────────────
 
 const RANK_COLOR: Record<number, string> = {
-  1: 'text-[#f0a800]',
-  2: 'text-[#9ca3af]',
-  3: 'text-[#b45309]',
+  1: 'text-[#FFD11A]',
+  2: 'text-[#D0D0D0]',
+  3: 'text-[#AC7636]',
 };
 
 function SeasonRankRow({ entry, isMe }: { entry: SeasonRankingEntry; isMe: boolean }) {
@@ -343,21 +343,21 @@ function SeasonRankRow({ entry, isMe }: { entry: SeasonRankingEntry; isMe: boole
       <Link
         href={`/user/${entry.userId}`}
         className={`grid grid-cols-[48px_1fr_130px_90px] items-center gap-3 px-5 py-3 transition-colors
-          ${isMe ? 'bg-amber-50 hover:bg-amber-50/80' : 'hover:bg-gray-50'}`}
+          ${isMe ? 'bg-[#EFF7FF] hover:bg-[#EFF7FF]/80' : 'hover:bg-gray-50'}`}
       >
-        <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
-        <div className="flex min-w-0 items-center gap-2.5">
+        <span className={`text-sm font-black text-center ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
+        <div className="flex min-w-0 items-center gap-2.5 pl-4">
           {entry.profileImageUrl ? (
             <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
           ) : (
-            <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+            <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-blue-200' : 'bg-gray-100'}`} />
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="truncate text-sm font-semibold text-gray-800">
                 {entry.userName}
               </span>
-              {isMe && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">나</span>}
+              {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
             </div>
           </div>
         </div>
@@ -376,20 +376,20 @@ function GithubRankRow({ entry, isMe }: { entry: GithubRankingEntry; isMe: boole
       <Link
         href={`/user/${entry.userId}`}
         className={`grid grid-cols-[48px_1fr_130px_90px] items-center gap-3 px-5 py-3 transition-colors
-          ${isMe ? 'bg-amber-50 hover:bg-amber-50/80' : 'hover:bg-gray-50'}`}
+          ${isMe ? 'bg-[#EFF7FF] hover:bg-[#EFF7FF]/80' : 'hover:bg-gray-50'}`}
       >
-        <span className={`text-sm font-black ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
-        <div className="flex min-w-0 items-center gap-2.5">
+        <span className={`text-sm font-black text-center ${RANK_COLOR[entry.rank] ?? 'text-slate-300'}`}>{entry.rank}</span>
+        <div className="flex min-w-0 items-center gap-2.5 pl-4">
           {entry.profileImageUrl ? (
             <img src={entry.profileImageUrl} alt={entry.userName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
           ) : (
-            <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-amber-200' : 'bg-gray-100'}`} />
+            <div className={`h-8 w-8 shrink-0 rounded-full ${isMe ? 'bg-blue-200' : 'bg-gray-100'}`} />
           )}
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="truncate text-sm font-semibold text-gray-800">
               {entry.userName}
             </span>
-            {isMe && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">나</span>}
+            {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
           </div>
         </div>
         <div><GithubTierBadge score={entry.totalScore} /></div>
@@ -473,18 +473,30 @@ export default function RankingPageClient({
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 
       {/* 헤더 */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">🏆 랭킹</h1>
-          <p className="mt-1 text-sm text-gray-500">매일 04:00 업데이트</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
+          </h1>
+          <p className="mt-1.5 text-sm text-gray-500">
+            {activeTab === 'season'
+              ? '출석 · 커밋 · 챌린지 · 프로젝트 · 커뮤니티 활동 점수 기준'
+              : 'GitHub 활동 점수 기준'}
+          </p>
         </div>
-        <button
-          onClick={() => setShowCriteria(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          <HelpCircle className="h-3.5 w-3.5" />
-          랭킹 기준
-        </button>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="flex items-center gap-1 text-xs text-gray-400">
+            <Info className="h-3.5 w-3.5" />
+            매일 04:00 업데이트
+          </span>
+          <button
+            onClick={() => setShowCriteria(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            랭킹 기준
+          </button>
+        </div>
       </div>
 
       {/* 사이드바 + 메인 콘텐츠 */}
