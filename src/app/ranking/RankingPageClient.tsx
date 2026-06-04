@@ -574,9 +574,10 @@ export default function RankingPageClient({
 
         {/* 테이블 헤더 */}
         <div className="grid grid-cols-[48px_1fr_130px_90px] gap-3 border-t border-gray-100 bg-gray-50 px-5 py-2.5">
-          {['순위', '사용자', '티어', '점수'].map((h) => (
-            <span key={h} className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{h}</span>
-          ))}
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">순위</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 pl-4">사용자</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">티어</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">점수</span>
         </div>
 
         {/* 테이블 바디 */}
