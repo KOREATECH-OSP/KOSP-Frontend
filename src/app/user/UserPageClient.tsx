@@ -589,38 +589,53 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 )}
               </div>
 
-              {/* 보유 칭호 전체 (대표 강조 + 나머지) */}
-              {myTitles.length > 0 && (
-                <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                  {myTitles.map((t) => {
-                    const isRep = t.isDisplay;
-                    return (
+              {/* 보유 칭호 — 대표 1개 + 나머지 최대 3개 = 최대 4개 노출 */}
+              {myTitles.length > 0 && (() => {
+                const displayTitles = [
+                  ...myTitles.filter((t) => t.isDisplay),
+                  ...myTitles.filter((t) => !t.isDisplay).slice(0, 3),
+                ].slice(0, 4);
+                const hiddenCount = myTitles.length - displayTitles.length;
+                return (
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                    {displayTitles.map((t) => {
+                      const isRep = t.isDisplay;
+                      return (
+                        <div
+                          key={t.userTitleId}
+                          title={`${t.titleName}${isRep ? ' (대표)' : ''}`}
+                          className={`flex items-center justify-center overflow-hidden rounded-full border text-sm transition-all ${
+                            isRep
+                              ? 'h-10 w-10 border-amber-300 bg-amber-50 shadow-[0_0_0_2px_#fbbf24]'
+                              : 'h-7 w-7 border-gray-100 bg-gray-50'
+                          }`}
+                        >
+                          {t.iconUrl ? (
+                            <img
+                              src={t.iconUrl}
+                              alt={t.titleName}
+                              className="h-full w-full object-cover"
+                              onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
+                            TITLE_CATEGORY_EMOJI[t.category]
+                          ) : (
+                            '🏅'
+                          )}
+                        </div>
+                      );
+                    })}
+                    {hiddenCount > 0 && (
                       <div
-                        key={t.userTitleId}
-                        title={`${t.titleName}${isRep ? ' (대표)' : ''}`}
-                        className={`flex items-center justify-center overflow-hidden rounded-full border text-sm transition-all ${
-                          isRep
-                            ? 'h-10 w-10 border-amber-300 bg-amber-50 shadow-[0_0_0_2px_#fbbf24]'
-                            : 'h-7 w-7 border-gray-100 bg-gray-50'
-                        }`}
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400"
+                        title={`외 ${hiddenCount}개 더 보유`}
                       >
-                        {t.iconUrl ? (
-                          <img
-                            src={t.iconUrl}
-                            alt={t.titleName}
-                            className="h-full w-full object-cover"
-                            onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                        ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
-                          TITLE_CATEGORY_EMOJI[t.category]
-                        ) : (
-                          '🏅'
-                        )}
+                        +{hiddenCount}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    )}
+                  </div>
+                );
+              })()}
 
               <p className="mb-2 text-sm text-gray-500">{session.user?.email}</p>
               <p className="break-all text-xs text-gray-400">ID: {userId}</p>

@@ -23,6 +23,8 @@ import {
   Plus,
   Trash2,
   ChevronDown,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import PdfDownloadButton from '@/common/components/PdfDownloadButton';
 import ResumeReadOnlyView from './components/ResumeReadOnlyView';
@@ -192,8 +194,8 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       const emptyResume = {
         resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
         links: [], education: [], career: [], experience: [], projects: [],
-        awards: [], certifications: [], coverLetters: [], isPublic: false,
-        visibleSections: DEFAULT_VISIBLE_SECTIONS,
+        awards: [], certifications: [], coverLetters: [], customSections: [],
+        isPublic: false, visibleSections: DEFAULT_VISIBLE_SECTIONS,
       };
       const newResume = await createResume(emptyResume, { accessToken });
       if (newResume.resumeId) {
@@ -231,7 +233,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
         setResumeId(null);
         applyResumeData({ resumeTitle: '', headline: '', bio: '', jobRole: '',
           techStack: [], links: [], education: [], career: [], experience: [], projects: [],
-          awards: [], certifications: [], coverLetters: [], isPublic: false });
+          awards: [], certifications: [], coverLetters: [], customSections: [], isPublic: false });
       }
     } finally {
       setIsDeletingResume(false);
@@ -409,60 +411,63 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           );
           return (
             <div className="mb-3 print:hidden">
-              {/* 탭 목록 */}
-              <div className="flex items-center gap-1 flex-wrap">
+              {/* 탭 목록 + 새 이력서 버튼 — 2줄 구조로 분리 */}
+              <div className="flex items-center gap-1">
                 {/* 이전 페이지 */}
                 {resumeTabPage > 0 && (
                   <button
                     type="button"
                     onClick={() => setResumeTabPage((p) => p - 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
                   >
                     <ChevronDown className="h-3.5 w-3.5 rotate-90" />
                   </button>
                 )}
 
-                {pageResumes.map((r) => {
-                  const isActive = r.resumeId === resumeId;
-                  return (
-                    <button
-                      key={r.resumeId}
-                      type="button"
-                      onClick={() => handleSwitchResume(r.resumeId)}
-                      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors max-w-[180px] ${
-                        isActive
-                          ? 'border-orange-400 bg-orange-50 text-orange-600 font-medium'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <FileText className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-orange-400' : 'text-gray-400'}`} />
-                      <span className="truncate max-w-[120px]">
-                        {r.resumeTitle || '(제목 없음)'}
-                      </span>
-                      {r.isDefault && (
-                        <Star className={`h-3 w-3 shrink-0 ${isActive ? 'text-orange-400 fill-orange-400' : 'text-gray-300 fill-gray-300'}`} />
-                      )}
-                    </button>
-                  );
-                })}
+                {/* 탭 목록 — 가로 스크롤, 줄바꿈 없음 */}
+                <div className="flex items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {pageResumes.map((r) => {
+                    const isActive = r.resumeId === resumeId;
+                    return (
+                      <button
+                        key={r.resumeId}
+                        type="button"
+                        onClick={() => handleSwitchResume(r.resumeId)}
+                        className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors max-w-[180px] ${
+                          isActive
+                            ? 'border-orange-400 bg-orange-50 text-orange-600 font-medium'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <FileText className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-orange-400' : 'text-gray-400'}`} />
+                        <span className="truncate max-w-[120px]">
+                          {r.resumeTitle || '(제목 없음)'}
+                        </span>
+                        {r.isDefault && (
+                          <Star className={`h-3 w-3 shrink-0 ${isActive ? 'text-orange-400 fill-orange-400' : 'text-gray-300 fill-gray-300'}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
 
                 {/* 다음 페이지 */}
                 {resumeTabPage < totalPages - 1 && (
                   <button
                     type="button"
                     onClick={() => setResumeTabPage((p) => p + 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors"
                   >
                     <ChevronDown className="h-3.5 w-3.5 -rotate-90" />
                   </button>
                 )}
 
-                {/* 새 이력서 버튼 */}
+                {/* 새 이력서 버튼 — 탭과 같은 줄, 오른쪽 끝에 고정 */}
                 <button
                   type="button"
                   onClick={handleCreateResume}
                   disabled={isCreatingResume}
-                  className="flex h-8 items-center gap-1 rounded-lg border border-dashed border-gray-300 px-2.5 text-xs font-medium text-gray-400 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
+                  className="ml-1 flex h-8 shrink-0 items-center gap-1 rounded-lg border border-dashed border-gray-300 px-2.5 text-xs font-medium text-gray-400 hover:border-orange-300 hover:text-orange-500 transition-colors disabled:opacity-50"
                   title="새 이력서 만들기"
                 >
                   {isCreatingResume ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
@@ -516,6 +521,24 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               placeholder="이력서 제목을 입력하세요"
               className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-semibold text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
             />
+            {/* 공개 여부 토글 */}
+            <button
+              type="button"
+              onClick={() => setIsPublic((p) => !p)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                isPublic
+                  ? 'border-orange-300 bg-orange-50 text-orange-600'
+                  : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-600'
+              }`}
+              title="저장 시 공개 여부가 반영됩니다"
+            >
+              {isPublic ? (
+                <Eye className="h-3.5 w-3.5" />
+              ) : (
+                <EyeOff className="h-3.5 w-3.5" />
+              )}
+              {isPublic ? '공개' : '비공개'}
+            </button>
           </div>
           <PdfDownloadButton
             targetId="resume-print-area"
