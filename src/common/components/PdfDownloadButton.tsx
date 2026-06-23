@@ -43,14 +43,12 @@ export default function PdfDownloadButton({
         import('jspdf'),
       ]);
 
-      // 캡처 시점에 target element를 ref로 고정 (active window 무관)
-      // onclone: off-screen(left:-9999px) 요소를 body에 직접 붙여 (0,0)에서 캡처
       const captureWidth = target.offsetWidth || 794;
-      const captureHeight = target.offsetHeight;
+      const captureHeight = target.scrollHeight || target.offsetHeight;
 
       const canvas = await html2canvas(target, {
-        scale: 2,          // 고해상도
-        useCORS: true,     // 외부 이미지 허용
+        scale: 2,
+        useCORS: true,
         allowTaint: false,
         logging: false,
         backgroundColor: '#ffffff',
@@ -58,17 +56,29 @@ export default function PdfDownloadButton({
         y: 0,
         width: captureWidth,
         height: captureHeight,
+        // 클론 문서의 가상 viewport를 이력서 전체 크기로 설정
+        // 미지정 시 window.innerHeight로 고정되어 이력서가 잘림
+        windowWidth: captureWidth,
+        windowHeight: captureHeight,
+        scrollX: 0,
+        scrollY: 0,
         onclone: (_clonedDoc: Document, clonedElement: HTMLElement) => {
           const body = _clonedDoc.body;
+          // clonedElement를 body 최상위로 이동 (position:fixed 컨테이너에서 분리)
           body.appendChild(clonedElement);
-          Array.from(body.children).forEach(child => {
+          // 모달, 오버레이, Toaster 포털 등 나머지 body 직접 자식 완전 차단
+          Array.from(body.children).forEach((child) => {
             if (child !== clonedElement) {
-              (child as HTMLElement).style.display = 'none';
+              const el = child as HTMLElement;
+              el.style.setProperty('display', 'none', 'important');
+              el.style.setProperty('visibility', 'hidden', 'important');
             }
           });
+          // 이력서 영역 좌표 초기화 + 상위 clip 해제
           clonedElement.style.cssText =
             `position:static!important;left:0!important;top:0!important;` +
-            `width:${captureWidth}px!important;margin:0!important;padding:0!important;`;
+            `width:${captureWidth}px!important;margin:0!important;padding:0!important;` +
+            `overflow:visible!important;height:auto!important;max-height:none!important;`;
         },
       });
 
