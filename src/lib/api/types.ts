@@ -650,6 +650,7 @@ export interface UserTitleResponse {
 
 export interface UserTitleListResponse {
   titles: UserTitleResponse[];
+  subTitles: UserTitleResponse[];
   totalCount: number;
 }
 
@@ -870,7 +871,7 @@ export interface ResumeProjectItem {
   period: string;
   summary: string;
   role: string;
-  techStack: string;
+  techStack: string[];
   mainFeatures: string;
   myContributions: string;
   problemSolving: string;

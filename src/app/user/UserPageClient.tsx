@@ -50,6 +50,7 @@ import {
   getMySeasonRanking,
   getMyResume,
   saveMyResume,
+  updateResumeById,
   getAllTitles,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
@@ -227,8 +228,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [pointHistory, setPointHistory] = useState<MyPointHistoryResponse | null>(null);
   const [applications, setApplications] = useState<MyApplicationResponse[]>([]);
 
-  // 대표 칭호
+  // 대표 칭호 + 보조 칭호
   const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
+  const [subTitles, setSubTitles] = useState<UserTitleResponse[]>([]);
 
   // 시즌 랭킹
   const [seasonRanking, setSeasonRanking] = useState<MySeasonRankingResponse | null>(null);
@@ -317,7 +319,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
       const currentData = current.resumeData;
       const nextPublic = !resumeIsPublic;
-      await saveMyResume(
+      await updateResumeById(
+        current.resumeId,
         {
           resumeTitle: currentData.resumeTitle ?? '',
           headline: currentData.headline ?? '',
@@ -410,6 +413,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
             const found = titlesRes.titles.find((t) => t.isDisplay) ?? null;
             setDisplayTitle(found);
             setMyTitles(titlesRes.titles);
+            setSubTitles(titlesRes.subTitles ?? []);
           }
           if (seasonRes) setSeasonRanking(seasonRes);
           if (resumeRes) {
@@ -902,6 +906,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       rank={getRankFromScore(contributionScore.totalScore)}
                       totalScore={contributionScore.totalScore}
                       displayTitle={displayTitle}
+                      subTitles={subTitles}
                       stats={{
                         commits: overallHistory.totalCommitCount,
                         pullRequests: overallHistory.totalPrCount,

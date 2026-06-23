@@ -174,7 +174,13 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
                   {proj.period && <span className="shrink-0 text-xs text-gray-400">{proj.period}</span>}
                 </div>
                 {proj.role && <p className="mt-0.5 text-xs text-gray-500">역할: {proj.role}</p>}
-                {proj.techStack && <p className="mt-0.5 text-xs text-gray-500">사용 기술: {proj.techStack}</p>}
+                {proj.techStack && proj.techStack.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {proj.techStack.map((t) => (
+                      <span key={t} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">{t}</span>
+                    ))}
+                  </div>
+                )}
                 {proj.summary && <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{proj.summary}</p>}
                 {proj.mainFeatures && (
                   <div className="mt-2">

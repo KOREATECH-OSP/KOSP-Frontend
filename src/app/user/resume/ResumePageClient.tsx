@@ -135,7 +135,12 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     if (d.education !== undefined) setEducation((d.education as unknown as EducationItem[]) ?? []);
     if (d.career !== undefined) setCareer((d.career as unknown as CareerItem[]) ?? []);
     if (d.experience !== undefined) setExperience((d.experience as unknown as ExperienceItem[]) ?? []);
-    if (d.projects !== undefined) setProjects((d.projects as unknown as ProjectItem[]) ?? []);
+    if (d.projects !== undefined) {
+      const converted = ((d.projects as unknown as { techStack?: string | string[] }[]) ?? []).map(
+        (p) => ({ ...p, techStack: Array.isArray(p.techStack) ? p.techStack.join(', ') : (p.techStack ?? '') })
+      );
+      setProjects(converted as unknown as ProjectItem[]);
+    }
     if (d.awards !== undefined) setAwards((d.awards as unknown as AwardItem[]) ?? []);
     if (d.certifications !== undefined) setCertifications((d.certifications as unknown as CertificationItem[]) ?? []);
     if (d.coverLetters !== undefined) setCoverLetters((d.coverLetters as unknown as CoverLetterItem[]) ?? []);
@@ -259,9 +264,16 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     setSaveError(false);
     setIsSaving(true);
 
+    const apiProjects = projects.map((p) => ({
+      ...p,
+      techStack: p.techStack
+        ? p.techStack.split(',').map((s) => s.trim()).filter(Boolean)
+        : [],
+    }));
     const payload = {
       resumeTitle, headline, bio, jobRole, techStack,
-      links, education, career, experience, projects,
+      links, education, career, experience,
+      projects: apiProjects,
       awards, certifications, coverLetters, customSections, isPublic, visibleSections,
     };
 
@@ -1052,7 +1064,12 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               education: education as ResumeData['education'],
               career: career as ResumeData['career'],
               experience: experience as ResumeData['experience'],
-              projects: projects as ResumeData['projects'],
+              projects: projects.map((p) => ({
+                ...p,
+                techStack: p.techStack
+                  ? p.techStack.split(',').map((s) => s.trim()).filter(Boolean)
+                  : [],
+              })) as ResumeData['projects'],
               awards: awards as ResumeData['awards'],
               certifications: certifications as ResumeData['certifications'],
               coverLetters: coverLetters as ResumeData['coverLetters'],
