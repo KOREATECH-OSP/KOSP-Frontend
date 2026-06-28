@@ -23,6 +23,7 @@ import {
   Coins,
   Home,
   Settings,
+  Building2,
 } from 'lucide-react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
 import { toast } from '@/lib/toast';
@@ -73,6 +74,11 @@ const navigation: NavItem[] = [
     children: [
       { name: '사용자 목록', href: '/admin/users/list', icon: Users },
     ],
+  },
+  {
+    name: '조직 관리',
+    href: '/admin/organizations',
+    icon: Building2,
   },
   {
     name: '칭호 관리',
