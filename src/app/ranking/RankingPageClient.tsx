@@ -506,7 +506,7 @@ export default function RankingPageClient({
       {/* 제목 + 우측 버튼 */}
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-lg font-bold text-gray-900">
             {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
           </h1>
           <p className="mt-1.5 text-sm text-gray-500">
