@@ -158,6 +158,17 @@ function Header({ simple = false, session = null }: HeaderProps) {
                                   </Link>
                                 )}
                               </Menu.Item>
+                              <Menu.Item key="내 조직">
+                                {({ active }) => (
+                                  <Link
+                                    href="/organization"
+                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                      }`}
+                                  >
+                                    내 조직
+                                  </Link>
+                                )}
+                              </Menu.Item>
                               {canAccessAdmin && (
                                 <Menu.Item key="관리자">
                                   {({ active }) => (
@@ -331,6 +342,18 @@ function Header({ simple = false, session = null }: HeaderProps) {
                           >
                             <div className="absolute bottom-full left-0 right-0 mb-3 rounded-2xl border border-gray-100 bg-white shadow-xl">
                               <ul className="py-2">
+                                <li>
+                                  <Link
+                                    href="/organization"
+                                    onClick={() => {
+                                      setMobileProfileOpen(false);
+                                      setMobileMenuOpen(false);
+                                    }}
+                                    className="block w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                  >
+                                    내 조직
+                                  </Link>
+                                </li>
                                 {canAccessAdmin && (
                                   <li>
                                     <Link

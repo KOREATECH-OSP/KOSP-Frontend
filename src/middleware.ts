@@ -9,6 +9,7 @@ const PROTECTED_ROUTES = [
   '/user/resume',
   '/team/create',
   '/community/write',
+  '/organization',
 ];
 
 export function middleware(request: NextRequest) {
@@ -35,5 +36,6 @@ export const config = {
     '/user/resume/:path*',
     '/team/create/:path*',
     '/community/write/:path*',
+    '/organization/:path*',
   ],
 };
