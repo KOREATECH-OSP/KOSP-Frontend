@@ -22,13 +22,15 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     redirect(`/login?callbackUrl=/organization/${orgId}`);
   }
 
+  let detail;
   try {
-    const detail = await getOrganizationDetail(orgId, session.accessToken);
-    return <OrganizationDetailClient detail={detail} />;
+    detail = await getOrganizationDetail(orgId, session.accessToken);
   } catch (error) {
     if (error instanceof ApiException && error.status === 404) {
       notFound();
     }
     throw error;
   }
+
+  return <OrganizationDetailClient detail={detail} />;
 }

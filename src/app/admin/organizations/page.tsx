@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Building2, Loader2, RefreshCcw } from 'lucide-react';
@@ -24,7 +24,7 @@ export default function AdminOrganizationsPage() {
   const [orgs, setOrgs] = useState<OrganizationResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchOrgs = async () => {
+  const fetchOrgs = useCallback(async () => {
     if (!session?.accessToken) return;
     setIsLoading(true);
     try {
@@ -35,11 +35,11 @@ export default function AdminOrganizationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.accessToken]);
 
   useEffect(() => {
     fetchOrgs();
-  }, [session?.accessToken]);
+  }, [fetchOrgs]);
 
   return (
     <div className="px-6 py-6">
