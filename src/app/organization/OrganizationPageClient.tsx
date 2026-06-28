@@ -7,7 +7,6 @@ import OrganizationCard from '@/common/components/organization/OrganizationCard'
 
 interface OrganizationPageClientProps {
   initialOrganizations: OrganizationResponse[];
-  accessToken: string;
 }
 
 export default function OrganizationPageClient({

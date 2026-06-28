@@ -12,10 +12,5 @@ export default async function OrganizationPage() {
 
   const organizations = await getMyOrganizations(session.accessToken);
 
-  return (
-    <OrganizationPageClient
-      initialOrganizations={organizations}
-      accessToken={session.accessToken}
-    />
-  );
+  return <OrganizationPageClient initialOrganizations={organizations} />;
 }
