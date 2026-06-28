@@ -188,35 +188,35 @@ function MySeasonBanner({ myRanking }: { myRanking: MySeasonRankingResponse }) {
   const progress = getTierProgress(myRanking.tier, myRanking.totalScore);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-xs font-semibold text-amber-600">내 순위</p>
-            <p className="text-3xl font-black text-amber-800 leading-none">{myRanking.rank}위</p>
+            <p className="text-xs font-semibold text-gray-500">내 순위</p>
+            <p className="text-3xl font-black text-gray-900 leading-none">{myRanking.rank}위</p>
           </div>
-          <div className="h-10 w-px bg-amber-200" />
+          <div className="h-10 w-px bg-gray-200" />
           <div>
             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${getTierStyle(myRanking.tier).badge}`}>
               {label}
             </span>
-            <p className="mt-1 text-xl font-bold text-amber-800">
-              {myRanking.totalScore.toFixed(1)}<span className="ml-1 text-sm font-normal text-amber-500">/ 100pt</span>
+            <p className="mt-1 text-xl font-bold text-gray-900">
+              {myRanking.totalScore.toFixed(1)}<span className="ml-1 text-sm font-normal text-gray-400">/ 100pt</span>
             </p>
           </div>
         </div>
-        <div className="text-right text-xs text-amber-600">
+        <div className="text-right text-xs text-gray-500">
           {remaining !== null
-            ? <span>다음 티어까지 <strong className="text-amber-800">{remaining.toFixed(1)}pt</strong></span>
+            ? <span>다음 티어까지 <strong className="text-gray-800">{remaining.toFixed(1)}pt</strong></span>
             : <span className="font-semibold text-rose-600">최고 티어 달성 🎉</span>
           }
         </div>
       </div>
       <div className="mt-4">
-        <div className="h-2 overflow-hidden rounded-full bg-amber-100">
+        <div className="h-2 overflow-hidden rounded-full bg-gray-100">
           <div className={`h-full rounded-full transition-all duration-700 ${bar}`} style={{ width: `${progress}%` }} />
         </div>
-        <div className="mt-1 flex justify-between text-[10px] text-amber-500">
+        <div className="mt-1 flex justify-between text-[10px] text-gray-400">
           <span>{min}pt</span><span>{max}pt</span>
         </div>
       </div>
@@ -236,30 +236,30 @@ function MyGithubBanner({ myRanking }: { myRanking: MyGithubRankingResponse }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-xs font-semibold text-amber-600">내 순위</p>
-            <p className="text-3xl font-black text-amber-800 leading-none">{myRanking.rank}위</p>
+            <p className="text-xs font-semibold text-gray-500">내 순위</p>
+            <p className="text-3xl font-black text-gray-900 leading-none">{myRanking.rank}위</p>
           </div>
-          <div className="h-10 w-px bg-amber-200" />
+          <div className="h-10 w-px bg-gray-200" />
           <div>
             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${badge}`}>{label}</span>
-            <p className="mt-1 text-xl font-bold text-amber-800">
-              {myRanking.totalScore.toFixed(1)}<span className="ml-1 text-sm font-normal text-amber-500">/ 9pt</span>
+            <p className="mt-1 text-xl font-bold text-gray-900">
+              {myRanking.totalScore.toFixed(1)}<span className="ml-1 text-sm font-normal text-gray-400">/ 9pt</span>
             </p>
           </div>
         </div>
-        <div className="text-right text-xs text-amber-600">
-          최대 <strong className="text-amber-800">9pt</strong>
+        <div className="text-right text-xs text-gray-500">
+          최대 <strong className="text-gray-800">9pt</strong>
         </div>
       </div>
       <div className="mt-4">
-        <div className="h-2 overflow-hidden rounded-full bg-amber-100">
+        <div className="h-2 overflow-hidden rounded-full bg-gray-100">
           <div className={`h-full rounded-full transition-all duration-700 ${barColor[rank]}`} style={{ width: `${(myRanking.totalScore / 9) * 100}%` }} />
         </div>
-        <div className="mt-1 flex justify-between text-[10px] text-amber-500">
+        <div className="mt-1 flex justify-between text-[10px] text-gray-400">
           <span>0pt</span><span>9pt</span>
         </div>
       </div>
