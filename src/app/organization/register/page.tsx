@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Building2, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, CheckCircle2, Loader2, RefreshCcw } from 'lucide-react';
 import { useSession } from '@/lib/auth/AuthContext';
 import {
   getAvailableOrganizations,
@@ -13,6 +13,7 @@ import {
 } from '@/lib/api/organization';
 import { ApiException } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
+import { GITHUB_CLIENT_ID } from '@/lib/api/config';
 
 export default function OrganizationRegisterPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function OrganizationRegisterPage() {
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -39,10 +41,7 @@ export default function OrganizationRegisterPage() {
         setOrgs(data);
       } catch (error) {
         if (error instanceof ApiException && error.status === 403) {
-          toast.error(
-            'GitHub read:org 권한이 필요합니다. GitHub 계정으로 재로그인해주세요.',
-            { duration: 6000 }
-          );
+          setNeedsReauth(true);
         } else {
           toast.error('조직 목록을 불러오지 못했습니다.');
         }
@@ -117,6 +116,31 @@ export default function OrganizationRegisterPage() {
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <Loader2 className="mb-3 h-8 w-8 animate-spin" />
           <p className="text-sm">GitHub에서 조직 목록을 불러오는 중...</p>
+        </div>
+      ) : needsReauth ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-orange-200 bg-orange-50 px-6 py-16 text-center">
+          <RefreshCcw className="mb-4 h-10 w-10 text-orange-400" />
+          <p className="text-sm font-semibold text-orange-700">GitHub 추가 권한이 필요합니다</p>
+          <p className="mt-1 text-xs text-orange-500">
+            조직 목록을 불러오려면 <strong>read:org</strong> 권한이 필요합니다.
+            <br />
+            GitHub로 다시 로그인하여 권한을 추가해주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!GITHUB_CLIENT_ID) return;
+              window.sessionStorage.setItem('kosp:oauth-from', 'login');
+              window.sessionStorage.setItem('kosp:oauth-callback', '/organization/register');
+              const redirectUri = `${window.location.origin}/api/auth/github/callback`;
+              const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
+              window.location.href = oauthUrl;
+            }}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            GitHub로 다시 로그인
+          </button>
         </div>
       ) : orgs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
