@@ -8,6 +8,18 @@ import { TITLE_CATEGORY_EMOJI } from '@/lib/constants/title';
 
 export type RankType = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'challenger';
 
+// 칭호 획득 날짜를 'YY.MM.DD' 형식의 짧은 텍스트로 변환한다.
+function formatTitleGrantedDate(grantedAt: string): string {
+  const date = new Date(grantedAt);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const yy = String(date.getFullYear()).slice(2);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}.${mm}.${dd}`;
+}
+
 // 티어 정보 목록 (모달에서 표시용)
 const tierList: { rank: RankType; range: string; description: string }[] = [
   { rank: 'challenger', range: '7.5 ~ 9', description: '최상위 기여자' },
@@ -285,13 +297,18 @@ export default function GithubRankCard({
                           <span className="text-xs leading-none">{TITLE_CATEGORY_EMOJI[displayTitle.category]}</span>
                         ) : null}
                         <span className="text-xs font-medium text-amber-300">{displayTitle.titleName}</span>
+                        {displayTitle.grantedAt && (
+                          <span className="ml-0.5 text-[10px] font-light text-amber-300/60">
+                            {formatTitleGrantedDate(displayTitle.grantedAt)}
+                          </span>
+                        )}
                       </div>
                     )}
                     {subTitles?.slice(0, 3).map((t) => (
                       <span
                         key={t.userTitleId}
                         className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-700 ring-1 ring-white/10"
-                        title={t.titleName}
+                        title={t.grantedAt ? `${t.titleName} · ${formatTitleGrantedDate(t.grantedAt)} 획득` : t.titleName}
                       >
                         {t.iconUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element

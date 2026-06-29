@@ -19,14 +19,29 @@ import {
   XCircle,
   Calendar,
   ClipboardList,
+  LogOut,
+  Clock,
+  X,
+  Shield,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { updateRecruitStatus, deleteRecruit } from '@/lib/api/recruit';
-import { inviteTeamMember } from '@/lib/api/team';
-import type { TeamDetailResponse, RecruitResponse, RecruitStatus } from '@/lib/api/types';
+import {
+  inviteTeamMember,
+  removeTeamMember,
+  leaveTeam,
+  cancelTeamInvite,
+  changeTeamMemberRole,
+} from '@/lib/api/team';
+import type {
+  TeamDetailResponse,
+  RecruitResponse,
+  RecruitStatus,
+  TeamRole,
+} from '@/lib/api/types';
 import { ensureEncodedUrl } from '@/lib/utils';
 
-type UserRole = 'leader' | 'member' | 'guest';
+type UserRole = 'leader' | 'admin' | 'member' | 'guest';
 
 interface TeamDetailClientProps {
   team: TeamDetailResponse;
@@ -38,24 +53,37 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmailId, setInviteEmailId] = useState('');
 
-  const [team] = useState(initialTeam);
+  const [team, setTeam] = useState(initialTeam);
   const [recruits, setRecruits] = useState(initialRecruits);
   const [activeRecruitMenu, setActiveRecruitMenu] = useState<number | null>(null);
   const [statusChangeModal, setStatusChangeModal] = useState<{ recruitId: number; currentStatus: RecruitStatus } | null>(null);
 
   const currentUserId = session?.user?.id ? Number(session.user.id) : null;
 
+  const myMembership = currentUserId
+    ? team.members?.find((m) => m.id === currentUserId)
+    : undefined;
+
   const currentUserRole: UserRole = !session
     ? 'guest'
-    : team.members?.some((m) => m.role === 'LEADER' && m.id === currentUserId)
+    : myMembership?.role === 'LEADER'
       ? 'leader'
-      : team.members?.some((m) => m.id === currentUserId)
-        ? 'member'
-        : 'guest';
+      : myMembership?.role === 'ADMIN'
+        ? 'admin'
+        : myMembership
+          ? 'member'
+          : 'guest';
 
+  // 팀 설정/모집공고 등 팀 관리 = 팀장만
   const canEditTeam = () => currentUserRole === 'leader';
-  const canInviteMember = () => currentUserRole === 'leader' || currentUserRole === 'member';
-  const canRemoveMember = () => currentUserRole === 'leader';
+  // 초대/제명/초대취소 = 팀장 또는 관리자
+  const canManageMembers = () => currentUserRole === 'leader' || currentUserRole === 'admin';
+  // 권한 위임(관리자 임명/해제) = 팀장만
+  const canGrantRole = () => currentUserRole === 'leader';
+  // 팀 나가기 = 팀장이 아닌 소속 팀원(관리자 포함)
+  const canLeaveTeam = () => currentUserRole === 'admin' || currentUserRole === 'member';
+
+  const pendingInvites = team.pendingInvites ?? [];
 
   const handleInvite = async () => {
     if (!inviteEmailId.trim()) {
@@ -80,8 +108,95 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
     }
   };
 
-  const handleRemoveMember = () => {
-    toast.info('아직 준비 중인 기능입니다.');
+  const handleRemoveMember = async (userId: number, memberName: string) => {
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+    if (!confirm(`정말 ${memberName}님을 팀에서 내보내시겠습니까?`)) {
+      return;
+    }
+    try {
+      await removeTeamMember(team.id, userId, session.accessToken);
+      setTeam((prev) => ({
+        ...prev,
+        members: prev.members.filter((m) => m.id !== userId),
+      }));
+      toast.success(`${memberName}님을 팀에서 내보냈습니다.`);
+    } catch (error) {
+      console.error('팀원 제명 실패:', error);
+      const message = error instanceof Error ? error.message : '팀원 제명에 실패했습니다.';
+      toast.error(message);
+    }
+  };
+
+  const handleLeaveTeam = async () => {
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+    if (!confirm('정말 이 팀에서 나가시겠습니까?')) {
+      return;
+    }
+    try {
+      await leaveTeam(team.id, session.accessToken);
+      if (currentUserId !== null) {
+        setTeam((prev) => ({
+          ...prev,
+          members: prev.members.filter((m) => m.id !== currentUserId),
+        }));
+      }
+      toast.success('팀에서 나갔습니다.');
+    } catch (error) {
+      console.error('팀 탈퇴 실패:', error);
+      const message = error instanceof Error ? error.message : '팀 탈퇴에 실패했습니다.';
+      toast.error(message);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: number, inviteeName: string) => {
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+    if (!confirm(`${inviteeName}님에게 보낸 초대를 취소하시겠습니까?`)) {
+      return;
+    }
+    try {
+      await cancelTeamInvite(inviteId, session.accessToken);
+      setTeam((prev) => ({
+        ...prev,
+        pendingInvites: (prev.pendingInvites ?? []).filter((p) => p.inviteId !== inviteId),
+      }));
+      toast.success('초대를 취소했습니다.');
+    } catch (error) {
+      console.error('초대 취소 실패:', error);
+      const message = error instanceof Error ? error.message : '초대 취소에 실패했습니다.';
+      toast.error(message);
+    }
+  };
+
+  const handleChangeRole = async (userId: number, nextRole: TeamRole, memberName: string) => {
+    if (!session?.accessToken) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+    try {
+      await changeTeamMemberRole(team.id, userId, nextRole, session.accessToken);
+      setTeam((prev) => ({
+        ...prev,
+        members: prev.members.map((m) => (m.id === userId ? { ...m, role: nextRole } : m)),
+      }));
+      toast.success(
+        nextRole === 'ADMIN'
+          ? `${memberName}님을 관리자로 임명했습니다.`
+          : `${memberName}님의 관리자 권한을 해제했습니다.`
+      );
+    } catch (error) {
+      console.error('권한 변경 실패:', error);
+      const message = error instanceof Error ? error.message : '권한 변경에 실패했습니다.';
+      toast.error(message);
+    }
   };
 
   const openStatusChangeModal = (recruitId: number, currentStatus: RecruitStatus) => {
@@ -203,7 +318,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                   </div>
                 </div>
 
-                {canInviteMember() && (
+                {canManageMembers() && (
                   <button
                     onClick={() => setIsInviteModalOpen(true)}
                     className="mt-5 w-full rounded-lg bg-gray-900 py-2.5 text-xs font-bold text-white transition-all hover:bg-black active:scale-[0.98]"
@@ -321,7 +436,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 <h2 className="text-sm font-bold text-gray-900">
                   팀원 목록
                 </h2>
-                {canInviteMember() && (
+                {canManageMembers() && (
                   <button
                     onClick={() => setIsInviteModalOpen(true)}
                     className="inline-flex items-center rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-900"
@@ -332,7 +447,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 )}
               </div>
 
-              {members.length === 0 ? (
+              {members.length === 0 && pendingInvites.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Users className="mb-3 h-10 w-10 text-gray-300" />
                   <p className="text-sm text-gray-500">등록된 팀원이 없습니다.</p>
@@ -358,11 +473,15 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                             <div
                               className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold hover:ring-2 hover:ring-gray-300 transition-all ${member.role === 'LEADER'
                                 ? 'bg-amber-100 text-amber-600'
-                                : 'bg-gray-100 text-gray-500'
+                                : member.role === 'ADMIN'
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : 'bg-gray-100 text-gray-500'
                                 }`}
                             >
                               {member.role === 'LEADER' ? (
                                 <Crown className="h-5 w-5" />
+                              ) : member.role === 'ADMIN' ? (
+                                <Shield className="h-5 w-5" />
                               ) : (
                                 member.name.charAt(0)
                               )}
@@ -379,23 +498,110 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                                 TEAM LEADER
                               </span>
                             )}
+                            {member.role === 'ADMIN' && (
+                              <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-100">
+                                ADMIN
+                              </span>
+                            )}
+                            {member.id === currentUserId && (
+                              <span className="text-[10px] font-medium text-gray-400">나</span>
+                            )}
                           </div>
                           <div className="text-xs text-gray-500 mt-0.5">
-                            {member.role === 'LEADER' ? '팀장' : '팀원'}
+                            {member.role === 'LEADER' ? '팀장' : member.role === 'ADMIN' ? '관리자' : '팀원'}
                           </div>
                         </div>
                       </div>
-                      {canRemoveMember() && member.role !== 'LEADER' && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        {/* 권한 위임/회수: 팀장만, 대상은 본인/팀장 제외 */}
+                        {canGrantRole() && member.role !== 'LEADER' && member.id !== currentUserId && (
+                          member.role === 'ADMIN' ? (
+                            <button
+                              onClick={() => handleChangeRole(member.id, 'MEMBER', member.name)}
+                              className="rounded-lg p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-700"
+                              title="관리자 해제"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleChangeRole(member.id, 'ADMIN', member.name)}
+                              className="rounded-lg p-2 text-gray-400 transition-all hover:bg-blue-50 hover:text-blue-600"
+                              title="관리자로 임명"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </button>
+                          )
+                        )}
+                        {/* 제명: 팀장/관리자, 대상은 본인/팀장 제외 */}
+                        {canManageMembers() && member.role !== 'LEADER' && member.id !== currentUserId && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id, member.name)}
+                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-red-50 hover:text-red-600"
+                            title="팀원 내보내기"
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* 초대 대기 중인 사용자 (반투명 표시) */}
+                  {pendingInvites.map((invite) => (
+                    <div
+                      key={`invite-${invite.inviteId}`}
+                      className="flex items-center justify-between px-6 py-4 bg-gray-50/40 opacity-60 hover:opacity-100 transition-all group"
+                    >
+                      <div className="flex items-center gap-4">
+                        {invite.profileImage ? (
+                          <Image
+                            src={ensureEncodedUrl(invite.profileImage)}
+                            alt={invite.name}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 rounded-full object-cover border border-dashed border-gray-300 grayscale"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-50 text-sm font-bold text-gray-400">
+                            {invite.name.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-500">{invite.name}</span>
+                            <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500 border border-gray-200">
+                              <Clock className="h-2.5 w-2.5" />
+                              초대 대기
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">아직 수락하지 않음</div>
+                        </div>
+                      </div>
+                      {canManageMembers() && (
                         <button
-                          onClick={handleRemoveMember}
+                          onClick={() => handleCancelInvite(invite.inviteId, invite.name)}
                           className="rounded-lg p-2 text-gray-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-600"
-                          title="퇴출"
+                          title="초대 취소"
                         >
-                          <UserMinus className="h-4 w-4" />
+                          <X className="h-4 w-4" />
                         </button>
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* 팀 나가기 (팀장이 아닌 본인) */}
+              {canLeaveTeam() && (
+                <div className="border-t border-gray-100 px-6 py-3 text-right">
+                  <button
+                    onClick={handleLeaveTeam}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    팀 나가기
+                  </button>
                 </div>
               )}
             </div>

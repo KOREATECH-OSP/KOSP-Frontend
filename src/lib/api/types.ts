@@ -443,11 +443,21 @@ export interface TeamListResponse {
   meta: PageMeta;
 }
 
+export type TeamRole = 'LEADER' | 'ADMIN' | 'MEMBER';
+
 export interface TeamMemberResponse {
   id: number;
   name: string;
   profileImage: string | null;
-  role: 'LEADER' | 'MEMBER';
+  role: TeamRole;
+}
+
+export interface PendingInviteResponse {
+  inviteId: number;
+  userId: number;
+  name: string;
+  profileImage: string | null;
+  expiresAt: string;
 }
 
 export interface TeamBasicInfo {
@@ -472,6 +482,7 @@ export interface TeamDetailResponse {
   description: string;
   imageUrl: string | null;
   members: TeamMemberResponse[];
+  pendingInvites?: PendingInviteResponse[];
 }
 
 // ============================================
