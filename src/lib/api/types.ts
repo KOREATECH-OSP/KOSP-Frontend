@@ -665,6 +665,26 @@ export interface UserTitleListResponse {
   totalCount: number;
 }
 
+export interface TitleConditionProgress {
+  conditionType: string;
+  current: number;
+  target: number;
+  rate: number;        // 0~100
+  measurable: boolean;
+}
+
+export interface TitleProgressResponse {
+  titleId: number;
+  titleName: string;
+  description: string;
+  category: string;
+  rarity: string;
+  iconUrl: string | null;
+  overallRate: number; // 0~100
+  measurable: boolean;
+  conditions: TitleConditionProgress[];
+}
+
 // ============================================
 // Title Catalog Types (전체 칭호 목록)
 // ============================================

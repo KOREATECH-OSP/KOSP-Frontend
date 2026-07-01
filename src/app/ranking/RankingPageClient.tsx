@@ -13,7 +13,7 @@ import {
   GithubRankingListResponse,
 } from '@/lib/api/types';
 import { apiClient } from '@/lib/api';
-import { getTierInfo, getTierStyle, getTierProgress, getNextTierRemaining } from './tierUtils';
+import { getTierInfo, getTierStyle, getTierProgress, getNextTierRemaining, getEliteUpgradeHint } from './tierUtils';
 import { getRankFromScore } from '@/common/components/GithubRankCard';
 import RankBadge from '@/common/components/RankBadge';
 
@@ -92,9 +92,9 @@ const SEASON_TIER_CRITERIA = [
   { label: 'SILVER 4~1', range: '10 ~ 20pt', color: 'bg-slate-100 text-slate-700' },
   { label: 'GOLD 4~1', range: '20 ~ 35pt', color: 'bg-yellow-100 text-yellow-800' },
   { label: 'PLATINUM 4~1', range: '35 ~ 55pt', color: 'bg-cyan-100 text-cyan-800' },
-  { label: 'DIAMOND 4~1', range: '55 ~ 75pt', color: 'bg-blue-100 text-blue-800' },
-  { label: 'MASTER 4~1', range: '75 ~ 90pt', color: 'bg-purple-100 text-purple-800' },
-  { label: 'CHALLENGER', range: '90pt 이상', color: 'bg-rose-100 text-rose-800' },
+  { label: 'DIAMOND 4~1', range: '55pt 이상 (점수형 최고)', color: 'bg-blue-100 text-blue-800' },
+  { label: 'MASTER', range: '상위 5% + 성취 조건', color: 'bg-purple-100 text-purple-800' },
+  { label: 'CHALLENGER', range: '상위 1% + 성취 조건', color: 'bg-rose-100 text-rose-800' },
 ];
 const GITHUB_TIER_CRITERIA = [
   { label: 'CHALLENGER', range: '7.5 ~ 9pt', color: 'bg-rose-100 text-rose-800' },
@@ -186,6 +186,7 @@ function MySeasonBanner({ myRanking }: { myRanking: MySeasonRankingResponse }) {
   const { bar, text } = getTierStyle(myRanking.tier);
   const remaining = getNextTierRemaining(myRanking.tier, myRanking.totalScore);
   const progress = getTierProgress(myRanking.tier, myRanking.totalScore);
+  const eliteHint = getEliteUpgradeHint(myRanking.tier);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5">
@@ -208,7 +209,9 @@ function MySeasonBanner({ myRanking }: { myRanking: MySeasonRankingResponse }) {
         <div className="text-right text-xs text-gray-500">
           {remaining !== null
             ? <span>다음 티어까지 <strong className="text-gray-800">{remaining.toFixed(1)}pt</strong></span>
-            : <span className="font-semibold text-rose-600">최고 티어 달성 🎉</span>
+            : eliteHint !== null
+              ? <span className="font-medium text-purple-600">{eliteHint}</span>
+              : <span className="font-semibold text-rose-600">최고 티어 달성 🎉</span>
           }
         </div>
       </div>
