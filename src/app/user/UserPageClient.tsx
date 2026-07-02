@@ -1764,7 +1764,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             {/* 대표 칭호: 왕관 뱃지 (overflow-hidden 밖에 위치해 잘리지 않음) */}
                             {isDisplayTitle && (
                               <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-400 shadow-sm">
-                                <span className="text-[10px] leading-none">★</span>
+                                <Star className="h-3 w-3 fill-white text-white" />
                               </div>
                             )}
                           </div>
