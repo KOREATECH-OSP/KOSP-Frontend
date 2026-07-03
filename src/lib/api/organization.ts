@@ -38,7 +38,7 @@ export interface AdminOrganizationMemberResponse {
   githubUserId: number;
   githubUsername: string;
   role: 'OWNER' | 'MEMBER';
-  status: 'LINKED' | 'NOT_JOINED' | 'REMOVED';
+  status: 'LINKED' | 'NOT_JOINED' | 'EMAIL_PENDING' | 'EMAIL_PRIVATE' | 'REMOVED';
   userId: number | null;
   joinedAt: string | null;
   syncedAt: string;
