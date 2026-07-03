@@ -412,6 +412,7 @@ interface RankingPageClientProps {
   myRanking: MySeasonRankingResponse | null;
   myGithubRanking: MyGithubRankingResponse | null;
   isAuthenticated: boolean;
+  myUserId: number | null;
 }
 
 export default function RankingPageClient({
@@ -420,6 +421,7 @@ export default function RankingPageClient({
   myRanking,
   myGithubRanking,
   isAuthenticated,
+  myUserId,
 }: RankingPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('season');
   const [seasonRankings, setSeasonRankings] = useState(initialSeasonRankings);
@@ -598,10 +600,10 @@ export default function RankingPageClient({
           <ul className="divide-y divide-gray-50">
             {activeTab === 'season'
               ? (filteredSeasonEntries as SeasonRankingEntry[]).map((entry) => (
-                  <SeasonRankRow key={`${entry.rank}-${entry.userId}`} entry={entry} isMe={myRanking?.rank === entry.rank} />
+                  <SeasonRankRow key={`${entry.rank}-${entry.userId}`} entry={entry} isMe={myUserId === entry.userId} />
                 ))
               : (filteredGithubEntries as GithubRankingEntry[]).map((entry) => (
-                  <GithubRankRow key={`${entry.rank}-${entry.userId}`} entry={entry} isMe={myGithubRanking?.rank === entry.rank} />
+                  <GithubRankRow key={`${entry.rank}-${entry.userId}`} entry={entry} isMe={myUserId === entry.userId} />
                 ))
             }
           </ul>

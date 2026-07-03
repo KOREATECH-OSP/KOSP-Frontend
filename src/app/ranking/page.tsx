@@ -68,6 +68,7 @@ export default async function RankingPage() {
           myRanking={myRanking}
           myGithubRanking={myGithubRanking}
           isAuthenticated={!!session}
+          myUserId={session ? parseInt(session.user.id) : null}
         />
       </Suspense>
       <Footer />
