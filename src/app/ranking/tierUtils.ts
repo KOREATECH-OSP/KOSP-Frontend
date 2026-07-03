@@ -56,8 +56,23 @@ export function getTierInfo(tier: string): TierInfo {
 
 export function getNextTierRemaining(tier: string, score: number): number | null {
   const info = getTierInfo(tier);
-  if (info.group === 'CHALLENGER') return null;
+  // 엘리트 구간(Master/Challenger)과 점수형 최고 티어(Diamond 1)는 점수 기반 다음 티어가 없다.
+  // (Master/Challenger는 "상위 % + 성취 조건" 교집합으로만 승급)
+  if (info.group === 'CHALLENGER' || info.group === 'MASTER' || tier === 'DIAMOND_1') {
+    return null;
+  }
   return Math.max(0, info.max - score);
+}
+
+/**
+ * 점수만으로는 오를 수 없는 구간의 승급 안내 문구를 반환한다.
+ * Diamond 1 → 마스터, Master → 챌린저. Challenger(최고)와 그 외 점수형 구간은 null.
+ */
+export function getEliteUpgradeHint(tier: string): string | null {
+  const info = getTierInfo(tier);
+  if (tier === 'DIAMOND_1') return '마스터 승급: 시즌 상위 5% + 성취 조건';
+  if (info.group === 'MASTER') return '챌린저 승급: 시즌 상위 1% + 성취 조건';
+  return null;
 }
 
 export function getTierProgress(tier: string, score: number): number {

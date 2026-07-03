@@ -46,6 +46,7 @@ import {
   getMyPointHistory,
   getMyApplications,
   getMyTitles,
+  getMyTitleProgress,
   setDisplayTitle as setDisplayTitleApi,
   getMySeasonRanking,
   getMyResume,
@@ -68,11 +69,32 @@ import type {
   MyApplicationResponse,
   BoardResponse,
   UserTitleResponse,
+  TitleProgressResponse,
   MySeasonRankingResponse,
   TitleDetailResponse,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { TITLE_CATEGORY_EMOJI, RARITY_LABELS, RARITY_COLORS, getTitleImage } from '@/lib/constants/title';
+
+// 칭호 취득 날짜 포맷 (YY.MM.DD)
+function formatTitleGrantedDate(grantedAt: string): string {
+  const d = new Date(grantedAt);
+  if (Number.isNaN(d.getTime())) return '';
+  const yy = String(d.getFullYear()).slice(2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}.${mm}.${dd}`;
+}
+
+// 미취득 칭호 진행도의 조건 유형 → 한글 라벨
+const TITLE_CONDITION_LABEL: Record<string, string> = {
+  COMMIT_COUNT_GTE: '커밋',
+  STREAK_DAYS_GTE: '연속 출석',
+  CHALLENGE_COUNT_GTE: '챌린지',
+  ARTICLE_COUNT_GTE: '게시글',
+  TEAM_JOIN_COUNT_GTE: '팀 참여',
+  MANUAL: '관리자 지급',
+};
 
 // ─── 시즌 랭킹 카드 ───────────────────────────────────────────
 const SEASON_TIER_LABELS: Record<string, string> = {
@@ -271,6 +293,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [allTitles, setAllTitles] = useState<TitleDetailResponse[]>([]);
   // 내 보유 칭호 목록
   const [myTitles, setMyTitles] = useState<UserTitleResponse[]>([]);
+  // 미취득 칭호 진행도 (titleId → 진행도)
+  const [titleProgress, setTitleProgress] = useState<Record<number, TitleProgressResponse>>({});
   // 칭호 탭 필터
   const [titleFilter, setTitleFilter] = useState<string>('전체');
   // 칭호 대표 설정 로딩
@@ -397,12 +421,13 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setBoards(boardsRes.boards);
 
         if (accessToken) {
-          const [challengeRes, titlesRes, seasonRes, resumeRes, allTitlesRes] = await Promise.all([
+          const [challengeRes, titlesRes, seasonRes, resumeRes, allTitlesRes, progressRes] = await Promise.all([
             getChallenges({ accessToken }).catch(() => null),
             getMyTitles({ accessToken }).catch(() => null),
             getMySeasonRanking({ accessToken }).catch(() => null),
             getMyResume({ accessToken }).catch(() => null),
             getAllTitles().catch(() => null),
+            getMyTitleProgress({ accessToken }).catch(() => null),
           ]);
           if (challengeRes) {
             const total = challengeRes.challenges.length;
@@ -421,6 +446,11 @@ export default function UserPageClient({ session }: UserPageClientProps) {
             setResumeIsPublic(resumeRes.resumeData?.isPublic ?? false);
           }
           if (allTitlesRes) setAllTitles(allTitlesRes.titles);
+          if (progressRes) {
+            const map: Record<number, TitleProgressResponse> = {};
+            progressRes.forEach((p) => { map[p.titleId] = p; });
+            setTitleProgress(map);
+          }
         }
 
         await fetchGithubData();
@@ -1675,6 +1705,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     {filteredTitles.map((title) => {
                       const userTitle = myTitles.find((mt) => mt.titleId === title.id);
                       const isOwned = !!userTitle;
+                      const prog = !isOwned ? titleProgress[title.id] : undefined;
                       const isDisplayTitle = userTitle?.isDisplay ?? false;
                       const imgSrc = getTitleImage(title.code, title.iconUrl);
                       const categoryEmoji = TITLE_CATEGORY_EMOJI[title.category] ?? '🏅';
@@ -1684,14 +1715,21 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       return (
                         <div
                           key={title.id}
-                          className={`flex flex-col rounded-xl border bg-white p-4 transition-all ${
+                          className={`relative group flex flex-col rounded-xl border bg-white p-4 transition-all ${
                             isDisplayTitle
                               ? 'border-orange-200 shadow-[0_0_0_2px_rgba(251,146,60,0.2)]'
                               : isOwned
                               ? 'border-gray-200 shadow-sm'
-                              : 'border-gray-100 bg-gray-50/50 grayscale'
+                              : 'border-gray-100 bg-gray-50/50 grayscale hover:grayscale-0'
                           }`}
                         >
+                          {/* 취득 날짜 (보유 시, 우측 상단) */}
+                          {isOwned && userTitle?.grantedAt && (
+                            <span className="absolute right-2 top-2 text-[10px] font-light text-gray-400">
+                              {formatTitleGrantedDate(userTitle.grantedAt)}
+                            </span>
+                          )}
+
                           {/* 이미지 영역 (80×80, 중앙 정렬) */}
                           <div className="relative mx-auto mb-3 h-20 w-20">
                             {/* 원형 클립 컨테이너: overflow-hidden으로 이미지 배경을 원형에 맞게 클리핑 */}
@@ -1726,7 +1764,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             {/* 대표 칭호: 왕관 뱃지 (overflow-hidden 밖에 위치해 잘리지 않음) */}
                             {isDisplayTitle && (
                               <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-400 shadow-sm">
-                                <span className="text-[10px] leading-none">★</span>
+                                <Star className="h-3 w-3 fill-white text-white" />
                               </div>
                             )}
                           </div>
@@ -1769,14 +1807,40 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             {title.description}
                           </p>
 
-                          {/* 달성 조건 */}
+                          {/* 달성 조건 (미획득 hover 시 진행도 블록으로 대체) */}
                           {title.conditions.length > 0 && (
-                            <div className="mb-3 space-y-0.5 rounded-lg bg-gray-50 px-3 py-2">
+                            <div
+                              className={`mb-3 space-y-0.5 rounded-lg bg-gray-50 px-3 py-2 ${
+                                prog && prog.measurable ? 'group-hover:hidden' : ''
+                              }`}
+                            >
                               {title.conditions.map((cond, i) => (
                                 <p key={i} className="text-center text-[11px] text-gray-400">
                                   {cond.description ?? `${cond.conditionType} ≥ ${cond.thresholdValue}`}
                                 </p>
                               ))}
+                            </div>
+                          )}
+
+                          {/* 미획득 칭호 진행도 (hover 시 표시) */}
+                          {prog && prog.measurable && (
+                            <div className="mb-3 hidden space-y-1.5 rounded-lg bg-blue-50/70 px-3 py-2 group-hover:block">
+                              {prog.conditions.map((c, i) => (
+                                <div key={i}>
+                                  <div className="flex items-center justify-between text-[10px] text-gray-500">
+                                    <span>{TITLE_CONDITION_LABEL[c.conditionType] ?? c.conditionType}</span>
+                                    <span className="font-medium text-gray-700">
+                                      {c.current}/{c.target} ({c.rate}%)
+                                    </span>
+                                  </div>
+                                  <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-gray-200">
+                                    <div className="h-full rounded-full bg-blue-500" style={{ width: `${c.rate}%` }} />
+                                  </div>
+                                </div>
+                              ))}
+                              <p className="pt-0.5 text-center text-[10px] font-semibold text-blue-600">
+                                달성률 {prog.overallRate}%
+                              </p>
                             </div>
                           )}
 

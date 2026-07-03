@@ -21,6 +21,7 @@ import type {
   MyApplicationListResponse,
   UserTitleListResponse,
   UserTitleResponse,
+  TitleProgressResponse,
   MySeasonRankingResponse,
   MyGithubRankingResponse,
   SeasonRankingListResponse,
@@ -278,6 +279,15 @@ export async function getUserTitles(userId: number): Promise<UserTitleListRespon
  */
 export async function getMyTitles(auth: AuthOptions): Promise<UserTitleListResponse> {
   return clientApiClient<UserTitleListResponse>('/v1/users/me/titles', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 미취득 칭호 진행도 조회 (인증 필요)
+ */
+export async function getMyTitleProgress(auth: AuthOptions): Promise<TitleProgressResponse[]> {
+  return clientApiClient<TitleProgressResponse[]>('/v1/users/me/titles/progress', {
     accessToken: auth.accessToken,
   });
 }
