@@ -796,3 +796,17 @@ export async function adminUploadTitleImage(
 
   return response.json() as Promise<{ iconUrl: string }>;
 }
+
+// ============================================
+// Season APIs
+// ============================================
+
+/**
+ * 시즌 랭킹 배치 강제 실행
+ */
+export async function runSeasonRankingBatch(auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>('/v1/admin/seasons/batch/ranking', {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
