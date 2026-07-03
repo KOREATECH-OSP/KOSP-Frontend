@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/server';
-import { getOrganizationDetail } from '@/lib/api/organization';
+import { getOrganizationDetail, getOrganizationMembers } from '@/lib/api/organization';
 import { ApiException } from '@/lib/api/client';
 import OrganizationDetailClient from './OrganizationDetailClient';
 
@@ -32,5 +32,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     throw error;
   }
 
-  return <OrganizationDetailClient detail={detail} />;
+  const members = await getOrganizationMembers(orgId, session.accessToken).catch(() => []);
+
+  return <OrganizationDetailClient detail={detail} members={members} />;
 }

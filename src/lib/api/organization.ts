@@ -33,6 +33,13 @@ export interface OrganizationRegisterRequest {
   githubOrgId: number;
 }
 
+export interface OrganizationMemberResponse {
+  id: number;
+  githubUsername: string;
+  role: 'OWNER' | 'MEMBER';
+  status: 'LINKED' | 'NOT_JOINED' | 'EMAIL_PENDING' | 'EMAIL_PRIVATE';
+}
+
 export interface AdminOrganizationMemberResponse {
   id: number;
   githubUserId: number;
@@ -105,6 +112,19 @@ export async function getOrganizationDetail(
   accessToken: string
 ): Promise<OrganizationDetailResponse> {
   return apiClient<OrganizationDetailResponse>(`/v1/organizations/${id}`, {
+    cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 멤버 목록 조회 (조직 등록자 전용)
+ */
+export async function getOrganizationMembers(
+  id: number,
+  accessToken: string
+): Promise<OrganizationMemberResponse[]> {
+  return apiClient<OrganizationMemberResponse[]>(`/v1/organizations/${id}/members`, {
     cache: 'no-store',
     accessToken,
   });
