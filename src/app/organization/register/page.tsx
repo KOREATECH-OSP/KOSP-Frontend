@@ -143,12 +143,35 @@ export default function OrganizationRegisterPage() {
           </button>
         </div>
       ) : orgs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
           <Building2 className="mb-4 h-10 w-10 text-gray-300" />
           <p className="text-sm font-medium text-gray-500">등록 가능한 조직이 없습니다.</p>
           <p className="mt-1 text-xs text-gray-400">
             GitHub에서 Owner 권한을 가진 조직만 등록할 수 있습니다.
           </p>
+          <div className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-left text-xs text-amber-700">
+            <p className="font-semibold">오너인 조직이 목록에 없나요?</p>
+            <p className="mt-1 leading-relaxed">
+              GitHub OAuth App 접근 제한으로 인해 조직이 보이지 않을 수 있습니다.
+              <br />
+              아래 버튼으로 재인증하여 조직 접근 권한을 부여해주세요.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!GITHUB_CLIENT_ID) return;
+              window.sessionStorage.setItem('kosp:oauth-from', 'login');
+              window.sessionStorage.setItem('kosp:oauth-callback', '/organization/register');
+              const redirectUri = `${window.location.origin}/api/auth/github/callback`;
+              const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
+              window.location.href = oauthUrl;
+            }}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+          >
+            <RefreshCcw className="h-3.5 w-3.5" />
+            GitHub 재인증으로 조직 접근 권한 부여
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -207,10 +230,27 @@ export default function OrganizationRegisterPage() {
         </div>
       )}
 
-      {/* 안내 문구 */}
-      <p className="mt-4 text-xs text-gray-400">
-        비공개 조직의 경우 멤버 목록이 누락될 수 있습니다.
-      </p>
+      {/* 조직이 안 보일 때 재인증 안내 */}
+      {!isFetching && !needsReauth && (
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
+          <p className="text-xs text-gray-500">오너인 조직이 목록에 없나요?</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!GITHUB_CLIENT_ID) return;
+              window.sessionStorage.setItem('kosp:oauth-from', 'login');
+              window.sessionStorage.setItem('kosp:oauth-callback', '/organization/register');
+              const redirectUri = `${window.location.origin}/api/auth/github/callback`;
+              const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
+              window.location.href = oauthUrl;
+            }}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 underline-offset-2 hover:underline"
+          >
+            <RefreshCcw className="h-3 w-3" />
+            GitHub 재인증으로 접근 권한 부여
+          </button>
+        </div>
+      )}
 
       {/* 등록 버튼 */}
       <div className="mt-8 flex justify-end gap-3">
