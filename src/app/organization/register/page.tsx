@@ -13,7 +13,6 @@ import {
 } from '@/lib/api/organization';
 import { ApiException } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
-import { GITHUB_CLIENT_ID } from '@/lib/api/config';
 
 export default function OrganizationRegisterPage() {
   const router = useRouter();
@@ -129,12 +128,9 @@ export default function OrganizationRegisterPage() {
           <button
             type="button"
             onClick={() => {
-              if (!GITHUB_CLIENT_ID) return;
               window.sessionStorage.setItem('kosp:oauth-from', 'login');
               window.sessionStorage.setItem('kosp:oauth-callback', '/organization/register');
-              const redirectUri = `${window.location.origin}/api/auth/github/callback`;
-              const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
-              window.location.href = oauthUrl;
+              window.location.href = '/api/auth/github/login?scope=read%3Auser%2Cuser%3Aemail%2Cread%3Aorg';
             }}
             className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
           >
@@ -160,12 +156,9 @@ export default function OrganizationRegisterPage() {
           <button
             type="button"
             onClick={() => {
-              if (!GITHUB_CLIENT_ID) return;
               window.sessionStorage.setItem('kosp:oauth-from', 'login');
               window.sessionStorage.setItem('kosp:oauth-callback', '/organization/register');
-              const redirectUri = `${window.location.origin}/api/auth/github/callback`;
-              const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
-              window.location.href = oauthUrl;
+              window.location.href = '/api/auth/github/login?scope=read%3Auser%2Cuser%3Aemail%2Cread%3Aorg';
             }}
             className="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
           >
@@ -237,12 +230,9 @@ export default function OrganizationRegisterPage() {
           <button
             type="button"
             onClick={() => {
-              if (!GITHUB_CLIENT_ID) return;
               window.sessionStorage.setItem('kosp:oauth-from', 'login');
               window.sessionStorage.setItem('kosp:oauth-callback', '/organization/register');
-              const redirectUri = `${window.location.origin}/api/auth/github/callback`;
-              const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
-              window.location.href = oauthUrl;
+              window.location.href = '/api/auth/github/login?scope=read%3Auser%2Cuser%3Aemail%2Cread%3Aorg';
             }}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 underline-offset-2 hover:underline"
           >
