@@ -34,5 +34,12 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
 
   const members = await getOrganizationMembers(orgId, session.accessToken).catch(() => []);
 
-  return <OrganizationDetailClient detail={detail} members={members} />;
+  return (
+    <OrganizationDetailClient
+      detail={detail}
+      members={members}
+      currentUserId={parseInt(session.user.id, 10)}
+      accessToken={session.accessToken}
+    />
+  );
 }

@@ -35,8 +35,9 @@ export interface OrganizationRegisterRequest {
 
 export interface OrganizationMemberResponse {
   id: number;
+  userId: number | null;
   githubUsername: string;
-  role: 'OWNER' | 'MEMBER';
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
   status: 'LINKED' | 'NOT_JOINED' | 'EMAIL_PENDING' | 'EMAIL_PRIVATE';
 }
 
@@ -44,7 +45,7 @@ export interface AdminOrganizationMemberResponse {
   id: number;
   githubUserId: number;
   githubUsername: string;
-  role: 'OWNER' | 'MEMBER';
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
   status: 'LINKED' | 'NOT_JOINED' | 'EMAIL_PENDING' | 'EMAIL_PRIVATE' | 'REMOVED';
   userId: number | null;
   joinedAt: string | null;
@@ -189,6 +190,34 @@ export async function deactivateOrganization(
   accessToken: string
 ): Promise<void> {
   await clientApiClient<void>(`/v1/admin/organizations/${id}`, {
+    method: 'DELETE',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 멤버 관리자 임명 (Owner 또는 Admin이 가능)
+ */
+export async function appointOrganizationAdmin(
+  orgId: number,
+  memberId: number,
+  accessToken: string
+): Promise<void> {
+  await clientApiClient<void>(`/v1/organizations/${orgId}/members/${memberId}/admin`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 멤버 관리자 해임 (Owner만 가능)
+ */
+export async function dismissOrganizationAdmin(
+  orgId: number,
+  memberId: number,
+  accessToken: string
+): Promise<void> {
+  await clientApiClient<void>(`/v1/organizations/${orgId}/members/${memberId}/admin`, {
     method: 'DELETE',
     accessToken,
   });

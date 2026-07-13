@@ -2,18 +2,42 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Building2, ExternalLink, Users, GitFork, UserCheck, Clock, EyeOff, Mail } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Building2, ExternalLink, Users, GitFork, UserCheck, Clock, EyeOff, Shield, Crown } from 'lucide-react';
 import type { OrganizationDetailResponse, OrganizationMemberResponse } from '@/lib/api/organization';
+import { appointOrganizationAdmin, dismissOrganizationAdmin } from '@/lib/api/organization';
 import OrganizationStatusBadge from '@/common/components/organization/OrganizationStatusBadge';
 
 interface OrganizationDetailClientProps {
   detail: OrganizationDetailResponse;
   members: OrganizationMemberResponse[];
+  currentUserId: number;
+  accessToken: string;
 }
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function MemberRoleBadge({ role }: { role: OrganizationMemberResponse['role'] }) {
+  if (role === 'OWNER') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-200">
+        <Crown className="h-2.5 w-2.5" />
+        오너
+      </span>
+    );
+  }
+  if (role === 'ADMIN') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-600 border border-purple-200">
+        <Shield className="h-2.5 w-2.5" />
+        관리자
+      </span>
+    );
+  }
+  return null;
 }
 
 function MemberStatusBadge({ status }: { status: OrganizationMemberResponse['status'] }) {
@@ -40,7 +64,6 @@ function MemberStatusBadge({ status }: { status: OrganizationMemberResponse['sta
       </span>
     );
   }
-  // NOT_JOINED
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-400 border border-gray-200">
       미가입
@@ -55,7 +78,48 @@ function MemberStatusDesc({ status }: { status: OrganizationMemberResponse['stat
   return <span className="text-xs text-gray-400">K-OSP에 가입되지 않았습니다</span>;
 }
 
-export default function OrganizationDetailClient({ detail, members }: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient({
+  detail,
+  members: initialMembers,
+  currentUserId,
+  accessToken,
+}: OrganizationDetailClientProps) {
+  const [members, setMembers] = useState(initialMembers);
+  const [loadingMemberId, setLoadingMemberId] = useState<number | null>(null);
+
+  const currentMember = members.find((m) => m.userId === currentUserId);
+  const currentRole = currentMember?.role ?? 'MEMBER';
+  const canAppoint = currentRole === 'OWNER' || currentRole === 'ADMIN';
+  const canDismiss = currentRole === 'OWNER';
+
+  async function handleAppoint(memberId: number) {
+    setLoadingMemberId(memberId);
+    try {
+      await appointOrganizationAdmin(detail.id, memberId, accessToken);
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, role: 'ADMIN' as const } : m))
+      );
+    } catch {
+      alert('관리자 임명에 실패했습니다.');
+    } finally {
+      setLoadingMemberId(null);
+    }
+  }
+
+  async function handleDismiss(memberId: number) {
+    setLoadingMemberId(memberId);
+    try {
+      await dismissOrganizationAdmin(detail.id, memberId, accessToken);
+      setMembers((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, role: 'MEMBER' as const } : m))
+      );
+    } catch {
+      alert('관리자 해임에 실패했습니다.');
+    } finally {
+      setLoadingMemberId(null);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
       {/* 뒤로가기 */}
@@ -172,29 +236,61 @@ export default function OrganizationDetailClient({ detail, members }: Organizati
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">멤버 목록</p>
               </div>
               <div className="divide-y divide-gray-100">
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center gap-4 px-5 py-3">
-                    {/* GitHub 아바타 */}
-                    <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
-                      <Image
-                        src={`https://github.com/${member.githubUsername}.png`}
-                        alt={member.githubUsername}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-
-                    {/* 이름 + 상태 */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{member.githubUsername}</span>
-                        <MemberStatusBadge status={member.status} />
+                {members.map((member) => {
+                  const isLoading = loadingMemberId === member.id;
+                  const isMe = member.userId === currentUserId;
+                  return (
+                    <div key={member.id} className="flex items-center gap-4 px-5 py-3">
+                      {/* GitHub 아바타 */}
+                      <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-100 border border-gray-200">
+                        <Image
+                          src={`https://github.com/${member.githubUsername}.png`}
+                          alt={member.githubUsername}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
                       </div>
-                      <MemberStatusDesc status={member.status} />
+
+                      {/* 이름 + 역할 + 상태 */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-gray-900">{member.githubUsername}</span>
+                          {isMe && (
+                            <span className="text-[10px] text-gray-400">(나)</span>
+                          )}
+                          <MemberRoleBadge role={member.role} />
+                          <MemberStatusBadge status={member.status} />
+                        </div>
+                        <MemberStatusDesc status={member.status} />
+                      </div>
+
+                      {/* 관리자 임명/해임 버튼 */}
+                      {!isMe && member.role !== 'OWNER' && (
+                        <div className="flex-shrink-0">
+                          {member.role === 'MEMBER' && canAppoint && (
+                            <button
+                              onClick={() => handleAppoint(member.id)}
+                              disabled={isLoading}
+                              className="text-xs px-2 py-1 rounded-md border border-purple-200 text-purple-600 hover:bg-purple-50 disabled:opacity-50 transition-colors"
+                            >
+                              {isLoading ? '처리 중...' : '관리자 임명'}
+                            </button>
+                          )}
+                          {member.role === 'ADMIN' && canDismiss && (
+                            <button
+                              onClick={() => handleDismiss(member.id)}
+                              disabled={isLoading}
+                              className="text-xs px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                            >
+                              {isLoading ? '처리 중...' : '관리자 해임'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
