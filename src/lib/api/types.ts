@@ -632,6 +632,13 @@ export interface RepositorySearchSummary {
   lastCommitDate: string | null;
 }
 
+export interface OrganizationSearchSummary {
+  id: number;
+  githubOrgName: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
 export interface GlobalSearchResponse {
   articles: ArticleSummary[];
   recruits: RecruitSummary[];
@@ -639,6 +646,7 @@ export interface GlobalSearchResponse {
   challenges: ChallengeSearchSummary[];
   users: UserSearchSummary[];
   repositories: RepositorySearchSummary[];
+  organizations: OrganizationSearchSummary[];
   meta?: PageMeta;
 }
 
