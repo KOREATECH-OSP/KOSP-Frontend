@@ -206,6 +206,96 @@ export interface GithubRecentActivityResponse {
   lastCommitDate: string;
 }
 
+/* ============================================
+ * 학습자료(과제/EL) — Material
+ * ============================================ */
+
+export type MaterialFolderType = 'YEAR' | 'SEMESTER' | 'SUBJECT' | 'CUSTOM';
+export type MaterialSource = 'AUNURI_ASSIGNMENT' | 'AUNURI_EL' | 'GITHUB' | 'MANUAL';
+export type MaterialVisibility = 'PUBLIC' | 'PRIVATE';
+
+export interface MaterialFolderResponse {
+  id: number;
+  parentId: number | null;
+  name: string;
+  folderType: MaterialFolderType;
+  source: MaterialSource;
+  visibility: MaterialVisibility;
+  isStartFolder: boolean;
+  sortOrder: number;
+  itemCount: number;
+}
+
+export interface MaterialItemResponse {
+  id: number;
+  folderId: number;
+  title: string;
+  subjectName: string | null;
+  materialYear: number | null;
+  semester: string | null;
+  source: MaterialSource;
+  sourceUrl: string | null;
+  fileUrl: string | null;
+  originalFileName: string | null;
+  fileSize: number | null;
+  contentType: string | null;
+  isPublic: boolean;
+  materialDate: string | null;
+  updatedAt: string;
+}
+
+export interface MaterialFolderCreateRequest {
+  name: string;
+  parentId?: number | null;
+  folderType?: MaterialFolderType;
+  source?: MaterialSource;
+  visibility?: MaterialVisibility;
+  sortOrder?: number;
+}
+
+export interface MaterialFolderUpdateRequest {
+  name?: string;
+  folderType?: MaterialFolderType;
+  sortOrder?: number;
+}
+
+export interface MaterialItemCreateRequest {
+  folderId: number;
+  title: string;
+  subjectName?: string | null;
+  materialYear?: number | null;
+  semester?: string | null;
+  source?: MaterialSource;
+  sourceUrl?: string | null;
+  fileUrl?: string | null;
+  originalFileName?: string | null;
+  fileSize?: number | null;
+  contentType?: string | null;
+  visibility?: MaterialVisibility | null;
+  materialDate?: string | null;
+}
+
+/**
+ * GitHub 저장소 → 이력서 프로젝트 가져오기 항목
+ * GET /v1/users/me/github/repositories
+ */
+export interface GithubResumeProjectResponse {
+  repoKey: string;
+  name: string;
+  githubLink: string;
+  summary: string | null;
+  techStack: string | null;
+  period: string | null;
+  myContributions: string | null;
+  result: string | null;
+  isOwned: boolean | null;
+  stargazersCount: number | null;
+  userCommitsCount: number | null;
+  userPrsCount: number | null;
+  userIssuesCount: number | null;
+  primaryLanguage: string | null;
+}
+
 /**
  * 기여 점수 - /v1/users/{userId}/github/contribution-score
  */

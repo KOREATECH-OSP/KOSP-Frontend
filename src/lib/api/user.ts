@@ -26,6 +26,7 @@ import type {
   MyGithubRankingResponse,
   SeasonRankingListResponse,
   GithubRankingListResponse,
+  GithubResumeProjectResponse,
   ResumeResponse,
   ResumeListResponse,
   ResumeSaveRequest,
@@ -310,6 +311,17 @@ export async function setDisplayTitle(
  */
 export async function getMyGithubRanking(auth: AuthOptions): Promise<MyGithubRankingResponse> {
   return clientApiClient<MyGithubRankingResponse>('/v1/github/rankings/me', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 내 GitHub 저장소 목록 조회 (이력서 프로젝트 가져오기용, 인증 필요)
+ */
+export async function getMyGithubRepositories(
+  auth: AuthOptions,
+): Promise<GithubResumeProjectResponse[]> {
+  return clientApiClient<GithubResumeProjectResponse[]>('/v1/users/me/github/repositories', {
     accessToken: auth.accessToken,
   });
 }
