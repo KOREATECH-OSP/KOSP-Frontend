@@ -57,6 +57,7 @@ import {
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
 import { getRecentMaterials } from '@/lib/api/material';
+import FollowCard from './resume/components/FollowCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 import type {
   MaterialItemResponse,
@@ -870,7 +871,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               )}
             </div>
 
-            {/* 팔로우/팔로워 카드 — TODO: 팔로우/팔로워 API 구현 후 활성화 */}
+            {/* 팔로우/팔로워 카드 */}
+            {userId != null && (
+              <FollowCard profileUserId={userId} accessToken={accessToken ?? null} isMe />
+            )}
           </div>
         </aside>
 

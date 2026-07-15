@@ -48,6 +48,8 @@ import type {
   ResumeData,
 } from '@/lib/api/types';
 import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
+import FollowCard from '@/app/user/resume/components/FollowCard';
+import { useAuth } from '@/lib/auth/AuthContext';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 
@@ -81,6 +83,10 @@ export default function UserProfileClient({
   profile,
   counts: initialCounts,
 }: UserProfileClientProps) {
+  const { session } = useAuth();
+  const viewerToken = session?.accessToken ?? null;
+  const isMe = session?.user?.id === String(userId);
+
   const [activeTab, setActiveTab] = useState<TabType>('활동');
   const [posts, setPosts] = useState<ArticleResponse[]>([]);
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -286,6 +292,9 @@ export default function UserProfileClient({
                 </div>
               </div>
             </div>
+
+            {/* 팔로우 카드 */}
+            <FollowCard profileUserId={userId} accessToken={viewerToken} isMe={isMe} />
           </div>
         </aside>
 

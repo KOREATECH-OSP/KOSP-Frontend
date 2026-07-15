@@ -207,6 +207,23 @@ export interface GithubRecentActivityResponse {
 }
 
 /* ============================================
+ * 팔로잉/팔로워 — Follow
+ * ============================================ */
+
+export interface FollowUserResponse {
+  userId: number;
+  name: string;
+  profileImage: string | null;
+  introduction: string | null;
+}
+
+export interface FollowSummaryResponse {
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+}
+
+/* ============================================
  * 학습자료(과제/EL) — Material
  * ============================================ */
 
