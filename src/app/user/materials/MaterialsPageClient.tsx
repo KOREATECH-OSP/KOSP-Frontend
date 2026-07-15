@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Folder,
@@ -32,11 +32,10 @@ import {
   setStartMaterialFolder,
   deleteMaterialFolder,
   getMaterialFolderItems,
-  createMaterialItem,
   changeMaterialItemVisibility,
   deleteMaterialItem,
 } from '@/lib/api/material';
-import { uploadFile } from '@/lib/api/upload';
+import AddMaterialModal from './AddMaterialModal';
 
 interface Props {
   session: AuthSession | null;
@@ -69,8 +68,7 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
   const [error, setError] = useState<string | null>(null);
 
   const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAddMaterial, setShowAddMaterial] = useState(false);
 
   const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
 
@@ -150,35 +148,13 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
     if (selectedFolderId === folder.id) setSelectedFolderId(null);
   };
 
-  // ── 자료 업로드/삭제 ────────────────────────────────────────────
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !auth || selectedFolderId == null) return;
-    setUploading(true);
-    try {
-      const { url } = await uploadFile(file, auth);
-      const created = await createMaterialItem(
-        {
-          folderId: selectedFolderId,
-          title: file.name,
-          source: 'MANUAL',
-          fileUrl: url,
-          originalFileName: file.name,
-          fileSize: file.size,
-          contentType: file.type || 'application/octet-stream',
-        },
-        auth,
-      );
-      setItems((prev) => [created, ...prev]);
-      setFolders((prev) =>
-        prev.map((f) => (f.id === selectedFolderId ? { ...f, itemCount: f.itemCount + 1 } : f)),
-      );
-    } catch {
-      alert('업로드에 실패했습니다.');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+  // ── 자료 등록 완료 콜백 / 삭제 ──────────────────────────────────
+  const handleMaterialCreated = (created: MaterialItemResponse) => {
+    setItems((prev) => [created, ...prev]);
+    setFolders((prev) =>
+      prev.map((f) => (f.id === created.folderId ? { ...f, itemCount: f.itemCount + 1 } : f)),
+    );
+    setShowAddMaterial(false);
   };
 
   const handleToggleItemVisibility = async (item: MaterialItemResponse) => {
@@ -315,14 +291,12 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
                   </span>
                 </div>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  onClick={() => setShowAddMaterial(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                 >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  <Upload className="h-4 w-4" />
                   자료 추가
                 </button>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} />
               </div>
 
               {itemsLoading ? (
@@ -400,6 +374,15 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
             setSelectedFolderId(created.id);
             setShowCreateFolder(false);
           }}
+          auth={auth}
+        />
+      )}
+
+      {showAddMaterial && auth && selectedFolderId != null && (
+        <AddMaterialModal
+          folderId={selectedFolderId}
+          onClose={() => setShowAddMaterial(false)}
+          onCreated={handleMaterialCreated}
           auth={auth}
         />
       )}
