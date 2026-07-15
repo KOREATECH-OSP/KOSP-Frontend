@@ -1,0 +1,101 @@
+name: Worklog to Notion
+
+# 팀 노션 DB에 작업/배포 로그를 자동 기록하는 워크플로.
+# - PR(develop 대상)이 열리거나 병합될 때
+# - develop 브랜치에 push(병합 결과 포함)될 때
+# CI(ci.yml)를 재사용해 검증 통과 여부까지 함께 기록한다.
+on:
+  pull_request:
+    types: [opened, closed]
+    branches: [develop]
+  push:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+# 같은 브랜치/PR에서 연속 이벤트가 몰릴 때 중복 기록을 줄인다.
+concurrency:
+  group: worklog-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # 1) CI 재사용 — 타입체크/린트 결과를 output(test_passed)으로 받는다.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # 2) 기록 — diff 메트릭 계산 후 팀 노션에 row 생성.
+  record:
+    needs: ci
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute change metrics
+        id: metrics
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          fi
+
+          # 최초 push 등으로 BASE 가 비어있거나 존재하지 않으면 마지막 커밋 1개만 비교
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE="$HEAD~1"
+          fi
+
+          FILES="$(git diff --name-only "$BASE" "$HEAD" || true)"
+          count() { printf '%s\n' "$FILES" | grep -cE "$1" || true; }
+
+          BACKEND=$(count '^backend/.*\.java$')
+          FRONTEND=$(count '^src/')
+          ENTITY_DTO=$(count '(Entity|Dto|/dto/|/model/|/request/|/response/)')
+          MIGRATION=$(count '^flyway/.*/db/migration/.*\.sql$')
+          TOTAL=$(printf '%s\n' "$FILES" | grep -c . || true)
+
+          TYPE=$(git log -1 --pretty=%s "$HEAD" | grep -oiE '^(feat|fix|docs|refactor|chore|test|style|perf)' | head -1 | tr 'A-Z' 'a-z')
+          [ -z "$TYPE" ] && TYPE="chore"
+
+          {
+            echo "backend=$BACKEND"
+            echo "frontend=$FRONTEND"
+            echo "entity_dto=$ENTITY_DTO"
+            echo "migration=$MIGRATION"
+            echo "total=$TOTAL"
+            echo "type=$TYPE"
+          } >> "$GITHUB_OUTPUT"
+
+      # 프론트 레포에 NOTION 시크릿이 아직 없을 수 있어, 기록 실패가 전체 체크를
+      # 빨간불로 만들지 않도록 continue-on-error 로 둔다. 시크릿 등록 후 정상 기록된다.
+      - name: Push to Notion
+        continue-on-error: true
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          PROJECT_NAME: KOSP-Frontend
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          WORK_TYPE: ${{ steps.metrics.outputs.type }}
+          BACKEND_FILES: ${{ steps.metrics.outputs.backend }}
+          FRONTEND_FILES: ${{ steps.metrics.outputs.frontend }}
+          ENTITY_DTO_FILES: ${{ steps.metrics.outputs.entity_dto }}
+          MIGRATION_FILES: ${{ steps.metrics.outputs.migration }}
+          TOTAL_FILES: ${{ steps.metrics.outputs.total }}
+          TEST_PASSED: ${{ needs.ci.outputs.test_passed }}
+        run: node .github/scripts/notion-log.mjs
