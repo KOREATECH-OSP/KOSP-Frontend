@@ -1,0 +1,49 @@
+name: CI
+
+# CI (타입체크/린트) 전용 워크플로.
+# - push / pull_request 시 단독 실행
+# - worklog.yml 에서 workflow_call 로 재사용 (검증 결과를 기록에 전달)
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_call:
+    outputs:
+      test_passed:
+        description: '프론트 검증(타입체크/린트) 통과 여부 (true/false)'
+        value: ${{ jobs.build-test.outputs.test_passed }}
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    outputs:
+      test_passed: ${{ steps.result.outputs.test_passed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check & lint
+        id: test
+        run: |
+          npx tsc --noEmit
+          npm run lint
+
+      - name: Mark test result
+        id: result
+        if: always()
+        run: echo "test_passed=${{ steps.test.outcome == 'success' }}" >> "$GITHUB_OUTPUT"

@@ -34,6 +34,9 @@ import {
   getMyResumes, createResume, updateResumeById,
   deleteResumeById, setDefaultResume,
 } from '@/lib/api/user';
+import type { GithubResumeProjectResponse, MaterialItemResponse } from '@/lib/api/types';
+import ImportGithubProjectsModal from './components/ImportGithubProjectsModal';
+import ImportMaterialsModal from './components/ImportMaterialsModal';
 import { ensureEncodedUrl } from '@/lib/utils';
 import type { UserProfileResponse, ResumeSummaryResponse, ResumeData } from '@/lib/api/types';
 import { useResumeStorage, newId } from './hooks/useResumeStorage';
@@ -340,6 +343,60 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const removeProject = (id: string) => setProjects(projects.filter((p) => p.id !== id));
   const updateProject = (id: string, key: string, value: string) =>
     setProjects(projects.map((p) => (p.id === id ? { ...p, [key]: value } : p)) as ProjectItem[]);
+
+  // GitHub 저장소 → 이력서 프로젝트 가져오기
+  const [showGithubImport, setShowGithubImport] = useState(false);
+  const githubLinkToKey = (link: string): string => {
+    const m = link.match(/github\.com\/([^/]+)\/([^/?#]+)/i);
+    return m ? `${m[1]}/${m[2]}`.toLowerCase() : '';
+  };
+  const existingRepoKeys = new Set(
+    projects.map((p) => githubLinkToKey(p.githubLink)).filter(Boolean),
+  );
+  const importGithubProjects = (repos: GithubResumeProjectResponse[]) => {
+    const existing = new Set(existingRepoKeys);
+    const additions: ProjectItem[] = repos
+      .filter((r) => !existing.has(r.repoKey))
+      .map((r) => ({
+        id: newId(),
+        name: r.name ?? '',
+        period: r.period ?? '',
+        summary: r.summary ?? '',
+        role: '',
+        techStack: r.techStack ?? '',
+        mainFeatures: '',
+        myContributions: r.myContributions ?? '',
+        problemSolving: '',
+        result: r.result ?? '',
+        githubLink: r.githubLink ?? '',
+        deployLink: '',
+        docLink: '',
+        featured: r.isOwned ? 'true' : 'false',
+      }));
+    if (additions.length > 0) setProjects([...projects, ...additions]);
+  };
+
+  // 첨부파일(학습자료) → 이력서 프로젝트 가져오기
+  const [showMaterialImport, setShowMaterialImport] = useState(false);
+  const importMaterialsAsProjects = (materials: MaterialItemResponse[]) => {
+    const additions: ProjectItem[] = materials.map((m) => ({
+      id: newId(),
+      name: m.title ?? '',
+      period: [m.materialYear, m.semester].filter(Boolean).join(' '),
+      summary: m.subjectName ?? '',
+      role: '',
+      techStack: '',
+      mainFeatures: '',
+      myContributions: '',
+      problemSolving: '',
+      result: '',
+      githubLink: '',
+      deployLink: '',
+      docLink: m.fileUrl ?? m.sourceUrl ?? '',
+      featured: 'false',
+    }));
+    if (additions.length > 0) setProjects([...projects, ...additions]);
+  };
 
   const addAward = () =>
     setAwards([...awards, { id: newId(), name: '', organization: '', date: '', relatedProject: '', description: '' }]);
@@ -829,6 +886,24 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               {/* 프로젝트 */}
               {visibleSections['sec-projects'] && (
                 <div id="sec-projects">
+                  <div className="mb-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowMaterialImport(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                    >
+                      <FileText className="h-4 w-4" />
+                      과제/자료에서 가져오기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowGithubImport(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                    >
+                      <FolderGit className="h-4 w-4" />
+                      GitHub에서 가져오기
+                    </button>
+                  </div>
                   <EditableListSection
                     title="프로젝트"
                     icon={<FolderGit className="h-4 w-4 text-gray-500" />}
@@ -856,6 +931,19 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                     onAdd={addProject}
                     onRemove={removeProject}
                     onUpdate={updateProject}
+                  />
+                  <ImportGithubProjectsModal
+                    open={showGithubImport}
+                    onClose={() => setShowGithubImport(false)}
+                    accessToken={accessToken}
+                    existingRepoKeys={existingRepoKeys}
+                    onConfirm={importGithubProjects}
+                  />
+                  <ImportMaterialsModal
+                    open={showMaterialImport}
+                    onClose={() => setShowMaterialImport(false)}
+                    accessToken={accessToken}
+                    onConfirm={importMaterialsAsProjects}
                   />
                 </div>
               )}

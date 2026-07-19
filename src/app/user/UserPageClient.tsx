@@ -56,8 +56,11 @@ import {
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
+import { getRecentMaterials } from '@/lib/api/material';
+import FollowCard from './resume/components/FollowCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 import type {
+  MaterialItemResponse,
   ArticleResponse,
   CommentResponse,
   UserProfileResponse,
@@ -309,6 +312,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 지원내역 모달 상태
   const [selectedApplication, setSelectedApplication] = useState<MyApplicationResponse | null>(null);
 
+  // 학습자료 최신 노출
+  const [recentMaterials, setRecentMaterials] = useState<MaterialItemResponse[]>([]);
+
   const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
   const accessToken = session?.accessToken as string | undefined;
 
@@ -463,6 +469,14 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
     fetchInitialData();
   }, [userId, accessToken, fetchGithubData]);
+
+  // 학습자료 최신 노출 로드
+  useEffect(() => {
+    if (!accessToken) return;
+    getRecentMaterials({ accessToken }, 5)
+      .then(setRecentMaterials)
+      .catch(() => setRecentMaterials([]));
+  }, [accessToken]);
 
   useEffect(() => {
     if (!userId) return;
@@ -817,7 +831,50 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               </div>
             )}
 
-            {/* 팔로우/팔로워 카드 — TODO: 팔로우/팔로워 API 구현 후 활성화 */}
+            {/* 학습자료 카드 */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="flex items-center gap-1.5 text-sm font-bold text-gray-900">
+                  <FolderGit className="h-4 w-4 text-gray-500" />
+                  학습자료
+                </h3>
+                <Link href="/user/materials" className="text-xs text-orange-500 hover:underline">
+                  더보기
+                </Link>
+              </div>
+              {recentMaterials.length === 0 ? (
+                <p className="py-4 text-center text-xs text-gray-400">
+                  등록된 자료가 없습니다.{' '}
+                  <Link href="/user/materials" className="text-orange-500 hover:underline">
+                    자료 추가
+                  </Link>
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {recentMaterials.map((m) => (
+                    <li key={m.id}>
+                      <Link
+                        href={`/user/materials?folder=${m.folderId}`}
+                        className="flex items-center gap-2 rounded-lg px-1 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                      >
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        <span className="truncate">{m.title}</span>
+                        {m.materialDate && (
+                          <span className="ml-auto shrink-0 text-[11px] text-gray-400">
+                            {m.materialDate.slice(0, 10)}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* 팔로우/팔로워 카드 */}
+            {userId != null && (
+              <FollowCard profileUserId={userId} accessToken={accessToken ?? null} isMe />
+            )}
           </div>
         </aside>
 
