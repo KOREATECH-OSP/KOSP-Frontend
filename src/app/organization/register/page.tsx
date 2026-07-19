@@ -59,6 +59,7 @@ export default function OrganizationRegisterPage() {
     try {
       await registerOrganization({ githubOrgId: selectedOrgId }, session.accessToken);
       toast.success('조직이 등록되었습니다.');
+      router.refresh();
       router.push('/organization');
     } catch (error) {
       if (error instanceof ApiException) {
