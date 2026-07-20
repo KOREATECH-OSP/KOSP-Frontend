@@ -37,6 +37,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # next-env.d.ts 는 .gitignore 대상이라 CI 체크아웃에 없다.
+      # 이 파일이 이미지(*.png 등) 모듈 타입을 declare 하므로, tsc 전에 생성해야
+      # "Cannot find module '@/assets/images/....png'" 오류를 막을 수 있다.
+      - name: Generate Next.js type declarations
+        run: |
+          printf '/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n' > next-env.d.ts
+
       - name: Type check & lint
         id: test
         run: |
