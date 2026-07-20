@@ -30,6 +30,8 @@ import type {
   ResumeResponse,
   ResumeListResponse,
   ResumeSaveRequest,
+  ResumeAutoProjectResponse,
+  AutoProjectUpdateRequest,
   TitleCatalogListResponse,
 } from './types';
 
@@ -480,6 +482,59 @@ export async function setDefaultResume(
     method: 'PATCH',
     accessToken: auth.accessToken,
   });
+}
+
+// ── 이력서 자동 프로젝트 (과제/EL 자료 → 이력서 프로젝트 자동 연결) ──────
+
+/**
+ * 이력서 자동 프로젝트 조회.
+ * 과제/EL 자료를 실시간 투영한 목록. 원본 변경이 자동 반영되고, 삭제(tombstone)한 항목은 제외된다.
+ */
+export async function getResumeAutoProjects(
+  resumeId: number,
+  auth: AuthOptions
+): Promise<ResumeAutoProjectResponse[]> {
+  return clientApiClient<ResumeAutoProjectResponse[]>(
+    `/v1/users/me/resumes/${resumeId}/auto-projects`,
+    { accessToken: auth.accessToken }
+  );
+}
+
+/** 자동 프로젝트 삭제(tombstone). 재동기화로 부활하지 않는다(복원 전까지). */
+export async function deleteResumeAutoProject(
+  resumeId: number,
+  materialItemId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(
+    `/v1/users/me/resumes/${resumeId}/auto-projects/${materialItemId}`,
+    { method: 'DELETE', accessToken: auth.accessToken }
+  );
+}
+
+/** 삭제된 자동 프로젝트 복원 */
+export async function restoreResumeAutoProject(
+  resumeId: number,
+  materialItemId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(
+    `/v1/users/me/resumes/${resumeId}/auto-projects/${materialItemId}/restore`,
+    { method: 'POST', accessToken: auth.accessToken }
+  );
+}
+
+/** 자동 프로젝트 수정 (overrides + 공개 여부). 이후 재동기화가 수정본을 덮어쓰지 않는다. */
+export async function updateResumeAutoProject(
+  resumeId: number,
+  materialItemId: number,
+  data: AutoProjectUpdateRequest,
+  auth: AuthOptions
+): Promise<ResumeAutoProjectResponse> {
+  return clientApiClient<ResumeAutoProjectResponse>(
+    `/v1/users/me/resumes/${resumeId}/auto-projects/${materialItemId}`,
+    { method: 'PATCH', body: data, accessToken: auth.accessToken }
+  );
 }
 
 /**

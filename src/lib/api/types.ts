@@ -257,8 +257,67 @@ export interface MaterialItemResponse {
   fileSize: number | null;
   contentType: string | null;
   isPublic: boolean;
+  semesterOrder: number | null;
+  autoImported: boolean;
+  duplicatedWithGithub: boolean;
+  duplicateRepoKey: string | null;
   materialDate: string | null;
+  lastSyncedAt: string | null;
   updatedAt: string;
+}
+
+/** 아우누리 과제/EL 자료 수집(import) 개별 항목 */
+export interface MaterialImportItem {
+  sourceExternalId: string;
+  source: Extract<MaterialSource, 'AUNURI_ASSIGNMENT' | 'AUNURI_EL'>;
+  title: string;
+  subjectName?: string | null;
+  materialYear?: number | null;
+  semester?: string | null;
+  sourceUrl?: string | null;
+  fileUrl?: string | null;
+  originalFileName?: string | null;
+  fileSize?: number | null;
+  contentType?: string | null;
+  materialDate?: string | null;
+}
+
+/** 아우누리 자료 수집 요청 */
+export interface MaterialImportRequest {
+  items: MaterialImportItem[];
+}
+
+/** 아우누리 자료 수집 결과 요약 */
+export interface MaterialImportResponse {
+  created: number;
+  updated: number;
+  unchanged: number;
+  items: MaterialItemResponse[];
+}
+
+/** 이력서 자동 프로젝트 (과제/EL 자료 → 이력서 프로젝트 실시간 투영) */
+export interface ResumeAutoProjectResponse {
+  materialItemId: number;
+  sourceType: Extract<MaterialSource, 'AUNURI_ASSIGNMENT' | 'AUNURI_EL'>;
+  name: string;
+  period: string | null;
+  summary: string | null;
+  docLink: string | null;
+  duplicatedWithGithub: boolean;
+  duplicateRepoKey: string | null;
+  autoImported: boolean;
+  userEdited: boolean;
+  deletedByUser: boolean;
+  isPublic: boolean;
+}
+
+/** 자동 프로젝트 수정 요청 (overrides + 공개 여부) */
+export interface AutoProjectUpdateRequest {
+  name?: string | null;
+  period?: string | null;
+  summary?: string | null;
+  docLink?: string | null;
+  visibility?: MaterialVisibility | null;
 }
 
 export interface MaterialFolderCreateRequest {

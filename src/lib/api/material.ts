@@ -5,6 +5,8 @@ import type {
   MaterialFolderCreateRequest,
   MaterialFolderUpdateRequest,
   MaterialItemCreateRequest,
+  MaterialImportRequest,
+  MaterialImportResponse,
   MaterialVisibility,
 } from './types';
 
@@ -110,6 +112,21 @@ export async function getRecentMaterials(
     `/v1/users/me/materials/recent?limit=${limit}`,
     { accessToken: auth.accessToken },
   );
+}
+
+/**
+ * 아우누리 과제/EL 자료 수집(import).
+ * 브라우저 확장이 스크랩한 정규화 데이터를 upsert 한다. (source, sourceExternalId) 기준 멱등.
+ */
+export async function importMaterials(
+  data: MaterialImportRequest,
+  auth: AuthOptions,
+): Promise<MaterialImportResponse> {
+  return clientApiClient<MaterialImportResponse>('/v1/users/me/materials/import', {
+    method: 'POST',
+    body: data,
+    accessToken: auth.accessToken,
+  });
 }
 
 /** 자료 등록 */

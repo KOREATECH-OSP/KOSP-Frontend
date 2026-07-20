@@ -22,6 +22,9 @@ import {
   Check,
   Plus,
   Trash2,
+  AlertTriangle,
+  RotateCcw,
+  Pencil,
   ChevronDown,
   Eye,
   EyeOff,
@@ -33,8 +36,11 @@ import {
   getUserProfile, getMyResume, saveMyResume,
   getMyResumes, createResume, updateResumeById,
   deleteResumeById, setDefaultResume,
+  getResumeAutoProjects, deleteResumeAutoProject, restoreResumeAutoProject, updateResumeAutoProject,
 } from '@/lib/api/user';
-import type { GithubResumeProjectResponse, MaterialItemResponse } from '@/lib/api/types';
+import type {
+  GithubResumeProjectResponse, MaterialItemResponse, ResumeAutoProjectResponse,
+} from '@/lib/api/types';
 import ImportGithubProjectsModal from './components/ImportGithubProjectsModal';
 import ImportMaterialsModal from './components/ImportMaterialsModal';
 import { ensureEncodedUrl } from '@/lib/utils';
@@ -396,6 +402,90 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       featured: 'false',
     }));
     if (additions.length > 0) setProjects([...projects, ...additions]);
+  };
+
+  // 자동 연결된 프로젝트(과제/EL 자료 실시간 투영) ─ 원본 변경 자동 반영, 삭제(tombstone)/복원
+  const [autoProjects, setAutoProjects] = useState<ResumeAutoProjectResponse[]>([]);
+  const [autoBusyId, setAutoBusyId] = useState<number | null>(null);
+  const loadAutoProjects = useCallback(async () => {
+    if (!accessToken || !resumeId) { setAutoProjects([]); return; }
+    try {
+      setAutoProjects(await getResumeAutoProjects(resumeId, { accessToken }));
+    } catch (err) {
+      console.error('[ResumePageClient] 자동 프로젝트 로딩 오류:', err);
+    }
+  }, [accessToken, resumeId]);
+  useEffect(() => { loadAutoProjects(); }, [loadAutoProjects]);
+
+  const removeAutoProject = async (materialItemId: number) => {
+    if (!accessToken || !resumeId || autoBusyId !== null) return;
+    setAutoBusyId(materialItemId);
+    try {
+      await deleteResumeAutoProject(resumeId, materialItemId, { accessToken });
+      await loadAutoProjects();
+    } catch (err) {
+      console.error('[ResumePageClient] 자동 프로젝트 삭제 오류:', err);
+    } finally {
+      setAutoBusyId(null);
+    }
+  };
+
+  const restoreAutoProjectItem = async (materialItemId: number) => {
+    if (!accessToken || !resumeId || autoBusyId !== null) return;
+    setAutoBusyId(materialItemId);
+    try {
+      await restoreResumeAutoProject(resumeId, materialItemId, { accessToken });
+      await loadAutoProjects();
+    } catch (err) {
+      console.error('[ResumePageClient] 자동 프로젝트 복원 오류:', err);
+    } finally {
+      setAutoBusyId(null);
+    }
+  };
+
+  const toggleAutoProjectVisibility = async (ap: ResumeAutoProjectResponse) => {
+    if (!accessToken || !resumeId || autoBusyId !== null) return;
+    setAutoBusyId(ap.materialItemId);
+    try {
+      await updateResumeAutoProject(
+        resumeId, ap.materialItemId,
+        { visibility: ap.isPublic ? 'PRIVATE' : 'PUBLIC' },
+        { accessToken },
+      );
+      await loadAutoProjects();
+    } catch (err) {
+      console.error('[ResumePageClient] 자동 프로젝트 공개설정 오류:', err);
+    } finally {
+      setAutoBusyId(null);
+    }
+  };
+
+  // 자동 프로젝트 인라인 편집
+  const [autoEditId, setAutoEditId] = useState<number | null>(null);
+  const [autoEditDraft, setAutoEditDraft] = useState<{ name: string; period: string; summary: string }>(
+    { name: '', period: '', summary: '' },
+  );
+  const startEditAutoProject = (ap: ResumeAutoProjectResponse) => {
+    setAutoEditId(ap.materialItemId);
+    setAutoEditDraft({ name: ap.name ?? '', period: ap.period ?? '', summary: ap.summary ?? '' });
+  };
+  const cancelEditAutoProject = () => setAutoEditId(null);
+  const saveEditAutoProject = async (materialItemId: number) => {
+    if (!accessToken || !resumeId || autoBusyId !== null) return;
+    setAutoBusyId(materialItemId);
+    try {
+      await updateResumeAutoProject(
+        resumeId, materialItemId,
+        { name: autoEditDraft.name, period: autoEditDraft.period, summary: autoEditDraft.summary },
+        { accessToken },
+      );
+      setAutoEditId(null);
+      await loadAutoProjects();
+    } catch (err) {
+      console.error('[ResumePageClient] 자동 프로젝트 수정 오류:', err);
+    } finally {
+      setAutoBusyId(null);
+    }
   };
 
   const addAward = () =>
@@ -904,6 +994,132 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                       GitHub에서 가져오기
                     </button>
                   </div>
+
+                  {/* 자동 연결된 프로젝트 (과제/EL 자료 → 실시간 투영) */}
+                  {autoProjects.length > 0 && (
+                    <div className="mb-4 rounded-lg border border-orange-100 bg-orange-50/50 p-3">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-orange-700">
+                        <FileText className="h-3.5 w-3.5" />
+                        과제/EL 자료에서 자동 연결된 프로젝트
+                        <span className="font-normal text-orange-500">· 원본 자료가 바뀌면 자동 반영됩니다</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {autoProjects.filter((ap) => !ap.deletedByUser).map((ap) => (
+                          <li
+                            key={ap.materialItemId}
+                            className="rounded-md border border-orange-100 bg-white px-3 py-2"
+                          >
+                            {autoEditId === ap.materialItemId ? (
+                              <div className="space-y-1.5">
+                                <input
+                                  value={autoEditDraft.name}
+                                  onChange={(e) => setAutoEditDraft((d) => ({ ...d, name: e.target.value }))}
+                                  placeholder="프로젝트명"
+                                  className="w-full rounded border border-gray-200 px-2 py-1 text-sm"
+                                />
+                                <input
+                                  value={autoEditDraft.period}
+                                  onChange={(e) => setAutoEditDraft((d) => ({ ...d, period: e.target.value }))}
+                                  placeholder="기간 (예: 2026 2학기)"
+                                  className="w-full rounded border border-gray-200 px-2 py-1 text-sm"
+                                />
+                                <input
+                                  value={autoEditDraft.summary}
+                                  onChange={(e) => setAutoEditDraft((d) => ({ ...d, summary: e.target.value }))}
+                                  placeholder="한 줄 요약"
+                                  className="w-full rounded border border-gray-200 px-2 py-1 text-sm"
+                                />
+                                <div className="flex justify-end gap-1.5">
+                                  <button type="button" onClick={cancelEditAutoProject}
+                                    className="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">취소</button>
+                                  <button type="button" onClick={() => saveEditAutoProject(ap.materialItemId)}
+                                    disabled={autoBusyId !== null}
+                                    className="rounded bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50">저장</button>
+                                </div>
+                              </div>
+                            ) : (
+                            <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="truncate text-sm font-medium text-gray-800">{ap.name}</span>
+                                <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-600">
+                                  {ap.sourceType === 'AUNURI_EL' ? 'EL' : '과제'} · 자동입력
+                                </span>
+                                {ap.duplicatedWithGithub && (
+                                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    GitHub 중복 가능성{ap.duplicateRepoKey ? ` (${ap.duplicateRepoKey})` : ''}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-0.5 truncate text-xs text-gray-500">
+                                {[ap.summary, ap.period].filter(Boolean).join(' · ') || ' '}
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => toggleAutoProjectVisibility(ap)}
+                                disabled={autoBusyId !== null}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 disabled:opacity-50"
+                                title={ap.isPublic ? '공개 → 비공개' : '비공개 → 공개'}
+                              >
+                                {ap.isPublic ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => startEditAutoProject(ap)}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100"
+                                title="수정 (원본 재동기화로부터 보호됩니다)"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeAutoProject(ap.materialItemId)}
+                                disabled={autoBusyId !== null}
+                                className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                                title="삭제 (재동기화로 되살아나지 않습니다)"
+                              >
+                                {autoBusyId === ap.materialItemId
+                                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                                  : <Trash2 className="h-4 w-4" />}
+                              </button>
+                            </div>
+                            </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* 삭제된 자동 프로젝트 (복원 가능) */}
+                      {autoProjects.some((ap) => ap.deletedByUser) && (
+                        <div className="mt-3 border-t border-orange-100 pt-2">
+                          <div className="mb-1.5 text-[11px] font-medium text-gray-400">삭제된 항목</div>
+                          <ul className="space-y-1">
+                            {autoProjects.filter((ap) => ap.deletedByUser).map((ap) => (
+                              <li key={ap.materialItemId} className="flex items-center justify-between gap-3 rounded-md px-2 py-1">
+                                <span className="truncate text-xs text-gray-400 line-through">{ap.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => restoreAutoProjectItem(ap.materialItemId)}
+                                  disabled={autoBusyId !== null}
+                                  className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                                  title="이력서에 다시 포함"
+                                >
+                                  {autoBusyId === ap.materialItemId
+                                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                                    : <RotateCcw className="h-3 w-3" />}
+                                  복원
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <EditableListSection
                     title="프로젝트"
                     icon={<FolderGit className="h-4 w-4 text-gray-500" />}

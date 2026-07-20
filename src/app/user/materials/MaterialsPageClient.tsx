@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import Link from 'next/link';
 import {
   Folder,
@@ -16,6 +16,7 @@ import {
   Plus,
   X,
   ArrowLeft,
+  AlertTriangle,
 } from 'lucide-react';
 import type { AuthSession } from '@/lib/auth/types';
 import type {
@@ -49,6 +50,24 @@ const SOURCE_LABEL: Record<MaterialSource, string> = {
   MANUAL: '업로드',
 };
 
+/** 최근 학기 우선 정렬키 (semesterOrder 우선, 없으면 연도 기반). */
+function semesterSortKey(item: MaterialItemResponse): number {
+  if (item.semesterOrder != null) return item.semesterOrder;
+  if (item.materialYear != null) return item.materialYear * 10;
+  return -1;
+}
+
+/** 학기 그룹 식별자 (헤더 전환 감지용). */
+function semesterGroupKey(item: MaterialItemResponse): string {
+  return `${item.materialYear ?? ''}|${item.semester ?? ''}`;
+}
+
+/** 학기 그룹 헤더 라벨. */
+function semesterGroupLabel(item: MaterialItemResponse): string {
+  if (item.materialYear == null && !item.semester) return '기타';
+  return [item.materialYear ? `${item.materialYear}년` : null, item.semester].filter(Boolean).join(' ');
+}
+
 const FOLDER_TYPE_OPTIONS: { value: MaterialFolderType; label: string }[] = [
   { value: 'YEAR', label: '연도' },
   { value: 'SEMESTER', label: '학기' },
@@ -71,6 +90,9 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
   const [showAddMaterial, setShowAddMaterial] = useState(false);
 
   const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
+
+  // 최근 학기가 최상위로 오도록 정렬 (semesterOrder desc, 동일 학기 내 백엔드 최신순 유지)
+  const sortedItems = [...items].sort((a, b) => semesterSortKey(b) - semesterSortKey(a));
 
   // ── 폴더 로드 + 초기 진입 폴더 결정 ──────────────────────────────
   const loadFolders = useCallback(async () => {
@@ -307,8 +329,17 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
                 <p className="py-12 text-center text-sm text-gray-400">등록된 자료가 없습니다.</p>
               ) : (
                 <ul className="divide-y divide-gray-100">
-                  {items.map((item) => (
-                    <li key={item.id} className="flex items-center gap-3 py-3">
+                  {sortedItems.map((item, idx) => {
+                    const showHeader =
+                      idx === 0 || semesterGroupKey(sortedItems[idx - 1]) !== semesterGroupKey(item);
+                    return (
+                    <Fragment key={item.id}>
+                    {showHeader && (
+                      <li className="pt-3 pb-1 text-xs font-semibold text-gray-500">
+                        {semesterGroupLabel(item)}
+                      </li>
+                    )}
+                    <li className="flex items-center gap-3 py-3">
                       <FileText className="h-5 w-5 shrink-0 text-gray-400" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -316,6 +347,19 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
                           <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
                             {SOURCE_LABEL[item.source]}
                           </span>
+                          {item.duplicatedWithGithub && (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700"
+                              title={
+                                item.duplicateRepoKey
+                                  ? `GitHub 프로젝트(${item.duplicateRepoKey})와 중복 가능성이 있습니다. 내용을 확인·수정하세요.`
+                                  : 'GitHub 프로젝트와 중복 가능성이 있습니다. 내용을 확인·수정하세요.'
+                              }
+                            >
+                              <AlertTriangle className="h-3 w-3" />
+                              중복 가능성
+                            </span>
+                          )}
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-400">
                           {item.subjectName && <span>{item.subjectName}</span>}
@@ -352,7 +396,9 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
                         </button>
                       </div>
                     </li>
-                  ))}
+                    </Fragment>
+                    );
+                  })}
                 </ul>
               )}
             </>
