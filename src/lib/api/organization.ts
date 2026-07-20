@@ -52,6 +52,16 @@ export interface AdminOrganizationMemberResponse {
   syncedAt: string;
 }
 
+export interface OrganizationRepoResponse {
+  id: number;
+  githubRepoId: number;
+  repositoryName: string;
+  repositoryFullName: string;
+  repositoryUrl: string;
+  visibility: string;
+  isActive: boolean;
+}
+
 export interface AdminOrganizationRepoResponse {
   id: number;
   githubRepoId: number;
@@ -127,6 +137,47 @@ export async function getOrganizationMembers(
 ): Promise<OrganizationMemberResponse[]> {
   return apiClient<OrganizationMemberResponse[]>(`/v1/organizations/${id}/members`, {
     cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 저장소 목록 조회 (조직 멤버 전용)
+ */
+export async function getOrganizationRepositories(
+  orgId: number,
+  accessToken: string
+): Promise<OrganizationRepoResponse[]> {
+  return apiClient<OrganizationRepoResponse[]>(`/v1/organizations/${orgId}/repositories`, {
+    cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 저장소 활성화 (Owner/Admin)
+ */
+export async function activateOrganizationRepo(
+  orgId: number,
+  repoId: number,
+  accessToken: string
+): Promise<void> {
+  await clientApiClient<void>(`/v1/organizations/${orgId}/repositories/${repoId}/activate`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 저장소 비활성화 (Owner/Admin)
+ */
+export async function deactivateOrganizationRepo(
+  orgId: number,
+  repoId: number,
+  accessToken: string
+): Promise<void> {
+  await clientApiClient<void>(`/v1/organizations/${orgId}/repositories/${repoId}/activate`, {
+    method: 'DELETE',
     accessToken,
   });
 }

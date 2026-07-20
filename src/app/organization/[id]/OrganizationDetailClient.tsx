@@ -3,14 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, Building2, ExternalLink, Users, GitFork, UserCheck, Clock, EyeOff, Shield, Crown } from 'lucide-react';
-import type { OrganizationDetailResponse, OrganizationMemberResponse } from '@/lib/api/organization';
-import { appointOrganizationAdmin, dismissOrganizationAdmin } from '@/lib/api/organization';
+import { ArrowLeft, Building2, ExternalLink, Users, GitFork, UserCheck, Clock, EyeOff, Shield, Crown, Lock, Globe } from 'lucide-react';
+import type { OrganizationDetailResponse, OrganizationMemberResponse, OrganizationRepoResponse } from '@/lib/api/organization';
+import { appointOrganizationAdmin, dismissOrganizationAdmin, activateOrganizationRepo, deactivateOrganizationRepo } from '@/lib/api/organization';
 import OrganizationStatusBadge from '@/common/components/organization/OrganizationStatusBadge';
 
 interface OrganizationDetailClientProps {
   detail: OrganizationDetailResponse;
   members: OrganizationMemberResponse[];
+  repos: OrganizationRepoResponse[];
   currentUserId: number;
   accessToken: string;
 }
@@ -81,11 +82,14 @@ function MemberStatusDesc({ status }: { status: OrganizationMemberResponse['stat
 export default function OrganizationDetailClient({
   detail,
   members: initialMembers,
+  repos: initialRepos,
   currentUserId,
   accessToken,
 }: OrganizationDetailClientProps) {
   const [members, setMembers] = useState(initialMembers);
+  const [repos, setRepos] = useState(initialRepos);
   const [loadingMemberId, setLoadingMemberId] = useState<number | null>(null);
+  const [loadingRepoId, setLoadingRepoId] = useState<number | null>(null);
 
   const currentMember = members.find((m) => m.userId === currentUserId);
   const currentRole = currentMember?.role ?? 'MEMBER';
@@ -117,6 +121,24 @@ export default function OrganizationDetailClient({
       alert('관리자 해임에 실패했습니다.');
     } finally {
       setLoadingMemberId(null);
+    }
+  }
+
+  async function handleRepoToggle(repoId: number, currentActive: boolean) {
+    setLoadingRepoId(repoId);
+    try {
+      if (currentActive) {
+        await deactivateOrganizationRepo(detail.id, repoId, accessToken);
+      } else {
+        await activateOrganizationRepo(detail.id, repoId, accessToken);
+      }
+      setRepos((prev) =>
+        prev.map((r) => (r.id === repoId ? { ...r, isActive: !currentActive } : r))
+      );
+    } catch {
+      alert('저장소 상태 변경에 실패했습니다.');
+    } finally {
+      setLoadingRepoId(null);
     }
   }
 
@@ -204,6 +226,80 @@ export default function OrganizationDetailClient({
           <p className="mt-1 text-xs text-gray-500">저장소</p>
         </div>
       </div>
+
+      {/* 저장소 목록 */}
+      {repos.length > 0 && (
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-sm font-semibold text-gray-700">저장소 목록</p>
+            {canAppoint && (
+              <p className="mt-0.5 text-xs text-gray-400">
+                비활성화한 저장소는 포털에서 숨겨집니다.
+              </p>
+            )}
+          </div>
+          <div className="divide-y divide-gray-100">
+            {repos.map((repo) => {
+              const isLoading = loadingRepoId === repo.id;
+              return (
+                <div key={repo.id} className="flex items-center gap-4 px-5 py-3">
+                  <div className="flex-shrink-0 text-gray-400">
+                    {repo.visibility === 'public' ? (
+                      <Globe className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Lock className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <a
+                        href={repo.repositoryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-gray-900 hover:text-blue-600 hover:underline text-sm"
+                      >
+                        {repo.repositoryName}
+                      </a>
+                      <span className={[
+                        'rounded-full px-2 py-0.5 text-[10px] font-bold border',
+                        repo.visibility === 'public'
+                          ? 'bg-green-50 text-green-600 border-green-100'
+                          : 'bg-gray-100 text-gray-500 border-gray-200',
+                      ].join(' ')}>
+                        {repo.visibility === 'public' ? '공개' : '비공개'}
+                      </span>
+                      {!repo.isActive && (
+                        <span className="rounded-full px-2 py-0.5 text-[10px] font-bold border bg-orange-50 text-orange-500 border-orange-100">
+                          비활성
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-400">{repo.repositoryFullName}</p>
+                  </div>
+
+                  {canAppoint && (
+                    <div className="flex-shrink-0">
+                      <button
+                        onClick={() => handleRepoToggle(repo.id, repo.isActive)}
+                        disabled={isLoading}
+                        className={[
+                          'text-xs px-2.5 py-1 rounded-md border transition-colors disabled:opacity-50',
+                          repo.isActive
+                            ? 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                            : 'border-blue-200 text-blue-600 hover:bg-blue-50',
+                        ].join(' ')}
+                      >
+                        {isLoading ? '처리 중...' : repo.isActive ? '비활성화' : '활성화'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 연동 비율 + 멤버 목록 */}
       {detail.totalMemberCount > 0 && (

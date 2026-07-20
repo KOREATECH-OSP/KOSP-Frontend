@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/server';
-import { getOrganizationDetail, getOrganizationMembers } from '@/lib/api/organization';
+import { getOrganizationDetail, getOrganizationMembers, getOrganizationRepositories } from '@/lib/api/organization';
 import { ApiException } from '@/lib/api/client';
 import OrganizationDetailClient from './OrganizationDetailClient';
 
@@ -32,12 +32,16 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     throw error;
   }
 
-  const members = await getOrganizationMembers(orgId, session.accessToken).catch(() => []);
+  const [members, repos] = await Promise.all([
+    getOrganizationMembers(orgId, session.accessToken).catch(() => []),
+    getOrganizationRepositories(orgId, session.accessToken).catch(() => []),
+  ]);
 
   return (
     <OrganizationDetailClient
       detail={detail}
       members={members}
+      repos={repos}
       currentUserId={parseInt(session.user.id, 10)}
       accessToken={session.accessToken}
     />
