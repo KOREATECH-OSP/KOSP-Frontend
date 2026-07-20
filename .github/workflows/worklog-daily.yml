@@ -5,7 +5,14 @@ name: Daily Portfolio to Notion
 # - 필요 시 수동 실행(workflow_dispatch)으로 기간(since)을 지정해 즉시 생성 가능
 on:
   schedule:
-    - cron: '0 14 * * *' # 매일 23:00 KST
+    - cron: '0 14 * * *' # 매일 23:00 KST (기본 브랜치에서만 동작)
+  # 기본 브랜치가 main 이라 cron/수동실행이 develop 기준으로 안 도는 문제 때문에
+  # develop push 에도 반응하게 둔다. 스크립트가 "하루 1개"로 중복을 막는다.
+  push:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       since:
@@ -39,6 +46,7 @@ jobs:
           PROJECT_NAME: KOSP-Frontend
           BRANCH: develop
           SINCE: ${{ github.event.inputs.since || '1 day ago' }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }} # 수동 실행은 중복 무시하고 강제 생성
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}

@@ -272,7 +272,32 @@ async function notion(path, method, body) {
   return JSON.parse(t);
 }
 
+// 오늘(KST) 이미 이 프로젝트의 포트폴리오 페이지를 만들었는지 확인 (push 트리거 중복 방지)
+async function alreadyGeneratedToday() {
+  try {
+    const res = await notion(`/databases/${P.NOTION_DB_ID}/query`, 'POST', {
+      page_size: 1,
+      filter: {
+        and: [
+          { property: '프로젝트', select: { equals: PROJECT } },
+          { property: '작성자', rich_text: { equals: 'portfolio-bot' } },
+          { property: '날짜', date: { on_or_after: `${kstDate}T00:00:00+09:00` } },
+        ],
+      },
+    });
+    return (res.results || []).length > 0;
+  } catch (e) {
+    console.warn('중복 조회 실패(계속 진행):', e.message);
+    return false;
+  }
+}
+
 async function run() {
+  const force = P.FORCE === 'true'; // 수동 실행(workflow_dispatch) 시 항상 생성
+  if (!force && (await alreadyGeneratedToday())) {
+    console.log(`오늘(${kstDate}) ${PROJECT} 포트폴리오가 이미 있어 스킵합니다. (수동 실행하면 강제 생성)`);
+    return;
+  }
   console.log(`포트폴리오 생성 시작: ${PROJECT}, 커밋 ${commits.length}건, model=${MODEL}`);
   const md = await generateMarkdown();
   const blocks = mdToBlocks(md);
