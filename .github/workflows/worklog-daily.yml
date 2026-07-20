@@ -1,0 +1,45 @@
+name: Daily Portfolio to Notion
+
+# 하루치 develop 커밋을 모아 포트폴리오형 개발기록 문서를 생성해 팀 노션 DB에 남긴다.
+# - 매일 KST 23:00(UTC 14:00) 자동 실행 (그날 커밋 0건이면 스킵)
+# - 필요 시 수동 실행(workflow_dispatch)으로 기간(since)을 지정해 즉시 생성 가능
+on:
+  schedule:
+    - cron: '0 14 * * *' # 매일 23:00 KST
+  workflow_dispatch:
+    inputs:
+      since:
+        description: '집계 시작 (git --since 형식, 예: "1 day ago", "2 days ago")'
+        required: false
+        default: '1 day ago'
+
+concurrency:
+  group: portfolio-daily
+  cancel-in-progress: false
+
+jobs:
+  portfolio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: develop
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate daily portfolio & push to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WORKLOG_MODEL: ${{ vars.WORKLOG_MODEL }} # 선택: 미설정 시 claude-opus-4-8
+          PROJECT_NAME: KOSP-Frontend
+          BRANCH: develop
+          SINCE: ${{ github.event.inputs.since || '1 day ago' }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node .github/scripts/notion-portfolio-daily.mjs
