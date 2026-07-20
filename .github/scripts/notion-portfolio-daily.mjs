@@ -20,13 +20,16 @@ const SINCE = P.SINCE || '1 day ago';
 const PROJECT = P.PROJECT_NAME || 'KOSP-Backend';
 const MAX_COMMITS = 40; // LLM 입력 토큰 방어
 
-if (!P.NOTION_TOKEN || !P.NOTION_DB_ID) {
-  console.error('NOTION_TOKEN / NOTION_DB_ID 가 없습니다.');
+// 실패 원인을 GitHub Actions Annotations 에 바로 노출하고 종료한다.
+function fail(msg) {
+  console.log(`::error::${msg}`);
+  console.error(msg);
   process.exit(1);
 }
-if (!P.ANTHROPIC_API_KEY) {
-  console.error('ANTHROPIC_API_KEY 가 없습니다. GitHub 시크릿에 등록하세요.');
-  process.exit(1);
+
+const missing = ['NOTION_TOKEN', 'NOTION_DB_ID', 'ANTHROPIC_API_KEY'].filter((k) => !P[k]);
+if (missing.length) {
+  fail(`필수 시크릿 누락: ${missing.join(', ')} — 레포 Settings → Secrets and variables → Actions 에 등록하세요.`);
 }
 
 // ── 1) 커밋 수집 ────────────────────────────────────────────────────
@@ -41,8 +44,7 @@ let raw = '';
 try {
   raw = git(`log --since="${SINCE}" --date=short --no-merges --pretty=format:'%H${US}%an${US}%ad${US}%s${US}%b${RS}'`);
 } catch (e) {
-  console.error('git log 실패:', e.message);
-  process.exit(1);
+  fail(`git log 실패: ${e.message}`);
 }
 
 const commits = raw
@@ -336,6 +338,5 @@ async function run() {
 }
 
 run().catch((e) => {
-  console.error('실패:', e.message);
-  process.exit(1);
+  fail(`실패: ${e.message}`);
 });
