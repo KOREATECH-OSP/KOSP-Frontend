@@ -53,7 +53,7 @@ jobs:
         run: node .github/scripts/notion-portfolio-daily.mjs
 
       - name: Upload portfolio artifact
-        if: ${{ hashFiles('portfolio-output.md') != '' }}
+        if: ${{ always() && hashFiles('portfolio-output.md') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: portfolio-KOSP-Frontend
@@ -61,7 +61,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Email portfolio
-        if: ${{ env.MAIL_USERNAME != '' && hashFiles('portfolio-output.md') != '' }}
+        if: ${{ always() && env.MAIL_USERNAME != '' && hashFiles('portfolio-output.md') != '' }}
         continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
