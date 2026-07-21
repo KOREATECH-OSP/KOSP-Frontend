@@ -1,14 +1,12 @@
-// 하루치 커밋을 모아 "포트폴리오형 개발기록 문서"를 만들어
+// 하루치 커밋을 모아 "포트폴리오형 개발기록 문서(고정 13섹션 양식)"를 만들어
 //   (1) 팀 노션 DB 에 본문 페이지로 남기고
 //   (2) portfolio-output.md 파일로도 저장한다(워크플로가 메일 첨부/아티팩트로 사용).
 //
-// AI(유료 API) 없이 커밋 메시지 + 변경파일 수치를 [양식]에 채우는 무료 템플릿 버전.
+// AI(유료 API) 없이: 사실/수치/파일목록/커밋링크는 자동으로 채우고,
+// 배경·설계·회고 등 통찰이 필요한 칸은 "✍️ 직접 작성" 자리로 고정 배치한다.
 //
 // 필요한 env: NOTION_TOKEN, NOTION_DB_ID, PROJECT_NAME
-//   (선택) SINCE(기본 "1 day ago"), BRANCH, FORCE(수동실행 시 중복 무시),
-//          GITHUB_SERVER_URL / GITHUB_REPOSITORY / GITHUB_RUN_ID (ActionRunURL 용)
-//
-// Node 18+ (fetch 내장). 외부 의존성 없음.
+//   (선택) SINCE(기본 "1 day ago"), BRANCH, FORCE, GITHUB_SERVER_URL/REPOSITORY/RUN_ID
 
 import { execSync } from 'node:child_process';
 import { writeFileSync, appendFileSync } from 'node:fs';
@@ -19,6 +17,8 @@ const PROJECT = P.PROJECT_NAME || 'KOSP-Backend';
 const BRANCH = P.BRANCH || 'develop';
 const MAX_COMMITS = 60;
 const OUTPUT_MD = 'portfolio-output.md';
+const REPO_BASE =
+  P.GITHUB_SERVER_URL && P.GITHUB_REPOSITORY ? `${P.GITHUB_SERVER_URL}/${P.GITHUB_REPOSITORY}` : null;
 
 function fail(msg) {
   console.log(`::error::${msg}`);
@@ -61,7 +61,6 @@ if (commits.length === 0) {
   process.exit(0);
 }
 
-// 변경 파일 집계
 const oldest = commits[commits.length - 1].hash;
 let base;
 try {
@@ -76,11 +75,18 @@ try {
   files = [];
 }
 
+// 파일 분류
+const feFiles = files.filter((f) => /^src\/|\.(t|j)sx?$/.test(f));
+const beFiles = files.filter((f) => /\.java$/.test(f));
+const infraFiles = files.filter((f) => /db\/migration\/.*\.sql$|^\.github\/|\.ya?ml$|build\.gradle|Dockerfile/.test(f));
+const etcFiles = files.filter((f) => !feFiles.includes(f) && !beFiles.includes(f) && !infraFiles.includes(f));
+
 const count = (re) => files.filter((f) => re.test(f)).length;
 const metrics = {
   totalFiles: files.length,
-  backendFiles: count(/\.java$/),
-  frontendFiles: count(/^src\/|\.(t|j)sx?$/),
+  frontendFiles: feFiles.length,
+  backendFiles: beFiles.length,
+  infraFiles: infraFiles.length,
   migrationFiles: count(/db\/migration\/.*\.sql$/),
   entityDtoFiles: count(/(Entity|Dto|\/dto\/|\/model\/|\/request\/|\/response\/|\/types\.ts$)/),
 };
@@ -92,76 +98,155 @@ for (const c of commits) {
   typeCounts[t] = (typeCounts[t] || 0) + 1;
 }
 const workType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0][0];
+const hasFeat = !!typeCounts.feat;
+const maintTypes = ['fix', 'refactor', 'chore', 'ci', 'test', 'perf', 'build', 'style', 'docs'];
+const hasMaint = Object.keys(typeCounts).some((t) => maintTypes.includes(t));
+const nature = hasFeat && hasMaint ? '신규 기능 개발 + 실무형 유지보수(혼재)' : hasFeat ? '신규 기능 개발' : '실무형 유지보수(리팩터링·버그수정·설정·자동화)';
 
 const usedCommits = commits.slice(0, MAX_COMMITS);
 const truncated = commits.length > MAX_COMMITS;
 const kstDate = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-const title = `[일일 개발로그] ${kstDate} · ${PROJECT}`;
-const runUrl =
-  P.GITHUB_SERVER_URL && P.GITHUB_REPOSITORY && P.GITHUB_RUN_ID
-    ? `${P.GITHUB_SERVER_URL}/${P.GITHUB_REPOSITORY}/actions/runs/${P.GITHUB_RUN_ID}`
-    : null;
+const title = `[개발기록] ${kstDate} · ${PROJECT}`;
+const runUrl = REPO_BASE && P.GITHUB_RUN_ID ? `${REPO_BASE}/actions/runs/${P.GITHUB_RUN_ID}` : null;
+const workName = usedCommits[0].subject;
+const topDirs = [...new Set(files.map((f) => f.split('/')[0]))].slice(0, 8);
 
-// ── 2) 마크다운 문서 생성 (무료 템플릿) ────────────────────────────
+// ── 2) 마크다운 문서 생성 (고정 13섹션 양식) ───────────────────────
+
+function fileList(arr, limit = 25) {
+  const L = [];
+  if (arr.length === 0) return ['- (해당 없음)'];
+  for (const f of arr.slice(0, limit)) L.push(`- ${f}`);
+  if (arr.length > limit) L.push(`- … 외 ${arr.length - limit}개`);
+  return L;
+}
+const PEN = '✍️ [직접 작성]';
 
 function buildMarkdown() {
   const L = [];
-  L.push(`# [${kstDate}] ${PROJECT} 일일 개발 로그`);
+  L.push(`# ${title}`);
+  L.push('');
+  L.push(`> 자동 생성 골격. **${PEN}** 표시된 칸만 채우면 됩니다. (개요·파일목록·수치·증빙은 자동)`);
+  L.push('');
+
+  L.push('## 0. 작업 성격');
+  L.push(`- **판정: ${nature}**`);
+  L.push(`- 커밋유형 분포: ${Object.entries(typeCounts).map(([t, n]) => `${t} ${n}`).join(', ')}`);
   L.push('');
 
   L.push('## 1. 작업 개요');
   L.push('| 항목 | 값 |');
   L.push('| --- | --- |');
-  L.push(`| 날짜(KST) | ${kstDate} |`);
-  L.push(`| 프로젝트 / 브랜치 | ${PROJECT} / ${BRANCH} |`);
-  L.push(`| 커밋 수 | ${commits.length}건 |`);
-  L.push(`| 총 변경파일 | ${metrics.totalFiles}개 |`);
-  L.push(`| 대표 작업유형 | ${workType} |`);
-  if (runUrl) L.push(`| CI 실행 | ${runUrl} |`);
+  L.push(`| 작업명 | ${workName}${commits.length > 1 ? ` 외 ${commits.length - 1}건` : ''} |`);
+  L.push(`| 작업 유형 | ${nature} (${workType}) |`);
+  L.push(`| 작업 기간 | ${usedCommits[usedCommits.length - 1].date} ~ ${usedCommits[0].date} (KST 기준 ${kstDate}) |`);
+  L.push(`| 관련 서비스/모듈 | ${topDirs.join(', ') || '-'} |`);
+  L.push(`| 담당자 | ${[...new Set(commits.map((c) => c.author))].join(', ')} |`);
+  L.push(`| 관련 브랜치 | ${BRANCH} |`);
+  L.push(`| 커밋 수 / 변경파일 | ${commits.length}건 / ${metrics.totalFiles}개 |`);
+  if (REPO_BASE) L.push(`| 관련 PR/커밋 | ${REPO_BASE}/commits/${BRANCH} |`);
+  L.push('');
+  L.push(`- 관련 이슈/티켓: ${PEN}`);
   L.push('');
 
-  L.push('## 2. 커밋 내역');
-  for (const c of usedCommits) {
-    L.push(`- **${c.subject}** — ${c.author}, ${c.date} (\`${c.hash.slice(0, 7)}\`)`);
+  L.push('## 2. 작업 배경');
+  L.push(`${PEN} 왜 이 작업이 필요했는가 / 기존 문제 / 사용자·운영 영향 / 우선순위 · 긴급도`);
+  L.push(`- (자동 힌트) 이번 기간 ${topDirs.join('·')} 영역에서 ${workType} 성격의 작업 ${commits.length}건, ${metrics.totalFiles}개 파일 변경.`);
+  L.push('');
+
+  L.push('## 3. 목표');
+  L.push(`${PEN} 이번 작업의 목표 / 성공 기준 / 완료 기준(DoD)`);
+  L.push(`- (자동 힌트) 주요 커밋: ${usedCommits.slice(0, 3).map((c) => c.subject).join(' / ')}`);
+  L.push('');
+
+  L.push('## 4. 작업 전 상태');
+  L.push(`${PEN} 기존 동작 방식 / 기존 UI·기능 / 기존 API·DB 구조 / 기존 권한·정책 / 문제 재현 방법 / 작업 전 로그·에러`);
+  L.push('');
+
+  L.push('## 5. 요구사항 정리');
+  L.push(`${PEN} 기능 요구사항 / 비기능 요구사항 / 예외 처리 / 권한 정책 / 데이터 정책 / 배포 시 주의사항`);
+  L.push('');
+
+  L.push('## 6. 설계 / 판단');
+  L.push(`${PEN} 고려한 대안 A / 대안 B / 최종 선택안 / 선택 이유 / 트레이드오프 / 향후 확장 고려사항`);
+  L.push('');
+
+  L.push('## 7. 구현 내용');
+  L.push('### 프론트엔드');
+  L.push(...fileList(feFiles));
+  L.push(`${PEN} UI/UX 변경점 · 상태 관리 변경점`);
+  L.push('');
+  L.push('### 백엔드');
+  L.push(...fileList(beFiles));
+  L.push(`${PEN} API 변경점 · 서비스/도메인 변경점 · 권한/상태값 변경점`);
+  L.push('');
+  L.push('### DB / 인프라');
+  L.push(...fileList(infraFiles));
+  if (etcFiles.length) {
+    L.push('');
+    L.push('### 기타');
+    L.push(...fileList(etcFiles, 15));
   }
-  if (truncated) L.push(`- … 외 ${commits.length - MAX_COMMITS}건 생략`);
+  L.push(`${PEN} 엔티티/테이블 변경 · 마이그레이션 · 환경변수 · 배포/워크플로 변경 설명`);
   L.push('');
 
-  L.push('## 3. 정량 지표');
+  L.push('## 8. 테스트');
+  L.push(`${PEN} 재현/정상/예외/권한 케이스 · 테스트 결과`);
+  if (runUrl) L.push(`- (자동) CI 실행: ${runUrl}`);
+  L.push('');
+
+  L.push('## 9. 결과');
+  L.push('| 항목 | 개선 전 | 개선 후 |');
+  L.push('| --- | --- | --- |');
+  L.push(`| ${PEN} | | |`);
+  L.push(`- (자동) 이 기간 총 ${metrics.totalFiles}개 파일 변경 (백엔드 ${metrics.backendFiles} · 프론트 ${metrics.frontendFiles} · 인프라 ${metrics.infraFiles}).`);
+  L.push(`${PEN} 개선 효과 / 사용자 입장 변화 / 운영 입장 변화`);
+  L.push('');
+
+  L.push('## 10. 수치화 (자동)');
   L.push('| 지표 | 수치 |');
   L.push('| --- | --- |');
-  L.push(`| 총 변경파일 | ${metrics.totalFiles} |`);
-  L.push(`| 백엔드(.java) | ${metrics.backendFiles} |`);
-  L.push(`| 프론트(src·tsx) | ${metrics.frontendFiles} |`);
-  L.push(`| 마이그레이션 SQL | ${metrics.migrationFiles} |`);
-  L.push(`| 엔티티/DTO | ${metrics.entityDtoFiles} |`);
+  L.push(`| 총 변경 파일 수 | ${metrics.totalFiles} |`);
+  L.push(`| 프론트 변경 파일 수 | ${metrics.frontendFiles} |`);
+  L.push(`| 백엔드 변경 파일 수 | ${metrics.backendFiles} |`);
+  L.push(`| DB/인프라 변경 파일 수 | ${metrics.infraFiles} |`);
+  L.push(`| 마이그레이션(SQL) 수 | ${metrics.migrationFiles} |`);
+  L.push(`| 엔티티/DTO 관련 파일 수 | ${metrics.entityDtoFiles} |`);
+  L.push(`| 커밋 수 | ${commits.length} |`);
   L.push('');
-
-  L.push('## 4. 작업유형 분포');
-  L.push('| 유형 | 커밋 수 |');
+  L.push('| 작업유형 | 커밋 수 |');
   L.push('| --- | --- |');
-  for (const [t, n] of Object.entries(typeCounts).sort((a, b) => b[1] - a[1])) {
-    L.push(`| ${t} | ${n} |`);
+  for (const [t, n] of Object.entries(typeCounts).sort((a, b) => b[1] - a[1])) L.push(`| ${t} | ${n} |`);
+  L.push('');
+
+  L.push('## 11. 증빙 자료');
+  if (REPO_BASE) L.push(`- 커밋 목록: ${REPO_BASE}/commits/${BRANCH}`);
+  if (runUrl) L.push(`- CI 실행 로그: ${runUrl}`);
+  for (const c of usedCommits) {
+    L.push(`- \`${c.hash.slice(0, 7)}\` ${c.subject}${REPO_BASE ? ` — ${REPO_BASE}/commit/${c.hash}` : ''}`);
   }
+  if (truncated) L.push(`- … 외 ${commits.length - MAX_COMMITS}건`);
+  L.push(`${PEN} 작업 전/후 캡처 · API 응답 예시 · DB 변경 증빙`);
   L.push('');
 
-  L.push('## 5. 변경 파일 (일부)');
-  for (const f of files.slice(0, 40)) L.push(`- ${f}`);
-  if (files.length > 40) L.push(`- … 외 ${files.length - 40}개`);
+  L.push('## 12. 회고');
+  L.push(`${PEN} 잘한 점 / 아쉬운 점 / 다음에 개선할 점 / 배운 점 / 실무형 경험 포인트`);
   L.push('');
 
-  L.push('## 6. 작업 배경/요약 (자동 정리)');
-  L.push(
-    `이 기간(${SINCE}) 동안 ${commits.length}개 커밋으로 총 ${metrics.totalFiles}개 파일을 변경했습니다. ` +
-      `대표 작업유형은 ${workType} 이며, 작업유형 분포는 ` +
-      `${Object.entries(typeCounts).map(([t, n]) => `${t} ${n}건`).join(', ')} 입니다.`,
-  );
-  const highlights = usedCommits.slice(0, 3).map((c) => c.subject);
-  if (highlights.length) L.push(`주요 작업: ${highlights.join(' / ')}.`);
+  L.push('## 13. 포트폴리오용 요약');
+  L.push(`- (자동 초안) ${PROJECT}에서 ${nature} ${commits.length}건 진행, ${metrics.totalFiles}개 파일 변경(백엔드 ${metrics.backendFiles}·프론트 ${metrics.frontendFiles}·인프라 ${metrics.infraFiles}).`);
+  L.push(`${PEN} 한 줄 요약 / 문제 → 해결 → 결과 / 내가 맡은 역할 / 기술적으로 강조할 부분 / 협업·운영 측면 강조할 부분`);
   L.push('');
 
-  L.push('## 7. 증빙 (커밋 해시)');
-  for (const c of usedCommits) L.push(`- ${c.hash} · ${c.subject}`);
+  L.push('## 부록. 취업/부트캠프 강조 포인트');
+  const tips = [];
+  if (metrics.migrationFiles > 0) tips.push(`DB 마이그레이션 ${metrics.migrationFiles}건 → 스키마 설계/버전관리 어필`);
+  if (metrics.entityDtoFiles > 0) tips.push(`엔티티/DTO ${metrics.entityDtoFiles}개 변경 → 도메인 설계 어필`);
+  if (metrics.infraFiles > 0) tips.push(`인프라/CI ${metrics.infraFiles}건 → 자동화/DevOps 어필`);
+  if (hasFeat) tips.push('신규 기능 → 문제정의·설계 서술을 강화');
+  if (hasMaint) tips.push('유지보수 → "왜 이렇게 고쳤는지" 트레이드오프 서술이 가치');
+  if (tips.length === 0) tips.push('변경 규모가 작음 → 여러 날 묶어 하나의 스토리로 정리 권장');
+  for (const t of tips) L.push(`- ${t}`);
   L.push('');
 
   return L.join('\n');
@@ -170,8 +255,6 @@ function buildMarkdown() {
 const md = buildMarkdown();
 writeFileSync(OUTPUT_MD, md, 'utf8');
 console.log(`마크다운 저장: ${OUTPUT_MD} (${md.length}자)`);
-
-// 워크플로 후속 스텝(메일 제목 등)에서 쓰도록 노출
 if (P.GITHUB_ENV) {
   appendFileSync(P.GITHUB_ENV, `PORTFOLIO_TITLE=${title}\n`);
   appendFileSync(P.GITHUB_ENV, `PORTFOLIO_MD=${OUTPUT_MD}\n`);
@@ -186,11 +269,7 @@ function richText(text) {
   for (let i = 0; i < t.length; i += 2000) out.push({ type: 'text', text: { content: t.slice(i, i + 2000) } });
   return out;
 }
-const heading = (level, text) => ({
-  object: 'block',
-  type: `heading_${level}`,
-  [`heading_${level}`]: { rich_text: richText(text) },
-});
+const heading = (level, text) => ({ object: 'block', type: `heading_${level}`, [`heading_${level}`]: { rich_text: richText(text) } });
 const para = (text) => ({ object: 'block', type: 'paragraph', paragraph: { rich_text: richText(text) } });
 const bullet = (text) => ({ object: 'block', type: 'bulleted_list_item', bulleted_list_item: { rich_text: richText(text) } });
 const numbered = (text) => ({ object: 'block', type: 'numbered_list_item', numbered_list_item: { rich_text: richText(text) } });
@@ -235,6 +314,7 @@ function mdToBlocks(text) {
     if ((m = /^#\s+(.*)/.exec(line))) blocks.push(heading(1, m[1]));
     else if ((m = /^##\s+(.*)/.exec(line))) blocks.push(heading(2, m[1]));
     else if ((m = /^#{3,}\s+(.*)/.exec(line))) blocks.push(heading(3, m[1]));
+    else if ((m = /^>\s?(.*)/.exec(line))) blocks.push(para(m[1]));
     else if ((m = /^\s*[-*]\s+(.*)/.exec(line))) blocks.push(bullet(m[1]));
     else if ((m = /^\s*\d+\.\s+(.*)/.exec(line))) blocks.push(numbered(m[1]));
     else if (line.trim() === '') {
