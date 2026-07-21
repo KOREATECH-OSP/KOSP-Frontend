@@ -1,33 +1,32 @@
-// 하루치 커밋을 모아 "포트폴리오형 개발기록 문서"를 생성해 팀 노션 DB에 페이지로 남긴다.
+// 하루치 커밋을 모아 "포트폴리오형 개발기록 문서"를 만들어
+//   (1) 팀 노션 DB 에 본문 페이지로 남기고
+//   (2) portfolio-output.md 파일로도 저장한다(워크플로가 메일 첨부/아티팩트로 사용).
 //
-// 동작:
-//   1) git log 로 지정 기간(SINCE, 기본 "1 day ago")의 커밋 + 변경파일을 수집
-//   2) Claude(Anthropic Messages API)로 [양식]에 맞춘 포트폴리오 문서(마크다운) 생성
-//   3) 마크다운을 노션 블록으로 변환해 DB에 페이지 생성(본문 포함)
+// AI(유료 API) 없이 커밋 메시지 + 변경파일 수치를 [양식]에 채우는 무료 템플릿 버전.
 //
-// 필요한 env:
-//   NOTION_TOKEN, NOTION_DB_ID, ANTHROPIC_API_KEY, PROJECT_NAME
-//   (선택) WORKLOG_MODEL(기본 claude-opus-4-8), SINCE, BRANCH,
+// 필요한 env: NOTION_TOKEN, NOTION_DB_ID, PROJECT_NAME
+//   (선택) SINCE(기본 "1 day ago"), BRANCH, FORCE(수동실행 시 중복 무시),
 //          GITHUB_SERVER_URL / GITHUB_REPOSITORY / GITHUB_RUN_ID (ActionRunURL 용)
 //
-// Node 18+ (fetch 내장). 학습/자동화용 스크립트.
+// Node 18+ (fetch 내장). 외부 의존성 없음.
 
 import { execSync } from 'node:child_process';
+import { writeFileSync, appendFileSync } from 'node:fs';
 
 const P = process.env;
-const MODEL = P.WORKLOG_MODEL || 'claude-opus-4-8';
 const SINCE = P.SINCE || '1 day ago';
 const PROJECT = P.PROJECT_NAME || 'KOSP-Backend';
-const MAX_COMMITS = 40; // LLM 입력 토큰 방어
+const BRANCH = P.BRANCH || 'develop';
+const MAX_COMMITS = 60;
+const OUTPUT_MD = 'portfolio-output.md';
 
-// 실패 원인을 GitHub Actions Annotations 에 바로 노출하고 종료한다.
 function fail(msg) {
   console.log(`::error::${msg}`);
   console.error(msg);
   process.exit(1);
 }
 
-const missing = ['NOTION_TOKEN', 'NOTION_DB_ID', 'ANTHROPIC_API_KEY'].filter((k) => !P[k]);
+const missing = ['NOTION_TOKEN', 'NOTION_DB_ID'].filter((k) => !P[k]);
 if (missing.length) {
   fail(`필수 시크릿 누락: ${missing.join(', ')} — 레포 Settings → Secrets and variables → Actions 에 등록하세요.`);
 }
@@ -38,8 +37,8 @@ function git(args) {
   return execSync(`git ${args}`, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 }
 
-const US = '\x1f'; // 필드 구분
-const RS = '\x1e'; // 레코드 구분
+const US = '\x1f';
+const RS = '\x1e';
 let raw = '';
 try {
   raw = git(`log --since="${SINCE}" --date=short --no-merges --pretty=format:'%H${US}%an${US}%ad${US}%s${US}%b${RS}'`);
@@ -53,7 +52,7 @@ const commits = raw
   .filter(Boolean)
   .map((r) => {
     const [hash, author, date, subject, body] = r.split(US);
-    return { hash: (hash || '').trim(), author, date, subject, body: (body || '').trim() };
+    return { hash: (hash || '').trim(), author, date, subject: (subject || '').trim(), body: (body || '').trim() };
   })
   .filter((c) => c.hash);
 
@@ -62,13 +61,13 @@ if (commits.length === 0) {
   process.exit(0);
 }
 
-// 변경 파일 집계 (기간 첫 커밋의 부모 ~ HEAD)
+// 변경 파일 집계
 const oldest = commits[commits.length - 1].hash;
 let base;
 try {
   base = git(`rev-parse ${oldest}^`).trim();
 } catch {
-  base = git('rev-parse --max-parents=0 HEAD').trim().split('\n')[0]; // 루트 커밋
+  base = git('rev-parse --max-parents=0 HEAD').trim().split('\n')[0];
 }
 let files = [];
 try {
@@ -86,7 +85,6 @@ const metrics = {
   entityDtoFiles: count(/(Entity|Dto|\/dto\/|\/model\/|\/request\/|\/response\/|\/types\.ts$)/),
 };
 
-// 대표 작업유형 (conventional commit prefix 최빈값)
 const typeCounts = {};
 for (const c of commits) {
   const m = /^(feat|fix|docs|refactor|chore|test|style|perf|ci|build)/i.exec(c.subject || '');
@@ -97,93 +95,86 @@ const workType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0][0];
 
 const usedCommits = commits.slice(0, MAX_COMMITS);
 const truncated = commits.length > MAX_COMMITS;
-
-// KST 기준 날짜
 const kstDate = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-const runUrl = P.GITHUB_SERVER_URL && P.GITHUB_REPOSITORY && P.GITHUB_RUN_ID
-  ? `${P.GITHUB_SERVER_URL}/${P.GITHUB_REPOSITORY}/actions/runs/${P.GITHUB_RUN_ID}`
-  : null;
+const title = `[일일 개발로그] ${kstDate} · ${PROJECT}`;
+const runUrl =
+  P.GITHUB_SERVER_URL && P.GITHUB_REPOSITORY && P.GITHUB_RUN_ID
+    ? `${P.GITHUB_SERVER_URL}/${P.GITHUB_REPOSITORY}/actions/runs/${P.GITHUB_RUN_ID}`
+    : null;
 
-// ── 2) Claude 로 포트폴리오 문서 생성 ──────────────────────────────
+// ── 2) 마크다운 문서 생성 (무료 템플릿) ────────────────────────────
 
-const SYSTEM = `너는 이 프로젝트의 시니어 풀스택 엔지니어이자 테크리드다.
-아래에 주어진 "하루치 실제 커밋 데이터"만을 근거로, 실무형 개발 기록 + 부트캠프 회고 문서를 작성한다.
+function buildMarkdown() {
+  const L = [];
+  L.push(`# [${kstDate}] ${PROJECT} 일일 개발 로그`);
+  L.push('');
 
-[절대 규칙]
-- 주어진 데이터에 없는 사실/수치는 지어내지 말 것. 추측 금지.
-- 수치화 가능한 것은 반드시 숫자로 적을 것. 수치가 없으면 "정량 추정 불가"라고 쓰지 말고, 왜 불가능한지 + 대체 가능한 지표를 제안할 것.
-- "개선되었다" 같은 모호한 표현 대신, 무엇이 몇 개/몇 건/몇 % 바뀌었는지로 적을 것.
-- 프론트엔드 / 백엔드 / 공통을 구분할 것.
-- 출력은 한국어. GitHub-flavored Markdown. 표(| |)를 적극 사용. 서두 인사말/코드펜스 없이 문서만 출력.
+  L.push('## 1. 작업 개요');
+  L.push('| 항목 | 값 |');
+  L.push('| --- | --- |');
+  L.push(`| 날짜(KST) | ${kstDate} |`);
+  L.push(`| 프로젝트 / 브랜치 | ${PROJECT} / ${BRANCH} |`);
+  L.push(`| 커밋 수 | ${commits.length}건 |`);
+  L.push(`| 총 변경파일 | ${metrics.totalFiles}개 |`);
+  L.push(`| 대표 작업유형 | ${workType} |`);
+  if (runUrl) L.push(`| CI 실행 | ${runUrl} |`);
+  L.push('');
 
-[출력 섹션 순서] (이 순서와 번호를 지켜라)
-1. 전체 작업 요약
-2. 작업 개요 (작업명/유형/기간/모듈/브랜치/커밋수/변경파일수 표)
-3. 작업 배경 (왜 이 커밋들이 필요했는가 — 커밋 메시지 근거)
-4. 프론트엔드 정리
-5. 백엔드 정리
-6. 공통 설계/인프라 정리
-7. 전후 비교표 (항목/개선전/개선후/변화량/비율)
-8. 정량 지표 표 (프론트/백엔드/공통)
-9. 테스트/검증 상태 (근거 없으면 "커밋 기준 확인 불가"로 명시)
-10. 실무형 경험 포인트 / 회고 (잘한 점·아쉬운 점·배운 점)
-11. 포트폴리오용 요약 3종 (한 줄 / 3줄 / 상세 — 각 최소 1개 숫자 포함)
-12. 다음 작업 추천
-13. 증빙(커밋 해시 목록)
-
-문서 제목(맨 위 h1)은 "# [${kstDate}] ${PROJECT} 일일 개발 로그" 로 시작한다.`;
-
-const payloadForModel = {
-  project: PROJECT,
-  branch: P.BRANCH || 'develop',
-  date_kst: kstDate,
-  window: SINCE,
-  commit_count: commits.length,
-  dominant_work_type: workType,
-  metrics,
-  changed_files_sample: files.slice(0, 120),
-  changed_files_truncated: files.length > 120,
-  commits: usedCommits,
-  commits_truncated: truncated,
-};
-
-async function generateMarkdown() {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': P.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 8000,
-      system: SYSTEM,
-      messages: [
-        {
-          role: 'user',
-          content:
-            '아래는 오늘 하루치 실제 커밋 데이터(JSON)다. 이 데이터만 근거로 [양식]대로 문서를 작성해라.\n\n' +
-            '```json\n' +
-            JSON.stringify(payloadForModel, null, 2) +
-            '\n```',
-        },
-      ],
-    }),
-  });
-
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Anthropic API 실패 (${res.status}): ${text.slice(0, 400)}`);
+  L.push('## 2. 커밋 내역');
+  for (const c of usedCommits) {
+    L.push(`- **${c.subject}** — ${c.author}, ${c.date} (\`${c.hash.slice(0, 7)}\`)`);
   }
-  const data = JSON.parse(text);
-  if (data.stop_reason === 'refusal') {
-    throw new Error('Anthropic 응답이 refusal 로 종료됨.');
+  if (truncated) L.push(`- … 외 ${commits.length - MAX_COMMITS}건 생략`);
+  L.push('');
+
+  L.push('## 3. 정량 지표');
+  L.push('| 지표 | 수치 |');
+  L.push('| --- | --- |');
+  L.push(`| 총 변경파일 | ${metrics.totalFiles} |`);
+  L.push(`| 백엔드(.java) | ${metrics.backendFiles} |`);
+  L.push(`| 프론트(src·tsx) | ${metrics.frontendFiles} |`);
+  L.push(`| 마이그레이션 SQL | ${metrics.migrationFiles} |`);
+  L.push(`| 엔티티/DTO | ${metrics.entityDtoFiles} |`);
+  L.push('');
+
+  L.push('## 4. 작업유형 분포');
+  L.push('| 유형 | 커밋 수 |');
+  L.push('| --- | --- |');
+  for (const [t, n] of Object.entries(typeCounts).sort((a, b) => b[1] - a[1])) {
+    L.push(`| ${t} | ${n} |`);
   }
-  const block = (data.content || []).find((b) => b.type === 'text');
-  const md = block ? block.text : '';
-  if (!md.trim()) throw new Error('빈 응답.');
-  return md;
+  L.push('');
+
+  L.push('## 5. 변경 파일 (일부)');
+  for (const f of files.slice(0, 40)) L.push(`- ${f}`);
+  if (files.length > 40) L.push(`- … 외 ${files.length - 40}개`);
+  L.push('');
+
+  L.push('## 6. 작업 배경/요약 (자동 정리)');
+  L.push(
+    `이 기간(${SINCE}) 동안 ${commits.length}개 커밋으로 총 ${metrics.totalFiles}개 파일을 변경했습니다. ` +
+      `대표 작업유형은 ${workType} 이며, 작업유형 분포는 ` +
+      `${Object.entries(typeCounts).map(([t, n]) => `${t} ${n}건`).join(', ')} 입니다.`,
+  );
+  const highlights = usedCommits.slice(0, 3).map((c) => c.subject);
+  if (highlights.length) L.push(`주요 작업: ${highlights.join(' / ')}.`);
+  L.push('');
+
+  L.push('## 7. 증빙 (커밋 해시)');
+  for (const c of usedCommits) L.push(`- ${c.hash} · ${c.subject}`);
+  L.push('');
+
+  return L.join('\n');
+}
+
+const md = buildMarkdown();
+writeFileSync(OUTPUT_MD, md, 'utf8');
+console.log(`마크다운 저장: ${OUTPUT_MD} (${md.length}자)`);
+
+// 워크플로 후속 스텝(메일 제목 등)에서 쓰도록 노출
+if (P.GITHUB_ENV) {
+  appendFileSync(P.GITHUB_ENV, `PORTFOLIO_TITLE=${title}\n`);
+  appendFileSync(P.GITHUB_ENV, `PORTFOLIO_MD=${OUTPUT_MD}\n`);
 }
 
 // ── 3) 마크다운 → 노션 블록 변환 ───────────────────────────────────
@@ -192,9 +183,7 @@ function richText(text) {
   const t = (text || '').replace(/\*\*/g, '').replace(/`/g, '').replace(/^#+\s*/, '');
   if (!t) return [{ type: 'text', text: { content: '' } }];
   const out = [];
-  for (let i = 0; i < t.length; i += 2000) {
-    out.push({ type: 'text', text: { content: t.slice(i, i + 2000) } });
-  }
+  for (let i = 0; i < t.length; i += 2000) out.push({ type: 'text', text: { content: t.slice(i, i + 2000) } });
   return out;
 }
 const heading = (level, text) => ({
@@ -224,13 +213,12 @@ function tableBlock(rows) {
   };
 }
 
-function mdToBlocks(md) {
-  const lines = md.replace(/```[a-z]*\n?/gi, '').split('\n');
+function mdToBlocks(text) {
+  const lines = text.replace(/```[a-z]*\n?/gi, '').split('\n');
   const blocks = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    // 표
     if (/^\s*\|/.test(line)) {
       const tbl = [];
       while (i < lines.length && /^\s*\|/.test(lines[i])) {
@@ -250,14 +238,14 @@ function mdToBlocks(md) {
     else if ((m = /^\s*[-*]\s+(.*)/.exec(line))) blocks.push(bullet(m[1]));
     else if ((m = /^\s*\d+\.\s+(.*)/.exec(line))) blocks.push(numbered(m[1]));
     else if (line.trim() === '') {
-      /* skip blank */
+      /* skip */
     } else blocks.push(para(line));
     i++;
   }
   return blocks;
 }
 
-// ── 4) 노션 페이지 생성 ────────────────────────────────────────────
+// ── 4) 노션 페이지 생성 (하루 1개 중복 방지) ───────────────────────
 
 async function notion(path, method, body) {
   const res = await fetch(`https://api.notion.com/v1${path}`, {
@@ -274,7 +262,6 @@ async function notion(path, method, body) {
   return JSON.parse(t);
 }
 
-// 오늘(KST) 이미 이 프로젝트의 포트폴리오 페이지를 만들었는지 확인 (push 트리거 중복 방지)
 async function alreadyGeneratedToday() {
   try {
     const res = await notion(`/databases/${P.NOTION_DB_ID}/query`, 'POST', {
@@ -295,20 +282,18 @@ async function alreadyGeneratedToday() {
 }
 
 async function run() {
-  const force = P.FORCE === 'true'; // 수동 실행(workflow_dispatch) 시 항상 생성
+  const force = P.FORCE === 'true';
   if (!force && (await alreadyGeneratedToday())) {
-    console.log(`오늘(${kstDate}) ${PROJECT} 포트폴리오가 이미 있어 스킵합니다. (수동 실행하면 강제 생성)`);
+    console.log(`오늘(${kstDate}) ${PROJECT} 노션 페이지가 이미 있어 노션 생성은 스킵합니다(메일/파일은 계속).`);
     return;
   }
-  console.log(`포트폴리오 생성 시작: ${PROJECT}, 커밋 ${commits.length}건, model=${MODEL}`);
-  const md = await generateMarkdown();
-  const blocks = mdToBlocks(md);
 
+  const blocks = mdToBlocks(md);
   const props = {
-    작업명: { title: [{ text: { content: `[일일 개발로그] ${kstDate} · ${PROJECT}`.slice(0, 200) } }] },
+    작업명: { title: [{ text: { content: title.slice(0, 200) } }] },
     프로젝트: { select: { name: PROJECT } },
     날짜: { date: { start: new Date().toISOString() } },
-    브랜치: { rich_text: [{ text: { content: P.BRANCH || 'develop' } }] },
+    브랜치: { rich_text: [{ text: { content: BRANCH } }] },
     커밋해시: { rich_text: [{ text: { content: `${commits.length}건 (~${commits[0].hash.slice(0, 7)})` } }] },
     작성자: { rich_text: [{ text: { content: 'portfolio-bot' } }] },
     작업유형: { select: { name: workType } },
@@ -322,18 +307,14 @@ async function run() {
   };
   if (runUrl) props.ActionRunURL = { url: runUrl };
 
-  // 페이지 생성(children 최대 100) → 나머지는 append
-  const first = blocks.slice(0, 100);
   const page = await notion('/pages', 'POST', {
     parent: { database_id: P.NOTION_DB_ID },
     properties: props,
-    children: first,
+    children: blocks.slice(0, 100),
   });
-
   for (let i = 100; i < blocks.length; i += 100) {
     await notion(`/blocks/${page.id}/children`, 'PATCH', { children: blocks.slice(i, i + 100) });
   }
-
   console.log(`노션 페이지 생성 완료: ${page.id} (블록 ${blocks.length}개)`);
 }
 

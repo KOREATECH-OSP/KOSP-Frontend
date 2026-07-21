@@ -27,6 +27,8 @@ concurrency:
 jobs:
   portfolio:
     runs-on: ubuntu-latest
+    env:
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,17 +39,41 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate daily portfolio & push to Notion
+      - name: Generate daily portfolio (Notion + md)
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          WORKLOG_MODEL: ${{ vars.WORKLOG_MODEL }} # 선택: 미설정 시 claude-opus-4-8
           PROJECT_NAME: KOSP-Frontend
           BRANCH: develop
           SINCE: ${{ github.event.inputs.since || '1 day ago' }}
-          FORCE: ${{ github.event_name == 'workflow_dispatch' }} # 수동 실행은 중복 무시하고 강제 생성
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }}
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: node .github/scripts/notion-portfolio-daily.mjs
+
+      - name: Upload portfolio artifact
+        if: ${{ hashFiles('portfolio-output.md') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-KOSP-Frontend
+          path: portfolio-output.md
+          if-no-files-found: ignore
+
+      - name: Email portfolio
+        if: ${{ env.MAIL_USERNAME != '' && hashFiles('portfolio-output.md') != '' }}
+        continue-on-error: true
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          from: KOSP Portfolio Bot <${{ secrets.MAIL_USERNAME }}>
+          to: ${{ secrets.MAIL_TO || secrets.MAIL_USERNAME }}
+          subject: ${{ env.PORTFOLIO_TITLE || '일일 개발 로그 · KOSP-Frontend' }}
+          body: |
+            ${{ env.PORTFOLIO_TITLE || '일일 개발 로그' }} 문서를 첨부합니다.
+            (자동 생성 · KOSP-Frontend)
+          attachments: portfolio-output.md
