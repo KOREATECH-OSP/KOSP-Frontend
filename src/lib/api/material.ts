@@ -90,6 +90,18 @@ export async function deleteMaterialFolder(folderId: number, auth: AuthOptions):
   });
 }
 
+/** 폴더 이동 (parentId=null 이면 최상위) */
+export async function moveMaterialFolder(
+  folderId: number,
+  parentId: number | null,
+  auth: AuthOptions,
+): Promise<MaterialFolderResponse> {
+  return clientApiClient<MaterialFolderResponse>(
+    `/v1/users/me/material-folders/${folderId}/parent`,
+    { method: 'PATCH', body: { parentId }, accessToken: auth.accessToken },
+  );
+}
+
 // ── 자료 아이템 ────────────────────────────────────────────────────
 
 /** 폴더 내 자료 조회 (최신순) */
@@ -154,12 +166,53 @@ export async function changeMaterialItemVisibility(
   });
 }
 
+/** 자료 수정 (이름 바꾸기 등) */
+export async function updateMaterialItem(
+  itemId: number,
+  data: { title?: string; subjectName?: string | null; materialYear?: number | null; semester?: string | null },
+  auth: AuthOptions,
+): Promise<MaterialItemResponse> {
+  return clientApiClient<MaterialItemResponse>(`/v1/users/me/materials/${itemId}`, {
+    method: 'PATCH',
+    body: data,
+    accessToken: auth.accessToken,
+  });
+}
+
+/** 자료 이동 (다른 폴더로) */
+export async function moveMaterialItem(
+  itemId: number,
+  folderId: number,
+  auth: AuthOptions,
+): Promise<MaterialItemResponse> {
+  return clientApiClient<MaterialItemResponse>(`/v1/users/me/materials/${itemId}/folder`, {
+    method: 'PATCH',
+    body: { folderId },
+    accessToken: auth.accessToken,
+  });
+}
+
 /** 자료 삭제 */
 export async function deleteMaterialItem(itemId: number, auth: AuthOptions): Promise<void> {
   await clientApiClient<void>(`/v1/users/me/materials/${itemId}`, {
     method: 'DELETE',
     accessToken: auth.accessToken,
   });
+}
+
+/**
+ * 자료 다운로드 URL 발급 (presigned GET, attachment 강제).
+ * 브라우저에서 열지 않고 곧바로 내려받는다. S3 저장 파일만 지원.
+ */
+export async function getMaterialDownloadUrl(
+  itemId: number,
+  auth: AuthOptions,
+): Promise<string> {
+  const res = await clientApiClient<{ downloadUrl: string }>(
+    `/v1/users/me/materials/${itemId}/download`,
+    { accessToken: auth.accessToken },
+  );
+  return res.downloadUrl;
 }
 
 // ── 타인 공개 조회 ─────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AuthSession } from '@/lib/auth/types';
 import {
@@ -32,6 +33,11 @@ import {
   Users,
   Trophy,
   Lock,
+  Plus,
+  MoreVertical,
+  Trash2,
+  Globe,
+  CheckCircle2,
 } from 'lucide-react';
 import Pagination from '@/common/components/Pagination';
 import {
@@ -53,6 +59,11 @@ import {
   saveMyResume,
   updateResumeById,
   getAllTitles,
+  getMyResumes,
+  getMyResumeById,
+  createResume,
+  deleteResumeById,
+  setDefaultResume,
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
@@ -75,6 +86,8 @@ import type {
   TitleProgressResponse,
   MySeasonRankingResponse,
   TitleDetailResponse,
+  ResumeSummaryResponse,
+  ResumeData,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { TITLE_CATEGORY_EMOJI, RARITY_LABELS, RARITY_COLORS, getTitleImage } from '@/lib/constants/title';
@@ -100,24 +113,24 @@ const TITLE_CONDITION_LABEL: Record<string, string> = {
 };
 
 // ─── 시즌 랭킹 카드 ───────────────────────────────────────────
+// 시즌 티어는 6단계 백분위 기반 (BRONZE~DIAMOND + CHALLENGER). MASTER 폐지.
 const SEASON_TIER_LABELS: Record<string, string> = {
-  BRONZE_4: '브론즈 4', BRONZE_3: '브론즈 3', BRONZE_2: '브론즈 2', BRONZE_1: '브론즈 1',
-  SILVER_4: '실버 4',   SILVER_3: '실버 3',   SILVER_2: '실버 2',   SILVER_1: '실버 1',
-  GOLD_4:   '골드 4',   GOLD_3:   '골드 3',   GOLD_2:   '골드 2',   GOLD_1:   '골드 1',
-  PLATINUM_4: '플래티넘 4', PLATINUM_3: '플래티넘 3', PLATINUM_2: '플래티넘 2', PLATINUM_1: '플래티넘 1',
-  DIAMOND_4: '다이아몬드 4', DIAMOND_3: '다이아몬드 3', DIAMOND_2: '다이아몬드 2', DIAMOND_1: '다이아몬드 1',
-  MASTER_4: '마스터 4', MASTER_3: '마스터 3', MASTER_2: '마스터 2', MASTER_1: '마스터 1',
+  BRONZE: '브론즈',
+  SILVER: '실버',
+  GOLD: '골드',
+  PLATINUM: '플래티넘',
+  DIAMOND: '다이아몬드',
   CHALLENGER: '챌린저',
 };
 
+// 기본 티어는 백분위로 결정되어 점수 구간이 없으므로, 진행 바는 대략치(총점 100 만점) 기준.
 const SEASON_TIER_THRESHOLDS: Record<string, [number, number]> = {
-  BRONZE_4: [0, 2.5],       BRONZE_3: [2.5, 5],     BRONZE_2: [5, 7.5],       BRONZE_1: [7.5, 10],
-  SILVER_4: [10, 12.5],     SILVER_3: [12.5, 15],   SILVER_2: [15, 17.5],     SILVER_1: [17.5, 20],
-  GOLD_4:   [20, 23.75],    GOLD_3:   [23.75, 27.5], GOLD_2:  [27.5, 31.25],  GOLD_1:   [31.25, 35],
-  PLATINUM_4: [35, 40],     PLATINUM_3: [40, 45],   PLATINUM_2: [45, 50],     PLATINUM_1: [50, 55],
-  DIAMOND_4: [55, 60],      DIAMOND_3: [60, 65],    DIAMOND_2: [65, 70],      DIAMOND_1: [70, 75],
-  MASTER_4: [75, 78.75],    MASTER_3: [78.75, 82.5], MASTER_2: [82.5, 86.25], MASTER_1: [86.25, 90],
-  CHALLENGER: [90, 100],
+  BRONZE: [0, 20],
+  SILVER: [20, 40],
+  GOLD: [40, 60],
+  PLATINUM: [60, 80],
+  DIAMOND: [80, 100],
+  CHALLENGER: [60, 100],
 };
 
 function getTierColor(tier: string): string {
@@ -126,7 +139,6 @@ function getTierColor(tier: string): string {
   if (tier.startsWith('GOLD'))     return 'text-yellow-500';
   if (tier.startsWith('PLATINUM')) return 'text-teal-500';
   if (tier.startsWith('DIAMOND'))  return 'text-blue-500';
-  if (tier.startsWith('MASTER'))   return 'text-purple-600';
   if (tier === 'CHALLENGER')       return 'text-rose-500';
   return 'text-gray-600';
 }
@@ -137,7 +149,6 @@ function getTierBarColor(tier: string): string {
   if (tier.startsWith('GOLD'))     return 'bg-yellow-400';
   if (tier.startsWith('PLATINUM')) return 'bg-teal-400';
   if (tier.startsWith('DIAMOND'))  return 'bg-blue-400';
-  if (tier.startsWith('MASTER'))   return 'bg-purple-500';
   if (tier === 'CHALLENGER')       return 'bg-rose-500';
   return 'bg-gray-400';
 }
@@ -230,11 +241,40 @@ function SeasonRankingCard({ ranking }: { ranking: MySeasonRankingResponse }) {
 }
 // ─────────────────────────────────────────────────────────────
 
+// ─── 드라이브(이력서 관리) 유틸 ────────────────────────────────
+// 작성률: 주요 12개 항목 중 채워진 비율(%). 백엔드에 지표가 없어 클라이언트에서 계산한다.
+function computeResumeCompletion(d: ResumeData): number {
+  const checks = [
+    !!d.headline?.trim(),
+    !!d.bio?.trim(),
+    !!d.jobRole?.trim(),
+    (d.techStack?.length ?? 0) > 0,
+    (d.links?.length ?? 0) > 0,
+    (d.education?.length ?? 0) > 0,
+    (d.career?.length ?? 0) > 0,
+    (d.experience?.length ?? 0) > 0,
+    (d.projects?.length ?? 0) > 0,
+    (d.awards?.length ?? 0) > 0,
+    (d.certifications?.length ?? 0) > 0,
+    (d.coverLetters?.length ?? 0) > 0,
+  ];
+  const filled = checks.filter(Boolean).length;
+  return Math.round((filled / checks.length) * 100);
+}
+
+const EMPTY_RESUME_DATA: ResumeData = {
+  resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
+  links: [], education: [], career: [], experience: [], projects: [],
+  awards: [], certifications: [], coverLetters: [], customSections: [],
+  isPublic: false,
+};
+// ─────────────────────────────────────────────────────────────
+
 interface UserPageClientProps {
   session: AuthSession | null;
 }
 
-type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기' | '칭호';
+type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기' | '칭호' | '포트폴리오';
 
 export default function UserPageClient({ session }: UserPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('활동');
@@ -315,6 +355,14 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 학습자료 최신 노출
   const [recentMaterials, setRecentMaterials] = useState<MaterialItemResponse[]>([]);
 
+  // 드라이브(이력서 관리) 상태
+  const [driveResumes, setDriveResumes] = useState<ResumeSummaryResponse[]>([]);
+  const [driveRates, setDriveRates] = useState<Record<number, number>>({});
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveBusy, setDriveBusy] = useState<number | 'new' | null>(null);
+  const [resumeMenuOpen, setResumeMenuOpen] = useState<number | null>(null);
+
+  const router = useRouter();
   const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
   const accessToken = session?.accessToken as string | undefined;
 
@@ -478,6 +526,112 @@ export default function UserPageClient({ session }: UserPageClientProps) {
       .catch(() => setRecentMaterials([]));
   }, [accessToken]);
 
+  // ── 드라이브(이력서 관리) 로드 ────────────────────────────────
+  const loadDriveResumes = useCallback(async () => {
+    if (!accessToken) return;
+    setDriveLoading(true);
+    try {
+      const list = await getMyResumes({ accessToken });
+      setDriveResumes(list.resumes);
+      // 작성률: 각 이력서를 개별 조회해 채움 비율 계산
+      const entries = await Promise.all(
+        list.resumes.map(async (r) => {
+          try {
+            const detail = await getMyResumeById(r.resumeId, { accessToken });
+            return [r.resumeId, detail.resumeData ? computeResumeCompletion(detail.resumeData) : 0] as const;
+          } catch {
+            return [r.resumeId, 0] as const;
+          }
+        })
+      );
+      setDriveRates(Object.fromEntries(entries));
+    } catch {
+      setDriveResumes([]);
+    } finally {
+      setDriveLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (activeTab === '포트폴리오') loadDriveResumes();
+  }, [activeTab, loadDriveResumes]);
+
+  // ── 드라이브 핸들러 ───────────────────────────────────────────
+  const handleCreateResume = async () => {
+    if (!accessToken || driveBusy) return;
+    setDriveBusy('new');
+    try {
+      const created = await createResume(EMPTY_RESUME_DATA, { accessToken });
+      if (created.resumeId) router.push(`/user/resume?resume=${created.resumeId}`);
+    } catch {
+      // 실패 시 상태 유지
+    } finally {
+      setDriveBusy(null);
+    }
+  };
+
+  const handleToggleResumePublicById = async (r: ResumeSummaryResponse) => {
+    if (!accessToken || driveBusy) return;
+    setDriveBusy(r.resumeId);
+    try {
+      const detail = await getMyResumeById(r.resumeId, { accessToken });
+      if (!detail.resumeData) return;
+      const nextPublic = !r.isPublic;
+      await updateResumeById(r.resumeId, { ...detail.resumeData, isPublic: nextPublic }, { accessToken });
+      setDriveResumes((prev) => prev.map((x) => (x.resumeId === r.resumeId ? { ...x, isPublic: nextPublic } : x)));
+    } catch {
+      // 실패 시 상태 유지
+    } finally {
+      setDriveBusy(null);
+    }
+  };
+
+  const handleDeleteResume = async (resumeId: number) => {
+    if (!accessToken || driveBusy) return;
+    if (!window.confirm('이 이력서를 삭제할까요? 되돌릴 수 없습니다.')) return;
+    setResumeMenuOpen(null);
+    setDriveBusy(resumeId);
+    try {
+      await deleteResumeById(resumeId, { accessToken });
+      setDriveResumes((prev) => prev.filter((x) => x.resumeId !== resumeId));
+    } catch {
+      // 실패 시 상태 유지
+    } finally {
+      setDriveBusy(null);
+    }
+  };
+
+  const handleSetDefaultResume = async (resumeId: number) => {
+    if (!accessToken || driveBusy) return;
+    setResumeMenuOpen(null);
+    setDriveBusy(resumeId);
+    try {
+      await setDefaultResume(resumeId, { accessToken });
+      setDriveResumes((prev) => prev.map((x) => ({ ...x, isDefault: x.resumeId === resumeId })));
+    } catch {
+      // 실패 시 상태 유지
+    } finally {
+      setDriveBusy(null);
+    }
+  };
+
+  // '이력서' 클릭 → 대표(기본) 이력서로 이동, 없으면 첫 이력서, 그마저 없으면 새로 생성
+  const openRepresentativeResume = async () => {
+    if (!accessToken) { router.push('/user/resume'); return; }
+    try {
+      const resumes = driveResumes.length ? driveResumes : (await getMyResumes({ accessToken })).resumes;
+      const target = resumes.find((r) => r.isDefault) ?? resumes[0];
+      if (target) {
+        router.push(`/user/resume?resume=${target.resumeId}`);
+        return;
+      }
+      const created = await createResume(EMPTY_RESUME_DATA, { accessToken });
+      router.push(created.resumeId ? `/user/resume?resume=${created.resumeId}` : '/user/resume');
+    } catch {
+      router.push('/user/resume');
+    }
+  };
+
   useEffect(() => {
     if (!userId) return;
 
@@ -579,6 +733,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     { key: '댓글', label: '댓글', icon: <MessageCircle className="h-4 w-4" /> },
     { key: '즐겨찾기', label: '저장', icon: <Bookmark className="h-4 w-4" /> },
     { key: '칭호', label: '칭호', icon: <Trophy className="h-4 w-4" /> },
+    { key: '포트폴리오', label: '포트폴리오', icon: <FolderGit className="h-4 w-4" /> },
   ];
 
   return (
@@ -838,9 +993,13 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   <FolderGit className="h-4 w-4 text-gray-500" />
                   학습자료
                 </h3>
-                <Link href="/user/materials" className="text-xs text-orange-500 hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('포트폴리오')}
+                  className="text-xs text-orange-500 hover:underline"
+                >
                   더보기
-                </Link>
+                </button>
               </div>
               {recentMaterials.length === 0 ? (
                 <p className="py-4 text-center text-xs text-gray-400">
@@ -902,15 +1061,173 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {tab.label}
                 </button>
               ))}
-              <Link
-                href="/user/resume"
+              <button
+                type="button"
+                onClick={openRepresentativeResume}
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-r-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200"
               >
                 <FileText className="h-4 w-4" />
                 이력서
-              </Link>
+              </button>
             </div>
           </div>
+
+          {activeTab === '포트폴리오' && (
+            <div className="space-y-8">
+              {/* ── 이력서 관리 ─────────────────────────────── */}
+              <section>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-base font-bold text-gray-900">이력서 관리</h2>
+                  <span className="text-xs text-gray-400">
+                    총 {driveResumes.length}개
+                  </span>
+                </div>
+
+                {driveLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-300" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {/* 새 이력서 작성 카드 */}
+                    <button
+                      type="button"
+                      onClick={handleCreateResume}
+                      disabled={driveBusy === 'new'}
+                      className="flex min-h-[150px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 transition hover:border-orange-300 hover:text-orange-500 disabled:opacity-50"
+                    >
+                      {driveBusy === 'new' ? (
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      ) : (
+                        <Plus className="h-6 w-6" />
+                      )}
+                      <span className="text-sm font-medium">새 이력서 작성</span>
+                    </button>
+
+                    {/* 이력서 카드들 */}
+                    {driveResumes.map((r) => {
+                      const rate = driveRates[r.resumeId] ?? 0;
+                      const busy = driveBusy === r.resumeId;
+                      const openEditor = () => router.push(`/user/resume?resume=${r.resumeId}`);
+                      return (
+                        <div
+                          key={r.resumeId}
+                          className="relative flex min-h-[150px] flex-col rounded-2xl border border-gray-200 bg-white p-4 transition hover:shadow-md"
+                        >
+                          {/* 상단: 작성률 배지 + 3점 메뉴 */}
+                          <div className="mb-2 flex items-start justify-between">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-500">
+                              <Star className="h-3 w-3" />
+                              작성률 {rate}%
+                            </span>
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={() => setResumeMenuOpen(resumeMenuOpen === r.resumeId ? null : r.resumeId)}
+                                className="rounded-lg p-1 text-gray-400 transition hover:bg-gray-100"
+                                aria-label="이력서 메뉴"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                              {resumeMenuOpen === r.resumeId && (
+                                <>
+                                  <div className="fixed inset-0 z-10" onClick={() => setResumeMenuOpen(null)} />
+                                  <div className="absolute right-0 top-8 z-20 w-36 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
+                                    <button
+                                      type="button"
+                                      onClick={() => { setResumeMenuOpen(null); openEditor(); }}
+                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-600 hover:bg-gray-50"
+                                    >
+                                      <Edit className="h-3.5 w-3.5" />
+                                      편집
+                                    </button>
+                                    {!r.isDefault && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetDefaultResume(r.resumeId)}
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-600 hover:bg-gray-50"
+                                      >
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        기본으로 설정
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteResume(r.resumeId)}
+                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-500 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      삭제
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 본문: 제목 + 진행 바 (클릭 시 편집 진입) */}
+                          <button type="button" onClick={openEditor} className="flex-1 text-left">
+                            <p className={`text-sm font-semibold ${r.resumeTitle ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {r.resumeTitle || '제목을 입력하세요'}
+                              {r.isDefault && (
+                                <span className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+                                  기본
+                                </span>
+                              )}
+                            </p>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                              <div className="h-full rounded-full bg-orange-400 transition-all" style={{ width: `${rate}%` }} />
+                            </div>
+                          </button>
+
+                          {/* 하단: 공개 토글 + 수정일 */}
+                          <div className="mt-3 flex items-center justify-between">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleResumePublicById(r)}
+                              disabled={busy}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium transition disabled:opacity-50"
+                            >
+                              {busy ? (
+                                <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                              ) : r.isPublic ? (
+                                <Globe className="h-3 w-3 text-orange-500" />
+                              ) : (
+                                <Lock className="h-3 w-3 text-gray-400" />
+                              )}
+                              <span className={r.isPublic ? 'text-orange-500' : 'text-gray-400'}>
+                                {r.isPublic ? '공개' : '비공개'}
+                              </span>
+                            </button>
+                            <span className="text-[11px] text-gray-400">
+                              {r.updatedAt?.slice(0, 10).replace(/-/g, '.')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* ── 내 폴더 · 내 파일 (학습자료 페이지로) ───────── */}
+              <section>
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-base font-bold text-gray-900">내 폴더 · 내 파일</h2>
+                  <Link
+                    href="/user/materials"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 hover:underline"
+                  >
+                    관리하기
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+                <p className="text-sm text-gray-400">
+                  학년별 폴더와 과제·EL 자료는 학습자료 페이지에서 관리합니다.
+                </p>
+              </section>
+            </div>
+          )}
 
           {activeTab === '활동' && (
             <div className="space-y-4">

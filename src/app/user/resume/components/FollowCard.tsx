@@ -83,15 +83,18 @@ export default function FollowCard({ profileUserId, accessToken, isMe }: Props) 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">팔로우</h3>
-        <div className="flex gap-3 text-[11px] text-gray-400">
-          <span>
-            <span className="font-semibold text-gray-700">{followingCount}</span> 팔로잉
-          </span>
-          <span>
-            <span className="font-semibold text-gray-700">{followers.length}</span> 팔로워
-          </span>
-        </div>
+        <h3 className="text-sm font-bold text-gray-900">소셜</h3>
+        <Link href={`/user/${profileUserId}`} className="text-[11px] text-orange-500 hover:underline">
+          전체보기 →
+        </Link>
+      </div>
+      <div className="mb-3 flex gap-4 text-xs text-gray-500">
+        <span>
+          <span className="font-semibold text-gray-900">{followingCount}</span> 팔로잉
+        </span>
+        <span>
+          <span className="font-semibold text-gray-900">{followers.length}</span> 팔로워
+        </span>
       </div>
 
       {!isMe && accessToken && (

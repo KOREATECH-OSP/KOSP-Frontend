@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import type { ResumeData } from '@/lib/api/types';
+import ProjectCarousel from './ProjectCarousel';
 
 // ── 자격증 상태 라벨 ──────────────────────────────────────────────
 const CERT_STATUS_LABEL: Record<string, string> = {
@@ -162,69 +163,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       {/* ── 프로젝트 ─────────────────────────────────────── */}
       {show('sec-projects') && data.projects?.filter((p) => p.name).length > 0 && (
         <Section title="프로젝트">
-          <div className="space-y-6">
-            {data.projects.filter((p) => p.name).map((proj, i) => (
-              <div key={proj.id ?? i}>
-                {i > 0 && <Divider />}
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {proj.name}
-                    {proj.featured === 'true' && <span className="ml-2 text-xs text-orange-500">★ 대표</span>}
-                  </p>
-                  {proj.period && <span className="shrink-0 text-xs text-gray-400">{proj.period}</span>}
-                </div>
-                {proj.role && <p className="mt-0.5 text-xs text-gray-500">역할: {proj.role}</p>}
-                {proj.techStack && proj.techStack.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {proj.techStack.map((t) => (
-                      <span key={t} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">{t}</span>
-                    ))}
-                  </div>
-                )}
-                {proj.summary && <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{proj.summary}</p>}
-                {proj.mainFeatures && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500 mb-1">주요 기능</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{proj.mainFeatures}</p>
-                  </div>
-                )}
-                {proj.myContributions && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500 mb-1">기여 내용</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{proj.myContributions}</p>
-                  </div>
-                )}
-                {proj.result && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500 mb-1">결과</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{proj.result}</p>
-                  </div>
-                )}
-                {(proj.githubLink || proj.deployLink || proj.docLink) && (
-                  <div className="mt-2 flex flex-wrap gap-3">
-                    {proj.githubLink && (
-                      <a href={proj.githubLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                        GitHub <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {proj.deployLink && (
-                      <a href={proj.deployLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                        배포 <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {proj.docLink && (
-                      <a href={proj.docLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                        문서 <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <ProjectCarousel projects={data.projects.filter((p) => p.name)} />
         </Section>
       )}
 

@@ -87,14 +87,14 @@ const SEASON_CRITERIA_ROWS = [
   { category: '프로젝트', criteria: '레벨별 2~10pt + 역할 보너스', cap: '30pt' },
   { category: '커뮤니티', criteria: '게시글 0.5pt/개', cap: '10pt' },
 ];
+// 시즌 티어는 6단계 백분위 기반. 기본 5티어는 시즌 순위(백분위)로, CHALLENGER만 다이아+총점 조건.
 const SEASON_TIER_CRITERIA = [
-  { label: 'BRONZE 4~1', range: '0 ~ 10pt', color: 'bg-amber-100 text-amber-800' },
-  { label: 'SILVER 4~1', range: '10 ~ 20pt', color: 'bg-slate-100 text-slate-700' },
-  { label: 'GOLD 4~1', range: '20 ~ 35pt', color: 'bg-yellow-100 text-yellow-800' },
-  { label: 'PLATINUM 4~1', range: '35 ~ 55pt', color: 'bg-cyan-100 text-cyan-800' },
-  { label: 'DIAMOND 4~1', range: '55pt 이상 (점수형 최고)', color: 'bg-blue-100 text-blue-800' },
-  { label: 'MASTER', range: '상위 5% + 성취 조건', color: 'bg-purple-100 text-purple-800' },
-  { label: 'CHALLENGER', range: '상위 1% + 성취 조건', color: 'bg-rose-100 text-rose-800' },
+  { label: 'CHALLENGER', range: '상위 20% + 총점 60점 이상', color: 'bg-rose-100 text-rose-800' },
+  { label: 'DIAMOND', range: '상위 20%', color: 'bg-blue-100 text-blue-800' },
+  { label: 'PLATINUM', range: '상위 20 ~ 40%', color: 'bg-cyan-100 text-cyan-800' },
+  { label: 'GOLD', range: '상위 40 ~ 60%', color: 'bg-yellow-100 text-yellow-800' },
+  { label: 'SILVER', range: '상위 60 ~ 80%', color: 'bg-slate-100 text-slate-700' },
+  { label: 'BRONZE', range: '하위 20%', color: 'bg-amber-100 text-amber-800' },
 ];
 const GITHUB_TIER_CRITERIA = [
   { label: 'CHALLENGER', range: '7.5 ~ 9pt', color: 'bg-rose-100 text-rose-800' },

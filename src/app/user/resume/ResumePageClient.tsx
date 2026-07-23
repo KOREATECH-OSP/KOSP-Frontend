@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import {
   User,
   FileText,
@@ -34,7 +35,7 @@ import ResumeReadOnlyView from './components/ResumeReadOnlyView';
 import type { AuthSession } from '@/lib/auth/types';
 import {
   getUserProfile, getMyResume, saveMyResume,
-  getMyResumes, createResume, updateResumeById,
+  getMyResumes, createResume, updateResumeById, getMyResumeById,
   deleteResumeById, setDefaultResume,
   getResumeAutoProjects, deleteResumeAutoProject, restoreResumeAutoProject, updateResumeAutoProject,
 } from '@/lib/api/user';
@@ -106,6 +107,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
 
   const accessToken = session.accessToken ?? null;
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
+  const searchParams = useSearchParams();
 
   // ── localStorage 기반 편집 상태 ──────────────────────────────
   const {
@@ -162,6 +164,9 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const fetchData = useCallback(async () => {
     if (!userId) { setIsLoading(false); return; }
     try {
+      // 드라이브 탭 등에서 ?resume=<id> 로 진입 시 해당 이력서를 연다.
+      const resumeParam = searchParams.get('resume');
+      const targetId = resumeParam ? Number(resumeParam) : null;
       const [profileData, resumeData, listData] = await Promise.all([
         getUserProfile(userId).catch(() => null),
         accessToken ? getMyResume({ accessToken }).catch(() => null) : Promise.resolve(null),
@@ -169,7 +174,13 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       ]);
       if (profileData) setProfile(profileData);
       if (listData?.resumes) setResumeList(listData.resumes);
-      if (resumeData?.resumeData) {
+      if (targetId && accessToken && listData?.resumes?.some((r) => r.resumeId === targetId)) {
+        // 딥링크로 지정된 이력서 로드
+        const detail = await getMyResumeById(targetId, { accessToken });
+        setResumeId(targetId);
+        if (detail.resumeData) applyResumeData(detail.resumeData as unknown as Record<string, unknown>);
+      } else if (resumeData?.resumeData) {
+        // 기본 이력서 로드
         if (resumeData.resumeId) setResumeId(resumeData.resumeId);
         applyResumeData(resumeData.resumeData as unknown as Record<string, unknown>);
       }
@@ -179,7 +190,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, accessToken, applyResumeData]);
+  }, [userId, accessToken, applyResumeData, searchParams]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
