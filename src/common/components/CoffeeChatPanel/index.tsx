@@ -7,6 +7,7 @@ import { X, Pencil, User as UserIcon, ChevronLeft, Smile, Paperclip, MoreVertica
 import { useSession } from '@/lib/auth/AuthContext';
 import {
   getMyChatRooms,
+  createOrGetRoom,
   getChatMessages,
   sendChatMessage,
   markRoomAsRead,
@@ -135,12 +136,7 @@ export default function CoffeeChatPanel() {
       if (!accessToken) return;
       setIsOpen(true);
       try {
-        const { clientApiClient } = await import('@/lib/api/client');
-        const room = await clientApiClient<CoffeeChatRoomResponse>('/v1/coffee-chat/rooms', {
-          method: 'POST',
-          body: JSON.stringify({ partnerId }),
-          accessToken,
-        });
+        const room = await createOrGetRoom(partnerId, { accessToken });
         setSelectedRoom(room);
         setRooms(prev => {
           const exists = prev.find(r => r.roomId === room.roomId);
@@ -219,12 +215,7 @@ export default function CoffeeChatPanel() {
     if (!accessToken) return;
     setShowCompose(false);
     try {
-      const { clientApiClient } = await import('@/lib/api/client');
-      const room = await clientApiClient<CoffeeChatRoomResponse>('/v1/coffee-chat/rooms', {
-        method: 'POST',
-        body: JSON.stringify({ partnerId: userId }),
-        accessToken,
-      });
+      const room = await createOrGetRoom(userId, { accessToken });
       setSelectedRoom(room);
       setRooms(prev => {
         const exists = prev.find(r => r.roomId === room.roomId);
