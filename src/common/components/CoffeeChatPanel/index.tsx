@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Pencil, User as UserIcon, ChevronLeft, Smile, Paperclip, MoreVertical, Pin, Trash2 } from 'lucide-react';
+import { X, Pencil, User as UserIcon, ChevronLeft, Smile, Paperclip, MoreVertical, Pin, Trash2, Search } from 'lucide-react';
 import { useSession } from '@/lib/auth/AuthContext';
 import {
   getMyChatRooms,
@@ -13,7 +13,8 @@ import {
   deleteRoom,
   togglePinRoom,
 } from '@/lib/api/coffeeChat';
-import type { CoffeeChatRoomResponse, CoffeeChatMessageResponse } from '@/lib/api/types';
+import { getFollowing } from '@/lib/api/follow';
+import type { CoffeeChatRoomResponse, CoffeeChatMessageResponse, FollowUserResponse } from '@/lib/api/types';
 import koriChatDefault from '@/assets/images/kori-chat/kori-chat-default.png';
 import koriChatActive from '@/assets/images/kori-chat/kori-chat-active.png';
 
@@ -64,6 +65,10 @@ export default function CoffeeChatPanel() {
   const [unreadTotal, setUnreadTotal] = useState(0);
   const [sending, setSending] = useState(false);
   const [menuRoomId, setMenuRoomId] = useState<number | null>(null);
+  const [showCompose, setShowCompose] = useState(false);
+  const [followingList, setFollowingList] = useState<FollowUserResponse[]>([]);
+  const [composeSearch, setComposeSearch] = useState('');
+  const [composeLoading, setComposeLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -195,6 +200,41 @@ export default function CoffeeChatPanel() {
     }
   };
 
+  const openCompose = async () => {
+    if (!myId) return;
+    setShowCompose(true);
+    setComposeSearch('');
+    setComposeLoading(true);
+    try {
+      const list = await getFollowing(myId);
+      setFollowingList(list);
+    } catch {
+      setFollowingList([]);
+    } finally {
+      setComposeLoading(false);
+    }
+  };
+
+  const openRoomWithUser = async (userId: number) => {
+    if (!accessToken) return;
+    setShowCompose(false);
+    try {
+      const { clientApiClient } = await import('@/lib/api/client');
+      const room = await clientApiClient<CoffeeChatRoomResponse>('/v1/coffee-chat/rooms', {
+        method: 'POST',
+        body: JSON.stringify({ partnerId: userId }),
+        accessToken,
+      });
+      setSelectedRoom(room);
+      setRooms(prev => {
+        const exists = prev.find(r => r.roomId === room.roomId);
+        return exists ? prev.map(r => r.roomId === room.roomId ? room : r) : [room, ...prev];
+      });
+    } catch {
+      // ignore
+    }
+  };
+
   if (!accessToken) return null;
 
   return (
@@ -226,7 +266,65 @@ export default function CoffeeChatPanel() {
         <div className="fixed bottom-[88px] right-10 z-50 w-[380px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100"
           style={{ maxHeight: 'calc(100vh - 120px)' }}
         >
-          {selectedRoom ? (
+          {showCompose ? (
+            /* 팔로잉 목록 - 새 메시지 작성 뷰 */
+            <div className="flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+              <div className="flex items-center gap-3 px-4 py-4">
+                <button
+                  onClick={() => setShowCompose(false)}
+                  className="text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <h2 className="flex-1 text-base font-bold text-gray-900">새 메시지</h2>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="px-4 pb-3">
+                <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2">
+                  <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    value={composeSearch}
+                    onChange={e => setComposeSearch(e.target.value)}
+                    placeholder="이름으로 검색"
+                    className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="h-px bg-gray-100" />
+
+              <div className="overflow-y-auto flex-1 min-h-[200px] max-h-[400px]">
+                {composeLoading ? (
+                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">불러오는 중...</div>
+                ) : followingList.length === 0 ? (
+                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">팔로잉 중인 사용자가 없습니다</div>
+                ) : (
+                  followingList
+                    .filter(u => u.name.includes(composeSearch))
+                    .map(user => (
+                      <button
+                        key={user.userId}
+                        onClick={() => openRoomWithUser(user.userId)}
+                        className="flex w-full items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <ProfileAvatar src={user.profileImage} name={user.name} size={44} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-gray-900 truncate">{user.name}</p>
+                          {user.introduction && (
+                            <p className="text-xs text-gray-400 truncate mt-0.5">{user.introduction}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))
+                )}
+              </div>
+            </div>
+          ) : selectedRoom ? (
             /* 채팅방 뷰 */
             <div className="flex h-[520px] flex-col">
               {/* 헤더 */}
@@ -405,7 +503,7 @@ export default function CoffeeChatPanel() {
               <div className="relative pb-4 pt-2 flex justify-end px-4">
                 <button
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
-                  onClick={() => {/* TODO: 유저 검색 후 새 채팅 */}}
+                  onClick={openCompose}
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
