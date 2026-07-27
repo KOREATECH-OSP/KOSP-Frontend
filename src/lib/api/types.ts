@@ -1183,10 +1183,12 @@ export interface CoffeeChatRoomResponse {
   roomId: number;
   partnerId: number;
   partnerName: string;
+  partnerGithubLogin: string | null;
   partnerProfileImage: string | null;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;
+  isPinned: boolean;
 }
 
 export interface CoffeeChatMessageResponse {

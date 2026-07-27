@@ -2,18 +2,57 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { X, Pencil, User as UserIcon } from 'lucide-react';
-import { useAuth } from '@/lib/auth/AuthContext';
+import Link from 'next/link';
+import { X, Pencil, User as UserIcon, ChevronLeft, Smile, Paperclip, MoreVertical, Pin, Trash2 } from 'lucide-react';
+import { useSession } from '@/lib/auth/AuthContext';
 import {
   getMyChatRooms,
   getChatMessages,
   sendChatMessage,
   markRoomAsRead,
+  deleteRoom,
+  togglePinRoom,
 } from '@/lib/api/coffeeChat';
 import type { CoffeeChatRoomResponse, CoffeeChatMessageResponse } from '@/lib/api/types';
+import koriChatDefault from '@/assets/images/kori-chat/kori-chat-default.png';
+import koriChatActive from '@/assets/images/kori-chat/kori-chat-active.png';
+
+function ProfileAvatar({ src, name, size = 44 }: { src: string | null; name: string; size?: number }) {
+  return src ? (
+    <Image
+      src={src}
+      alt={name}
+      width={size}
+      height={size}
+      className="rounded-full object-cover flex-shrink-0"
+      style={{ width: size, height: size }}
+    />
+  ) : (
+    <div
+      className="flex items-center justify-center rounded-full bg-gray-200 flex-shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <UserIcon style={{ width: size * 0.45, height: size * 0.45 }} className="text-gray-400" />
+    </div>
+  );
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '방금';
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}일 전`;
+  return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+}
 
 export default function CoffeeChatPanel() {
-  const { session } = useAuth();
+  const { session } = useSession();
   const accessToken = session?.accessToken ?? null;
   const myId = session?.user?.id ? Number(session.user.id) : null;
 
@@ -24,7 +63,9 @@ export default function CoffeeChatPanel() {
   const [input, setInput] = useState('');
   const [unreadTotal, setUnreadTotal] = useState(0);
   const [sending, setSending] = useState(false);
+  const [menuRoomId, setMenuRoomId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const loadRooms = useCallback(async () => {
     if (!accessToken) return;
@@ -71,7 +112,18 @@ export default function CoffeeChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 글로벌 이벤트: 프로필에서 "메시지" 버튼 클릭 시 해당 room으로 이동
+  // 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuRoomId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // 프로필 "메시지" 버튼 이벤트
   useEffect(() => {
     const handler = async (e: Event) => {
       const { partnerId } = (e as CustomEvent).detail;
@@ -87,7 +139,7 @@ export default function CoffeeChatPanel() {
         setSelectedRoom(room);
         setRooms(prev => {
           const exists = prev.find(r => r.roomId === room.roomId);
-          return exists ? prev : [room, ...prev];
+          return exists ? prev.map(r => r.roomId === room.roomId ? room : r) : [room, ...prev];
         });
       } catch {
         // ignore
@@ -117,201 +169,251 @@ export default function CoffeeChatPanel() {
     }
   };
 
+  const handleDeleteRoom = async (roomId: number) => {
+    if (!accessToken) return;
+    setMenuRoomId(null);
+    try {
+      await deleteRoom(roomId, { accessToken });
+      setRooms(prev => prev.filter(r => r.roomId !== roomId));
+      if (selectedRoom?.roomId === roomId) setSelectedRoom(null);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleTogglePin = async (roomId: number) => {
+    if (!accessToken) return;
+    setMenuRoomId(null);
+    try {
+      const updated = await togglePinRoom(roomId, { accessToken });
+      setRooms(prev => {
+        const newRooms = prev.map(r => r.roomId === roomId ? updated : r);
+        return [...newRooms].sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
+      });
+    } catch {
+      // ignore
+    }
+  };
+
   if (!accessToken) return null;
 
   return (
     <>
-      {/* 플로팅 고양이 아이콘 */}
+      {/* 플로팅 고양이 말풍선 아이콘 */}
       <button
         onClick={() => setIsOpen(v => !v)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg hover:shadow-xl transition-shadow"
+        className="fixed bottom-8 right-10 z-40 drop-shadow-lg hover:drop-shadow-xl transition-all hover:scale-105"
         aria-label="커피챗 열기"
       >
-        {/* 고양이 아이콘 SVG */}
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="16" cy="18" rx="10" ry="9" fill="#F5F5F5" stroke="#E0E0E0" strokeWidth="1"/>
-          {/* 귀 */}
-          <polygon points="8,11 6,5 12,9" fill="#F5F5F5" stroke="#E0E0E0" strokeWidth="1"/>
-          <polygon points="24,11 26,5 20,9" fill="#F5F5F5" stroke="#E0E0E0" strokeWidth="1"/>
-          {/* 얼굴 */}
-          <ellipse cx="16" cy="17" rx="8" ry="7" fill="white"/>
-          {/* 눈 */}
-          <ellipse cx="13" cy="15" rx="1.2" ry="1.2" fill="#333"/>
-          <ellipse cx="19" cy="15" rx="1.2" ry="1.2" fill="#333"/>
-          {/* 코 */}
-          <ellipse cx="16" cy="18" rx="0.8" ry="0.6" fill="#FFB6C1"/>
-          {/* 수염 */}
-          <line x1="8" y1="17" x2="13" y2="18" stroke="#999" strokeWidth="0.8"/>
-          <line x1="8" y1="19" x2="13" y2="19" stroke="#999" strokeWidth="0.8"/>
-          <line x1="19" y1="18" x2="24" y2="17" stroke="#999" strokeWidth="0.8"/>
-          <line x1="19" y1="19" x2="24" y2="19" stroke="#999" strokeWidth="0.8"/>
-        </svg>
-        {unreadTotal > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-            {unreadTotal > 99 ? '99+' : unreadTotal}
-          </span>
-        )}
+        <div className="relative">
+          <Image
+            src={unreadTotal > 0 ? koriChatActive : koriChatDefault}
+            alt="커피챗"
+            width={56}
+            height={56}
+            className="object-contain"
+          />
+          {unreadTotal > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+              {unreadTotal > 99 ? '99+' : unreadTotal}
+            </span>
+          )}
+        </div>
       </button>
 
       {/* 메시지 패널 */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[480px] w-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100">
+        <div className="fixed bottom-[88px] right-10 z-50 w-[380px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100"
+          style={{ maxHeight: 'calc(100vh - 120px)' }}
+        >
           {selectedRoom ? (
             /* 채팅방 뷰 */
-            <>
+            <div className="flex h-[520px] flex-col">
+              {/* 헤더 */}
               <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
                 <button
-                  onClick={() => setSelectedRoom(null)}
-                  className="text-gray-400 hover:text-gray-700"
+                  onClick={() => { setSelectedRoom(null); setMessages([]); }}
+                  className="text-gray-500 hover:text-gray-900 transition-colors"
                 >
-                  ←
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
-                <div className="flex flex-1 items-center gap-2">
-                  {selectedRoom.partnerProfileImage ? (
-                    <Image
-                      src={selectedRoom.partnerProfileImage}
-                      alt={selectedRoom.partnerName}
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                      <UserIcon className="h-4 w-4 text-gray-400" />
-                    </div>
-                  )}
-                  <span className="font-semibold text-gray-900 text-sm">{selectedRoom.partnerName}</span>
-                </div>
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700">
+                <ProfileAvatar src={selectedRoom.partnerProfileImage} name={selectedRoom.partnerName} size={32} />
+                <span className="flex-1 font-semibold text-gray-900 text-sm">{selectedRoom.partnerName}님</span>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-                {messages.map(msg => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.senderId === myId ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm ${
-                        msg.senderId === myId
-                          ? 'bg-orange-400 text-white rounded-br-sm'
-                          : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                      }`}
-                    >
-                      {msg.content}
+              {/* 메시지 영역 */}
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                {messages.length === 0 ? (
+                  /* 빈 상태 - 프로필 카드 */
+                  <div className="flex flex-col items-center justify-center h-full gap-3 py-6">
+                    <ProfileAvatar src={selectedRoom.partnerProfileImage} name={selectedRoom.partnerName} size={80} />
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-gray-900">{selectedRoom.partnerName}님</p>
+                      {selectedRoom.partnerGithubLogin && (
+                        <p className="text-sm text-gray-500 mt-0.5">{selectedRoom.partnerGithubLogin}</p>
+                      )}
                     </div>
+                    <Link
+                      href={`/user/${selectedRoom.partnerId}`}
+                      className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+                    >
+                      프로필 보기
+                    </Link>
+                    <p className="mt-4 text-sm text-gray-400">대화를 시작해보세요!</p>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
+                ) : (
+                  /* 메시지 목록 */
+                  <div className="space-y-2">
+                    {messages.map((msg, idx) => {
+                      const isMe = msg.senderId === myId;
+                      const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                      const showAvatar = !isMe && (!prevMsg || prevMsg.senderId !== msg.senderId);
+                      return (
+                        <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          {!isMe && (
+                            <div className="w-7 flex-shrink-0">
+                              {showAvatar && (
+                                <ProfileAvatar src={selectedRoom.partnerProfileImage} name={selectedRoom.partnerName} size={28} />
+                              )}
+                            </div>
+                          )}
+                          <div
+                            className={`max-w-[65%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                              isMe
+                                ? 'bg-gray-900 text-white rounded-br-md'
+                                : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                            }`}
+                          >
+                            {msg.content}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
               </div>
 
-              <div className="border-t border-gray-100 px-3 py-2 flex gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  placeholder="메시지 입력..."
-                  className="flex-1 rounded-full border border-gray-200 px-4 py-2 text-sm outline-none focus:border-orange-400"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || sending}
-                  className="rounded-full bg-orange-400 px-4 py-2 text-sm font-medium text-white hover:bg-orange-500 disabled:opacity-50"
-                >
-                  전송
-                </button>
+              {/* 입력창 */}
+              <div className="border-t border-gray-100 px-3 py-3">
+                <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder="메시지를 입력하세요."
+                    className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+                  />
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+                    <Smile className="h-5 w-5" />
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+                    <Paperclip className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </>
+            </div>
           ) : (
             /* 채팅 목록 뷰 */
-            <>
-              <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
-                <h2 className="text-base font-bold text-gray-900">메시지</h2>
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700">
+            <div className="flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+              {/* 헤더 */}
+              <div className="flex items-center justify-between px-5 py-4">
+                <h2 className="text-lg font-bold text-gray-900">메시지</h2>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              <div className="h-px bg-gray-100" />
+
+              {/* 채팅방 목록 */}
+              <div className="overflow-y-auto flex-1 min-h-[300px] max-h-[450px] relative">
                 {rooms.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                  <div className="flex items-center justify-center py-16 text-sm text-gray-400">
                     아직 메시지가 없습니다
                   </div>
                 ) : (
                   rooms.map(room => (
-                    <button
+                    <div
                       key={room.roomId}
+                      className="group relative flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => setSelectedRoom(room)}
-                      className="flex w-full items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                     >
-                      <div className="relative flex-shrink-0">
-                        {room.partnerProfileImage ? (
-                          <Image
-                            src={room.partnerProfileImage}
-                            alt={room.partnerName}
-                            width={44}
-                            height={44}
-                            className="h-11 w-11 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100">
-                            <UserIcon className="h-5 w-5 text-gray-400" />
-                          </div>
-                        )}
-                        {room.unreadCount > 0 && (
-                          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                            {room.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-sm text-gray-900 truncate">{room.partnerName}</span>
-                          <span className="text-[11px] text-gray-400 ml-2 flex-shrink-0">
-                            {room.lastMessageAt ? formatDate(room.lastMessageAt) : ''}
-                          </span>
+                      {/* 고정 핀 표시 */}
+                      {room.isPinned && (
+                        <Pin className="absolute top-2 right-5 h-3 w-3 text-orange-400 rotate-45" />
+                      )}
+
+                      <ProfileAvatar src={room.partnerProfileImage} name={room.partnerName} size={52} />
+
+                      <div className="flex-1 min-w-0 pr-6">
+                        <p className="font-semibold text-sm text-gray-900 truncate">{room.partnerName}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <p className="text-xs text-gray-400 truncate">
+                            {room.lastMessage ?? '대화를 시작해보세요'}
+                          </p>
+                          {room.lastMessageAt && (
+                            <>
+                              <span className="text-xs text-gray-300 flex-shrink-0">·</span>
+                              <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(room.lastMessageAt)}</span>
+                            </>
+                          )}
                         </div>
-                        <p className={`text-xs truncate mt-0.5 ${room.unreadCount > 0 ? 'font-medium text-gray-800' : 'text-gray-400'}`}>
-                          {room.lastMessage ?? '대화를 시작해보세요'}
-                        </p>
                       </div>
-                    </button>
+
+                      {/* 더보기 버튼 (hover 시) */}
+                      <button
+                        onClick={e => { e.stopPropagation(); setMenuRoomId(prev => prev === room.roomId ? null : room.roomId); }}
+                        className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-gray-200"
+                      >
+                        <MoreVertical className="h-4 w-4 text-gray-500" />
+                      </button>
+
+                      {/* 드롭다운 메뉴 */}
+                      {menuRoomId === room.roomId && (
+                        <div
+                          ref={menuRef}
+                          className="absolute right-10 top-8 z-10 w-32 overflow-hidden rounded-lg bg-white shadow-lg border border-gray-100"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => handleTogglePin(room.roomId)}
+                            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <Pin className="h-3.5 w-3.5" />
+                            {room.isPinned ? '고정 해제' : '고정하기'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRoom(room.roomId)}
+                            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            삭제하기
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ))
                 )}
               </div>
 
               {/* 새 메시지 작성 버튼 */}
-              <div className="relative h-0">
+              <div className="relative pb-4 pt-2 flex justify-end px-4">
                 <button
-                  className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-white shadow-md hover:bg-gray-700"
-                  onClick={() => {
-                    // TODO: 새 메시지 작성 UI (추후 구현)
-                  }}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                  onClick={() => {/* TODO: 유저 검색 후 새 채팅 */}}
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       )}
     </>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return '방금';
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}일 전`;
-  return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }

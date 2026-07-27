@@ -46,3 +46,17 @@ export async function getChatUnreadCount(auth: AuthOptions): Promise<number> {
   });
   return res.count;
 }
+
+export async function deleteRoom(roomId: number, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>(`/v1/coffee-chat/rooms/${roomId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+export async function togglePinRoom(roomId: number, auth: AuthOptions): Promise<CoffeeChatRoomResponse> {
+  return clientApiClient<CoffeeChatRoomResponse>(`/v1/coffee-chat/rooms/${roomId}/pin`, {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
