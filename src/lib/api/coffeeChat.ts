@@ -14,7 +14,7 @@ export async function getMyChatRooms(auth: AuthOptions): Promise<CoffeeChatRoomR
 export async function createOrGetRoom(partnerId: number, auth: AuthOptions): Promise<CoffeeChatRoomResponse> {
   return clientApiClient<CoffeeChatRoomResponse>('/v1/coffee-chat/rooms', {
     method: 'POST',
-    body: JSON.stringify({ partnerId }),
+    body: { partnerId },
     accessToken: auth.accessToken,
   });
 }
@@ -28,7 +28,7 @@ export async function getChatMessages(roomId: number, auth: AuthOptions): Promis
 export async function sendChatMessage(roomId: number, content: string, auth: AuthOptions): Promise<CoffeeChatMessageResponse> {
   return clientApiClient<CoffeeChatMessageResponse>(`/v1/coffee-chat/rooms/${roomId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ content }),
+    body: { content },
     accessToken: auth.accessToken,
   });
 }

@@ -50,6 +50,7 @@ import type {
 import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
 import FollowCard from '@/app/user/resume/components/FollowCard';
 import { useAuth } from '@/lib/auth/AuthContext';
+import CodeReviewModal from '@/common/components/CodeReviewModal';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 
@@ -107,6 +108,7 @@ export default function UserProfileClient({
   const [resumePrivate, setResumePrivate] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
   const recentRepositoryCount = recentActivity.length;
+  const [codeReviewRepo, setCodeReviewRepo] = useState<{ repoOwner: string; repositoryName: string; description: string | null } | null>(null);
 
   const fetchGithubData = useCallback(async () => {
     const [historyRes, activityRes, scoreRes, comparisonRes, titlesRes] = await Promise.all([
@@ -533,14 +535,13 @@ export default function UserProfileClient({
                       </div>
                       <div className="divide-y divide-gray-100">
                         {(showAllRepos ? recentActivity : recentActivity.slice(0, 5)).map((repo, idx) => (
-                          <a
-                            key={idx}
-                            href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-gray-50"
-                          >
-                            <div className="min-w-0 flex-1">
+                          <div key={idx} className="flex items-center px-5 py-3.5 transition-colors hover:bg-gray-50">
+                            <a
+                              href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="min-w-0 flex-1"
+                            >
                               <div className="flex items-center gap-2">
                                 <span className="truncate text-sm font-medium text-gray-900">
                                   {repo.repoOwner}/{repo.repositoryName}
@@ -564,8 +565,18 @@ export default function UserProfileClient({
                                   {repo.stargazersCount}
                                 </span>
                               </div>
-                            </div>
-                          </a>
+                            </a>
+                            <button
+                              onClick={() => setCodeReviewRepo({
+                                repoOwner: repo.repoOwner,
+                                repositoryName: repo.repositoryName,
+                                description: repo.description ?? null,
+                              })}
+                              className="ml-4 flex-shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              코드리뷰
+                            </button>
+                          </div>
                         ))}
                       </div>
                       {recentActivity.length > 5 && (
@@ -694,6 +705,15 @@ export default function UserProfileClient({
           )}
         </div>
       </div>
+
+      {codeReviewRepo && (
+        <CodeReviewModal
+          repoOwner={codeReviewRepo.repoOwner}
+          repositoryName={codeReviewRepo.repositoryName}
+          description={codeReviewRepo.description}
+          onClose={() => setCodeReviewRepo(null)}
+        />
+      )}
     </div>
   );
 }
