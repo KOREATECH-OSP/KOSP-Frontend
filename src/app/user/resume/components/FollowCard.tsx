@@ -98,18 +98,29 @@ export default function FollowCard({ profileUserId, accessToken, isMe }: Props) 
       </div>
 
       {!isMe && accessToken && (
-        <button
-          type="button"
-          onClick={toggleFollow}
-          disabled={busy}
-          className={`mb-3 flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors disabled:opacity-50
-            ${isFollowing
-              ? 'border border-gray-300 text-gray-600 hover:bg-gray-50'
-              : 'bg-orange-400 text-white hover:bg-orange-500'}`}
-        >
-          {busy && <Loader2 className="h-3 w-3 animate-spin" />}
-          {isFollowing ? '팔로잉' : '팔로우'}
-        </button>
+        <div className="mb-3 flex gap-2">
+          <button
+            type="button"
+            onClick={toggleFollow}
+            disabled={busy}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors disabled:opacity-50
+              ${isFollowing
+                ? 'border border-gray-300 text-gray-600 hover:bg-gray-50'
+                : 'bg-orange-400 text-white hover:bg-orange-500'}`}
+          >
+            {busy && <Loader2 className="h-3 w-3 animate-spin" />}
+            {isFollowing ? '팔로잉' : '팔로우'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('coffeeChat:openRoom', { detail: { partnerId: profileUserId } }));
+            }}
+            className="flex flex-1 items-center justify-center rounded-md border border-gray-300 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            메시지
+          </button>
+        </div>
       )}
 
       {loading ? (

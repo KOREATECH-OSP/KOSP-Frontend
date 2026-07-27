@@ -1174,3 +1174,29 @@ export interface ResumeListResponse {
 
 /** POST /v1/users/me/resume 요청 */
 export type ResumeSaveRequest = ResumeData;
+
+// ============================================
+// CoffeeChat Types
+// ============================================
+
+export interface CoffeeChatRoomResponse {
+  roomId: number;
+  partnerId: number;
+  partnerName: string;
+  partnerProfileImage: string | null;
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+}
+
+export interface CoffeeChatMessageResponse {
+  id: string;
+  senderId: number;
+  content: string;
+  sentAt: string;
+  isRead: boolean;
+}
+
+export interface CoffeeChatUnreadCountResponse {
+  count: number;
+}
