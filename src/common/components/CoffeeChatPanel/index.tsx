@@ -52,7 +52,7 @@ function formatDate(dateStr: string): string {
 }
 
 export default function CoffeeChatPanel() {
-  const { session } = useSession();
+  const { data: session } = useSession();
   const accessToken = session?.accessToken ?? null;
   const myId = session?.user?.id ? Number(session.user.id) : null;
 
