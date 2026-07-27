@@ -91,6 +91,7 @@ import type {
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { TITLE_CATEGORY_EMOJI, RARITY_LABELS, RARITY_COLORS, getTitleImage } from '@/lib/constants/title';
+import CodeReviewModal from '@/common/components/CodeReviewModal';
 
 // 칭호 취득 날짜 포맷 (YY.MM.DD)
 function formatTitleGrantedDate(grantedAt: string): string {
@@ -330,6 +331,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   const [counts, setCounts] = useState({ posts: 0, comments: 0, bookmarks: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [showAllRepos, setShowAllRepos] = useState(false);
+  const [codeReviewRepo, setCodeReviewRepo] = useState<{ repoOwner: string; repositoryName: string; description: string | null } | null>(null);
   const recentRepositoryCount = recentActivity.length;
 
   // 전체 칭호 목록 (카탈로그)
@@ -1486,14 +1488,16 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                       </div>
                       <div className="divide-y divide-gray-100">
                         {(showAllRepos ? recentActivity : recentActivity.slice(0, 5)).map((repo, idx) => (
-                          <a
+                          <div
                             key={idx}
-                            href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-gray-50"
                           >
-                            <div className="min-w-0 flex-1">
+                            <a
+                              href={`https://github.com/${repo.repoOwner}/${repo.repositoryName}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="min-w-0 flex-1"
+                            >
                               <div className="flex items-center gap-2">
                                 <span className="truncate text-sm font-medium text-gray-900">
                                   {repo.repoOwner}/{repo.repositoryName}
@@ -1517,8 +1521,18 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                                   {repo.stargazersCount}
                                 </span>
                               </div>
-                            </div>
-                          </a>
+                            </a>
+                            <button
+                              onClick={() => setCodeReviewRepo({
+                                repoOwner: repo.repoOwner,
+                                repositoryName: repo.repositoryName,
+                                description: repo.description ?? null,
+                              })}
+                              className="ml-4 flex-shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              코드리뷰
+                            </button>
+                          </div>
                         ))}
                       </div>
                       {recentActivity.length > 5 && (
@@ -2240,6 +2254,14 @@ export default function UserPageClient({ session }: UserPageClientProps) {
           })()}
         </div>
       </div>
+      {codeReviewRepo && (
+        <CodeReviewModal
+          repoOwner={codeReviewRepo.repoOwner}
+          repositoryName={codeReviewRepo.repositoryName}
+          description={codeReviewRepo.description}
+          onClose={() => setCodeReviewRepo(null)}
+        />
+      )}
     </div>
   );
 }

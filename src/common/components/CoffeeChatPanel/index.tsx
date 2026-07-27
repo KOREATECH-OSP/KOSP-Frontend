@@ -14,7 +14,7 @@ import {
   deleteRoom,
   togglePinRoom,
 } from '@/lib/api/coffeeChat';
-import { getFollowing } from '@/lib/api/follow';
+import { getFollowingClient } from '@/lib/api/follow';
 import type { CoffeeChatRoomResponse, CoffeeChatMessageResponse, FollowUserResponse } from '@/lib/api/types';
 import koriChatDefault from '@/assets/images/kori-chat/kori-chat-default.png';
 import koriChatActive from '@/assets/images/kori-chat/kori-chat-active.png';
@@ -202,7 +202,7 @@ export default function CoffeeChatPanel() {
     setComposeSearch('');
     setComposeLoading(true);
     try {
-      const list = await getFollowing(myId);
+      const list = await getFollowingClient(myId);
       setFollowingList(list);
     } catch {
       setFollowingList([]);

@@ -1202,3 +1202,25 @@ export interface CoffeeChatMessageResponse {
 export interface CoffeeChatUnreadCountResponse {
   count: number;
 }
+
+// ============================================
+// CodeReview Types
+// ============================================
+
+export interface CodeReviewResponse {
+  id: number;
+  authorId: number;
+  authorName: string;
+  authorProfileImage: string | null;
+  content: string;
+  likesCount: number;
+  likedByMe: boolean;
+  createdAt: string;
+  parentId: number | null;
+  replies: CodeReviewResponse[];
+}
+
+export interface CodeReviewListResponse {
+  total: number;
+  reviews: CodeReviewResponse[];
+}
