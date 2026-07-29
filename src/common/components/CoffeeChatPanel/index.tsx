@@ -14,10 +14,12 @@ import {
   deleteRoom,
   togglePinRoom,
 } from '@/lib/api/coffeeChat';
-import { getFollowingClient } from '@/lib/api/follow';
-import type { CoffeeChatRoomResponse, CoffeeChatMessageResponse, FollowUserResponse } from '@/lib/api/types';
+import { searchGlobal } from '@/lib/api/search';
+import type { CoffeeChatRoomResponse, CoffeeChatMessageResponse, UserSearchSummary } from '@/lib/api/types';
 import koriChatDefault from '@/assets/images/kori-chat/kori-chat-default.png';
 import koriChatActive from '@/assets/images/kori-chat/kori-chat-active.png';
+
+const TOPICS = ['취업/커리어 고민', '오픈소스 기여', '기술 스택/개발', '코드리뷰 요청', '기타'];
 
 function ProfileAvatar({ src, name, size = 44 }: { src: string | null; name: string; size?: number }) {
   return src ? (
@@ -66,12 +68,22 @@ export default function CoffeeChatPanel() {
   const [unreadTotal, setUnreadTotal] = useState(0);
   const [sending, setSending] = useState(false);
   const [menuRoomId, setMenuRoomId] = useState<number | null>(null);
+
+  // 새 메시지 작성 (유저 검색)
   const [showCompose, setShowCompose] = useState(false);
-  const [followingList, setFollowingList] = useState<FollowUserResponse[]>([]);
   const [composeSearch, setComposeSearch] = useState('');
-  const [composeLoading, setComposeLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<UserSearchSummary[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // 커피챗 요청 모달
+  const [requestPartnerId, setRequestPartnerId] = useState<number | null>(null);
+  const [requestTopic, setRequestTopic] = useState('');
+  const [requestMessage, setRequestMessage] = useState('');
+  const [requestSending, setRequestSending] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadRooms = useCallback(async () => {
     if (!accessToken) return;
@@ -118,7 +130,6 @@ export default function CoffeeChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -129,26 +140,62 @@ export default function CoffeeChatPanel() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // 유저 검색 (디바운스)
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!composeSearch.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await searchGlobal({ keyword: composeSearch, filter: ['users'], size: 10 });
+        setSearchResults(result.users.filter(u => u.id !== myId));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  }, [composeSearch, myId]);
+
   // 프로필 "메시지" 버튼 이벤트
   useEffect(() => {
-    const handler = async (e: Event) => {
+    const handler = (e: Event) => {
       const { partnerId } = (e as CustomEvent).detail;
       if (!accessToken) return;
       setIsOpen(true);
-      try {
-        const room = await createOrGetRoom(partnerId, { accessToken });
-        setSelectedRoom(room);
-        setRooms(prev => {
-          const exists = prev.find(r => r.roomId === room.roomId);
-          return exists ? prev.map(r => r.roomId === room.roomId ? room : r) : [room, ...prev];
-        });
-      } catch {
-        // ignore
+      setShowCompose(false);
+      setRequestTopic('');
+      setRequestMessage('');
+
+      const existingRoom = rooms.find(r => r.partnerId === partnerId);
+      if (existingRoom) {
+        setSelectedRoom(existingRoom);
+        return;
       }
+      setRequestPartnerId(partnerId);
     };
     window.addEventListener('coffeeChat:openRoom', handler);
     return () => window.removeEventListener('coffeeChat:openRoom', handler);
-  }, [accessToken]);
+  }, [accessToken, rooms]);
+
+  // 알림에서 roomId로 바로 열기
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { partnerId } = (e as CustomEvent).detail;
+      if (!accessToken) return;
+      setIsOpen(true);
+      setShowCompose(false);
+      setRequestPartnerId(null);
+
+      const existingRoom = rooms.find(r => r.partnerId === partnerId);
+      if (existingRoom) setSelectedRoom(existingRoom);
+    };
+    window.addEventListener('coffeeChat:openByPartner', handler);
+    return () => window.removeEventListener('coffeeChat:openByPartner', handler);
+  }, [accessToken, rooms]);
 
   const handleSend = async () => {
     if (!selectedRoom || !input.trim() || !accessToken || sending) return;
@@ -167,6 +214,32 @@ export default function CoffeeChatPanel() {
       setInput(content);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSendRequest = async () => {
+    if (!accessToken || requestPartnerId === null || !requestMessage.trim() || requestSending) return;
+    setRequestSending(true);
+    const content = requestTopic
+      ? `[${requestTopic}]\n${requestMessage.trim()}`
+      : requestMessage.trim();
+    try {
+      const room = await createOrGetRoom(requestPartnerId, { accessToken });
+      await sendChatMessage(room.roomId, content, { accessToken });
+      setRooms(prev => {
+        const exists = prev.find(r => r.roomId === room.roomId);
+        return exists
+          ? prev.map(r => r.roomId === room.roomId ? { ...r, lastMessage: content, lastMessageAt: new Date().toISOString() } : r)
+          : [{ ...room, lastMessage: content, lastMessageAt: new Date().toISOString() }, ...prev];
+      });
+      setRequestPartnerId(null);
+      setRequestTopic('');
+      setRequestMessage('');
+      setSelectedRoom(room);
+    } catch {
+      // ignore
+    } finally {
+      setRequestSending(false);
     }
   };
 
@@ -196,34 +269,20 @@ export default function CoffeeChatPanel() {
     }
   };
 
-  const openCompose = async () => {
-    if (!myId) return;
-    setShowCompose(true);
-    setComposeSearch('');
-    setComposeLoading(true);
-    try {
-      const list = await getFollowingClient(myId);
-      setFollowingList(list);
-    } catch {
-      setFollowingList([]);
-    } finally {
-      setComposeLoading(false);
-    }
-  };
-
   const openRoomWithUser = async (userId: number) => {
     if (!accessToken) return;
     setShowCompose(false);
-    try {
-      const room = await createOrGetRoom(userId, { accessToken });
-      setSelectedRoom(room);
-      setRooms(prev => {
-        const exists = prev.find(r => r.roomId === room.roomId);
-        return exists ? prev.map(r => r.roomId === room.roomId ? room : r) : [room, ...prev];
-      });
-    } catch {
-      // ignore
+    setComposeSearch('');
+    setSearchResults([]);
+
+    const existingRoom = rooms.find(r => r.partnerId === userId);
+    if (existingRoom) {
+      setSelectedRoom(existingRoom);
+      return;
     }
+    setRequestPartnerId(userId);
+    setRequestTopic('');
+    setRequestMessage('');
   };
 
   if (!accessToken) return null;
@@ -257,12 +316,67 @@ export default function CoffeeChatPanel() {
         <div className="fixed bottom-[88px] right-10 z-50 w-[380px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100"
           style={{ maxHeight: 'calc(100vh - 120px)' }}
         >
-          {showCompose ? (
-            /* 팔로잉 목록 - 새 메시지 작성 뷰 */
+          {/* 커피챗 요청 모달 */}
+          {requestPartnerId !== null ? (
+            <div className="flex flex-col p-5 gap-4" style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setRequestPartnerId(null)}
+                  className="text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <h2 className="flex-1 text-base font-bold text-gray-900">커피챗 요청 보내기</h2>
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-gray-700">어떤 주제로 이야기하고 싶으신가요?</p>
+                <div className="flex flex-wrap gap-2">
+                  {TOPICS.map(topic => (
+                    <button
+                      key={topic}
+                      onClick={() => setRequestTopic(prev => prev === topic ? '' : topic)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                        requestTopic === topic
+                          ? 'bg-gray-900 text-white'
+                          : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-gray-700">메시지</p>
+                <textarea
+                  value={requestMessage}
+                  onChange={e => setRequestMessage(e.target.value)}
+                  placeholder="간단한 인사와 함께 요청을 보내보세요."
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 outline-none placeholder-gray-400 focus:border-gray-400 transition-colors"
+                />
+              </div>
+
+              <button
+                onClick={handleSendRequest}
+                disabled={!requestMessage.trim() || requestSending}
+                className="w-full rounded-xl bg-gray-900 py-3 text-sm font-semibold text-white hover:bg-gray-700 disabled:opacity-40 transition-colors"
+              >
+                {requestSending ? '보내는 중...' : '요청 보내기'}
+              </button>
+            </div>
+
+          ) : showCompose ? (
+            /* 유저 검색 - 새 메시지 작성 뷰 */
             <div className="flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
               <div className="flex items-center gap-3 px-4 py-4">
                 <button
-                  onClick={() => setShowCompose(false)}
+                  onClick={() => { setShowCompose(false); setComposeSearch(''); setSearchResults([]); }}
                   className="text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -290,35 +404,35 @@ export default function CoffeeChatPanel() {
               <div className="h-px bg-gray-100" />
 
               <div className="overflow-y-auto flex-1 min-h-[200px] max-h-[400px]">
-                {composeLoading ? (
-                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">불러오는 중...</div>
-                ) : followingList.length === 0 ? (
-                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">팔로잉 중인 사용자가 없습니다</div>
+                {searchLoading ? (
+                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">검색 중...</div>
+                ) : !composeSearch.trim() ? (
+                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">이름을 입력해 검색하세요</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="flex items-center justify-center py-10 text-sm text-gray-400">검색 결과가 없습니다</div>
                 ) : (
-                  followingList
-                    .filter(u => u.name.includes(composeSearch))
-                    .map(user => (
-                      <button
-                        key={user.userId}
-                        onClick={() => openRoomWithUser(user.userId)}
-                        className="flex w-full items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
-                      >
-                        <ProfileAvatar src={user.profileImage} name={user.name} size={44} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-gray-900 truncate">{user.name}</p>
-                          {user.introduction && (
-                            <p className="text-xs text-gray-400 truncate mt-0.5">{user.introduction}</p>
-                          )}
-                        </div>
-                      </button>
-                    ))
+                  searchResults.map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => openRoomWithUser(user.id)}
+                      className="flex w-full items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <ProfileAvatar src={user.profileImageUrl} name={user.name} size={44} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">{user.name}</p>
+                        {user.githubLogin && (
+                          <p className="text-xs text-gray-400 truncate mt-0.5">@{user.githubLogin}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))
                 )}
               </div>
             </div>
+
           ) : selectedRoom ? (
             /* 채팅방 뷰 */
             <div className="flex h-[520px] flex-col">
-              {/* 헤더 */}
               <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
                 <button
                   onClick={() => { setSelectedRoom(null); setMessages([]); }}
@@ -333,10 +447,8 @@ export default function CoffeeChatPanel() {
                 </button>
               </div>
 
-              {/* 메시지 영역 */}
               <div className="flex-1 overflow-y-auto px-4 py-4">
                 {messages.length === 0 ? (
-                  /* 빈 상태 - 프로필 카드 */
                   <div className="flex flex-col items-center justify-center h-full gap-3 py-6">
                     <ProfileAvatar src={selectedRoom.partnerProfileImage} name={selectedRoom.partnerName} size={80} />
                     <div className="text-center">
@@ -354,7 +466,6 @@ export default function CoffeeChatPanel() {
                     <p className="mt-4 text-sm text-gray-400">대화를 시작해보세요!</p>
                   </div>
                 ) : (
-                  /* 메시지 목록 */
                   <div className="space-y-2">
                     {messages.map((msg, idx) => {
                       const isMe = msg.senderId === myId;
@@ -370,7 +481,7 @@ export default function CoffeeChatPanel() {
                             </div>
                           )}
                           <div
-                            className={`max-w-[65%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                            className={`max-w-[65%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                               isMe
                                 ? 'bg-gray-900 text-white rounded-br-md'
                                 : 'bg-gray-100 text-gray-900 rounded-bl-md'
@@ -386,7 +497,6 @@ export default function CoffeeChatPanel() {
                 )}
               </div>
 
-              {/* 입력창 */}
               <div className="border-t border-gray-100 px-3 py-3">
                 <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5">
                   <input
@@ -406,10 +516,10 @@ export default function CoffeeChatPanel() {
                 </div>
               </div>
             </div>
+
           ) : (
             /* 채팅 목록 뷰 */
             <div className="flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-              {/* 헤더 */}
               <div className="flex items-center justify-between px-5 py-4">
                 <h2 className="text-lg font-bold text-gray-900">메시지</h2>
                 <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
@@ -419,7 +529,6 @@ export default function CoffeeChatPanel() {
 
               <div className="h-px bg-gray-100" />
 
-              {/* 채팅방 목록 */}
               <div className="overflow-y-auto flex-1 min-h-[300px] max-h-[450px] relative">
                 {rooms.length === 0 ? (
                   <div className="flex items-center justify-center py-16 text-sm text-gray-400">
@@ -432,7 +541,6 @@ export default function CoffeeChatPanel() {
                       className="group relative flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => setSelectedRoom(room)}
                     >
-                      {/* 고정 핀 표시 */}
                       {room.isPinned && (
                         <Pin className="absolute top-2 right-5 h-3 w-3 text-orange-400 rotate-45" />
                       )}
@@ -454,7 +562,12 @@ export default function CoffeeChatPanel() {
                         </div>
                       </div>
 
-                      {/* 더보기 버튼 (hover 시) */}
+                      {room.unreadCount > 0 && (
+                        <span className="absolute right-12 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                        </span>
+                      )}
+
                       <button
                         onClick={e => { e.stopPropagation(); setMenuRoomId(prev => prev === room.roomId ? null : room.roomId); }}
                         className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-gray-200"
@@ -462,7 +575,6 @@ export default function CoffeeChatPanel() {
                         <MoreVertical className="h-4 w-4 text-gray-500" />
                       </button>
 
-                      {/* 드롭다운 메뉴 */}
                       {menuRoomId === room.roomId && (
                         <div
                           ref={menuRef}
@@ -490,11 +602,10 @@ export default function CoffeeChatPanel() {
                 )}
               </div>
 
-              {/* 새 메시지 작성 버튼 */}
               <div className="relative pb-4 pt-2 flex justify-end px-4">
                 <button
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
-                  onClick={openCompose}
+                  onClick={() => { setShowCompose(true); setComposeSearch(''); setSearchResults([]); }}
                 >
                   <Pencil className="h-4 w-4" />
                 </button>

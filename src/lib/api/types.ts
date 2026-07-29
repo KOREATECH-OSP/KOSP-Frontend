@@ -1015,6 +1015,7 @@ export type NotificationType =
   | 'CHALLENGE_ACHIEVED'
   | 'POINT_EARNED'
   | 'TEAM_INVITED'
+  | 'COFFEE_CHAT_RECEIVED'
   | 'SYSTEM';
 
 export interface NotificationResponse {
