@@ -75,6 +75,9 @@ export default function CoffeeChatPanel() {
   const [searchResults, setSearchResults] = useState<UserSearchSummary[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  // 질문 추천 드롭업
+  const [showTopicPicker, setShowTopicPicker] = useState(false);
+
   // 커피챗 요청 모달
   const [requestPartnerId, setRequestPartnerId] = useState<number | null>(null);
   const [requestTopic, setRequestTopic] = useState('');
@@ -498,7 +501,31 @@ export default function CoffeeChatPanel() {
               </div>
 
               <div className="border-t border-gray-100 px-3 py-3">
+                {/* 질문 추천 드롭업 */}
+                {showTopicPicker && (
+                  <div className="mb-2 rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden">
+                    {TOPICS.map(topic => (
+                      <button
+                        key={topic}
+                        onClick={() => {
+                          setInput(prev => prev ? `${prev} [${topic}] ` : `[${topic}] `);
+                          setShowTopicPicker(false);
+                        }}
+                        className="flex w-full items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5">
+                  <button
+                    onClick={() => setShowTopicPicker(v => !v)}
+                    className={`flex-shrink-0 transition-colors ${showTopicPicker ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                    title="질문 추천"
+                  >
+                    <Smile className="h-5 w-5" />
+                  </button>
                   <input
                     type="text"
                     value={input}
@@ -507,9 +534,6 @@ export default function CoffeeChatPanel() {
                     placeholder="메시지를 입력하세요."
                     className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
                   />
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
-                    <Smile className="h-5 w-5" />
-                  </button>
                   <button className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
                     <Paperclip className="h-5 w-5" />
                   </button>
