@@ -22,12 +22,12 @@ export async function getCodeReviews(
 }
 
 export async function createCodeReview(
-  data: { repoOwner: string; repositoryName: string; content: string; parentId?: number },
+  data: { repoOwner: string; repositoryName: string; content: string; parentId?: number; isPrivate?: boolean },
   auth: AuthOptions,
 ): Promise<CodeReviewResponse> {
   return clientApiClient<CodeReviewResponse>(BASE, {
     method: 'POST',
-    body: { ...data, parentId: data.parentId ?? null },
+    body: { ...data, parentId: data.parentId ?? null, isPrivate: data.isPrivate ?? false },
     accessToken: auth.accessToken,
   });
 }

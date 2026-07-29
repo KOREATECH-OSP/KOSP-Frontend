@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { X, ExternalLink, Heart, MoreVertical, Paperclip, MessageCircle, Flag, Trash2, CornerDownRight } from 'lucide-react';
+import { X, ExternalLink, Heart, MoreVertical, Paperclip, MessageCircle, Flag, Trash2, CornerDownRight, Lock } from 'lucide-react';
 import { useSession } from '@/lib/auth/AuthContext';
 import {
   getCodeReviews,
@@ -67,6 +67,12 @@ function ReviewItem({ review, myId, accessToken, onDelete, onLike, onReply, isRe
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm text-gray-900">{review.authorName}</span>
               <span className="text-xs text-gray-400">{formatDate(review.createdAt)}</span>
+              {review.isPrivate && (
+                <span className="inline-flex items-center gap-0.5 rounded border border-gray-300 px-1 py-0.5 text-[10px] text-gray-500">
+                  <Lock className="h-2.5 w-2.5" />
+                  비밀글
+                </span>
+              )}
             </div>
             <div className="relative" ref={menuRef}>
               <button
@@ -138,6 +144,7 @@ export default function CodeReviewModal({ repoOwner, repositoryName, description
 
   const [data, setData] = useState<CodeReviewListResponse | null>(null);
   const [content, setContent] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [replyTarget, setReplyTarget] = useState<CodeReviewResponse | null>(null);
   const [replyContent, setReplyContent] = useState('');
@@ -158,8 +165,9 @@ export default function CodeReviewModal({ repoOwner, repositoryName, description
     if (!accessToken || !content.trim() || submitting) return;
     setSubmitting(true);
     try {
-      await createCodeReview({ repoOwner, repositoryName, content: content.trim() }, { accessToken });
+      await createCodeReview({ repoOwner, repositoryName, content: content.trim(), isPrivate }, { accessToken });
       setContent('');
+      setIsPrivate(false);
       await load();
     } finally {
       setSubmitting(false);
@@ -251,7 +259,19 @@ export default function CodeReviewModal({ repoOwner, repositoryName, description
                 rows={3}
                 className="w-full resize-none px-4 py-3 text-sm text-gray-700 outline-none placeholder-gray-400"
               />
-              <div className="flex justify-end px-3 pb-2">
+              <div className="flex items-center justify-between px-3 pb-2">
+                <label className="flex cursor-pointer items-center gap-1.5 select-none">
+                  <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={e => setIsPrivate(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-gray-300 accent-gray-800"
+                  />
+                  <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <Lock className="h-3 w-3" />
+                    비밀글
+                  </span>
+                </label>
                 <button
                   onClick={handleSubmit}
                   disabled={!content.trim() || submitting}

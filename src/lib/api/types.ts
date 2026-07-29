@@ -1217,6 +1217,7 @@ export interface CodeReviewResponse {
   likedByMe: boolean;
   createdAt: string;
   parentId: number | null;
+  isPrivate: boolean;
   replies: CodeReviewResponse[];
 }
 
