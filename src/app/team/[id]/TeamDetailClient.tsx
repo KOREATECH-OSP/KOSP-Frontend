@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from '@/lib/auth/AuthContext';
@@ -32,12 +32,14 @@ import {
   leaveTeam,
   cancelTeamInvite,
   changeTeamMemberRole,
+  getInviteAvailability,
 } from '@/lib/api/team';
 import type {
   TeamDetailResponse,
   RecruitResponse,
   RecruitStatus,
   TeamRole,
+  InviteAvailabilityResponse,
 } from '@/lib/api/types';
 import { ensureEncodedUrl } from '@/lib/utils';
 
@@ -52,6 +54,9 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
   const { data: session } = useSession();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmailId, setInviteEmailId] = useState('');
+  // 반복 거절 제한 상태 (초대 전 사전 안내)
+  const [inviteAvailability, setInviteAvailability] = useState<InviteAvailabilityResponse | null>(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   const [team, setTeam] = useState(initialTeam);
   const [recruits, setRecruits] = useState(initialRecruits);
@@ -85,6 +90,29 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
 
   const pendingInvites = team.pendingInvites ?? [];
 
+  // 입력한 아이디에 대해 초대 제한이 걸려 있는지 미리 확인한다.
+  useEffect(() => {
+    const emailId = inviteEmailId.trim();
+    if (!isInviteModalOpen || !emailId || !session?.accessToken) {
+      setInviteAvailability(null);
+      return;
+    }
+    let cancelled = false;
+    setCheckingAvailability(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await getInviteAvailability(team.id, emailId, session.accessToken as string);
+        if (!cancelled) setInviteAvailability(result);
+      } catch {
+        // 조회 실패는 초대를 막지 않는다. 실제 판정은 서버가 초대 시점에 한 번 더 한다.
+        if (!cancelled) setInviteAvailability(null);
+      } finally {
+        if (!cancelled) setCheckingAvailability(false);
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [inviteEmailId, isInviteModalOpen, session?.accessToken, team.id]);
+
   const handleInvite = async () => {
     if (!inviteEmailId.trim()) {
       toast.error('이메일 아이디를 입력해주세요');
@@ -100,6 +128,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
       await inviteTeamMember(team.id, inviteEmailId.trim(), session.accessToken);
       toast.success('초대가 전송되었습니다.');
       setInviteEmailId('');
+      setInviteAvailability(null);
       setIsInviteModalOpen(false);
     } catch (error) {
       console.error('팀원 초대 실패:', error);
@@ -774,6 +803,30 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                       </span>
                     </div>
                   </div>
+
+                  {/* 반복 거절 제한 안내 */}
+                  {checkingAvailability && (
+                    <p className="text-xs text-gray-400">초대 가능 여부 확인 중…</p>
+                  )}
+                  {!checkingAvailability && inviteAvailability && !inviteAvailability.canInvite && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                      <p className="font-medium">{inviteAvailability.reason}</p>
+                      <p className="mt-1 text-red-500">
+                        누적 거절 {inviteAvailability.rejectionCount}회
+                        {inviteAvailability.blockedUntil && (
+                          <> · 제한 해제 {new Date(inviteAvailability.blockedUntil).toLocaleString('ko-KR')}</>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {!checkingAvailability
+                    && inviteAvailability?.canInvite
+                    && inviteAvailability.rejectionCount > 0 && (
+                    <p className="text-xs text-amber-600">
+                      이 사용자는 이전에 초대를 {inviteAvailability.rejectionCount}회 거절했습니다.
+                      3회에 도달하면 24시간 동안 재초대가 제한됩니다.
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
@@ -781,6 +834,7 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                   onClick={() => {
                     setIsInviteModalOpen(false);
                     setInviteEmailId('');
+                    setInviteAvailability(null);
                   }}
                   className="flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
@@ -788,9 +842,10 @@ export default function TeamDetailClient({ team: initialTeam, recruits: initialR
                 </button>
                 <button
                   onClick={handleInvite}
-                  className="flex-1 rounded-lg bg-gray-900 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800"
+                  disabled={inviteAvailability?.canInvite === false}
+                  className="flex-1 rounded-lg bg-gray-900 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
-                  초대하기
+                  {inviteAvailability?.canInvite === false ? '초대 제한 중' : '초대하기'}
                 </button>
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import type { AuthSession } from '@/lib/auth/types';
 import {
@@ -40,6 +40,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import Pagination from '@/common/components/Pagination';
+import TitleBadgeRow from '@/common/components/TitleBadgeRow';
+import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
 import {
   getUserPosts,
   getUserComments,
@@ -55,8 +57,6 @@ import {
   getMyTitleProgress,
   setDisplayTitle as setDisplayTitleApi,
   getMySeasonRanking,
-  getMyResume,
-  saveMyResume,
   updateResumeById,
   getAllTitles,
   getMyResumes,
@@ -67,11 +67,17 @@ import {
 } from '@/lib/api/user';
 import { getBoards } from '@/lib/api/board';
 import { getChallenges } from '@/lib/api/challenge';
-import { getRecentMaterials } from '@/lib/api/material';
+import {
+  getRecentMaterials,
+  getPublicMaterials,
+  getPublicMaterialFolders,
+  getPublicMaterialDownloadUrl,
+} from '@/lib/api/material';
 import FollowCard from './resume/components/FollowCard';
 import { ensureEncodedUrl } from '@/lib/utils';
 import type {
   MaterialItemResponse,
+  MaterialFolderResponse,
   ArticleResponse,
   CommentResponse,
   UserProfileResponse,
@@ -90,6 +96,7 @@ import type {
   ResumeData,
 } from '@/lib/api/types';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
+import { LAST_RESUME_MESSAGE, normalizeJobRole } from '@/lib/constants/resume';
 import { TITLE_CATEGORY_EMOJI, RARITY_LABELS, RARITY_COLORS, getTitleImage } from '@/lib/constants/title';
 import CodeReviewModal from '@/common/components/CodeReviewModal';
 
@@ -248,7 +255,7 @@ function computeResumeCompletion(d: ResumeData): number {
   const checks = [
     !!d.headline?.trim(),
     !!d.bio?.trim(),
-    !!d.jobRole?.trim(),
+    normalizeJobRole(d.jobRole).length > 0,
     (d.techStack?.length ?? 0) > 0,
     (d.links?.length ?? 0) > 0,
     (d.education?.length ?? 0) > 0,
@@ -264,7 +271,7 @@ function computeResumeCompletion(d: ResumeData): number {
 }
 
 const EMPTY_RESUME_DATA: ResumeData = {
-  resumeTitle: '새 이력서', headline: '', bio: '', jobRole: '', techStack: [],
+  resumeTitle: '새 이력서', headline: '', bio: '', jobRole: [], techStack: [],
   links: [], education: [], career: [], experience: [], projects: [],
   awards: [], certifications: [], coverLetters: [], customSections: [],
   isPublic: false,
@@ -277,8 +284,13 @@ interface UserPageClientProps {
 
 type TabType = '활동' | '포인트' | '지원내역' | '작성글' | '댓글' | '즐겨찾기' | '칭호' | '포트폴리오';
 
+const TAB_KEYS: TabType[] = ['활동', '포인트', '지원내역', '작성글', '댓글', '즐겨찾기', '칭호', '포트폴리오'];
+
 export default function UserPageClient({ session }: UserPageClientProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('활동');
+  // ?tab=포트폴리오 로 진입하면 해당 탭을 연다. (이력서 편집기 → 포트폴리오 복귀 링크에서 사용)
+  const searchParams = useSearchParams();
+  const initialTab = TAB_KEYS.find((t) => t === searchParams.get('tab')) ?? '활동';
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [posts, setPosts] = useState<ArticleResponse[]>([]);
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -345,11 +357,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 칭호 대표 설정 로딩
   const [displayTitleLoading, setDisplayTitleLoading] = useState(false);
 
-  // 이력서 공개 설정
-  const [resumeIsPublic, setResumeIsPublic] = useState<boolean | null>(null);
-  const [resumeExists, setResumeExists] = useState(false);
-  const [resumePublicLoading, setResumePublicLoading] = useState(false);
-  const [resumePublicCopied, setResumePublicCopied] = useState(false);
+  // 이력서 공개 설정은 포트폴리오 탭의 이력서 카드에서만 제어한다(내정보 중복 메뉴 제거).
 
   // 지원내역 모달 상태
   const [selectedApplication, setSelectedApplication] = useState<MyApplicationResponse | null>(null);
@@ -357,9 +365,18 @@ export default function UserPageClient({ session }: UserPageClientProps) {
   // 학습자료 최신 노출
   const [recentMaterials, setRecentMaterials] = useState<MaterialItemResponse[]>([]);
 
+  // 포트폴리오 탭의 공개 학습자료 (타인에게 실제로 노출되는 목록과 동일한 API를 사용한다)
+  const [publicMaterials, setPublicMaterials] = useState<MaterialItemResponse[]>([]);
+  const [publicMaterialFolders, setPublicMaterialFolders] = useState<MaterialFolderResponse[]>([]);
+  const [publicMaterialsLoading, setPublicMaterialsLoading] = useState(false);
+
   // 드라이브(이력서 관리) 상태
   const [driveResumes, setDriveResumes] = useState<ResumeSummaryResponse[]>([]);
   const [driveRates, setDriveRates] = useState<Record<number, number>>({});
+  // 포트폴리오 탭에서 바로 펼쳐 보여줄 이력서. 진입 시 대표 이력서가 자동 선택된다.
+  const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null);
+  const [selectedResumeData, setSelectedResumeData] = useState<ResumeData | null>(null);
+  const [selectedResumeLoading, setSelectedResumeLoading] = useState(false);
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveBusy, setDriveBusy] = useState<number | 'new' | null>(null);
   const [resumeMenuOpen, setResumeMenuOpen] = useState<number | null>(null);
@@ -383,60 +400,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     if (scoreRes) setContributionScore(scoreRes);
     if (comparisonRes) setComparison(comparisonRes);
   }, [userId]);
-
-  // ── 이력서 공개 설정 핸들러 ──────────────────────────────────
-  const handleToggleResumePublic = async () => {
-    if (!accessToken || resumePublicLoading) return;
-    setResumePublicLoading(true);
-    try {
-      // 기존 이력서 데이터를 가져온 후 isPublic만 반전시켜 저장
-      const current = await getMyResume({ accessToken }).catch(() => null);
-
-      // 저장된 이력서가 없으면 토글 불가
-      if (!current?.resumeId || !current?.resumeData) {
-        return;
-      }
-
-      const currentData = current.resumeData;
-      const nextPublic = !resumeIsPublic;
-      await updateResumeById(
-        current.resumeId,
-        {
-          resumeTitle: currentData.resumeTitle ?? '',
-          headline: currentData.headline ?? '',
-          bio: currentData.bio ?? '',
-          jobRole: currentData.jobRole ?? '',
-          techStack: currentData.techStack ?? [],
-          links: currentData.links ?? [],
-          education: currentData.education ?? [],
-          career: currentData.career ?? [],
-          experience: currentData.experience ?? [],
-          projects: currentData.projects ?? [],
-          awards: currentData.awards ?? [],
-          certifications: currentData.certifications ?? [],
-          coverLetters: currentData.coverLetters ?? [],
-          customSections: currentData.customSections ?? [],
-          visibleSections: currentData.visibleSections,
-          isPublic: nextPublic,
-        },
-        { accessToken }
-      );
-      setResumeIsPublic(nextPublic);
-    } catch {
-      // 실패 시 상태 유지
-    } finally {
-      setResumePublicLoading(false);
-    }
-  };
-
-  const handleCopyResumeUrl = () => {
-    if (!userId) return;
-    const url = `${window.location.origin}/resume/${userId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setResumePublicCopied(true);
-      setTimeout(() => setResumePublicCopied(false), 2000);
-    });
-  };
 
   // ── 대표 칭호 설정 핸들러 ──────────────────────────────────────
   const handleSetDisplayTitle = async (userTitleId: number) => {
@@ -477,11 +440,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         setBoards(boardsRes.boards);
 
         if (accessToken) {
-          const [challengeRes, titlesRes, seasonRes, resumeRes, allTitlesRes, progressRes] = await Promise.all([
+          const [challengeRes, titlesRes, seasonRes, allTitlesRes, progressRes] = await Promise.all([
             getChallenges({ accessToken }).catch(() => null),
             getMyTitles({ accessToken }).catch(() => null),
             getMySeasonRanking({ accessToken }).catch(() => null),
-            getMyResume({ accessToken }).catch(() => null),
             getAllTitles().catch(() => null),
             getMyTitleProgress({ accessToken }).catch(() => null),
           ]);
@@ -497,10 +459,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
             setSubTitles(titlesRes.subTitles ?? []);
           }
           if (seasonRes) setSeasonRanking(seasonRes);
-          if (resumeRes) {
-            setResumeExists(!!resumeRes.resumeId && !!resumeRes.resumeData);
-            setResumeIsPublic(resumeRes.resumeData?.isPublic ?? false);
-          }
           if (allTitlesRes) setAllTitles(allTitlesRes.titles);
           if (progressRes) {
             const map: Record<number, TitleProgressResponse> = {};
@@ -535,11 +493,19 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     try {
       const list = await getMyResumes({ accessToken });
       setDriveResumes(list.resumes);
-      // 작성률: 각 이력서를 개별 조회해 채움 비율 계산
+
+      // 작성률: 각 이력서를 개별 조회해 채움 비율 계산.
+      // 같은 응답에서 대표 이력서 본문도 함께 확보해 추가 요청 없이 바로 펼쳐 보여준다.
+      const defaultResume = list.resumes.find((r) => r.isDefault) ?? list.resumes[0] ?? null;
+      let defaultData: ResumeData | null = null;
+
       const entries = await Promise.all(
         list.resumes.map(async (r) => {
           try {
             const detail = await getMyResumeById(r.resumeId, { accessToken });
+            if (defaultResume && r.resumeId === defaultResume.resumeId) {
+              defaultData = detail.resumeData ?? null;
+            }
             return [r.resumeId, detail.resumeData ? computeResumeCompletion(detail.resumeData) : 0] as const;
           } catch {
             return [r.resumeId, 0] as const;
@@ -547,6 +513,10 @@ export default function UserPageClient({ session }: UserPageClientProps) {
         })
       );
       setDriveRates(Object.fromEntries(entries));
+
+      // 대표 이력서 자동 선택 (A: 대표 1개가 기본으로 열림)
+      setSelectedResumeId(defaultResume?.resumeId ?? null);
+      setSelectedResumeData(defaultData);
     } catch {
       setDriveResumes([]);
     } finally {
@@ -554,9 +524,58 @@ export default function UserPageClient({ session }: UserPageClientProps) {
     }
   }, [accessToken]);
 
+  /** 포트폴리오 탭에서 미리볼 이력서를 전환한다. */
+  const handleSelectResumePreview = useCallback(async (resumeId: number) => {
+    if (!accessToken || resumeId === selectedResumeId) return;
+    setSelectedResumeLoading(true);
+    setSelectedResumeId(resumeId);
+    try {
+      const detail = await getMyResumeById(resumeId, { accessToken });
+      setSelectedResumeData(detail.resumeData ?? null);
+    } catch {
+      setSelectedResumeData(null);
+    } finally {
+      setSelectedResumeLoading(false);
+    }
+  }, [accessToken, selectedResumeId]);
+
+  // ── 포트폴리오 공개 학습자료 로드 ─────────────────────────────
+  // 타인 공개 조회 API를 그대로 호출해, 실제로 남에게 보이는 것과 동일한 목록을 확인할 수 있게 한다.
+  const loadPublicMaterials = useCallback(async () => {
+    if (!userId) return;
+    setPublicMaterialsLoading(true);
+    try {
+      const [items, folders] = await Promise.all([
+        getPublicMaterials(userId, 0).catch(() => [] as MaterialItemResponse[]),
+        getPublicMaterialFolders(userId).catch(() => [] as MaterialFolderResponse[]),
+      ]);
+      setPublicMaterials(items);
+      setPublicMaterialFolders(folders);
+    } finally {
+      setPublicMaterialsLoading(false);
+    }
+  }, [userId]);
+
   useEffect(() => {
-    if (activeTab === '포트폴리오') loadDriveResumes();
-  }, [activeTab, loadDriveResumes]);
+    if (activeTab === '포트폴리오') {
+      loadDriveResumes();
+      loadPublicMaterials();
+    }
+  }, [activeTab, loadDriveResumes, loadPublicMaterials]);
+
+  /**
+   * 공개 자료 다운로드.
+   * 응답에 S3 원본 URL이 없으므로, 만료 있는 presigned URL을 그때그때 발급받아 연다.
+   */
+  const handleDownloadPublicMaterial = async (itemId: number) => {
+    if (!userId) return;
+    try {
+      const url = await getPublicMaterialDownloadUrl(userId, itemId);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      alert('다운로드할 수 없는 자료입니다. 공개 설정을 확인해주세요.');
+    }
+  };
 
   // ── 드라이브 핸들러 ───────────────────────────────────────────
   const handleCreateResume = async () => {
@@ -590,14 +609,22 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
   const handleDeleteResume = async (resumeId: number) => {
     if (!accessToken || driveBusy) return;
+    // 이력서는 최소 1개를 유지해야 한다. (백엔드에서도 동일하게 차단하며, 여기서는 사전 안내만 한다)
+    if (driveResumes.length <= 1) {
+      alert(LAST_RESUME_MESSAGE);
+      setResumeMenuOpen(null);
+      return;
+    }
     if (!window.confirm('이 이력서를 삭제할까요? 되돌릴 수 없습니다.')) return;
     setResumeMenuOpen(null);
     setDriveBusy(resumeId);
     try {
       await deleteResumeById(resumeId, { accessToken });
-      setDriveResumes((prev) => prev.filter((x) => x.resumeId !== resumeId));
-    } catch {
-      // 실패 시 상태 유지
+      // 기본 이력서 자동 승격 등 서버 상태를 그대로 반영하기 위해 목록을 재조회한다.
+      await loadDriveResumes();
+    } catch (e) {
+      // 마지막 1개 삭제 시도는 백엔드가 400으로 막는다. 서버 메시지를 그대로 노출한다.
+      alert(e instanceof Error && e.message ? e.message : LAST_RESUME_MESSAGE);
     } finally {
       setDriveBusy(null);
     }
@@ -614,23 +641,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
       // 실패 시 상태 유지
     } finally {
       setDriveBusy(null);
-    }
-  };
-
-  // '이력서' 클릭 → 대표(기본) 이력서로 이동, 없으면 첫 이력서, 그마저 없으면 새로 생성
-  const openRepresentativeResume = async () => {
-    if (!accessToken) { router.push('/user/resume'); return; }
-    try {
-      const resumes = driveResumes.length ? driveResumes : (await getMyResumes({ accessToken })).resumes;
-      const target = resumes.find((r) => r.isDefault) ?? resumes[0];
-      if (target) {
-        router.push(`/user/resume?resume=${target.resumeId}`);
-        return;
-      }
-      const created = await createResume(EMPTY_RESUME_DATA, { accessToken });
-      router.push(created.resumeId ? `/user/resume?resume=${created.resumeId}` : '/user/resume');
-    } catch {
-      router.push('/user/resume');
     }
   };
 
@@ -794,53 +804,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                 )}
               </div>
 
-              {/* 보유 칭호 — 대표 1개 + 나머지 최대 3개 = 최대 4개 노출 */}
-              {myTitles.length > 0 && (() => {
-                const displayTitles = [
-                  ...myTitles.filter((t) => t.isDisplay),
-                  ...myTitles.filter((t) => !t.isDisplay).slice(0, 3),
-                ].slice(0, 4);
-                const hiddenCount = myTitles.length - displayTitles.length;
-                return (
-                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                    {displayTitles.map((t) => {
-                      const isRep = t.isDisplay;
-                      return (
-                        <div
-                          key={t.userTitleId}
-                          title={`${t.titleName}${isRep ? ' (대표)' : ''}`}
-                          className={`flex items-center justify-center overflow-hidden rounded-full border text-sm transition-all ${
-                            isRep
-                              ? 'h-10 w-10 border-amber-300 bg-amber-50 shadow-[0_0_0_2px_#fbbf24]'
-                              : 'h-7 w-7 border-gray-100 bg-gray-50'
-                          }`}
-                        >
-                          {t.iconUrl ? (
-                            <img
-                              src={t.iconUrl}
-                              alt={t.titleName}
-                              className="h-full w-full object-cover"
-                              onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          ) : t.category && TITLE_CATEGORY_EMOJI[t.category] ? (
-                            TITLE_CATEGORY_EMOJI[t.category]
-                          ) : (
-                            '🏅'
-                          )}
-                        </div>
-                      );
-                    })}
-                    {hiddenCount > 0 && (
-                      <div
-                        className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400"
-                        title={`외 ${hiddenCount}개 더 보유`}
-                      >
-                        +{hiddenCount}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              {/* 보유 칭호 — 대표 1개 + 보조 최대 3개 (타인 프로필과 동일 컴포넌트/정책) */}
+              <TitleBadgeRow titles={myTitles} subTitles={subTitles} />
 
               <p className="mb-2 text-sm text-gray-500">{session.user?.email}</p>
               <p className="break-all text-xs text-gray-400">ID: {userId}</p>
@@ -910,84 +875,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               </div>
             </div>
 
-            {/* 이력서 공개 설정 카드 */}
-            {accessToken && (
-              <div className="rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-100 px-5 py-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    이력서 공개 설정
-                  </h2>
-                </div>
-                <div className="px-5 py-4 space-y-3">
-                  {/* 이력서 없을 때 안내 */}
-                  {resumeIsPublic !== null && !resumeExists && (
-                    <p className="text-xs text-gray-400 text-center py-1">
-                      저장된 이력서가 없습니다.{' '}
-                      <Link href="/user/resume" className="text-orange-500 hover:underline">이력서 작성하기</Link>
-                    </p>
-                  )}
-
-                  {/* 공개 여부 토글 */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`text-sm font-medium ${resumeExists ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {resumeIsPublic ? '공개 중' : '비공개'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {resumeIsPublic
-                          ? '누구나 공개 URL로 볼 수 있습니다.'
-                          : '본인만 이력서를 볼 수 있습니다.'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleToggleResumePublic}
-                      disabled={resumePublicLoading || resumeIsPublic === null || !resumeExists}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
-                        resumeIsPublic ? 'bg-orange-400' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-                          resumeIsPublic ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* 공개 URL 복사 / 미리보기 */}
-                  {resumeIsPublic && userId && (
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleCopyResumeUrl}
-                        className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                      >
-                        {resumePublicCopied ? '복사됨!' : 'URL 복사'}
-                      </button>
-                      <a
-                        href={`/resume/${userId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 rounded-lg border border-gray-200 py-1.5 text-center text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                      >
-                        미리보기
-                      </a>
-                    </div>
-                  )}
-
-                  {/* 이력서 작성 링크 */}
-                  <Link
-                    href="/user/resume"
-                    className="block w-full rounded-lg bg-orange-400 py-1.5 text-center text-xs font-medium text-white hover:bg-orange-500 transition-colors"
-                  >
-                    이력서 작성하기
-                  </Link>
-                </div>
-              </div>
-            )}
-
             {/* 학습자료 카드 */}
             <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
@@ -1052,7 +939,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     activeTab === tab.key
                       ? 'text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  } ${index === 0 ? 'rounded-l-lg' : ''}`}
+                  } ${index === 0 ? 'rounded-l-lg' : ''} ${index === tabs.length - 1 ? 'rounded-r-lg' : ''}`}
                   style={
                     activeTab === tab.key
                       ? { background: 'linear-gradient(180deg, #FAA61B 0%, #F36A22 100%)' }
@@ -1063,14 +950,6 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   {tab.label}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={openRepresentativeResume}
-                className="flex flex-shrink-0 items-center gap-1.5 rounded-r-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200"
-              >
-                <FileText className="h-4 w-4" />
-                이력서
-              </button>
             </div>
           </div>
 
@@ -1168,7 +1047,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                           </div>
 
                           {/* 본문: 제목 + 진행 바 (클릭 시 편집 진입) */}
-                          <button type="button" onClick={openEditor} className="flex-1 text-left">
+                          <button type="button" onClick={() => handleSelectResumePreview(r.resumeId)} className="flex-1 text-left">
                             <p className={`text-sm font-semibold ${r.resumeTitle ? 'text-gray-900' : 'text-gray-400'}`}>
                               {r.resumeTitle || '제목을 입력하세요'}
                               {r.isDefault && (
@@ -1210,23 +1089,142 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                     })}
                   </div>
                 )}
+
+                {/* ── 선택된 이력서 본문 (진입 시 대표 이력서가 자동으로 열린다) ── */}
+                {selectedResumeId !== null && (
+                  <div className="mt-6">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-gray-900">
+                        {driveResumes.find((r) => r.resumeId === selectedResumeId)?.resumeTitle || '이력서'}
+                        {driveResumes.find((r) => r.resumeId === selectedResumeId)?.isDefault && (
+                          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600 border border-amber-100">
+                            대표
+                          </span>
+                        )}
+                      </h3>
+                      <Link
+                        href={`/user/resume?resume=${selectedResumeId}`}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 hover:underline"
+                      >
+                        편집하기
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+
+                    {selectedResumeLoading ? (
+                      <div className="flex justify-center py-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
+                      </div>
+                    ) : selectedResumeData ? (
+                      <ResumeReadOnlyView
+                        data={selectedResumeData}
+                        profileImageUrl={profile?.profileImage}
+                        visibleSections={selectedResumeData.visibleSections}
+                      />
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-gray-200 py-10 text-center">
+                        <p className="text-sm text-gray-400">아직 작성된 내용이 없습니다.</p>
+                        <Link
+                          href={`/user/resume?resume=${selectedResumeId}`}
+                          className="text-xs text-orange-500 hover:underline"
+                        >
+                          이력서 작성하러 가기
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
 
-              {/* ── 내 폴더 · 내 파일 (학습자료 페이지로) ───────── */}
+              {/* ── 공개 학습자료 ───────────────────────────── */}
               <section>
                 <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-base font-bold text-gray-900">내 폴더 · 내 파일</h2>
+                  <h2 className="text-base font-bold text-gray-900">공개 학습자료</h2>
                   <Link
                     href="/user/materials"
                     className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 hover:underline"
                   >
-                    관리하기
+                    공개 설정 관리
                     <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
-                <p className="text-sm text-gray-400">
-                  학년별 폴더와 과제·EL 자료는 학습자료 페이지에서 관리합니다.
+                <p className="mb-4 text-xs text-gray-400">
+                  공개로 설정한 폴더·자료만 표시되며, 타인이 내 프로필에서 보는 목록과 동일합니다.
+                  기본값은 비공개입니다.
                 </p>
+
+                {publicMaterialsLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
+                  </div>
+                ) : publicMaterials.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-200 py-10 text-center">
+                    <Lock className="mx-auto mb-2 h-5 w-5 text-gray-300" />
+                    <p className="text-sm text-gray-400">공개로 설정한 학습자료가 없습니다.</p>
+                    <Link href="/user/materials" className="text-xs text-orange-500 hover:underline">
+                      학습자료에서 공개로 전환하기
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* 공개 폴더 바로가기 */}
+                    {publicMaterialFolders.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {publicMaterialFolders.map((f) => (
+                          <Link
+                            key={f.id}
+                            href={`/user/materials?folder=${f.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:border-orange-300 hover:text-orange-500"
+                          >
+                            <FolderGit className="h-3.5 w-3.5 text-gray-400" />
+                            {f.name}
+                            <span className="text-[10px] text-gray-400">{f.itemCount}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 공개 자료 목록 — 최근 학기·최신순 (서버 정렬 그대로) */}
+                    <ul className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                      {publicMaterials.map((m) => (
+                        <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+                          <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">{m.title}</p>
+                            <p className="truncate text-[11px] text-gray-400">
+                              {[m.subjectName, m.materialYear ? `${m.materialYear}년` : null, m.semester]
+                                .filter(Boolean)
+                                .join(' · ') || '학기 정보 없음'}
+                            </p>
+                          </div>
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-500">
+                            <Globe className="h-3 w-3" />
+                            공개
+                          </span>
+                          {m.hasFile && userId && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadPublicMaterial(m.id)}
+                              className="shrink-0 rounded-lg border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600 transition hover:bg-gray-50"
+                            >
+                              다운로드
+                            </button>
+                          )}
+                          {!m.hasFile && m.sourceUrl && (
+                            <a
+                              href={m.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 rounded-lg border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600 transition hover:bg-gray-50"
+                            >
+                              원본 링크
+                            </a>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </section>
             </div>
           )}

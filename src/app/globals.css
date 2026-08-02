@@ -220,6 +220,27 @@ body {
     margin: 0 !important;
   }
 
+  /* 인쇄 전용 렌더링 교체.
+     캐러셀/모달처럼 화면에서만 동작하는 UI 대신 전체를 펼친 블록을 출력한다. */
+  [data-pdf-hidden] {
+    display: none !important;
+  }
+  [data-pdf-only] {
+    display: block !important;
+  }
+
+  /* 섹션이 페이지 경계에서 쪼개지지 않게 한다.
+     제목만 이전 페이지에 남고 본문이 다음 페이지로 넘어가는 것을 막는다. */
+  #resume-print-area > section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #resume-print-area h2,
+  #resume-print-area h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
   /* 페이지 여백 */
   @page {
     margin: 15mm 12mm;

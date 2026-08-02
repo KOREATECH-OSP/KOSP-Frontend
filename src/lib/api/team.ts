@@ -6,6 +6,7 @@ import type {
   TeamDetailResponse,
   TeamInviteResponse,
   TeamRole,
+  InviteAvailabilityResponse,
 } from './types';
 
 /**
@@ -75,6 +76,24 @@ export async function getTeamInvite(inviteId: string): Promise<TeamInviteRespons
   return apiClient<TeamInviteResponse>(`/v1/teams/invites/${inviteId}`, {
     cache: 'no-store',
   });
+}
+
+/**
+ * 초대 가능 여부 조회
+ *
+ * 반복 거절로 제한된 상대인지 초대 전에 확인한다.
+ * 제한된 경우 누적 거절 횟수와 제한 종료 시각을 함께 받는다.
+ */
+export async function getInviteAvailability(
+  teamId: number,
+  emailId: string,
+  accessToken: string
+): Promise<InviteAvailabilityResponse> {
+  const email = `${emailId}@koreatech.ac.kr`;
+  return apiClient<InviteAvailabilityResponse>(
+    `/v1/teams/${teamId}/invites/availability?email=${encodeURIComponent(email)}`,
+    { cache: 'no-store', accessToken }
+  );
 }
 
 /**

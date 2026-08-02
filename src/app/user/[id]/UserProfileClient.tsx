@@ -46,7 +46,16 @@ import type {
   GithubContributionComparisonResponse,
   UserTitleResponse,
   ResumeData,
+  MaterialItemResponse,
+  MaterialFolderResponse,
 } from '@/lib/api/types';
+import {
+  getPublicMaterials,
+  getPublicMaterialFolders,
+  getPublicMaterialFolderItems,
+  getPublicMaterialDownloadUrl,
+} from '@/lib/api/material';
+import TitleBadgeRow from '@/common/components/TitleBadgeRow';
 import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
 import FollowCard from '@/app/user/resume/components/FollowCard';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -77,7 +86,7 @@ interface UserProfileClientProps {
   };
 }
 
-type TabType = '활동' | '작성글' | '댓글' | '이력서';
+type TabType = '활동' | '작성글' | '댓글' | '이력서' | '학습자료';
 
 export default function UserProfileClient({
   userId,
@@ -100,6 +109,9 @@ export default function UserProfileClient({
 
   const [counts, setCounts] = useState(initialCounts);
   const [displayTitle, setDisplayTitle] = useState<UserTitleResponse | null>(null);
+  // 내 프로필과 동일한 정책(대표 1개 + 보조 최대 3개)으로 노출하기 위한 전체/보조 칭호
+  const [allTitles, setAllTitles] = useState<UserTitleResponse[]>([]);
+  const [subTitles, setSubTitles] = useState<UserTitleResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 이력서 상태
@@ -109,6 +121,12 @@ export default function UserProfileClient({
   const [showAllRepos, setShowAllRepos] = useState(false);
   const recentRepositoryCount = recentActivity.length;
   const [codeReviewRepo, setCodeReviewRepo] = useState<{ repoOwner: string; repositoryName: string; description: string | null } | null>(null);
+
+  // 공개 학습자료 (공개로 설정된 폴더·자료만 서버에서 내려온다)
+  const [publicMaterials, setPublicMaterials] = useState<MaterialItemResponse[]>([]);
+  const [publicMaterialFolders, setPublicMaterialFolders] = useState<MaterialFolderResponse[]>([]);
+  const [materialsLoaded, setMaterialsLoaded] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
 
   const fetchGithubData = useCallback(async () => {
     const [historyRes, activityRes, scoreRes, comparisonRes, titlesRes] = await Promise.all([
@@ -123,7 +141,11 @@ export default function UserProfileClient({
     if (activityRes) setRecentActivity(activityRes);
     if (scoreRes) setContributionScore(scoreRes);
     if (comparisonRes) setComparison(comparisonRes);
-    if (titlesRes) setDisplayTitle(titlesRes.titles.find((t) => t.isDisplay) ?? null);
+    if (titlesRes) {
+      setDisplayTitle(titlesRes.titles.find((t) => t.isDisplay) ?? null);
+      setAllTitles(titlesRes.titles);
+      setSubTitles(titlesRes.subTitles ?? []);
+    }
   }, [userId]);
 
   useEffect(() => {
@@ -153,6 +175,14 @@ export default function UserProfileClient({
           const res = await getUserComments(userId).catch(() => null);
           setComments(res?.comments ?? []);
           setCounts((prev) => ({ ...prev, comments: res?.meta?.totalItems ?? prev.comments }));
+        } else if (activeTab === '학습자료' && !materialsLoaded) {
+          const [items, folders] = await Promise.all([
+            getPublicMaterials(userId, 0).catch(() => [] as MaterialItemResponse[]),
+            getPublicMaterialFolders(userId).catch(() => [] as MaterialFolderResponse[]),
+          ]);
+          setPublicMaterials(items);
+          setPublicMaterialFolders(folders);
+          setMaterialsLoaded(true);
         } else if (activeTab === '이력서' && !resumeLoaded) {
           try {
             const res = await getPublicResume(userId);
@@ -181,6 +211,29 @@ export default function UserProfileClient({
     });
   };
 
+  /** 공개 폴더 선택 → 해당 폴더의 공개 자료만 조회. 다시 누르면 전체 목록으로 돌아온다. */
+  const handleSelectPublicFolder = async (folderId: number | null) => {
+    setSelectedFolderId(folderId);
+    const items = folderId == null
+      ? await getPublicMaterials(userId, 0).catch(() => [] as MaterialItemResponse[])
+      : await getPublicMaterialFolderItems(userId, folderId).catch(() => [] as MaterialItemResponse[]);
+    setPublicMaterials(items);
+  };
+
+  /**
+   * 공개 자료 다운로드.
+   * 응답에 S3 원본 URL이 없으므로 만료 있는 presigned URL을 발급받아 연다.
+   * 비공개 자료의 ID로 호출하면 서버가 404를 반환한다.
+   */
+  const handleDownloadPublicMaterial = async (itemId: number) => {
+    try {
+      const url = await getPublicMaterialDownloadUrl(userId, itemId);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      alert('공개되지 않은 자료입니다.');
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -195,6 +248,7 @@ export default function UserProfileClient({
     { key: '작성글', label: '작성한 글', icon: <FileText className="h-4 w-4" /> },
     { key: '댓글', label: '작성한 댓글', icon: <MessageCircle className="h-4 w-4" /> },
     { key: '이력서', label: '이력서', icon: <FileText className="h-4 w-4" /> },
+    { key: '학습자료', label: '학습자료', icon: <FolderGit className="h-4 w-4" /> },
   ];
 
   return (
@@ -255,6 +309,9 @@ export default function UserProfileClient({
                   </div>
                 )}
               </div>
+
+              {/* 보유 칭호 — 내 프로필과 동일 정책(대표 1개 + 보조 최대 3개) */}
+              <TitleBadgeRow titles={allTitles} subTitles={subTitles} />
 
               {profile.introduction && (
                 <p className="mt-4 text-sm text-gray-600">{profile.introduction}</p>
@@ -700,6 +757,98 @@ export default function UserProfileClient({
                   profileImageUrl={profile.profileImage}
                   visibleSections={resumeData.visibleSections}
                 />
+              )}
+            </div>
+          )}
+
+          {/* 학습자료 탭 — 공개로 설정된 폴더·자료만 노출된다 */}
+          {activeTab === '학습자료' && (
+            <div className="space-y-4">
+              {!materialsLoaded ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : publicMaterialFolders.length === 0 && publicMaterials.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
+                  <FolderGit className="mb-3 h-12 w-12 text-gray-200" />
+                  <p className="text-sm font-medium text-gray-500">공개된 학습자료가 없습니다.</p>
+                </div>
+              ) : (
+                <>
+                  {/* 공개 폴더 — 누르면 해당 폴더의 공개 자료만 표시 */}
+                  {publicMaterialFolders.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPublicFolder(null)}
+                        className={`rounded-full border px-3 py-1 text-xs transition ${
+                          selectedFolderId == null
+                            ? 'border-orange-300 bg-orange-50 text-orange-600'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        전체
+                      </button>
+                      {publicMaterialFolders.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => handleSelectPublicFolder(f.id)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition ${
+                            selectedFolderId === f.id
+                              ? 'border-orange-300 bg-orange-50 text-orange-600'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                          }`}
+                        >
+                          <FolderGit className="h-3.5 w-3.5 text-gray-400" />
+                          {f.name}
+                          <span className="text-[10px] text-gray-400">{f.itemCount}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 공개 자료 목록 — 최근 학기·최신순 (서버 정렬 그대로) */}
+                  {publicMaterials.length === 0 ? (
+                    <p className="rounded-xl border border-gray-200 bg-white py-12 text-center text-sm text-gray-400">
+                      이 폴더에 공개된 자료가 없습니다.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                      {publicMaterials.map((m) => (
+                        <li key={m.id} className="flex items-center gap-3 px-5 py-3.5">
+                          <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">{m.title}</p>
+                            <p className="truncate text-[11px] text-gray-400">
+                              {[m.subjectName, m.materialYear ? `${m.materialYear}년` : null, m.semester]
+                                .filter(Boolean)
+                                .join(' · ') || '학기 정보 없음'}
+                            </p>
+                          </div>
+                          {m.hasFile ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadPublicMaterial(m.id)}
+                              className="shrink-0 rounded-lg border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600 transition hover:bg-gray-50"
+                            >
+                              다운로드
+                            </button>
+                          ) : m.sourceUrl ? (
+                            <a
+                              href={m.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 rounded-lg border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600 transition hover:bg-gray-50"
+                            >
+                              원본 링크
+                            </a>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </div>
           )}

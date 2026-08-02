@@ -224,7 +224,7 @@ export async function getPublicMaterialFolders(userId: number): Promise<Material
   });
 }
 
-/** 특정 사용자의 공개 폴더 내 공개 자료 조회 */
+/** 특정 사용자의 공개 폴더 내 공개 자료 조회 (최근 학기·최신순) */
 export async function getPublicMaterialFolderItems(
   userId: number,
   folderId: number,
@@ -233,4 +233,33 @@ export async function getPublicMaterialFolderItems(
     `/v1/users/${userId}/material-folders/${folderId}/items`,
     { cache: 'no-store' },
   );
+}
+
+/**
+ * 특정 사용자의 공개 자료 전체 조회 (포트폴리오 노출용, 최근 학기·최신순).
+ * @param limit 0 이하이면 전체
+ */
+export async function getPublicMaterials(
+  userId: number,
+  limit: number = 0,
+): Promise<MaterialItemResponse[]> {
+  return apiClient<MaterialItemResponse[]>(
+    `/v1/users/${userId}/materials/public?limit=${limit}`,
+    { cache: 'no-store' },
+  );
+}
+
+/**
+ * 공개 자료 다운로드 URL 발급 (presigned GET, 만료 있음).
+ * 비공개 자료의 ID로 호출하면 백엔드가 404를 반환한다.
+ */
+export async function getPublicMaterialDownloadUrl(
+  userId: number,
+  itemId: number,
+): Promise<string> {
+  const res = await apiClient<{ downloadUrl: string }>(
+    `/v1/users/${userId}/materials/${itemId}/download`,
+    { cache: 'no-store' },
+  );
+  return res.downloadUrl;
 }

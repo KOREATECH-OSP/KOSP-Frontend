@@ -215,6 +215,24 @@ export interface FollowUserResponse {
   name: string;
   profileImage: string | null;
   introduction: string | null;
+  /** 대표 칭호명 (없으면 null) */
+  displayTitleName: string | null;
+  /** 대표 칭호 아이콘 URL (없으면 null) */
+  displayTitleIconUrl: string | null;
+  /** 로그인 조회자가 이 사용자를 팔로우 중인지 */
+  isFollowing: boolean;
+  /** 이 항목이 조회자 본인인지 (true면 팔로우 버튼 미노출) */
+  isMe: boolean;
+}
+
+/** GET /v1/users/:id/followers, /following 응답 (페이지) */
+export interface FollowUserListResponse {
+  users: FollowUserResponse[];
+  meta: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
 }
 
 export interface FollowSummaryResponse {
@@ -256,6 +274,8 @@ export interface MaterialItemResponse {
   originalFileName: string | null;
   fileSize: number | null;
   contentType: string | null;
+  /** 내려받을 파일이 있는지 (공개 응답은 fileUrl이 null이므로 이 값으로 판단) */
+  hasFile: boolean;
   isPublic: boolean;
   semesterOrder: number | null;
   autoImported: boolean;
@@ -1055,6 +1075,8 @@ export interface ResumeEducationItem {
   school: string;
   major: string;
   period: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeCareerItem {
@@ -1062,6 +1084,8 @@ export interface ResumeCareerItem {
   company: string;
   role: string;
   period: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeExperienceItem {
@@ -1069,6 +1093,8 @@ export interface ResumeExperienceItem {
   title: string;
   description: string;
   period: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeProjectItem {
@@ -1086,6 +1112,8 @@ export interface ResumeProjectItem {
   deployLink: string;
   docLink: string;
   featured: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeAwardItem {
@@ -1131,7 +1159,11 @@ export interface ResumeData {
   resumeTitle: string;
   headline: string;
   bio: string;
-  jobRole: string;
+  /**
+   * 개발 직무 (다중). 과거 버전은 단일 문자열로 저장했으므로
+   * 읽는 쪽에서 배열로 정규화해야 한다 (normalizeJobRole 사용).
+   */
+  jobRole: string[] | string;
   techStack: string[];
   links: ResumeLinkItem[];
   education: ResumeEducationItem[];
@@ -1225,4 +1257,27 @@ export interface CodeReviewResponse {
 export interface CodeReviewListResponse {
   total: number;
   reviews: CodeReviewResponse[];
+}
+
+// ============================================
+// Team Invite Restriction Types
+// ============================================
+
+/** 초대 제한이 걸린 축 */
+export type InviteRestrictionScope = 'TEAM' | 'INVITER';
+
+/** GET /v1/teams/{teamId}/invites/availability 응답 */
+export interface InviteAvailabilityResponse {
+  /** 지금 초대할 수 있는지 */
+  canInvite: boolean;
+  /** 차단된 축 (TEAM: 팀 단위, INVITER: 초대자 단위). 초대 가능하면 null */
+  blockedScope: InviteRestrictionScope | null;
+  /** 누적 거절 횟수 */
+  rejectionCount: number;
+  /** 최근 거절 시각 (ISO) */
+  lastRejectedAt: string | null;
+  /** 제한 종료 시각 (ISO). 초대 가능하면 null */
+  blockedUntil: string | null;
+  /** 사용자 안내 문구. 초대 가능하면 null */
+  reason: string | null;
 }
