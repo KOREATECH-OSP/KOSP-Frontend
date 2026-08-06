@@ -295,7 +295,8 @@ export default function CoffeeChatPanel() {
       {/* 플로팅 고양이 말풍선 아이콘 */}
       <button
         onClick={() => setIsOpen(v => !v)}
-        className="fixed bottom-[45px] right-10 z-40 drop-shadow-lg hover:drop-shadow-xl transition-all hover:scale-105"
+        className="fixed right-10 z-40 drop-shadow-lg hover:drop-shadow-xl transition-all hover:scale-105"
+        style={{ bottom: 'calc(45px + var(--bottom-bar-height, 0px))' }}
         aria-label="커피챗 열기"
       >
         <div className="relative">
@@ -316,8 +317,8 @@ export default function CoffeeChatPanel() {
 
       {/* 메시지 패널 */}
       {isOpen && (
-        <div className="fixed bottom-[117px] right-10 z-50 w-[380px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100"
-          style={{ maxHeight: 'calc(100vh - 120px)' }}
+        <div className="fixed right-10 z-50 w-[380px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100"
+          style={{ bottom: 'calc(117px + var(--bottom-bar-height, 0px))', maxHeight: 'calc(100vh - 120px)' }}
         >
           {/* 커피챗 요청 모달 */}
           {requestPartnerId !== null ? (

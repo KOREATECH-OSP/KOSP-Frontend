@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -35,6 +35,22 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
   const [team, setTeam] = useState<TeamDetailResponse | null>(null);
   const [isTeamLoading, setIsTeamLoading] = useState(true);
+
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = bottomBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--bottom-bar-height', `${el.offsetHeight}px`);
+    });
+    observer.observe(el);
+    document.documentElement.style.setProperty('--bottom-bar-height', `${el.offsetHeight}px`);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.setProperty('--bottom-bar-height', '0px');
+    };
+  }, []);
 
   useEffect(() => {
     if (!recruit?.teamId) return;
@@ -392,7 +408,7 @@ export default function RecruitDetailClient({ recruit }: RecruitDetailClientProp
       </div>
 
       {/* Mobile Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-lg px-4 py-3 pb-[calc(12px+var(--safe-area-bottom))] lg:hidden">
+      <div ref={bottomBarRef} className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-lg px-4 py-3 pb-[calc(12px+var(--safe-area-bottom))] lg:hidden">
         <div className="mx-auto flex max-w-md items-center gap-3">
           <button
             onClick={handleLike}

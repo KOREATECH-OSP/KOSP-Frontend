@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, type KeyboardEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
@@ -112,6 +112,22 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const [isCreatingResume, setIsCreatingResume] = useState(false);
   const [isDeletingResume, setIsDeletingResume] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState(false);
+
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = bottomBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--bottom-bar-height', `${el.offsetHeight}px`);
+    });
+    observer.observe(el);
+    document.documentElement.style.setProperty('--bottom-bar-height', `${el.offsetHeight}px`);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.setProperty('--bottom-bar-height', '0px');
+    };
+  }, []);
 
   const accessToken = session.accessToken ?? null;
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
@@ -1593,7 +1609,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       )}
 
       {/* ── 하단 고정 저장 바 (인쇄 제외) ─────────────────────────── */}
-      <div className="print:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg">
+      <div ref={bottomBarRef} className="print:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg">
         {/* 저장 실패 상세 사유 (서버 응답 메시지 노출) */}
         {saveError && saveErrorMessage && (
           <div className="mx-auto mb-2 max-w-4xl rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
