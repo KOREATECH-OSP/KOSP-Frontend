@@ -48,7 +48,7 @@ function formatDate(dateStr: string) {
 function MemberRoleBadge({ role }: { role: OrganizationMemberResponse['role'] }) {
   if (role === 'OWNER') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 border border-amber-200">
         <Crown className="h-2.5 w-2.5" />
         OWNER
       </span>
@@ -56,7 +56,7 @@ function MemberRoleBadge({ role }: { role: OrganizationMemberResponse['role'] })
   }
   if (role === 'ADMIN') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-600 border border-purple-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600 border border-purple-200">
         <Shield className="h-2.5 w-2.5" />
         관리자
       </span>
@@ -68,14 +68,14 @@ function MemberRoleBadge({ role }: { role: OrganizationMemberResponse['role'] })
 function MemberStatusBadge({ status }: { status: OrganizationMemberResponse['status'] }) {
   if (status === 'LINKED') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-100">
+      <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 border border-blue-100">
         K-OSP 연동
       </span>
     );
   }
   if (status === 'EMAIL_PENDING') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500 border border-gray-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 border border-gray-200">
         <Clock className="h-2.5 w-2.5" />
         초대 대기
       </span>
@@ -83,14 +83,14 @@ function MemberStatusBadge({ status }: { status: OrganizationMemberResponse['sta
   }
   if (status === 'EMAIL_PRIVATE') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-400 border border-gray-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-200">
         <EyeOff className="h-2.5 w-2.5" />
         비공개
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-400 border border-gray-200">
+    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-200">
       미가입
     </span>
   );
