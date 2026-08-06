@@ -127,7 +127,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       observer.disconnect();
       document.documentElement.style.setProperty('--bottom-bar-height', '0px');
     };
-  }, []);
+  }, [isLoading, loadError]);
 
   const accessToken = session.accessToken ?? null;
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
