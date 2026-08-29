@@ -431,6 +431,7 @@ export default function RankingPageClient({
   const [search, setSearch] = useState('');
   const [showCriteria, setShowCriteria] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const filteredSeasonEntries = useMemo(() => {
     if (!search.trim()) return seasonRankings.rankings;
@@ -446,20 +447,26 @@ export default function RankingPageClient({
 
   const handleSeasonPageChange = async (page: number) => {
     setIsLoading(true);
+    setPageError(null);
     try {
       const data = await apiClient<SeasonRankingListResponse>(`/v1/seasons/current/rankings?page=${page - 1}&size=10`, { cache: 'no-store' });
       setSeasonRankings(data); setSeasonPage(page); setSearch('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch { /* 실패 시 현재 페이지 유지 */ } finally { setIsLoading(false); }
+    } catch {
+      setPageError('랭킹 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally { setIsLoading(false); }
   };
 
   const handleGithubPageChange = async (page: number) => {
     setIsLoading(true);
+    setPageError(null);
     try {
       const data = await apiClient<GithubRankingListResponse>(`/v1/github/rankings?page=${page - 1}&size=10`, { cache: 'no-store' });
       setGithubRankings(data); setGithubPage(page); setSearch('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch { /* 실패 시 현재 페이지 유지 */ } finally { setIsLoading(false); }
+    } catch {
+      setPageError('랭킹 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally { setIsLoading(false); }
   };
 
   const top3: AnyEntry[] = activeTab === 'season'
@@ -579,6 +586,14 @@ export default function RankingPageClient({
           </div>
         </div>
 
+        {/* 페이지 에러 메시지 */}
+        {pageError && (
+          <div className="mx-5 mb-3 flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+            <Info className="h-4 w-4 shrink-0" />
+            {pageError}
+          </div>
+        )}
+
         {/* 테이블 헤더 */}
         <div className="grid grid-cols-[48px_1fr_130px_90px] gap-3 border-t border-gray-100 bg-gray-50 px-5 py-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">순위</span>
@@ -630,8 +645,8 @@ export default function RankingPageClient({
             {'<'}
           </button>
 
-          {/* 1~5 고정 페이지 번호 */}
-          {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((page) => (
+          {/* 실제 페이지 수 기반 번호 (최대 TOTAL_PAGES개) */}
+          {Array.from({ length: Math.min(TOTAL_PAGES, totalPages) }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => handlePageChange(page)}
