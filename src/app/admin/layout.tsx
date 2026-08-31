@@ -51,6 +51,11 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    name: '프로젝트 관리',
+    href: '/admin/projects',
+    icon: FileText,
+  },
+  {
     name: '콘텐츠 관리',
     href: '/admin/contents',
     icon: FileText,
