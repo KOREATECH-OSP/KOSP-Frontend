@@ -112,7 +112,7 @@ function RankingCriteriaModal({ tab, onClose }: { tab: TabType; onClose: () => v
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-base font-bold text-gray-900">{isGithub ? '전체 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}</h2>
+          <h2 className="text-base font-bold text-gray-900">{isGithub ? '깃허브 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><X className="h-5 w-5" /></button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
@@ -494,7 +494,7 @@ export default function RankingPageClient({
             <div className="flex lg:flex-col gap-1">
               {([
                 { key: 'season', label: '시즌 랭킹' },
-                { key: 'github', label: '전체 랭킹' },
+                { key: 'github', label: '깃허브 랭킹' },
               ] as { key: TabType; label: string }[]).map(({ key, label }) => (
                 <button
                   key={key}
@@ -519,7 +519,7 @@ export default function RankingPageClient({
       <div className="mb-5 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">
-            {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
+            {activeTab === 'season' ? '시즌 랭킹' : '깃허브 랭킹'}
           </h1>
           <p className="mt-1.5 text-sm text-gray-500">
             {activeTab === 'season'
@@ -562,7 +562,7 @@ export default function RankingPageClient({
         {/* 카드 헤더: 탭 이름 + 총 인원 */}
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-sm font-semibold text-gray-900">
-            {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
+            {activeTab === 'season' ? '시즌 랭킹' : '깃허브 랭킹'}
           </h2>
           {totalCount > 0 && (
             <span className="text-xs text-gray-400">총 {totalCount.toLocaleString()}명</span>
