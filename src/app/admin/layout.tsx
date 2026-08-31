@@ -19,6 +19,7 @@ import {
   Trophy,
   Bell,
   Flag,
+  BarChart2,
   ShieldX,
   Coins,
   Home,
@@ -49,6 +50,11 @@ const navigation: NavItem[] = [
       { name: '챌린지 목록', href: '/admin/challenges/list', icon: Trophy },
       { name: '챌린지 생성', href: '/admin/challenges/create', icon: Trophy },
     ],
+  },
+  {
+    name: '랭킹 관리',
+    href: '/admin/ranking',
+    icon: BarChart2,
   },
   {
     name: '프로젝트 관리',

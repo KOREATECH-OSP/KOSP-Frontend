@@ -30,6 +30,9 @@ import type {
   AdminSearchResponse,
   PointTransactionRequest,
   PointHistoryResponse,
+  AdminSeasonListResponse,
+  AdminSeasonCreateRequest,
+  AdminSeasonUpdateRequest,
 } from '@/types/admin';
 
 interface AuthOptions {
@@ -921,6 +924,49 @@ export async function removeAdminProjectMember(
 ): Promise<void> {
   await clientApiClient<void>(`/v1/admin/seasons/projects/members/${memberId}`, {
     method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// Season Management APIs
+// ============================================
+
+/**
+ * 전체 시즌 목록 조회
+ */
+export async function getAdminSeasons(auth: AuthOptions): Promise<AdminSeasonListResponse> {
+  return clientApiClient<AdminSeasonListResponse>('/v1/admin/seasons', {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 시즌 생성
+ */
+export async function createAdminSeason(
+  body: AdminSeasonCreateRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>('/v1/admin/seasons', {
+    method: 'POST',
+    body,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 시즌 정보 수정 (이름, 기간, 활성 여부)
+ */
+export async function updateAdminSeason(
+  seasonId: number,
+  body: AdminSeasonUpdateRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/${seasonId}`, {
+    method: 'PATCH',
+    body,
     accessToken: auth.accessToken,
   });
 }

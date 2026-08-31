@@ -379,3 +379,28 @@ export interface AdminSeasonProjectMemberListResponse {
   members: AdminSeasonProjectMemberResponse[];
 }
 
+
+export interface AdminSeasonItem {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
+export interface AdminSeasonListResponse {
+  seasons: AdminSeasonItem[];
+}
+
+export interface AdminSeasonCreateRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface AdminSeasonUpdateRequest {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+}
