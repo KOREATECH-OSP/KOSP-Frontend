@@ -21,6 +21,12 @@ import RankBadge from '@/common/components/RankBadge';
 
 type TabType = 'season' | 'github';
 
+function maskName(name: string): string {
+  if (!name || name.length <= 1) return name;
+  if (name.length === 2) return name[0] + '*';
+  return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
+}
+
 // ─── Tier Badge ────────────────────────────────────────────────────────────────
 
 function SeasonTierBadge({ tier }: { tier: string }) {
@@ -301,7 +307,7 @@ function PodiumItem({ entry, type }: { entry: AnyEntry; type: TabType }) {
           href={`/user/${entry.userId}`}
           className={`font-bold text-gray-800 hover:text-blue-600 truncate max-w-[100px] text-center ${isFirst ? 'text-base' : 'text-sm'}`}
         >
-          {entry.userName || '이름 없음'}
+          {maskName(entry.userName) || '이름 없음'}
         </Link>
         <p className={`text-gray-400 ${isFirst ? 'text-xs font-semibold text-[#f0a800]' : 'text-[11px]'}`}>
           {type === 'season'
@@ -358,7 +364,7 @@ function SeasonRankRow({ entry, isMe }: { entry: SeasonRankingEntry; isMe: boole
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="truncate text-sm font-semibold text-gray-800">
-                {entry.userName}
+                {maskName(entry.userName)}
               </span>
               {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
             </div>
@@ -390,7 +396,7 @@ function GithubRankRow({ entry, isMe }: { entry: GithubRankingEntry; isMe: boole
           )}
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="truncate text-sm font-semibold text-gray-800">
-              {entry.userName}
+              {maskName(entry.userName)}
             </span>
             {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
           </div>
