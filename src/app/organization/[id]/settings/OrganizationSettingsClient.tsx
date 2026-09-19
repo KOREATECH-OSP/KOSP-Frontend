@@ -2,13 +2,15 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useRef } from 'react';
-import { ArrowLeft, Crown, Shield, Search, X, Plus } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Crown, Shield, Search, X } from 'lucide-react';
 import type {
   OrganizationDetailResponse,
   OrganizationMemberResponse,
 } from '@/lib/api/organization';
 import { updateOrganization, addOrganizationMember } from '@/lib/api/organization';
+import { searchUsers } from '@/lib/api/user';
+import type { UserProfileResponse } from '@/lib/api/types';
 
 type Section = 'profile' | 'members' | 'repositories' | 'board';
 
@@ -40,13 +42,13 @@ function MemberRoleBadge({ role }: { role: OrganizationMemberResponse['role'] })
     return (
       <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600 border border-purple-200">
         <Shield className="h-2.5 w-2.5" />
-        OWNER
+        ADMIN
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 border border-gray-200">
-      OWNER
+      MEMBER
     </span>
   );
 }
@@ -72,16 +74,58 @@ export default function OrganizationSettingsClient({
   const [profileLoading, setProfileLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 멤버 추가 상태
-  const [memberSearch, setMemberSearch] = useState('');
-  const [pendingUsernames, setPendingUsernames] = useState<string[]>([]);
+  // 멤버 검색 상태
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UserProfileResponse[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [pendingUsers, setPendingUsers] = useState<UserProfileResponse[]>([]);
   const [memberLoading, setMemberLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const currentMember = members.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === 'OWNER';
 
+  // 검색 드롭다운 외부 클릭 닫기
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 검색어 변경 시 API 호출 (debounce)
+  useEffect(() => {
+    if (!memberSearchQuery.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchUsers(memberSearchQuery, accessToken);
+        // 이미 추가된 멤버 및 선택 대기 중인 유저 제외
+        const existingIds = new Set([
+          ...members.map((m) => m.userId).filter(Boolean),
+          ...pendingUsers.map((u) => u.id),
+        ]);
+        setSearchResults(results.filter((u) => !existingIds.has(u.id)));
+        setShowDropdown(true);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [memberSearchQuery]);
+
   function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault();
       const val = tagInput.trim();
       if (val && !tags.includes(val) && tags.length < 5) {
@@ -111,33 +155,43 @@ export default function OrganizationSettingsClient({
     }
   }
 
-  function handleAddPendingUsername() {
-    const val = memberSearch.trim();
-    if (val && !pendingUsernames.includes(val)) {
-      setPendingUsernames((prev) => [...prev, val]);
-      setMemberSearch('');
+  function selectUser(user: UserProfileResponse) {
+    if (!pendingUsers.find((u) => u.id === user.id)) {
+      setPendingUsers((prev) => [...prev, user]);
     }
+    setMemberSearchQuery('');
+    setShowDropdown(false);
+    setSearchResults([]);
   }
 
-  function removePendingUsername(username: string) {
-    setPendingUsernames((prev) => prev.filter((u) => u !== username));
+  function removePendingUser(userId: number) {
+    setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
   }
 
   async function handleMemberAdd() {
-    if (pendingUsernames.length === 0) return;
+    if (pendingUsers.length === 0) return;
     setMemberLoading(true);
     const errors: string[] = [];
     const added: OrganizationMemberResponse[] = [];
-    for (const username of pendingUsernames) {
+    for (const user of pendingUsers) {
+      const githubUsername = user.githubUrl?.split('/').pop();
+      if (!githubUsername) {
+        errors.push(user.name);
+        continue;
+      }
       try {
-        const newMember = await addOrganizationMember(detail.id, { githubUsername: username }, accessToken);
+        const newMember = await addOrganizationMember(
+          detail.id,
+          { githubUsername },
+          accessToken
+        );
         added.push(newMember);
       } catch {
-        errors.push(username);
+        errors.push(user.name);
       }
     }
     setMembers((prev) => [...prev, ...added]);
-    setPendingUsernames([]);
+    setPendingUsers([]);
     setMemberLoading(false);
     if (errors.length > 0) {
       alert(`추가 실패한 사용자: ${errors.join(', ')}`);
@@ -192,7 +246,6 @@ export default function OrganizationSettingsClient({
               </p>
 
               <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
-                {/* 조직 이름 */}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">조직 이름</label>
                   <input
@@ -204,7 +257,6 @@ export default function OrganizationSettingsClient({
                   />
                 </div>
 
-                {/* 조직 설명 */}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">조직 설명</label>
                   <textarea
@@ -216,7 +268,6 @@ export default function OrganizationSettingsClient({
                   />
                 </div>
 
-                {/* 태그 추가하기 */}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">태그 추가하기</label>
                   <input
@@ -245,7 +296,6 @@ export default function OrganizationSettingsClient({
                   </div>
                 </div>
 
-                {/* 조직 이미지 */}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">조직 이미지 (선택)</label>
                   <div
@@ -283,7 +333,6 @@ export default function OrganizationSettingsClient({
                   </div>
                 </div>
 
-                {/* 버튼 */}
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={() => {
@@ -338,7 +387,9 @@ export default function OrganizationSettingsClient({
                           </span>
                           <MemberRoleBadge role={member.role} />
                         </div>
-                        <p className="text-xs text-gray-400">({member.role === 'OWNER' ? 'OWNER' : member.role === 'ADMIN' ? 'ADMIN' : '멤버'})</p>
+                        <p className="text-xs text-gray-400">
+                          {member.role === 'OWNER' ? 'Owner' : member.role === 'ADMIN' ? 'Admin' : '멤버'}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -348,38 +399,77 @@ export default function OrganizationSettingsClient({
               {/* 멤버 추가하기 */}
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <p className="mb-3 text-sm font-semibold text-gray-700">조직 멤버 추가하기</p>
-                <div className="relative mb-3">
-                  <input
-                    type="text"
-                    value={memberSearch}
-                    onChange={(e) => setMemberSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddPendingUsername();
-                      }
-                    }}
-                    placeholder="내용을 입력해주세요"
-                    className="w-full rounded-lg border border-gray-200 py-2.5 pl-4 pr-10 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200"
-                  />
-                  <button
-                    onClick={handleAddPendingUsername}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
-                  >
-                    <Search className="h-4 w-4" />
-                  </button>
+
+                {/* 검색 입력 + 드롭다운 */}
+                <div className="relative mb-3" ref={searchRef}>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={memberSearchQuery}
+                      onChange={(e) => setMemberSearchQuery(e.target.value)}
+                      placeholder="이름을 입력하여 사용자를 검색하세요"
+                      className="w-full rounded-lg border border-gray-200 py-2.5 pl-4 pr-10 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {searchLoading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 검색 결과 드롭다운 */}
+                  {showDropdown && searchResults.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                      {searchResults.map((user) => (
+                        <button
+                          key={user.id}
+                          onClick={() => selectUser(user)}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
+                            {user.profileImage ? (
+                              <Image src={user.profileImage} alt={user.name} fill className="object-cover" unoptimized />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                                {user.name[0]}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                            {user.githubUrl && (
+                              <p className="text-xs text-gray-400">{user.githubUrl.split('/').pop()}</p>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {showDropdown && !searchLoading && memberSearchQuery.trim() && searchResults.length === 0 && (
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400 shadow-lg">
+                      검색 결과가 없습니다.
+                    </div>
+                  )}
                 </div>
 
-                {/* 추가 예정 사용자 태그 */}
-                {pendingUsernames.length > 0 && (
+                {/* 선택된 사용자 태그 */}
+                {pendingUsers.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-1.5">
-                    {pendingUsernames.map((username) => (
+                    {pendingUsers.map((user) => (
                       <span
-                        key={username}
-                        className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-xs text-gray-600"
+                        key={user.id}
+                        className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 pl-1 pr-2 py-0.5 text-xs text-gray-700"
                       >
-                        {username}
-                        <button onClick={() => removePendingUsername(username)} className="text-gray-400 hover:text-gray-700">
+                        {user.profileImage && (
+                          <div className="relative h-5 w-5 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
+                            <Image src={user.profileImage} alt={user.name} fill className="object-cover" unoptimized />
+                          </div>
+                        )}
+                        {user.name}
+                        <button onClick={() => removePendingUser(user.id)} className="text-gray-400 hover:text-gray-700">
                           <X className="h-3 w-3" />
                         </button>
                       </span>
@@ -389,14 +479,14 @@ export default function OrganizationSettingsClient({
 
                 <div className="flex justify-end gap-2 pt-1">
                   <button
-                    onClick={() => { setMemberSearch(''); setPendingUsernames([]); }}
+                    onClick={() => { setMemberSearchQuery(''); setPendingUsers([]); }}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     취소하기
                   </button>
                   <button
                     onClick={handleMemberAdd}
-                    disabled={memberLoading || pendingUsernames.length === 0}
+                    disabled={memberLoading || pendingUsers.length === 0}
                     className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-50"
                   >
                     {memberLoading ? '추가 중...' : '업로드하기'}
