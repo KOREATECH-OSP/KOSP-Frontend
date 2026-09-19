@@ -1,80 +1,92 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { User as UserIcon, Loader2 } from 'lucide-react';
 
 import {
   getFollowers,
-  getFollowing,
   getFollowSummary,
   followUser,
   unfollowUser,
 } from '@/lib/api/follow';
+import FollowListModal, { type FollowTab } from '@/common/components/FollowListModal';
 import type { FollowUserResponse } from '@/lib/api/types';
+
+/** 카드에 미리보기로 노출할 팔로워 수. */
+const PREVIEW_SIZE = 5;
 
 interface Props {
   /** 프로필 주인의 userId */
   profileUserId: number;
   /** 조회자(로그인)의 accessToken. 비로그인 시 null */
   accessToken: string | null;
-  /** 내 프로필을 보는 경우 (팔로우 버튼 숨김) */
+  /** 내 프로필을 보는 경우 (프로필 주인 대상 팔로우 버튼 숨김) */
   isMe: boolean;
 }
 
 /**
  * 팔로잉/팔로워 카드.
- * 팔로워/팔로잉 수와 팔로워 목록을 보여주고, 타인 프로필에서는 팔로우/언팔로우를 지원한다.
+ *
+ * 카드에는 요약(팔로워·팔로잉 수)과 팔로워 미리보기만 노출하고,
+ * '전체보기'를 누르면 팔로워/팔로잉 탭이 분리된 전체 목록 모달을 연다.
  */
 export default function FollowCard({ profileUserId, accessToken, isMe }: Props) {
   const [loading, setLoading] = useState(true);
-  const [followers, setFollowers] = useState<FollowUserResponse[]>([]);
+  const [preview, setPreview] = useState<FollowUserResponse[]>([]);
+  const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [modalTab, setModalTab] = useState<FollowTab | null>(null);
+
+  /**
+   * 카운트/미리보기 재조회.
+   * 카운트는 목록 길이가 아니라 서버 집계(follow-summary / 페이지 meta.totalItems)를 신뢰한다.
+   */
+  const refresh = useCallback(async () => {
+    const [followerPage, summary] = await Promise.all([
+      getFollowers(profileUserId, 0, PREVIEW_SIZE, accessToken).catch(() => null),
+      accessToken ? getFollowSummary(profileUserId, { accessToken }).catch(() => null) : null,
+    ]);
+
+    if (followerPage) {
+      setPreview(followerPage.users);
+      setFollowerCount(followerPage.meta?.totalItems ?? followerPage.users.length);
+    }
+    if (summary) {
+      setFollowerCount(summary.followerCount);
+      setFollowingCount(summary.followingCount);
+      if (!isMe) setIsFollowing(summary.isFollowing);
+    }
+  }, [profileUserId, accessToken, isMe]);
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [followerList, followingList] = await Promise.all([
-          getFollowers(profileUserId).catch(() => [] as FollowUserResponse[]),
-          getFollowing(profileUserId).catch(() => [] as FollowUserResponse[]),
-        ]);
-        if (cancelled) return;
-        setFollowers(followerList);
-        setFollowingCount(followingList.length);
-
-        if (accessToken && !isMe) {
-          const summary = await getFollowSummary(profileUserId, { accessToken }).catch(() => null);
-          if (!cancelled && summary) setIsFollowing(summary.isFollowing);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
+    setLoading(true);
+    refresh().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [profileUserId, accessToken, isMe]);
+  }, [refresh]);
 
+  /** 프로필 주인에 대한 팔로우/언팔로우 (타인 프로필에서만 노출). */
   const toggleFollow = async () => {
     if (!accessToken || busy) return;
     setBusy(true);
     const next = !isFollowing;
-    // 낙관적 업데이트
-    setIsFollowing(next);
-    setFollowers((prev) => prev); // 목록은 재조회로 갱신
+    setIsFollowing(next); // 낙관적 갱신
+    setFollowerCount((c) => Math.max(0, c + (next ? 1 : -1)));
     try {
       if (next) await followUser(profileUserId, { accessToken });
       else await unfollowUser(profileUserId, { accessToken });
-      const refreshed = await getFollowers(profileUserId).catch(() => followers);
-      setFollowers(refreshed);
+      await refresh();
     } catch {
-      setIsFollowing(!next); // 롤백
+      setIsFollowing(!next);
+      setFollowerCount((c) => Math.max(0, c + (next ? -1 : 1)));
     } finally {
       setBusy(false);
     }
@@ -84,17 +96,21 @@ export default function FollowCard({ profileUserId, accessToken, isMe }: Props) 
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">소셜</h3>
-        <Link href={`/user/${profileUserId}`} className="text-[11px] text-orange-500 hover:underline">
+        <button
+          type="button"
+          onClick={() => setModalTab('followers')}
+          className="text-[11px] text-orange-500 hover:underline"
+        >
           전체보기 →
-        </Link>
+        </button>
       </div>
       <div className="mb-3 flex gap-4 text-xs text-gray-500">
-        <span>
+        <button type="button" onClick={() => setModalTab('following')} className="hover:underline">
           <span className="font-semibold text-gray-900">{followingCount}</span> 팔로잉
-        </span>
-        <span>
-          <span className="font-semibold text-gray-900">{followers.length}</span> 팔로워
-        </span>
+        </button>
+        <button type="button" onClick={() => setModalTab('followers')} className="hover:underline">
+          <span className="font-semibold text-gray-900">{followerCount}</span> 팔로워
+        </button>
       </div>
 
       {!isMe && accessToken && (
@@ -127,11 +143,11 @@ export default function FollowCard({ profileUserId, accessToken, isMe }: Props) 
         <div className="flex justify-center py-4 text-gray-300">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
-      ) : followers.length === 0 ? (
+      ) : preview.length === 0 ? (
         <p className="py-3 text-center text-[11px] text-gray-400">아직 팔로워가 없습니다.</p>
       ) : (
         <ul className="space-y-3">
-          {followers.slice(0, 5).map((u) => (
+          {preview.map((u) => (
             <li key={u.userId}>
               <Link href={`/user/${u.userId}`} className="flex items-center gap-2 hover:opacity-80">
                 {u.profileImage ? (
@@ -148,10 +164,25 @@ export default function FollowCard({ profileUserId, accessToken, isMe }: Props) 
                   </div>
                 )}
                 <p className="truncate text-xs font-medium text-gray-800">{u.name}</p>
+                {u.displayTitleName && (
+                  <span className="ml-auto shrink-0 truncate rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                    {u.displayTitleName}
+                  </span>
+                )}
               </Link>
             </li>
           ))}
         </ul>
+      )}
+
+      {modalTab && (
+        <FollowListModal
+          profileUserId={profileUserId}
+          accessToken={accessToken}
+          initialTab={modalTab}
+          onClose={() => setModalTab(null)}
+          onFollowChanged={refresh}
+        />
       )}
     </div>
   );
