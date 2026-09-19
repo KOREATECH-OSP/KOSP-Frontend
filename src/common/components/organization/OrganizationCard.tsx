@@ -1,55 +1,87 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Building2 } from 'lucide-react';
+import { Building2, Share2, Heart } from 'lucide-react';
 import type { OrganizationResponse } from '@/lib/api/organization';
-import OrganizationStatusBadge from './OrganizationStatusBadge';
 
 interface OrganizationCardProps {
   organization: OrganizationResponse;
+  fromTab?: 'all' | 'mine';
 }
 
-export default function OrganizationCard({ organization }: OrganizationCardProps) {
+export default function OrganizationCard({ organization, fromTab = 'all' }: OrganizationCardProps) {
+  const tags = organization.tags
+    ? organization.tags.split(',').map((t) => t.trim()).filter(Boolean)
+    : [];
+
   return (
-    <Link
-      href={`/organization/${organization.id}`}
-      className="group flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-4 sm:p-5 transition-all duration-300 hover:shadow-md hover:border-gray-300"
-    >
-      <div className="flex items-start gap-3 sm:gap-4">
-        {/* 아바타 */}
-        <div className="relative h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
-          {organization.avatarUrl ? (
-            <Image
-              src={organization.avatarUrl}
-              alt={organization.displayName}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-gray-400">
-              <Building2 className="h-6 w-6 sm:h-7 sm:w-7" />
-            </div>
+    <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col gap-3">
+      {/* 상단: 아바타 + 이름 + 공유/찜 */}
+      <div className="flex items-start gap-3">
+        <Link href={`/organization/${organization.id}?from=${fromTab}`} className="flex-shrink-0">
+          <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
+            {organization.avatarUrl ? (
+              <Image
+                src={organization.avatarUrl}
+                alt={organization.displayName}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-gray-400">
+                <Building2 className="h-5 w-5" />
+              </div>
+            )}
+          </div>
+        </Link>
+
+        <div className="min-w-0 flex-1">
+          <Link href={`/organization/${organization.id}?from=${fromTab}`}>
+            <p className="truncate text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors">
+              {organization.displayName}
+            </p>
+          </Link>
+          {organization.description && (
+            <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">{organization.description}</p>
           )}
         </div>
 
-        {/* 조직명 + 상태 */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <h3 className="truncate text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-              {organization.displayName}
-            </h3>
-            <OrganizationStatusBadge status={organization.status} />
-          </div>
-          <p className="mt-1 truncate text-sm text-gray-500">
-            github.com/{organization.githubOrgName}
-          </p>
+        {/* 공유하기 / 찜하기 (UI만, 기능 보류) */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            title="공유하기"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            공유하기
+          </button>
+          <button
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+            title="찜하기"
+          >
+            <Heart className="h-3.5 w-3.5" />
+            찜하기
+          </button>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-end border-t border-gray-50 pt-3">
-        <span className="text-xs font-medium text-blue-600 group-hover:underline">
-          상세보기 →
-        </span>
+      {/* 구분선 */}
+      <div className="border-t border-gray-100" />
+
+      {/* 태그 */}
+      <div className="flex flex-wrap gap-1.5 min-h-[24px]">
+        {tags.length > 0 ? (
+          tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-600"
+            >
+              #{tag}
+            </span>
+          ))
+        ) : (
+          <span className="text-xs text-gray-300">태그 없음</span>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }

@@ -13,6 +13,8 @@ export interface OrganizationResponse {
   githubOrgName: string;
   displayName: string;
   avatarUrl: string | null;
+  description: string | null;
+  tags: string | null;
   status: 'ACTIVE' | 'PENDING' | 'DISCONNECTED';
   createdAt: string;
 }
@@ -22,6 +24,8 @@ export interface OrganizationDetailResponse {
   githubOrgName: string;
   displayName: string;
   avatarUrl: string | null;
+  description: string | null;
+  tags: string | null;
   status: 'ACTIVE' | 'PENDING' | 'DISCONNECTED';
   totalMemberCount: number;
   linkedMemberCount: number;
@@ -31,6 +35,16 @@ export interface OrganizationDetailResponse {
 
 export interface OrganizationRegisterRequest {
   githubOrgId: number;
+}
+
+export interface OrganizationUpdateRequest {
+  displayName: string;
+  description: string;
+  tags: string;
+}
+
+export interface OrganizationAddMemberRequest {
+  githubUsername: string;
 }
 
 export interface OrganizationMemberResponse {
@@ -74,6 +88,21 @@ export interface AdminOrganizationRepoResponse {
 }
 
 /**
+ * 전체 조직 목록 조회 (로그인 사용자 - 모든 활성 조직)
+ * Server Component에서 호출 가능 (apiClient 사용)
+ */
+export async function getAllOrganizations(
+  accessToken: string,
+  search?: string
+): Promise<OrganizationResponse[]> {
+  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  return apiClient<OrganizationResponse[]>(`/v1/organizations${params}`, {
+    cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
  * 등록 가능한 조직 목록 조회 (GitHub Owner 권한 보유 조직)
  * Server Component에서 호출 가능 (apiClient 사용)
  */
@@ -102,7 +131,7 @@ export async function registerOrganization(
 }
 
 /**
- * 내가 등록한 조직 목록 조회
+ * 내가 속한 조직 목록 조회
  * Server Component에서 호출 가능 (apiClient 사용)
  */
 export async function getMyOrganizations(
@@ -129,7 +158,23 @@ export async function getOrganizationDetail(
 }
 
 /**
- * 조직 멤버 목록 조회 (조직 등록자 전용)
+ * 조직 정보 수정 (Owner만 가능)
+ * Client Component 전용 (clientApiClient 사용)
+ */
+export async function updateOrganization(
+  id: number,
+  data: OrganizationUpdateRequest,
+  accessToken: string
+): Promise<void> {
+  await clientApiClient<void>(`/v1/organizations/${id}`, {
+    method: 'PATCH',
+    body: data,
+    accessToken,
+  });
+}
+
+/**
+ * 조직 멤버 목록 조회 (조직 Owner/Admin 전용)
  */
 export async function getOrganizationMembers(
   id: number,
@@ -137,6 +182,22 @@ export async function getOrganizationMembers(
 ): Promise<OrganizationMemberResponse[]> {
   return apiClient<OrganizationMemberResponse[]>(`/v1/organizations/${id}/members`, {
     cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
+ * 조직 멤버 추가 (Owner/Admin만 가능)
+ * Client Component 전용 (clientApiClient 사용)
+ */
+export async function addOrganizationMember(
+  orgId: number,
+  data: OrganizationAddMemberRequest,
+  accessToken: string
+): Promise<OrganizationMemberResponse> {
+  return clientApiClient<OrganizationMemberResponse>(`/v1/organizations/${orgId}/members`, {
+    method: 'POST',
+    body: data,
     accessToken,
   });
 }

@@ -1,16 +1,32 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/server';
-import { getMyOrganizations } from '@/lib/api/organization';
+import { getAllOrganizations, getMyOrganizations } from '@/lib/api/organization';
 import OrganizationPageClient from './OrganizationPageClient';
 
-export default async function OrganizationPage() {
+interface PageProps {
+  searchParams: Promise<{ tab?: string }>;
+}
+
+export default async function OrganizationPage({ searchParams }: PageProps) {
+  const { tab } = await searchParams;
+  const activeTab = tab === 'mine' ? 'mine' : 'all';
+
   const session = await auth();
 
   if (!session) {
     redirect('/login?callbackUrl=/organization');
   }
 
-  const organizations = await getMyOrganizations(session.accessToken);
+  const [allOrgs, myOrgs] = await Promise.all([
+    getAllOrganizations(session.accessToken).catch(() => []),
+    getMyOrganizations(session.accessToken).catch(() => []),
+  ]);
 
-  return <OrganizationPageClient initialOrganizations={organizations} />;
+  return (
+    <OrganizationPageClient
+      allOrganizations={allOrgs}
+      myOrganizations={myOrgs}
+      activeTab={activeTab}
+    />
+  );
 }
