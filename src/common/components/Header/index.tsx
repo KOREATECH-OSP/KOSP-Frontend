@@ -57,6 +57,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
   const navItems = [
     { href: "/community", label: "커뮤니티" },
     { href: "/team", label: "팀게시판" },
+    { href: "/organization", label: "조직" },
     { href: "/challenge", label: "챌린지" },
     { href: "/ranking", label: "랭킹" },
   ];
