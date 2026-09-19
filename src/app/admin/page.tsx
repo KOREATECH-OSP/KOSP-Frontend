@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Loader2, ChevronRight } from 'lucide-react';
-import { getAdminUsers, getRoles, getPolicies, getPermissions, runSeasonRankingBatch } from '@/lib/api/admin';
+import { getAdminUsers, getRoles, getPolicies, getPermissions } from '@/lib/api/admin';
 import { toast } from '@/lib/toast';
 import type { AdminUserResponse } from '@/types/admin';
 
@@ -27,8 +27,6 @@ export default function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState<AdminUserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [batchRunning, setBatchRunning] = useState(false);
-
   const fetchDashboardData = useCallback(async () => {
     if (!session?.accessToken) return;
 
@@ -69,19 +67,6 @@ export default function AdminDashboard() {
       fetchDashboardData();
     }
   }, [session?.accessToken, fetchDashboardData]);
-
-  const handleRunRankingBatch = async () => {
-    if (!session?.accessToken) return;
-    setBatchRunning(true);
-    try {
-      await runSeasonRankingBatch({ accessToken: session.accessToken });
-      toast.success('시즌 랭킹 배치가 실행되었습니다.');
-    } catch {
-      toast.error('랭킹 배치 실행에 실패했습니다.');
-    } finally {
-      setBatchRunning(false);
-    }
-  };
 
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
@@ -174,25 +159,6 @@ export default function AdminDashboard() {
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
             <div className="mb-1 text-sm text-gray-500">권한</div>
             <div className="text-2xl font-bold text-gray-900">{stats.totalPermissions}</div>
-          </div>
-        </div>
-
-        {/* 시즌 관리 */}
-        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">시즌 관리</h2>
-            <p className="text-sm text-gray-500">시즌 랭킹 배치를 수동으로 실행합니다</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRunRankingBatch}
-              disabled={batchRunning}
-              className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {batchRunning && <Loader2 className="h-4 w-4 animate-spin" />}
-              랭킹 배치 강제 실행
-            </button>
-            <p className="text-xs text-gray-400">커밋·챌린지 점수 재계산 → 순위 갱신 → 티어 적용</p>
           </div>
         </div>
 

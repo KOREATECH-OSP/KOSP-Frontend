@@ -21,6 +21,12 @@ import RankBadge from '@/common/components/RankBadge';
 
 type TabType = 'season' | 'github';
 
+function maskName(name: string): string {
+  if (!name || name.length <= 1) return name;
+  if (name.length === 2) return name[0] + '*';
+  return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
+}
+
 // ─── Tier Badge ────────────────────────────────────────────────────────────────
 
 function SeasonTierBadge({ tier }: { tier: string }) {
@@ -112,7 +118,7 @@ function RankingCriteriaModal({ tab, onClose }: { tab: TabType; onClose: () => v
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-base font-bold text-gray-900">{isGithub ? '전체 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}</h2>
+          <h2 className="text-base font-bold text-gray-900">{isGithub ? '깃허브 랭킹 기준 안내' : '시즌 랭킹 기준 안내'}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><X className="h-5 w-5" /></button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
@@ -301,7 +307,7 @@ function PodiumItem({ entry, type }: { entry: AnyEntry; type: TabType }) {
           href={`/user/${entry.userId}`}
           className={`font-bold text-gray-800 hover:text-blue-600 truncate max-w-[100px] text-center ${isFirst ? 'text-base' : 'text-sm'}`}
         >
-          {entry.userName || '이름 없음'}
+          {maskName(entry.userName) || '이름 없음'}
         </Link>
         <p className={`text-gray-400 ${isFirst ? 'text-xs font-semibold text-[#f0a800]' : 'text-[11px]'}`}>
           {type === 'season'
@@ -358,7 +364,7 @@ function SeasonRankRow({ entry, isMe }: { entry: SeasonRankingEntry; isMe: boole
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="truncate text-sm font-semibold text-gray-800">
-                {entry.userName}
+                {maskName(entry.userName)}
               </span>
               {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
             </div>
@@ -390,7 +396,7 @@ function GithubRankRow({ entry, isMe }: { entry: GithubRankingEntry; isMe: boole
           )}
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="truncate text-sm font-semibold text-gray-800">
-              {entry.userName}
+              {maskName(entry.userName)}
             </span>
             {isMe && <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">나</span>}
           </div>
@@ -431,6 +437,7 @@ export default function RankingPageClient({
   const [search, setSearch] = useState('');
   const [showCriteria, setShowCriteria] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const filteredSeasonEntries = useMemo(() => {
     if (!search.trim()) return seasonRankings.rankings;
@@ -446,20 +453,26 @@ export default function RankingPageClient({
 
   const handleSeasonPageChange = async (page: number) => {
     setIsLoading(true);
+    setPageError(null);
     try {
       const data = await apiClient<SeasonRankingListResponse>(`/v1/seasons/current/rankings?page=${page - 1}&size=10`, { cache: 'no-store' });
       setSeasonRankings(data); setSeasonPage(page); setSearch('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch { /* 실패 시 현재 페이지 유지 */ } finally { setIsLoading(false); }
+    } catch {
+      setPageError('랭킹 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally { setIsLoading(false); }
   };
 
   const handleGithubPageChange = async (page: number) => {
     setIsLoading(true);
+    setPageError(null);
     try {
       const data = await apiClient<GithubRankingListResponse>(`/v1/github/rankings?page=${page - 1}&size=10`, { cache: 'no-store' });
       setGithubRankings(data); setGithubPage(page); setSearch('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch { /* 실패 시 현재 페이지 유지 */ } finally { setIsLoading(false); }
+    } catch {
+      setPageError('랭킹 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally { setIsLoading(false); }
   };
 
   const top3: AnyEntry[] = activeTab === 'season'
@@ -487,7 +500,7 @@ export default function RankingPageClient({
             <div className="flex lg:flex-col gap-1">
               {([
                 { key: 'season', label: '시즌 랭킹' },
-                { key: 'github', label: '전체 랭킹' },
+                { key: 'github', label: '깃허브 랭킹' },
               ] as { key: TabType; label: string }[]).map(({ key, label }) => (
                 <button
                   key={key}
@@ -512,7 +525,7 @@ export default function RankingPageClient({
       <div className="mb-5 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">
-            {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
+            {activeTab === 'season' ? '시즌 랭킹' : '깃허브 랭킹'}
           </h1>
           <p className="mt-1.5 text-sm text-gray-500">
             {activeTab === 'season'
@@ -555,7 +568,7 @@ export default function RankingPageClient({
         {/* 카드 헤더: 탭 이름 + 총 인원 */}
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-sm font-semibold text-gray-900">
-            {activeTab === 'season' ? '시즌 랭킹' : '전체 랭킹'}
+            {activeTab === 'season' ? '시즌 랭킹' : '깃허브 랭킹'}
           </h2>
           {totalCount > 0 && (
             <span className="text-xs text-gray-400">총 {totalCount.toLocaleString()}명</span>
@@ -578,6 +591,14 @@ export default function RankingPageClient({
             />
           </div>
         </div>
+
+        {/* 페이지 에러 메시지 */}
+        {pageError && (
+          <div className="mx-5 mb-3 flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+            <Info className="h-4 w-4 shrink-0" />
+            {pageError}
+          </div>
+        )}
 
         {/* 테이블 헤더 */}
         <div className="grid grid-cols-[48px_1fr_130px_90px] gap-3 border-t border-gray-100 bg-gray-50 px-5 py-2.5">
@@ -630,8 +651,8 @@ export default function RankingPageClient({
             {'<'}
           </button>
 
-          {/* 1~5 고정 페이지 번호 */}
-          {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((page) => (
+          {/* 실제 페이지 수 기반 번호 (최대 TOTAL_PAGES개) */}
+          {Array.from({ length: Math.min(TOTAL_PAGES, totalPages) }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => handlePageChange(page)}

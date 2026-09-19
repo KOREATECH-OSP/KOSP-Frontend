@@ -958,7 +958,7 @@ export interface MySeasonRankingResponse {
   endDate: string; // "YYYY-MM-DD"
   rank: number;
   totalScore: number;
-  tier: string; // e.g. "BRONZE_4", "SILVER_2", "CHALLENGER"
+  tier: string; // e.g. "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "CHALLENGER"
   attendanceScore: number;
   commitScore: number;
   challengeScore: number;
@@ -1010,7 +1010,7 @@ export interface SeasonRankingEntry {
   userName: string;
   profileImageUrl: string | null;
   totalScore: number;
-  tier: string; // e.g. "BRONZE_4", "GOLD_2", "CHALLENGER"
+  tier: string; // e.g. "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "CHALLENGER"
 }
 
 /**

@@ -6,10 +6,12 @@ import OrganizationDetailClient from './OrganizationDetailClient';
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }
 
-export default async function OrganizationDetailPage({ params }: PageProps) {
+export default async function OrganizationDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { from } = await searchParams;
   const orgId = parseInt(id, 10);
 
   if (isNaN(orgId)) {
@@ -44,6 +46,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
       repos={repos}
       currentUserId={parseInt(session.user.id, 10)}
       accessToken={session.accessToken}
+      fromTab={from === 'mine' ? 'mine' : 'all'}
     />
   );
 }

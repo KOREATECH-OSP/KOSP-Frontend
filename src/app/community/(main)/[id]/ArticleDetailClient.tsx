@@ -75,6 +75,21 @@ export default function ArticleDetailClient({
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = bottomBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--bottom-bar-height', `${el.offsetHeight}px`);
+    });
+    observer.observe(el);
+    document.documentElement.style.setProperty('--bottom-bar-height', `${el.offsetHeight}px`);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.setProperty('--bottom-bar-height', '0px');
+    };
+  }, []);
 
   const isMine = currentUserId === article.author.id;
 
@@ -584,7 +599,7 @@ export default function ArticleDetailClient({
       </section>
 
       {/* Mobile Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-2.5 safe-area-bottom lg:hidden">
+      <div ref={bottomBarRef} className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-2.5 safe-area-bottom lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around">
           <button
             onClick={handleLike}

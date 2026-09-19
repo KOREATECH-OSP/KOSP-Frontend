@@ -554,3 +554,21 @@ export async function getMyApplications(
     }
   );
 }
+
+
+/**
+ * 사용자 이름 검색 (최대 10명)
+ */
+export async function searchUsers(
+  q: string,
+  accessToken: string
+): Promise<UserProfileResponse[]> {
+  return clientApiClient<UserProfileResponse[]>(
+    `/v1/users/search?q=${encodeURIComponent(q)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+}
