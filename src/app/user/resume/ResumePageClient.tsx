@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, type KeyboardEvent } from 'react';
+import { useState, useEffect, useCallback, useMemo, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
@@ -31,6 +31,8 @@ import {
   EyeOff,
 } from 'lucide-react';
 import PdfDownloadButton from '@/common/components/PdfDownloadButton';
+import PdfPreviewButton from '@/common/components/PdfPreviewButton';
+import type { HwpxSource } from '@/common/components/PdfPreviewModal';
 import {
   LAST_RESUME_MESSAGE,
   JOB_ROLE_PRESETS,
@@ -116,6 +118,21 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
   const accessToken = session.accessToken ?? null;
   const userId = session.user?.id ? parseInt(session.user.id, 10) : null;
   const searchParams = useSearchParams();
+
+  /**
+   * 한글 내려받기 대상.
+   *
+   * <p>서버가 만드는 파일이므로 <b>저장된 내용</b> 기준이다. 아직 저장하지 않은 편집 중
+   * 변경은 반영되지 않는다. 이력서가 아직 생성되지 않았거나(resumeId 없음) 비로그인이면
+   * undefined 를 넘겨 버튼 자체를 감춘다.</p>
+   */
+  const hwpxSource = useMemo<HwpxSource | undefined>(
+    () =>
+      resumeId != null && accessToken
+        ? { kind: 'mine', resumeId, accessToken }
+        : undefined,
+    [resumeId, accessToken],
+  );
 
   // ── localStorage 기반 편집 상태 ──────────────────────────────
   const {
@@ -849,11 +866,19 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
               {isPublic ? '공개' : '비공개'}
             </button>
           </div>
-          <PdfDownloadButton
-            targetId="resume-print-area"
-            fileName={resumeTitle || '이력서'}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-orange-400 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-500 disabled:opacity-60"
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <PdfPreviewButton
+              targetId="resume-print-area"
+              fileName={resumeTitle || '이력서'}
+              hwpxSource={hwpxSource}
+              className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
+            />
+            <PdfDownloadButton
+              targetId="resume-print-area"
+              fileName={resumeTitle || '이력서'}
+              className="flex items-center gap-2 rounded-xl bg-orange-400 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-500 disabled:opacity-60"
+            />
+          </div>
         </div>
 
         {/* 인쇄 시에만 표시되는 이력서 제목 */}
@@ -1629,6 +1654,12 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
             편집 중인 내용은 브라우저에 임시저장되며, 저장하기 버튼으로 서버에 반영됩니다.
           </p>
           <div className="flex items-center gap-3 ml-auto">
+            <PdfPreviewButton
+              targetId="resume-print-area"
+              fileName={resumeTitle || '이력서'}
+              hwpxSource={hwpxSource}
+              className="print:hidden flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
+            />
             <PdfDownloadButton
               targetId="resume-print-area"
               fileName={resumeTitle || '이력서'}
