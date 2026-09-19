@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, Menu, Transition } from '@headlessui/react';
 import { signOutOnce } from '@/lib/auth/signout';
@@ -17,7 +17,6 @@ export interface HeaderProps {
 }
 
 function Header({ simple = false, session = null }: HeaderProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
@@ -25,35 +24,40 @@ function Header({ simple = false, session = null }: HeaderProps) {
   const isLoggedIn = Boolean(session?.user);
   const displayName = session?.user?.name ?? '';
   const canAccessAdmin = session?.canAccessAdmin ?? false;
-  const handleMyInfo = () => {
-    setMobileProfileOpen(false);
-    router.push('/user');
-  };
-  const handleNotification = () => {
-    setMobileProfileOpen(false);
-    router.push('/notification');
-  };
+
   const handleLogout = () => {
-    setMobileMenuOpen(false);
-    setMobileProfileOpen(false);
+    closeMobileMenus();
     signOutOnce({ callbackUrl: '/' });
   };
-  const handleResume = () => {
+
+  /** 모바일 드로어와 그 안의 프로필 아코디언을 함께 닫는다. */
+  function closeMobileMenus() {
+    setMobileMenuOpen(false);
     setMobileProfileOpen(false);
-    router.push('/user/resume');
-  };
-  const profileActions = isLoggedIn
+  }
+
+  /**
+   * 프로필 메뉴 항목.
+   *
+   * <p><b>데스크톱 드롭다운과 모바일 햄버거가 이 배열 하나를 함께 쓴다.</b>
+   * 예전에는 '내 조직'·'관리자'가 양쪽 JSX에 따로 하드코딩돼 있고, 데스크톱은
+   * 필터링한 목록을 모바일은 전체 목록을 쓰는 바람에 순서가 어긋나고
+   * 한쪽에만 항목이 추가되는 일이 생겼다. 항목을 늘리려면 여기만 고치면 된다.</p>
+   *
+   * <p>{@code href} 가 있으면 링크로, {@code action} 이 있으면 버튼으로 그린다.</p>
+   */
+  const profileMenuItems: { label: string; href?: string; action?: () => void }[] = isLoggedIn
     ? [
-      { label: "내 정보", action: handleMyInfo },
-      { label: "이력서", action: handleResume },
-      { label: "알림", action: handleNotification },
+      { label: "내 정보", href: "/user" },
+      // 이력서는 포트폴리오 안에서만 관리한다. 헤더의 별도 '이력서' 항목은 '포트폴리오'로 대체했다.
+      { label: "포트폴리오", href: "/user?tab=포트폴리오" },
+      { label: "내 조직", href: "/organization" },
+      ...(canAccessAdmin ? [{ label: "관리자", href: "/admin" }] : []),
+      { label: "알림", href: "/notification" },
       { label: "로그아웃", action: handleLogout },
     ]
     : [];
-  // 데스크탑 드롭다운에서 Link로 처리하는 항목은 버튼 루프에서 제외
-  const profileActionButtons = profileActions.filter(
-    ({ label }) => label !== "내 정보" && label !== "이력서"
-  );
+
   const navItems = [
     { href: "/community", label: "커뮤니티" },
     { href: "/team", label: "팀게시판" },
@@ -136,64 +140,21 @@ function Header({ simple = false, session = null }: HeaderProps) {
                         >
                           <Menu.Items className="absolute right-0 mt-2 w-40 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
                             <div className="py-2">
-                              <Menu.Item key="내 정보">
-                                {({ active }) => (
-                                  <Link
-                                    href="/user"
-                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                      }`}
-                                  >
-                                    내 정보
-                                  </Link>
-                                )}
-                              </Menu.Item>
-                              <Menu.Item key="이력서">
-                                {({ active }) => (
-                                  <Link
-                                    href="/user/resume"
-                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                      }`}
-                                  >
-                                    이력서
-                                  </Link>
-                                )}
-                              </Menu.Item>
-                              <Menu.Item key="내 조직">
-                                {({ active }) => (
-                                  <Link
-                                    href="/organization"
-                                    className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                      }`}
-                                  >
-                                    내 조직
-                                  </Link>
-                                )}
-                              </Menu.Item>
-                              {canAccessAdmin && (
-                                <Menu.Item key="관리자">
-                                  {({ active }) => (
-                                    <Link
-                                      href="/admin"
-                                      className={`block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                        }`}
-                                    >
-                                      관리자
-                                    </Link>
-                                  )}
-                                </Menu.Item>
-                              )}
-                              {profileActionButtons.map(({ label, action }) => (
+                              {profileMenuItems.map(({ label, href, action }) => (
                                 <Menu.Item key={label}>
-                                  {({ active }) => (
-                                    <button
-                                      type="button"
-                                      onClick={action}
-                                      className={`w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
-                                        }`}
-                                    >
-                                      {label}
-                                    </button>
-                                  )}
+                                  {({ active }) => {
+                                    const itemClass = `block w-full text-left px-4 py-2 text-sm font-medium ${active ? "text-gray-900 bg-gray-50" : "text-gray-600"
+                                      }`;
+                                    return href ? (
+                                      <Link href={href} className={itemClass}>
+                                        {label}
+                                      </Link>
+                                    ) : (
+                                      <button type="button" onClick={action} className={itemClass}>
+                                        {label}
+                                      </button>
+                                    );
+                                  }}
                                 </Menu.Item>
                               ))}
                             </div>
@@ -220,7 +181,12 @@ function Header({ simple = false, session = null }: HeaderProps) {
                   className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-gray-100 transition-colors touch-feedback"
                   aria-label="모바일 메뉴 열기"
                   aria-expanded={mobileMenuOpen}
-                  onClick={() => setMobileMenuOpen(true)}
+                  onClick={() => {
+                    // 프로필 항목을 펼친 채로 연다. 접힌 채로 열면 데스크톱에서 보이던
+                    // '내 정보 / 포트폴리오 …' 가 한 단계 더 눌러야 나와서 없는 것처럼 보인다.
+                    setMobileMenuOpen(true);
+                    setMobileProfileOpen(true);
+                  }}
                 >
                   <div className="flex flex-col gap-1.5">
                     <span className="block w-5 h-0.5 bg-gray-700 rounded-full" />
@@ -342,41 +308,25 @@ function Header({ simple = false, session = null }: HeaderProps) {
                           >
                             <div className="absolute bottom-full left-0 right-0 mb-3 rounded-2xl border border-gray-100 bg-white shadow-xl">
                               <ul className="py-2">
-                                <li>
-                                  <Link
-                                    href="/organization"
-                                    onClick={() => {
-                                      setMobileProfileOpen(false);
-                                      setMobileMenuOpen(false);
-                                    }}
-                                    className="block w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                                  >
-                                    내 조직
-                                  </Link>
-                                </li>
-                                {canAccessAdmin && (
-                                  <li>
-                                    <Link
-                                      href="/admin"
-                                      onClick={() => {
-                                        setMobileProfileOpen(false);
-                                        setMobileMenuOpen(false);
-                                      }}
-                                      className="block w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                                    >
-                                      관리자
-                                    </Link>
-                                  </li>
-                                )}
-                                {profileActions.map(({ label, action }) => (
+                                {profileMenuItems.map(({ label, href, action }) => (
                                   <li key={label}>
-                                    <button
-                                      type="button"
-                                      onClick={action}
-                                      className="w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                                    >
-                                      {label}
-                                    </button>
+                                    {href ? (
+                                      <Link
+                                        href={href}
+                                        onClick={closeMobileMenus}
+                                        className="block w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                      >
+                                        {label}
+                                      </Link>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={action}
+                                        className="w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                      >
+                                        {label}
+                                      </button>
+                                    )}
                                   </li>
                                 ))}
                               </ul>
