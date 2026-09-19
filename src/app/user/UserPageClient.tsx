@@ -1046,8 +1046,8 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                             </div>
                           </div>
 
-                          {/* 본문: 제목 + 진행 바 (클릭 시 편집 진입) */}
-                          <button type="button" onClick={() => handleSelectResumePreview(r.resumeId)} className="flex-1 text-left">
+                          {/* 본문: 제목 + 진행 바 (클릭 시 해당 이력서로 이동) */}
+                          <button type="button" onClick={openEditor} className="flex-1 text-left">
                             <p className={`text-sm font-semibold ${r.resumeTitle ? 'text-gray-900' : 'text-gray-400'}`}>
                               {r.resumeTitle || '제목을 입력하세요'}
                               {r.isDefault && (
@@ -1080,9 +1080,21 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                                 {r.isPublic ? '공개' : '비공개'}
                               </span>
                             </button>
-                            <span className="text-[11px] text-gray-400">
-                              {r.updatedAt?.slice(0, 10).replace(/-/g, '.')}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {/* 카드 본문 클릭은 이동이므로, 아래쪽 인라인 미리보기 전환은 여기서 한다. */}
+                              <button
+                                type="button"
+                                onClick={() => handleSelectResumePreview(r.resumeId)}
+                                disabled={selectedResumeId === r.resumeId}
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 transition hover:text-gray-600 disabled:opacity-40"
+                              >
+                                <Eye className="h-3 w-3" />
+                                {selectedResumeId === r.resumeId ? '미리보는 중' : '미리보기'}
+                              </button>
+                              <span className="text-[11px] text-gray-400">
+                                {r.updatedAt?.slice(0, 10).replace(/-/g, '.')}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
