@@ -43,7 +43,7 @@ function ProjectPdfList({ projects }: { projects: ResumeData['projects'] }) {
   return (
     <div className="space-y-5">
       {projects.map((proj, i) => (
-        <div key={proj.id ?? i}>
+        <div key={proj.id ?? i} data-pdf-cut>
           {i > 0 && <Divider />}
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-semibold text-gray-900">{proj.name}</p>
@@ -205,7 +205,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="링크">
           <div className="space-y-2">
             {data.links.map((link, i) => (
-              <div key={link.id ?? i} className="flex items-center gap-2">
+              <div key={link.id ?? i} data-pdf-cut className="flex items-center gap-2">
                 <span className="w-20 shrink-0 text-xs text-gray-400">{link.label || '링크'}</span>
                 {link.url ? (
                   <a href={link.url} target="_blank" rel="noopener noreferrer"
@@ -227,7 +227,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="학력">
           <div className="space-y-4">
             {data.education.filter((e) => e.school).map((edu, i) => (
-              <div key={edu.id ?? i}>
+              <div key={edu.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <p className="text-sm font-semibold text-gray-900">{edu.school}</p>
                 {edu.major && <p className="mt-0.5 text-sm text-gray-500">{edu.major}</p>}
@@ -243,7 +243,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="경력">
           <div className="space-y-4">
             {data.career.filter((c) => c.company).map((c, i) => (
-              <div key={c.id ?? i}>
+              <div key={c.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <p className="text-sm font-semibold text-gray-900">{c.company}</p>
                 {c.role && <p className="mt-0.5 text-sm text-gray-500">{c.role}</p>}
@@ -274,7 +274,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="교육이력">
           <div className="space-y-4">
             {data.experience.filter((e) => e.title).map((exp, i) => (
-              <div key={exp.id ?? i}>
+              <div key={exp.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-900">{exp.title}</p>
@@ -294,7 +294,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="수상이력">
           <div className="space-y-4">
             {data.awards.filter((a) => a.name).map((award, i) => (
-              <div key={award.id ?? i}>
+              <div key={award.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-900">{award.name}</p>
@@ -315,7 +315,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="자격증">
           <div className="space-y-3">
             {data.certifications.filter((c) => c.name).map((cert, i) => (
-              <div key={cert.id ?? i} className="flex items-center justify-between">
+              <div key={cert.id ?? i} data-pdf-cut className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{cert.name}</p>
                   {cert.organization && <p className="text-xs text-gray-500">{cert.organization}</p>}
@@ -339,7 +339,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="자기소개서">
           <div className="space-y-6">
             {data.coverLetters.filter((cl) => cl.content).map((cl, i) => (
-              <div key={cl.id ?? i}>
+              <div key={cl.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 {cl.title && <p className="mb-2 text-sm font-semibold text-gray-900">{cl.title}</p>}
                 <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
@@ -352,11 +352,13 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 커스텀 섹션 ─────────────────────────────────── */}
-      {data.customSections?.filter((s) => s.title && s.fields.some((f) => f.label || f.value)).map((section) => (
+      {/* fields 는 서버 검증이 없어 null/누락 상태로 저장될 수 있다.
+          이 컴포넌트는 화면 렌더와 PDF 캡처 대상을 겸하므로, 여기서 터지면 페이지 전체가 죽는다. */}
+      {data.customSections?.filter((s) => s.title && s.fields?.some((f) => f.label || f.value)).map((section) => (
         <Section key={section.id} title={section.title}>
           <div className="space-y-2">
-            {section.fields.filter((f) => f.label || f.value).map((field) => (
-              <div key={field.id} className="flex items-start gap-3">
+            {section.fields?.filter((f) => f.label || f.value).map((field) => (
+              <div key={field.id} data-pdf-cut className="flex items-start gap-3">
                 {field.label && (
                   <span className="w-24 shrink-0 text-xs font-medium text-gray-500 pt-0.5">{field.label}</span>
                 )}
