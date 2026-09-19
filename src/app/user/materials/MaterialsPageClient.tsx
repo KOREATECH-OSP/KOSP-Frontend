@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Fragment } from 'react';
+import { useState, useEffect, useCallback, Fragment, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Folder,
@@ -107,6 +107,52 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
   >(null);
 
   const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
+
+  /**
+   * 실제로 남에게 보이는 폴더 id 집합.
+   *
+   * <p>백엔드 {@code MaterialService.resolvePublicFolderIds} 와 같은 규칙이다:
+   * <b>폴더 자신이 PUBLIC 이고 루트까지의 모든 상위 폴더도 PUBLIC</b> 일 때만 공개다.
+   * 비공개가 항상 이긴다 — 비공개 폴더 안의 자료는 개별 공개로 지정해도 노출되지 않는다.</p>
+   *
+   * <p>응답 DTO 에 "실효 공개 여부" 필드가 없어서 프론트가 직접 계산한다.
+   * 서버가 판정 필드를 내려주게 되면 이 계산은 지워도 된다.</p>
+   */
+  const publicFolderIds = useMemo(() => {
+    const byId = new Map(folders.map((f) => [f.id, f]));
+    const resolved = new Map<number, boolean>();
+
+    const isChainPublic = (folder: MaterialFolderResponse): boolean => {
+      const cached = resolved.get(folder.id);
+      if (cached !== undefined) return cached;
+
+      let current: MaterialFolderResponse | undefined = folder;
+      let ok = true;
+      // 데이터 이상(순환 참조)에 대비해 깊이를 제한한다. 백엔드와 같은 값.
+      for (let depth = 0; depth < 32 && current; depth++) {
+        if (current.visibility !== 'PUBLIC') { ok = false; break; }
+        if (current.parentId === null) break;
+        const parent: MaterialFolderResponse | undefined = byId.get(current.parentId);
+        // 상위가 목록에 없으면(데이터 이상) 비공개로 본다. 백엔드와 같은 판단.
+        if (!parent) { ok = false; break; }
+        current = parent;
+      }
+      resolved.set(folder.id, ok);
+      return ok;
+    };
+
+    return new Set(folders.filter(isChainPublic).map((f) => f.id));
+  }, [folders]);
+
+  /** 선택한 폴더가 스스로는 공개인데 상위 때문에 실제로는 안 보이는 상태인가. */
+  const selectedBlockedByAncestor =
+    selectedFolder !== null
+    && selectedFolder.visibility === 'PUBLIC'
+    && !publicFolderIds.has(selectedFolder.id);
+
+  /** 지금 보고 있는 폴더가 실제로 남에게 보이는가. 자료 배지 판단에 쓴다. */
+  const selectedFolderEffectivelyPublic =
+    selectedFolder !== null && publicFolderIds.has(selectedFolder.id);
 
   // 최근 학기가 최상위로 오도록 정렬 (semesterOrder desc, 동일 학기 내 백엔드 최신순 유지)
   const sortedItems = [...items].sort((a, b) => semesterSortKey(b) - semesterSortKey(a));
@@ -400,6 +446,32 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
           <Folder className="h-4 w-4 shrink-0 text-gray-400" />
           <span className="truncate">{folder.name}</span>
           {folder.isStartFolder && <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />}
+          {/* 공개 상태는 항상 보여야 한다. 예전에는 hover 시에만 나타나는 토글 버튼이
+              유일한 표시였기 때문에, 트리만 봐서는 어느 폴더가 공개인지 알 수 없었다. */}
+          {folder.visibility === 'PUBLIC' ? (
+            publicFolderIds.has(folder.id) ? (
+              <span
+                title="공개 — 다른 사람에게 보입니다"
+                className="inline-flex shrink-0 items-center gap-0.5 rounded bg-green-50 px-1 py-0.5 text-[10px] font-medium text-green-600"
+              >
+                <Globe className="h-2.5 w-2.5" />공개
+              </span>
+            ) : (
+              <span
+                title="공개로 설정했지만 상위 폴더가 비공개라 다른 사람에게 보이지 않습니다"
+                className="inline-flex shrink-0 items-center gap-0.5 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-medium text-amber-600"
+              >
+                <AlertTriangle className="h-2.5 w-2.5" />상위 비공개
+              </span>
+            )
+          ) : (
+            <span
+              title="비공개 — 나만 볼 수 있습니다"
+              className="inline-flex shrink-0 items-center gap-0.5 rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium text-gray-500"
+            >
+              <Lock className="h-2.5 w-2.5" />비공개
+            </span>
+          )}
           <span className="shrink-0 text-xs text-gray-400">{folder.itemCount}</span>
         </button>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
@@ -508,6 +580,28 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
                 </button>
               </div>
 
+              {/* 공개 규칙 안내.
+                  상위가 비공개면 하위를 공개로 바꿔도 노출되지 않는데(서버가 루트까지 조상을 검사한다),
+                  화면에 아무 표시가 없으면 사용자는 공개한 줄 알고 넘어간다. */}
+              {selectedBlockedByAncestor && (
+                <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    이 폴더는 <b>공개</b>로 설정되어 있지만, <b>상위 폴더가 비공개</b>라 다른 사람에게 보이지 않습니다.
+                    공개하려면 루트까지의 상위 폴더를 모두 공개로 바꿔야 합니다.
+                  </span>
+                </div>
+              )}
+              {selectedFolder.visibility !== 'PUBLIC' && (
+                <div className="mb-3 flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    이 폴더는 <b>비공개</b>입니다. 안의 자료를 개별 공개로 바꿔도 다른 사람에게 보이지 않습니다.
+                    왼쪽 폴더 목록에서 폴더에 마우스를 올린 뒤 자물쇠 아이콘을 눌러 공개로 바꿀 수 있습니다.
+                  </span>
+                </div>
+              )}
+
               {/* 편집 툴바: 전체선택 + 일괄 처리 */}
               {items.length > 0 && (
                 <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
@@ -599,6 +693,27 @@ export default function MaterialsPageClient({ session, initialFolderId }: Props)
                           <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
                             {SOURCE_LABEL[item.source]}
                           </span>
+                          {/* 공개 상태를 글자로 못 박는다. 오른쪽 아이콘은 '누르면 바뀌는 버튼'이라
+                              지금 상태인지 바꿀 상태인지 헷갈렸다. */}
+                          {item.isPublic ? (
+                            selectedFolderEffectivelyPublic ? (
+                              <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-green-50 px-1.5 py-0.5 text-[11px] font-medium text-green-600">
+                                <Globe className="h-3 w-3" />공개
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700"
+                                title="상위 폴더가 비공개라 다른 사람에게 표시되지 않습니다"
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                상위 폴더가 비공개라 표시되지 않습니다
+                              </span>
+                            )
+                          ) : (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">
+                              <Lock className="h-3 w-3" />비공개
+                            </span>
+                          )}
                           {item.duplicatedWithGithub && (
                             <span
                               className="inline-flex shrink-0 items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700"
@@ -767,7 +882,7 @@ function MoveModal({
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-100">
+          <button onClick={onClose} title="닫기" aria-label="닫기" className="rounded p-1 text-gray-400 hover:bg-gray-100">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -852,7 +967,7 @@ function CreateFolderModal({
       <div className="w-full max-w-sm rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h3 className="text-base font-semibold text-gray-900">폴더 만들기</h3>
-          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-100">
+          <button onClick={onClose} title="닫기" aria-label="닫기" className="rounded p-1 text-gray-400 hover:bg-gray-100">
             <X className="h-5 w-5" />
           </button>
         </div>

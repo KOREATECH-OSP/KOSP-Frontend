@@ -180,6 +180,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                   type="button"
                   className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-gray-100 transition-colors touch-feedback"
                   aria-label="모바일 메뉴 열기"
+                  title="메뉴"
                   aria-expanded={mobileMenuOpen}
                   onClick={() => {
                     // 프로필 항목을 펼친 채로 연다. 접힌 채로 열면 데스크톱에서 보이던
@@ -241,6 +242,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
                       type="button"
                       className="w-11 h-11 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors touch-feedback"
                       aria-label="모바일 메뉴 닫기"
+                      title="닫기"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-600" aria-hidden="true">

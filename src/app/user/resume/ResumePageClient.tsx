@@ -1046,6 +1046,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                               onClick={() => removeJobRole(role)}
                               className="ml-0.5 rounded-full hover:text-orange-200 transition-colors"
                               aria-label={`${role} 삭제`}
+                              title={`${role} 삭제`}
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -1111,6 +1112,7 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
                               onClick={() => removeTechTag(tag)}
                               className="ml-0.5 rounded-full hover:text-gray-300 transition-colors"
                               aria-label={`${tag} 삭제`}
+                              title={`${tag} 삭제`}
                             >
                               <X className="h-3 w-3" />
                             </button>

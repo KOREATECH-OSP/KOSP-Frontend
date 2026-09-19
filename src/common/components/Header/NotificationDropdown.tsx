@@ -142,6 +142,7 @@ export default function NotificationDropdown({ linkMode = false }: NotificationD
         href="/notification"
         className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
         aria-label="알림"
+        title="알림"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -162,6 +163,7 @@ export default function NotificationDropdown({ linkMode = false }: NotificationD
             onClick={handleOpen}
             className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors focus:outline-none"
             aria-label="알림"
+            title="알림"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
