@@ -1,5 +1,5 @@
-import { apiClient, clientApiClient } from './client';
-import type { FollowUserResponse, FollowSummaryResponse } from './types';
+import { clientApiClient } from './client';
+import type { FollowUserResponse, FollowUserListResponse, FollowSummaryResponse } from './types';
 
 interface AuthOptions {
   accessToken: string;
@@ -21,14 +21,36 @@ export async function unfollowUser(userId: number, auth: AuthOptions): Promise<v
   });
 }
 
-/** 팔로워 목록 (공개) */
-export async function getFollowers(userId: number): Promise<FollowUserResponse[]> {
-  return apiClient<FollowUserResponse[]>(`/v1/users/${userId}/followers`, { cache: 'no-store' });
+/**
+ * 팔로워 목록 (페이지).
+ * 비로그인도 조회 가능하지만, accessToken을 넘기면 각 항목의 isFollowing/isMe가 채워진다.
+ */
+export async function getFollowers(
+  userId: number,
+  page: number = 0,
+  size: number = 20,
+  accessToken?: string | null,
+): Promise<FollowUserListResponse> {
+  return clientApiClient<FollowUserListResponse>(
+    `/v1/users/${userId}/followers?page=${page}&size=${size}`,
+    { accessToken: accessToken ?? undefined },
+  );
 }
 
-/** 팔로잉 목록 (공개, 서버) */
-export async function getFollowing(userId: number): Promise<FollowUserResponse[]> {
-  return apiClient<FollowUserResponse[]>(`/v1/users/${userId}/following`, { cache: 'no-store' });
+/**
+ * 팔로잉 목록 (페이지).
+ * 비로그인도 조회 가능하지만, accessToken을 넘기면 각 항목의 isFollowing/isMe가 채워진다.
+ */
+export async function getFollowing(
+  userId: number,
+  page: number = 0,
+  size: number = 20,
+  accessToken?: string | null,
+): Promise<FollowUserListResponse> {
+  return clientApiClient<FollowUserListResponse>(
+    `/v1/users/${userId}/following?page=${page}&size=${size}`,
+    { accessToken: accessToken ?? undefined },
+  );
 }
 
 /** 팔로잉 목록 (클라이언트 컴포넌트용) */
