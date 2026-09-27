@@ -99,6 +99,7 @@ import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRank
 import { LAST_RESUME_MESSAGE, normalizeJobRole } from '@/lib/constants/resume';
 import { TITLE_CATEGORY_EMOJI, RARITY_LABELS, RARITY_COLORS, getTitleImage } from '@/lib/constants/title';
 import CodeReviewModal from '@/common/components/CodeReviewModal';
+import SectionErrorBoundary from '@/common/components/SectionErrorBoundary';
 
 // 칭호 취득 날짜 포맷 (YY.MM.DD)
 function formatTitleGrantedDate(grantedAt: string): string {
@@ -921,7 +922,9 @@ export default function UserPageClient({ session }: UserPageClientProps) {
 
             {/* 팔로우/팔로워 카드 */}
             {userId != null && (
-              <FollowCard profileUserId={userId} accessToken={accessToken ?? null} isMe />
+              <SectionErrorBoundary name="소셜">
+                <FollowCard profileUserId={userId} accessToken={accessToken ?? null} isMe />
+              </SectionErrorBoundary>
             )}
           </div>
         </aside>
@@ -1149,6 +1152,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
               </section>
 
               {/* ── 공개 학습자료 ───────────────────────────── */}
+              <SectionErrorBoundary name="공개 학습자료">
               <section>
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-base font-bold text-gray-900">공개 학습자료</h2>
@@ -1238,6 +1242,7 @@ export default function UserPageClient({ session }: UserPageClientProps) {
                   </div>
                 )}
               </section>
+              </SectionErrorBoundary>
             </div>
           )}
 

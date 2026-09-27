@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { User as UserIcon, Loader2 } from 'lucide-react';
 
 import {
+  emptyFollowPage,
   getFollowers,
   getFollowSummary,
   followUser,
@@ -47,14 +48,13 @@ export default function FollowCard({ profileUserId, accessToken, isMe }: Props) 
    */
   const refresh = useCallback(async () => {
     const [followerPage, summary] = await Promise.all([
-      getFollowers(profileUserId, 0, PREVIEW_SIZE, accessToken).catch(() => null),
+      getFollowers(profileUserId, 0, PREVIEW_SIZE, accessToken).catch(() => emptyFollowPage()),
       accessToken ? getFollowSummary(profileUserId, { accessToken }).catch(() => null) : null,
     ]);
 
-    if (followerPage) {
-      setPreview(followerPage.users);
-      setFollowerCount(followerPage.meta?.totalItems ?? followerPage.users.length);
-    }
+    const users = Array.isArray(followerPage.users) ? followerPage.users : [];
+    setPreview(users.slice(0, PREVIEW_SIZE));
+    setFollowerCount(followerPage.meta?.totalItems ?? users.length);
     if (summary) {
       setFollowerCount(summary.followerCount);
       setFollowingCount(summary.followingCount);

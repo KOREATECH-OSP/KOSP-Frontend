@@ -219,9 +219,10 @@ export async function getMaterialDownloadUrl(
 
 /** 특정 사용자의 공개 폴더 조회 */
 export async function getPublicMaterialFolders(userId: number): Promise<MaterialFolderResponse[]> {
-  return apiClient<MaterialFolderResponse[]>(`/v1/users/${userId}/material-folders`, {
+  const folders = await apiClient<MaterialFolderResponse[]>(`/v1/users/${userId}/material-folders`, {
     cache: 'no-store',
   });
+  return Array.isArray(folders) ? folders : [];
 }
 
 /** 특정 사용자의 공개 폴더 내 공개 자료 조회 (최근 학기·최신순) */
@@ -243,10 +244,11 @@ export async function getPublicMaterials(
   userId: number,
   limit: number = 0,
 ): Promise<MaterialItemResponse[]> {
-  return apiClient<MaterialItemResponse[]>(
+  const items = await apiClient<MaterialItemResponse[]>(
     `/v1/users/${userId}/materials/public?limit=${limit}`,
     { cache: 'no-store' },
   );
+  return Array.isArray(items) ? items : [];
 }
 
 /**

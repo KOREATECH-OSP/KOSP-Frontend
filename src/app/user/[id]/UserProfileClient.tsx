@@ -62,6 +62,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import CodeReviewModal from '@/common/components/CodeReviewModal';
 import GithubRankCard, { getRankFromScore } from '@/common/components/GithubRankCard';
 import { ensureEncodedUrl } from '@/lib/utils';
+import SectionErrorBoundary from '@/common/components/SectionErrorBoundary';
 
 const TITLE_CATEGORY_EMOJI: Record<string, string> = {
   COMMIT: '✏️',
@@ -353,7 +354,9 @@ export default function UserProfileClient({
             </div>
 
             {/* 팔로우 카드 */}
-            <FollowCard profileUserId={userId} accessToken={viewerToken} isMe={isMe} />
+            <SectionErrorBoundary name="소셜">
+              <FollowCard profileUserId={userId} accessToken={viewerToken} isMe={isMe} />
+            </SectionErrorBoundary>
           </div>
         </aside>
 
@@ -763,6 +766,7 @@ export default function UserProfileClient({
 
           {/* 학습자료 탭 — 공개로 설정된 폴더·자료만 노출된다 */}
           {activeTab === '학습자료' && (
+            <SectionErrorBoundary name="학습자료">
             <div className="space-y-4">
               {!materialsLoaded ? (
                 <div className="flex items-center justify-center py-20">
@@ -851,6 +855,7 @@ export default function UserProfileClient({
                 </>
               )}
             </div>
+            </SectionErrorBoundary>
           )}
         </div>
       </div>

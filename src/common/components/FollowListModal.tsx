@@ -82,12 +82,13 @@ export default function FollowListModal({
         const fetcher = target === 'followers' ? getFollowers : getFollowing;
         const res = await fetcher(profileUserId, nextPage, PAGE_SIZE, accessToken);
         setter((prev) => {
-          const merged = reset ? res.users : [...prev.users, ...res.users];
+          const pageUsers = Array.isArray(res?.users) ? res.users : [];
+          const merged = reset ? pageUsers : [...prev.users, ...pageUsers];
           return {
             users: merged,
             page: nextPage + 1,
-            totalItems: res.meta?.totalItems ?? merged.length,
-            hasMore: nextPage + 1 < (res.meta?.totalPages ?? 1),
+            totalItems: res?.meta?.totalItems ?? merged.length,
+            hasMore: nextPage + 1 < (res?.meta?.totalPages ?? 0),
             loading: false,
             loaded: true,
           };
