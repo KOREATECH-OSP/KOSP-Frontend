@@ -64,6 +64,7 @@ function Header({ simple = false, session = null }: HeaderProps) {
     { href: "/organization", label: "조직" },
     { href: "/challenge", label: "챌린지" },
     { href: "/ranking", label: "랭킹" },
+    { href: "/notice", label: "공지·FAQ" },
   ];
 
   return (
