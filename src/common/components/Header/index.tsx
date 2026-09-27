@@ -257,28 +257,32 @@ function Header({ simple = false, session = null }: HeaderProps) {
                     </button>
                   </div>
 
-                  <nav className="flex-1 px-3 py-4 overflow-y-auto">
+                  {/*
+                    프로필 영역은 네비 항목 바로 아래에 이어서 흐르게 둔다 (바닥 고정 X).
+                    메뉴는 absolute 로 띄우지 않고 이름 버튼 아래에 문서 흐름대로 펼쳐,
+                    데스크톱 드롭다운과 같은 '이름 → 아래로 메뉴' 배치를 유지한다.
+                    min-h-0: 사파리에서 flex 자식의 overflow 스크롤이 동작하도록 필요하다.
+                  */}
+                  <nav className="flex-1 min-h-0 px-3 py-4 overflow-y-auto">
                     <div className="space-y-1">
                       {navItems.map(({ href, label }) => (
                         <Link
                           key={href}
                           href={href}
                           className="flex items-center px-4 py-3.5 min-h-[44px] text-[15px] font-medium text-gray-700 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors touch-feedback"
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={closeMobileMenus}
                         >
                           {label}
                         </Link>
                       ))}
                     </div>
-                  </nav>
 
-                  <div className="px-5 py-5 border-t border-gray-100 space-y-3">
-                    {isLoggedIn ? (
-                      <div className="space-y-3">
-                        <div className="relative">
+                    <div className="mt-4 border-t border-gray-100 pt-4">
+                      {isLoggedIn ? (
+                        <>
                           <button
                             type="button"
-                            className="w-full flex items-center justify-between bg-white px-4 py-3 text-[15px] font-medium text-gray-900 hover:bg-gray-50 transition-colors focus:outline-none"
+                            className="w-full flex items-center justify-between px-4 py-3 min-h-[44px] text-[15px] font-medium text-gray-900 rounded-xl hover:bg-gray-50 transition-colors focus:outline-none touch-feedback"
                             onClick={() => setMobileProfileOpen((prev) => !prev)}
                             aria-expanded={mobileProfileOpen}
                           >
@@ -303,50 +307,48 @@ function Header({ simple = false, session = null }: HeaderProps) {
                             show={mobileProfileOpen}
                             as={Fragment}
                             enter="transition ease-out duration-150"
-                            enterFrom="transform opacity-0 translate-y-2"
-                            enterTo="transform opacity-100 translate-y-0"
+                            enterFrom="opacity-0 -translate-y-1"
+                            enterTo="opacity-100 translate-y-0"
                             leave="transition ease-in duration-100"
-                            leaveFrom="transform opacity-100 translate-y-0"
-                            leaveTo="transform opacity-0 translate-y-2"
+                            leaveFrom="opacity-100 translate-y-0"
+                            leaveTo="opacity-0 -translate-y-1"
                           >
-                            <div className="absolute bottom-full left-0 right-0 mb-3 rounded-2xl border border-gray-100 bg-white shadow-xl">
-                              <ul className="py-2">
-                                {profileMenuItems.map(({ label, href, action }) => (
-                                  <li key={label}>
-                                    {href ? (
-                                      <Link
-                                        href={href}
-                                        onClick={closeMobileMenus}
-                                        className="block w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                                      >
-                                        {label}
-                                      </Link>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={action}
-                                        className="w-full px-4 py-2 text-left text-[15px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                                      >
-                                        {label}
-                                      </button>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                            <ul className="mt-1 space-y-0.5">
+                              {profileMenuItems.map(({ label, href, action }) => (
+                                <li key={label}>
+                                  {href ? (
+                                    <Link
+                                      href={href}
+                                      onClick={closeMobileMenus}
+                                      className="block w-full pl-7 pr-4 py-2.5 min-h-[44px] text-left text-[15px] font-medium text-gray-600 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors touch-feedback"
+                                    >
+                                      {label}
+                                    </Link>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={action}
+                                      className="block w-full pl-7 pr-4 py-2.5 min-h-[44px] text-left text-[15px] font-medium text-gray-600 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors touch-feedback"
+                                    >
+                                      {label}
+                                    </button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
                           </Transition>
-                        </div>
-                      </div>
-                    ) : (
-                      <Link
-                        href="/login"
-                        className="block w-full text-center text-[15px] font-semibold text-white bg-gray-900 rounded-xl py-3 hover:bg-gray-800 transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        시작하기
-                      </Link>
-                    )}
-                  </div>
+                        </>
+                      ) : (
+                        <Link
+                          href="/login"
+                          className="block w-full text-center text-[15px] font-semibold text-white bg-gray-900 rounded-xl py-3 hover:bg-gray-800 transition-colors"
+                          onClick={closeMobileMenus}
+                        >
+                          시작하기
+                        </Link>
+                      )}
+                    </div>
+                  </nav>
                 </Dialog.Panel>
               </Transition.Child>
             </div>
