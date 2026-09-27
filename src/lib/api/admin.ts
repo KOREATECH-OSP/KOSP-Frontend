@@ -822,6 +822,7 @@ import type {
   AdminCurrentSeasonResponse,
   AdminSeasonProjectListResponse,
   AdminSeasonProjectMemberListResponse,
+  CollectionStatusListResponse,
 } from '@/types/admin';
 
 /**
@@ -967,6 +968,32 @@ export async function updateAdminSeason(
   await clientApiClient<void>(`/v1/admin/seasons/${seasonId}`, {
     method: 'PATCH',
     body,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 시즌별 유저 수집 현황 조회
+ */
+export async function getCollectionStatus(
+  seasonId: number,
+  auth: AuthOptions
+): Promise<CollectionStatusListResponse> {
+  return clientApiClient<CollectionStatusListResponse>(
+    `/v1/admin/seasons/${seasonId}/collection-status`,
+    { accessToken: auth.accessToken, cache: 'no-store' }
+  );
+}
+
+/**
+ * 특정 유저 수집 강제 실행
+ */
+export async function forceCollect(
+  userId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/collection/${userId}/force`, {
+    method: 'POST',
     accessToken: auth.accessToken,
   });
 }

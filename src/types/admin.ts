@@ -404,3 +404,22 @@ export interface AdminSeasonUpdateRequest {
   endDate?: string;
   isActive?: boolean;
 }
+
+// ============================================
+// Collection Status Types
+// ============================================
+
+export type CollectionStatus = 'NORMAL' | 'ANOMALY' | 'NOT_COLLECTED';
+
+export interface CollectionStatusItem {
+  userId: number;
+  userName: string;
+  githubLogin: string | null;
+  lastCrawling: string | null;
+  totalCommitCount: number;
+  collectionStatus: CollectionStatus;
+}
+
+export interface CollectionStatusListResponse {
+  users: CollectionStatusItem[];
+}

@@ -10,10 +10,12 @@ import {
   runSeasonRankingBatch,
 } from '@/lib/api/admin';
 import type { AdminSeasonItem } from '@/types/admin';
-import { Plus, Play, Pencil, CheckCircle, Circle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Play, Pencil, CheckCircle, Circle, BarChart2 } from 'lucide-react';
 
 export default function AdminRankingPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [seasons, setSeasons] = useState<AdminSeasonItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [batchRunning, setBatchRunning] = useState(false);
@@ -186,13 +188,22 @@ export default function AdminRankingPage() {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => openEdit(season)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  편집
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => router.push(`/admin/ranking/${season.id}/collection`)}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <BarChart2 className="h-3.5 w-3.5" />
+                    수집 현황
+                  </button>
+                  <button
+                    onClick={() => openEdit(season)}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    편집
+                  </button>
+                </div>
               </div>
             ))}
           </div>
