@@ -423,3 +423,20 @@ export interface CollectionStatusItem {
 export interface CollectionStatusListResponse {
   users: CollectionStatusItem[];
 }
+
+export interface RepositoryCommitStat {
+  repositoryName: string;
+  totalCommitCount: number;
+  scoredCommitCount: number;
+}
+
+export interface CollectionStatusDetailResponse {
+  userId: number;
+  userName: string;
+  githubLogin: string | null;
+  lastCrawling: string | null;
+  collectionStatus: CollectionStatus;
+  totalCommitCount: number;
+  scoredCommitCount: number;
+  repositories: RepositoryCommitStat[];
+}

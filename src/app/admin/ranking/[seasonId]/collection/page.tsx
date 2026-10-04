@@ -152,13 +152,21 @@ export default function CollectionStatusPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleForceCollect(user)}
-                        disabled={forcingUserId === user.userId}
-                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-                      >
-                        {forcingUserId === user.userId ? '요청 중...' : '강제 수집'}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => router.push(`/admin/ranking/${seasonId}/collection/${user.userId}`)}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                        >
+                          상세
+                        </button>
+                        <button
+                          onClick={() => handleForceCollect(user)}
+                          disabled={forcingUserId === user.userId}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          {forcingUserId === user.userId ? '요청 중...' : '강제 수집'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

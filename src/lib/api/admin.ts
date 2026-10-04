@@ -823,6 +823,7 @@ import type {
   AdminSeasonProjectListResponse,
   AdminSeasonProjectMemberListResponse,
   CollectionStatusListResponse,
+  CollectionStatusDetailResponse,
 } from '@/types/admin';
 
 /**
@@ -981,6 +982,20 @@ export async function getCollectionStatus(
 ): Promise<CollectionStatusListResponse> {
   return clientApiClient<CollectionStatusListResponse>(
     `/v1/admin/seasons/${seasonId}/collection-status`,
+    { accessToken: auth.accessToken, cache: 'no-store' }
+  );
+}
+
+/**
+ * 특정 유저 수집 현황 상세 조회 (레포지토리별)
+ */
+export async function getCollectionStatusDetail(
+  seasonId: number,
+  userId: number,
+  auth: AuthOptions
+): Promise<CollectionStatusDetailResponse> {
+  return clientApiClient<CollectionStatusDetailResponse>(
+    `/v1/admin/seasons/${seasonId}/collection-status/${userId}`,
     { accessToken: auth.accessToken, cache: 'no-store' }
   );
 }
