@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth/AuthContext';
 import { toast } from '@/lib/toast';
-import { getCollectionStatus, forceCollect } from '@/lib/api/admin';
+import { getCollectionStatus, forceCollect, forceCollectAll } from '@/lib/api/admin';
 import type { CollectionStatusItem, CollectionStatus } from '@/types/admin';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
@@ -40,6 +40,7 @@ export default function CollectionStatusPage() {
   const [users, setUsers] = useState<CollectionStatusItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forcingUserId, setForcingUserId] = useState<number | null>(null);
+  const [forcingAll, setForcingAll] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -57,6 +58,20 @@ export default function CollectionStatusPage() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  const handleForceCollectAll = async () => {
+    if (!session?.accessToken) return;
+    if (!confirm('이 시즌의 전체 유저 수집을 즉시 요청하시겠습니까?')) return;
+    setForcingAll(true);
+    try {
+      await forceCollectAll(seasonId, { accessToken: session.accessToken });
+      toast.success('전체 수집 요청이 전송되었습니다. 수분 내 반영됩니다.');
+    } catch {
+      toast.error('전체 수집 요청에 실패했습니다.');
+    } finally {
+      setForcingAll(false);
+    }
+  };
 
   const handleForceCollect = async (user: CollectionStatusItem) => {
     if (!session?.accessToken) return;
@@ -93,14 +108,23 @@ export default function CollectionStatusPage() {
             <p className="mt-1 text-sm text-gray-500">시즌별 유저 GitHub 데이터 수집 현황</p>
           </div>
         </div>
-        <button
-          onClick={fetchStatus}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          새로고침
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleForceCollectAll}
+            disabled={forcingAll || loading}
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {forcingAll ? '요청 중...' : '전체 수집'}
+          </button>
+          <button
+            onClick={fetchStatus}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            새로고침
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white">

@@ -1001,6 +1001,19 @@ export async function getCollectionStatusDetail(
 }
 
 /**
+ * 시즌 전체 유저 수집 강제 실행
+ */
+export async function forceCollectAll(
+  seasonId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/${seasonId}/collection/force-all`, {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
  * 특정 유저 수집 강제 실행
  */
 export async function forceCollect(
