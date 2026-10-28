@@ -415,7 +415,7 @@ export interface CollectionStatusItem {
   userId: number;
   userName: string;
   githubLogin: string | null;
-  lastCrawling: string | null;
+  lastCrawling: string | null; // UTC ISO 8601
   totalCommitCount: number;
   collectionStatus: CollectionStatus;
 }
