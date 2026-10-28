@@ -9,14 +9,18 @@ import type { CollectionStatusItem, CollectionStatus } from '@/types/admin';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 const STATUS_LABEL: Record<CollectionStatus, string> = {
+  COLLECTING: '수집 중',
   NORMAL: '정상',
   ANOMALY: '이상',
+  FAILED: '실패',
   NOT_COLLECTED: '미수집',
 };
 
 const STATUS_CLASS: Record<CollectionStatus, string> = {
+  COLLECTING: 'bg-blue-100 text-blue-700',
   NORMAL: 'bg-green-100 text-green-700',
   ANOMALY: 'bg-yellow-100 text-yellow-700',
+  FAILED: 'bg-red-100 text-red-700',
   NOT_COLLECTED: 'bg-gray-100 text-gray-500',
 };
 
@@ -58,6 +62,14 @@ export default function CollectionStatusPage() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  // 수집 중인 유저가 있으면 10초마다 자동 갱신
+  useEffect(() => {
+    const isCollecting = users.some((u) => u.collectionStatus === 'COLLECTING');
+    if (!isCollecting) return;
+    const interval = setInterval(fetchStatus, 10000);
+    return () => clearInterval(interval);
+  }, [users, fetchStatus]);
 
   const handleForceCollectAll = async () => {
     if (!session?.accessToken) return;
@@ -170,8 +182,11 @@ export default function CollectionStatusPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[user.collectionStatus]}`}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[user.collectionStatus]}`}
                       >
+                        {user.collectionStatus === 'COLLECTING' && (
+                          <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                        )}
                         {STATUS_LABEL[user.collectionStatus]}
                       </span>
                     </td>

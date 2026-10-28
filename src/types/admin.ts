@@ -409,7 +409,7 @@ export interface AdminSeasonUpdateRequest {
 // Collection Status Types
 // ============================================
 
-export type CollectionStatus = 'NORMAL' | 'ANOMALY' | 'NOT_COLLECTED';
+export type CollectionStatus = 'COLLECTING' | 'NORMAL' | 'ANOMALY' | 'FAILED' | 'NOT_COLLECTED';
 
 export interface CollectionStatusItem {
   userId: number;
