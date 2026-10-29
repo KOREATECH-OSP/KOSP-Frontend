@@ -1025,3 +1025,30 @@ export async function forceCollect(
     accessToken: auth.accessToken,
   });
 }
+
+/**
+ * 수집 큐 상태 조회 (현재 대기 메시지 수)
+ */
+export async function getQueueStatus(
+  auth: AuthOptions
+): Promise<{ pendingCount: number }> {
+  return clientApiClient<{ pendingCount: number }>(
+    `/v1/admin/seasons/collection/queue/status`,
+    { accessToken: auth.accessToken }
+  );
+}
+
+/**
+ * 수집 큐 비우기 (RabbitMQ 대기 메시지 제거 + stuck 배치 잡 정리)
+ */
+export async function clearCollectionQueue(
+  auth: AuthOptions
+): Promise<{ purgedMessageCount: number; clearedJobCount: number }> {
+  return clientApiClient<{ purgedMessageCount: number; clearedJobCount: number }>(
+    `/v1/admin/seasons/collection/queue`,
+    {
+      method: 'DELETE',
+      accessToken: auth.accessToken,
+    }
+  );
+}

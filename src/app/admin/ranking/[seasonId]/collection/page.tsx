@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth/AuthContext';
 import { toast } from '@/lib/toast';
-import { getCollectionStatus, forceCollect, forceCollectAll } from '@/lib/api/admin';
+import { getCollectionStatus, forceCollect, forceCollectAll, clearCollectionQueue, getQueueStatus } from '@/lib/api/admin';
 import type { CollectionStatusItem, CollectionStatus } from '@/types/admin';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
@@ -45,6 +45,8 @@ export default function CollectionStatusPage() {
   const [loading, setLoading] = useState(true);
   const [forcingUserId, setForcingUserId] = useState<number | null>(null);
   const [forcingAll, setForcingAll] = useState(false);
+  const [clearingQueue, setClearingQueue] = useState(false);
+  const [queuePending, setQueuePending] = useState<number | null>(null);
 
   const fetchStatus = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -71,6 +73,22 @@ export default function CollectionStatusPage() {
     return () => clearInterval(interval);
   }, [users, fetchStatus]);
 
+  // 큐 대기 수 5초마다 폴링
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    const fetchQueueStatus = async () => {
+      try {
+        const data = await getQueueStatus({ accessToken: session.accessToken! });
+        setQueuePending(data.pendingCount);
+      } catch {
+        // 조회 실패 시 무시
+      }
+    };
+    fetchQueueStatus();
+    const interval = setInterval(fetchQueueStatus, 5000);
+    return () => clearInterval(interval);
+  }, [session?.accessToken]);
+
   const handleForceCollectAll = async () => {
     if (!session?.accessToken) return;
     if (!confirm('이 시즌의 전체 유저 수집을 즉시 요청하시겠습니까?')) return;
@@ -82,6 +100,21 @@ export default function CollectionStatusPage() {
       toast.error('전체 수집 요청에 실패했습니다.');
     } finally {
       setForcingAll(false);
+    }
+  };
+
+  const handleClearQueue = async () => {
+    if (!session?.accessToken) return;
+    if (!confirm('수집 큐를 비우고 stuck 상태의 작업을 정리하시겠습니까?\n현재 대기 중인 수집 요청이 모두 취소됩니다.')) return;
+    setClearingQueue(true);
+    try {
+      const result = await clearCollectionQueue({ accessToken: session.accessToken });
+      toast.success(`큐 ${result.purgedMessageCount}개 메시지 제거, stuck 잡 ${result.clearedJobCount}개 정리 완료`);
+      await fetchStatus();
+    } catch {
+      toast.error('큐 비우기에 실패했습니다.');
+    } finally {
+      setClearingQueue(false);
     }
   };
 
@@ -121,6 +154,18 @@ export default function CollectionStatusPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleClearQueue}
+            disabled={clearingQueue || loading}
+            className="flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            {clearingQueue ? '처리 중...' : '큐 비우기'}
+            {queuePending !== null && (
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${queuePending > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+                {queuePending}
+              </span>
+            )}
+          </button>
           <button
             onClick={handleForceCollectAll}
             disabled={forcingAll || loading}
