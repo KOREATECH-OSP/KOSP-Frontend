@@ -5,6 +5,7 @@ import { useSession } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Loader2, ChevronRight } from 'lucide-react';
 import { getAdminUsers, getRoles, getPolicies, getPermissions } from '@/lib/api/admin';
+import { toast } from '@/lib/toast';
 import type { AdminUserResponse } from '@/types/admin';
 
 interface DashboardStats {
@@ -26,7 +27,6 @@ export default function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState<AdminUserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const fetchDashboardData = useCallback(async () => {
     if (!session?.accessToken) return;
 

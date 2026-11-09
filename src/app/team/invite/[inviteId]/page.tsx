@@ -10,6 +10,9 @@ import { ApiException } from '@/lib/api/client';
 import type { TeamInviteResponse } from '@/lib/api/types';
 import { toast } from '@/lib/toast';
 
+// 초대 메일과 동일한 K-OSP 마스코트 이미지(프론트 public 자산).
+const INVITE_MASCOT_URL = '/images/titles/kori_email_photo.png';
+
 function formatDateTime(dateString: string) {
   return new Date(dateString).toLocaleString('ko-KR', {
     year: 'numeric',
@@ -288,10 +291,13 @@ export default function TeamInvitePage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-            <h1 className="mt-6 text-center text-xl font-bold text-gray-900">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={INVITE_MASCOT_URL}
+              alt="K-OSP 마스코트"
+              className="mx-auto h-24 w-24 object-contain"
+            />
+            <h1 className="mt-4 text-center text-xl font-bold text-gray-900">
               팀에 초대받으셨습니다
             </h1>
             <p className="mt-3 text-center text-sm text-gray-600">
@@ -324,10 +330,13 @@ export default function TeamInvitePage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-            <Users className="h-8 w-8 text-blue-600" />
-          </div>
-          <h1 className="mt-6 text-center text-xl font-bold text-gray-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={INVITE_MASCOT_URL}
+            alt="K-OSP 마스코트"
+            className="mx-auto h-24 w-24 object-contain"
+          />
+          <h1 className="mt-4 text-center text-xl font-bold text-gray-900">
             팀에 초대받으셨습니다
           </h1>
           <p className="mt-3 text-center text-sm text-gray-600">

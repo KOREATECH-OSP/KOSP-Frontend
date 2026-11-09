@@ -4,7 +4,6 @@ export type TierGroup =
   | 'GOLD'
   | 'PLATINUM'
   | 'DIAMOND'
-  | 'MASTER'
   | 'CHALLENGER';
 
 export interface TierInfo {
@@ -15,56 +14,67 @@ export interface TierInfo {
   max: number;
 }
 
-const TIER_THRESHOLDS: TierInfo[] = [
-  { group: 'BRONZE', level: 4, label: 'BRONZE 4', min: 0, max: 2.5 },
-  { group: 'BRONZE', level: 3, label: 'BRONZE 3', min: 2.5, max: 5.0 },
-  { group: 'BRONZE', level: 2, label: 'BRONZE 2', min: 5.0, max: 7.5 },
-  { group: 'BRONZE', level: 1, label: 'BRONZE 1', min: 7.5, max: 10.0 },
-  { group: 'SILVER', level: 4, label: 'SILVER 4', min: 10.0, max: 12.5 },
-  { group: 'SILVER', level: 3, label: 'SILVER 3', min: 12.5, max: 15.0 },
-  { group: 'SILVER', level: 2, label: 'SILVER 2', min: 15.0, max: 17.5 },
-  { group: 'SILVER', level: 1, label: 'SILVER 1', min: 17.5, max: 20.0 },
-  { group: 'GOLD', level: 4, label: 'GOLD 4', min: 20.0, max: 23.75 },
-  { group: 'GOLD', level: 3, label: 'GOLD 3', min: 23.75, max: 27.5 },
-  { group: 'GOLD', level: 2, label: 'GOLD 2', min: 27.5, max: 31.25 },
-  { group: 'GOLD', level: 1, label: 'GOLD 1', min: 31.25, max: 35.0 },
-  { group: 'PLATINUM', level: 4, label: 'PLATINUM 4', min: 35.0, max: 40.0 },
-  { group: 'PLATINUM', level: 3, label: 'PLATINUM 3', min: 40.0, max: 45.0 },
-  { group: 'PLATINUM', level: 2, label: 'PLATINUM 2', min: 45.0, max: 50.0 },
-  { group: 'PLATINUM', level: 1, label: 'PLATINUM 1', min: 50.0, max: 55.0 },
-  { group: 'DIAMOND', level: 4, label: 'DIAMOND 4', min: 55.0, max: 60.0 },
-  { group: 'DIAMOND', level: 3, label: 'DIAMOND 3', min: 60.0, max: 65.0 },
-  { group: 'DIAMOND', level: 2, label: 'DIAMOND 2', min: 65.0, max: 70.0 },
-  { group: 'DIAMOND', level: 1, label: 'DIAMOND 1', min: 70.0, max: 75.0 },
-  { group: 'MASTER', level: 4, label: 'MASTER 4', min: 75.0, max: 78.75 },
-  { group: 'MASTER', level: 3, label: 'MASTER 3', min: 78.75, max: 82.5 },
-  { group: 'MASTER', level: 2, label: 'MASTER 2', min: 82.5, max: 86.25 },
-  { group: 'MASTER', level: 1, label: 'MASTER 1', min: 86.25, max: 90.0 },
-  { group: 'CHALLENGER', level: null, label: 'CHALLENGER', min: 90.0, max: 100 },
+// 6단계 티어 (백분위 기반).
+// 기본 5티어(BRONZE~DIAMOND)는 시즌 순위 백분위(상위 20/40/60/80%)로 배정된다 → 점수 구간 없음.
+// CHALLENGER는 다이아(상위 20%)이면서 총점 60 이상일 때만 → 점수 구간 존재.
+const TIER_INFOS: TierInfo[] = [
+  { group: 'BRONZE', level: null, label: 'BRONZE', min: 0, max: 0 },
+  { group: 'SILVER', level: null, label: 'SILVER', min: 0, max: 0 },
+  { group: 'GOLD', level: null, label: 'GOLD', min: 0, max: 0 },
+  { group: 'PLATINUM', level: null, label: 'PLATINUM', min: 0, max: 0 },
+  { group: 'DIAMOND', level: null, label: 'DIAMOND', min: 0, max: 60 },
+  { group: 'CHALLENGER', level: null, label: 'CHALLENGER', min: 60, max: 100 },
 ];
 
 const TIER_KEY_MAP: Record<string, TierInfo> = Object.fromEntries(
-  TIER_THRESHOLDS.map((t) => [
-    t.level !== null ? `${t.group}_${t.level}` : t.group,
-    t,
-  ]),
+  TIER_INFOS.map((t) => [t.group, t]),
 );
 
+// 챌린저 승급 최소 총점 (다이아 = 상위 20% 조건과 함께 충족)
+const CHALLENGER_MIN_SCORE = 60;
+
 export function getTierInfo(tier: string): TierInfo {
-  return TIER_KEY_MAP[tier] ?? TIER_THRESHOLDS[0];
+  return TIER_KEY_MAP[tier] ?? TIER_INFOS[0];
 }
 
+/**
+ * 다음 티어까지 남은 "총점". 백분위 기반 기본 티어는 점수로 오르는 게 아니라
+ * 순위로 결정되므로 null. 다이아→챌린저(60)만 점수 기준.
+ */
 export function getNextTierRemaining(tier: string, score: number): number | null {
-  const info = getTierInfo(tier);
-  if (info.group === 'CHALLENGER') return null;
-  return Math.max(0, info.max - score);
+  const { group } = getTierInfo(tier);
+  if (group === 'DIAMOND') return Math.max(0, CHALLENGER_MIN_SCORE - score);
+  return null;
 }
 
+/**
+ * 승급 안내 문구.
+ * - 다이아: 총점 60 넘으면 챌린저 (상위 20% 유지 조건)
+ * - 그 외 기본 티어: 상위 티어는 시즌 순위(백분위)로 결정
+ */
+export function getEliteUpgradeHint(tier: string): string | null {
+  const { group } = getTierInfo(tier);
+  if (group === 'CHALLENGER') return null;
+  if (group === 'DIAMOND') {
+    return '챌린저 승급: 총점 60점 이상 (상위 20% 유지)';
+  }
+  return '상위 티어는 시즌 순위(백분위)로 결정됩니다';
+}
+
+/**
+ * 진행률(%). 다이아는 챌린저 승급 점수(60)까지의 진행률, 그 외는 총점(100 만점) 기준 대략치.
+ */
 export function getTierProgress(tier: string, score: number): number {
-  const info = getTierInfo(tier);
-  const range = info.max - info.min;
-  if (range === 0) return 100;
-  return Math.min(100, Math.max(0, ((score - info.min) / range) * 100));
+  const { group } = getTierInfo(tier);
+  if (group === 'CHALLENGER') return 100;
+  if (group === 'DIAMOND') {
+    return clampPct((score / CHALLENGER_MIN_SCORE) * 100);
+  }
+  return clampPct(score); // 기본 티어: 총점(0~100) 대략 게이지
+}
+
+function clampPct(v: number): number {
+  return Math.min(100, Math.max(0, v));
 }
 
 export interface TierStyle {
@@ -98,11 +108,6 @@ const TIER_STYLES: Record<TierGroup, TierStyle> = {
     badge: 'bg-blue-100 text-blue-800 border border-blue-200',
     text: 'text-blue-700',
     bar: 'bg-blue-400',
-  },
-  MASTER: {
-    badge: 'bg-purple-100 text-purple-800 border border-purple-200',
-    text: 'text-purple-700',
-    bar: 'bg-purple-400',
   },
   CHALLENGER: {
     badge: 'bg-rose-100 text-rose-800 border border-rose-200',

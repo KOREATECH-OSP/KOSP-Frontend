@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { width: 320px; margin: 0; padding: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2937; }
+    h1 { font-size: 14px; margin: 0 0 4px; }
+    p.desc { font-size: 11px; color: #6b7280; margin: 0 0 12px; }
+    label { display: block; font-size: 11px; font-weight: 600; color: #4b5563; margin: 8px 0 3px; }
+    input, select { width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 6px; }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    button { width: 100%; margin-top: 12px; padding: 9px; font-size: 13px; font-weight: 600; color: #fff; background: #f97316; border: none; border-radius: 8px; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #status { margin-top: 10px; font-size: 12px; white-space: pre-wrap; }
+    .note { font-size: 10px; color: #9ca3af; margin-top: 8px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <h1>아우누리 자료 수집</h1>
+  <p class="desc">아우누리 과제/EL 목록 페이지에서 실행하세요. 학교 로그인 정보는 서버로 전송되지 않습니다.</p>
+
+  <label>오픈소스포털 API 주소</label>
+  <input id="apiBase" placeholder="http://localhost:8080" />
+
+  <label>오픈소스포털 로그인 토큰 (JWT)</label>
+  <input id="token" type="password" placeholder="Bearer 없이 토큰만" />
+
+  <div class="row">
+    <div>
+      <label>자료 종류</label>
+      <select id="source">
+        <option value="AUNURI_ASSIGNMENT">과제</option>
+        <option value="AUNURI_EL">EL 자료</option>
+      </select>
+    </div>
+    <div>
+      <label>연도</label>
+      <input id="year" type="number" placeholder="2026" />
+    </div>
+    <div>
+      <label>학기</label>
+      <select id="semester">
+        <option value="">-</option>
+        <option value="1학기">1학기</option>
+        <option value="여름">여름</option>
+        <option value="2학기">2학기</option>
+        <option value="겨울">겨울</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="collect">이 페이지에서 수집</button>
+  <div id="status"></div>
+  <p class="note">토큰은 오픈소스포털 로그인 후 개발자도구에서 확인할 수 있습니다. 입력값은 이 브라우저에만 저장됩니다.</p>
+
+  <script src="config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

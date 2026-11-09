@@ -16,3 +16,4 @@ export * from './challenge';
 export * from './board';
 export * from './admin';
 export * from './notification';
+export * from './organization';

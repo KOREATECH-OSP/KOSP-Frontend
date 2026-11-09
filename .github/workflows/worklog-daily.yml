@@ -1,0 +1,79 @@
+name: Daily Portfolio to Notion
+
+# 하루치 develop 커밋을 모아 포트폴리오형 개발기록 문서를 생성해 팀 노션 DB에 남긴다.
+# - 매일 KST 23:00(UTC 14:00) 자동 실행 (그날 커밋 0건이면 스킵)
+# - 필요 시 수동 실행(workflow_dispatch)으로 기간(since)을 지정해 즉시 생성 가능
+on:
+  schedule:
+    - cron: '0 14 * * *' # 매일 23:00 KST (기본 브랜치에서만 동작)
+  # 기본 브랜치가 main 이라 cron/수동실행이 develop 기준으로 안 도는 문제 때문에
+  # develop push 에도 반응하게 둔다. 스크립트가 "하루 1개"로 중복을 막는다.
+  push:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: '집계 시작 (git --since 형식, 예: "1 day ago", "2 days ago")'
+        required: false
+        default: '1 day ago'
+
+concurrency:
+  group: portfolio-daily
+  cancel-in-progress: false
+
+jobs:
+  portfolio:
+    runs-on: ubuntu-latest
+    env:
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: develop
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate daily portfolio (Notion + md)
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          PROJECT_NAME: KOSP-Frontend
+          BRANCH: develop
+          SINCE: ${{ github.event.inputs.since || '1 day ago' }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node .github/scripts/notion-portfolio-daily.mjs
+
+      - name: Upload portfolio artifact
+        if: ${{ always() && hashFiles('portfolio-output.md') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-KOSP-Frontend
+          path: portfolio-output.md
+          if-no-files-found: ignore
+
+      - name: Email portfolio
+        if: ${{ always() && env.MAIL_USERNAME != '' && hashFiles('portfolio-output.md') != '' }}
+        continue-on-error: true
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          from: KOSP Portfolio Bot <${{ secrets.MAIL_USERNAME }}>
+          to: ${{ secrets.MAIL_TO || secrets.MAIL_USERNAME }}
+          subject: ${{ env.PORTFOLIO_TITLE || '일일 개발 로그 · KOSP-Frontend' }}
+          body: |
+            ${{ env.PORTFOLIO_TITLE || '일일 개발 로그' }} 문서를 첨부합니다.
+            (자동 생성 · KOSP-Frontend)
+          attachments: portfolio-output.md

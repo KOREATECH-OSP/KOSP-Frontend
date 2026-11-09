@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Users, Search, ChevronLeft, ChevronRight, User, Star, GitFork, ExternalLink } from 'lucide-react';
-import type { GlobalSearchResponse, UserSearchSummary } from '@/lib/api/types';
+import type { GlobalSearchResponse, OrganizationSearchSummary, UserSearchSummary } from '@/lib/api/types';
 import type { AuthSession } from '@/lib/auth/types';
 import Header from '@/common/components/Header';
 import Footer from '@/common/components/Footer';
@@ -17,7 +17,7 @@ interface SearchPageClientProps {
   session: AuthSession | null;
 }
 
-type TabType = 'ALL' | 'ARTICLE' | 'RECRUIT' | 'TEAM' | 'CHALLENGE' | 'USER' | 'REPOSITORY';
+type TabType = 'ALL' | 'ARTICLE' | 'RECRUIT' | 'TEAM' | 'CHALLENGE' | 'USER' | 'REPOSITORY' | 'ORGANIZATION';
 
 const MAX_ITEMS_ALL_TAB = 10; // 전체 탭에서 각 카테고리별 최대 개수
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -96,6 +96,38 @@ function UserMiniCard({ user }: { user: UserSearchSummary }) {
         {user.githubLogin && (
           <p className="truncate text-xs text-gray-500">@{user.githubLogin}</p>
         )}
+      </div>
+    </Link>
+  );
+}
+
+// 조직 카드
+function OrganizationCard({ org }: { org: OrganizationSearchSummary }) {
+  return (
+    <Link
+      href={`/organization/${org.id}`}
+      className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 hover:shadow-sm"
+    >
+      {org.avatarUrl ? (
+        <Image
+          src={ensureEncodedUrl(org.avatarUrl)}
+          alt={org.githubOrgName}
+          width={48}
+          height={48}
+          className="h-12 w-12 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-gray-400 to-gray-600">
+          <span className="text-sm font-medium text-white">
+            {org.githubOrgName.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <h3 className="truncate font-semibold text-gray-900">
+          {org.displayName || org.githubOrgName}
+        </h3>
+        <p className="truncate text-sm text-gray-500">@{org.githubOrgName}</p>
       </div>
     </Link>
   );
@@ -281,16 +313,17 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
     );
   }
 
-  const { articles, recruits, teams, challenges, users = [], repositories = [] } = initialData;
+  const { articles, recruits, teams, challenges, users = [], repositories = [], organizations = [] } = initialData;
 
   const tabs: { key: TabType; label: string; count: number }[] = [
-    { key: 'ALL', label: '전체', count: articles.length + recruits.length + teams.length + challenges.length + users.length + repositories.length },
+    { key: 'ALL', label: '전체', count: articles.length + recruits.length + teams.length + challenges.length + users.length + repositories.length + organizations.length },
     { key: 'ARTICLE', label: '게시글', count: articles.length },
     { key: 'RECRUIT', label: '모집공고', count: recruits.length },
     { key: 'TEAM', label: '팀', count: teams.length },
     { key: 'CHALLENGE', label: '챌린지', count: challenges.length },
     { key: 'USER', label: '사용자', count: users.length },
     { key: 'REPOSITORY', label: '레포지토리', count: repositories.length },
+    { key: 'ORGANIZATION', label: '조직', count: organizations.length },
   ];
 
   // 페이지네이션 헬퍼
@@ -511,6 +544,33 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
     );
   };
 
+  const renderOrganizations = (isAllTab: boolean) => {
+    const { paginatedItems, totalPages } = getPaginatedItems(organizations, isAllTab);
+
+    if (paginatedItems.length === 0) {
+      return <p className="py-8 text-center text-gray-500">검색 결과가 없습니다.</p>;
+    }
+
+    return (
+      <>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedItems.map((org) => (
+            <OrganizationCard key={org.id} org={org} />
+          ))}
+        </div>
+        {!isAllTab && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={organizations.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        )}
+      </>
+    );
+  };
+
   const renderRepositories = (isAllTab: boolean) => {
     const { paginatedItems, totalPages } = getPaginatedItems(repositories, isAllTab);
 
@@ -678,7 +738,14 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
                   {renderSeeMoreLink('CHALLENGE', challenges.length)}
                 </section>
               )}
-              {articles.length === 0 && recruits.length === 0 && teams.length === 0 && challenges.length === 0 && users.length === 0 && repositories.length === 0 && (
+              {organizations.length > 0 && (
+                <section>
+                  <h2 className="mb-4 text-lg font-bold text-gray-900">조직</h2>
+                  {renderOrganizations(true)}
+                  {renderSeeMoreLink('ORGANIZATION', organizations.length)}
+                </section>
+              )}
+              {articles.length === 0 && recruits.length === 0 && teams.length === 0 && challenges.length === 0 && users.length === 0 && repositories.length === 0 && organizations.length === 0 && (
                 <p className="py-16 text-center text-gray-500">검색 결과가 없습니다.</p>
               )}
             </div>
@@ -689,6 +756,7 @@ export default function SearchPageClient({ keyword, initialData, session }: Sear
           {activeTab === 'CHALLENGE' && renderChallenges(false)}
           {activeTab === 'USER' && renderUsers(false)}
           {activeTab === 'REPOSITORY' && renderRepositories(false)}
+          {activeTab === 'ORGANIZATION' && renderOrganizations(false)}
         </div>
       </main>
       <Footer />

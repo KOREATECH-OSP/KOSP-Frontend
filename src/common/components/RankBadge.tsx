@@ -7,9 +7,9 @@ interface BadgeProps {
 }
 
 const RANK_COLORS: Record<number, string> = {
-  1: '#F0A800',
-  2: '#9CA3AF',
-  3: '#B45309',
+  1: '#FFD11A',
+  2: '#D0D0D0',
+  3: '#AC7636',
 };
 
 export default function RankBadge({ rank, size = 40, color }: BadgeProps) {

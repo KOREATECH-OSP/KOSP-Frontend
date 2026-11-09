@@ -44,13 +44,21 @@ export default async function RankingPage() {
   const myGithubRankingFromApi: MyGithubRankingResponse | null =
     myGithubRankingResult.status === 'fulfilled' ? myGithubRankingResult.value : null;
 
-  const myGithubRanking: MyGithubRankingResponse | null =
-    myGithubRankingFromApi ??
-    (session
-      ? (githubRankings.rankings.find(
-          (e) => e.userId === parseInt(session.user.id)
-        ) ?? null)
-      : null);
+  const myGithubRanking: MyGithubRankingResponse | null = (() => {
+    if (myGithubRankingFromApi) return myGithubRankingFromApi;
+    if (!session) return null;
+    const entry = githubRankings.rankings.find(
+      (e) => e.userId === parseInt(session.user.id)
+    );
+    if (!entry) return null;
+    return {
+      rank: entry.rank,
+      totalScore: entry.totalScore,
+      activityScore: entry.activityScore,
+      diversityScore: entry.diversityScore,
+      impactScore: entry.impactScore,
+    };
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,6 +76,7 @@ export default async function RankingPage() {
           myRanking={myRanking}
           myGithubRanking={myGithubRanking}
           isAuthenticated={!!session}
+          myUserId={session ? parseInt(session.user.id) : null}
         />
       </Suspense>
       <Footer />

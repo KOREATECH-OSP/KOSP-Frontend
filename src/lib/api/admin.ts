@@ -30,6 +30,9 @@ import type {
   AdminSearchResponse,
   PointTransactionRequest,
   PointHistoryResponse,
+  AdminSeasonListResponse,
+  AdminSeasonCreateRequest,
+  AdminSeasonUpdateRequest,
 } from '@/types/admin';
 
 interface AuthOptions {
@@ -795,4 +798,257 @@ export async function adminUploadTitleImage(
   }
 
   return response.json() as Promise<{ iconUrl: string }>;
+}
+
+// ============================================
+// Season APIs
+// ============================================
+
+/**
+ * 시즌 랭킹 배치 강제 실행
+ */
+export async function runSeasonRankingBatch(auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>('/v1/admin/seasons/batch/ranking', {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// Season Project APIs
+// ============================================
+
+import type {
+  AdminCurrentSeasonResponse,
+  AdminSeasonProjectListResponse,
+  AdminSeasonProjectMemberListResponse,
+  CollectionStatusListResponse,
+  CollectionStatusDetailResponse,
+} from '@/types/admin';
+
+/**
+ * 현재 활성 시즌 조회
+ */
+export async function getAdminCurrentSeason(auth: AuthOptions): Promise<AdminCurrentSeasonResponse> {
+  return clientApiClient<AdminCurrentSeasonResponse>('/v1/admin/seasons/current', {
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 시즌 프로젝트 목록 조회
+ */
+export async function getAdminProjects(
+  seasonId: number,
+  page: number,
+  auth: AuthOptions
+): Promise<AdminSeasonProjectListResponse> {
+  return clientApiClient<AdminSeasonProjectListResponse>(
+    `/v1/admin/seasons/${seasonId}/projects?page=${page}&size=20`,
+    { accessToken: auth.accessToken }
+  );
+}
+
+/**
+ * 시즌 프로젝트 생성
+ */
+export async function createAdminProject(
+  seasonId: number,
+  body: { name: string; projectLevel: number; note?: string },
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/${seasonId}/projects`, {
+    method: 'POST',
+    body,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 프로젝트 참여자 목록 조회
+ */
+export async function getAdminProjectMembers(
+  projectId: number,
+  auth: AuthOptions
+): Promise<AdminSeasonProjectMemberListResponse> {
+  return clientApiClient<AdminSeasonProjectMemberListResponse>(
+    `/v1/admin/seasons/projects/${projectId}/members`,
+    { accessToken: auth.accessToken }
+  );
+}
+
+/**
+ * 프로젝트 참여자 추가
+ */
+export async function addAdminProjectMember(
+  projectId: number,
+  body: { userId: number; roleType: 'TEAM_LEAD' | 'PM' | 'MEMBER' },
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/projects/${projectId}/members`, {
+    method: 'POST',
+    body,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 프로젝트 종료 및 점수 일괄 지급
+ */
+export async function closeAdminProject(projectId: number, auth: AuthOptions): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/projects/${projectId}/close`, {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 프로젝트 참여자 역할 변경
+ */
+export async function changeAdminProjectMemberRole(
+  memberId: number,
+  roleType: 'TEAM_LEAD' | 'PM' | 'MEMBER',
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/projects/members/${memberId}/role`, {
+    method: 'PATCH',
+    body: { roleType },
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 프로젝트 참여자 삭제
+ */
+export async function removeAdminProjectMember(
+  memberId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/projects/members/${memberId}`, {
+    method: 'DELETE',
+    accessToken: auth.accessToken,
+  });
+}
+
+// ============================================
+// Season Management APIs
+// ============================================
+
+/**
+ * 전체 시즌 목록 조회
+ */
+export async function getAdminSeasons(auth: AuthOptions): Promise<AdminSeasonListResponse> {
+  return clientApiClient<AdminSeasonListResponse>('/v1/admin/seasons', {
+    accessToken: auth.accessToken,
+    cache: 'no-store',
+  });
+}
+
+/**
+ * 시즌 생성
+ */
+export async function createAdminSeason(
+  body: AdminSeasonCreateRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>('/v1/admin/seasons', {
+    method: 'POST',
+    body,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 시즌 정보 수정 (이름, 기간, 활성 여부)
+ */
+export async function updateAdminSeason(
+  seasonId: number,
+  body: AdminSeasonUpdateRequest,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/${seasonId}`, {
+    method: 'PATCH',
+    body,
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 시즌별 유저 수집 현황 조회
+ */
+export async function getCollectionStatus(
+  seasonId: number,
+  auth: AuthOptions
+): Promise<CollectionStatusListResponse> {
+  return clientApiClient<CollectionStatusListResponse>(
+    `/v1/admin/seasons/${seasonId}/collection-status`,
+    { accessToken: auth.accessToken, cache: 'no-store' }
+  );
+}
+
+/**
+ * 특정 유저 수집 현황 상세 조회 (레포지토리별)
+ */
+export async function getCollectionStatusDetail(
+  seasonId: number,
+  userId: number,
+  auth: AuthOptions
+): Promise<CollectionStatusDetailResponse> {
+  return clientApiClient<CollectionStatusDetailResponse>(
+    `/v1/admin/seasons/${seasonId}/collection-status/${userId}`,
+    { accessToken: auth.accessToken, cache: 'no-store' }
+  );
+}
+
+/**
+ * 시즌 전체 유저 수집 강제 실행
+ */
+export async function forceCollectAll(
+  seasonId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/${seasonId}/collection/force-all`, {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 특정 유저 수집 강제 실행
+ */
+export async function forceCollect(
+  userId: number,
+  auth: AuthOptions
+): Promise<void> {
+  await clientApiClient<void>(`/v1/admin/seasons/collection/${userId}/force`, {
+    method: 'POST',
+    accessToken: auth.accessToken,
+  });
+}
+
+/**
+ * 수집 큐 상태 조회 (현재 대기 메시지 수)
+ */
+export async function getQueueStatus(
+  auth: AuthOptions
+): Promise<{ pendingCount: number }> {
+  return clientApiClient<{ pendingCount: number }>(
+    `/v1/admin/seasons/collection/queue/status`,
+    { accessToken: auth.accessToken }
+  );
+}
+
+/**
+ * 수집 큐 비우기 (RabbitMQ 대기 메시지 제거 + stuck 배치 잡 정리)
+ */
+export async function clearCollectionQueue(
+  auth: AuthOptions
+): Promise<{ purgedMessageCount: number; clearedJobCount: number }> {
+  return clientApiClient<{ purgedMessageCount: number; clearedJobCount: number }>(
+    `/v1/admin/seasons/collection/queue`,
+    {
+      method: 'DELETE',
+      accessToken: auth.accessToken,
+    }
+  );
 }
