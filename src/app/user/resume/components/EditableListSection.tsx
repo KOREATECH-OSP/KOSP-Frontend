@@ -9,6 +9,7 @@ export interface FieldDef {
   multiline?: boolean;
   span?: 'full' | 'half';
   select?: { value: string; label: string }[];
+  tags?: boolean;
 }
 
 interface EditableListSectionProps<T extends { id: string }> {
@@ -105,6 +106,17 @@ export default function EditableListSection<T extends { id: string }>({
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
+                    ) : field.tags ? (
+                      <input
+                        type="text"
+                        value={(() => {
+                          const raw = (item as Record<string, unknown>)[field.key];
+                          return Array.isArray(raw) ? (raw as string[]).join(', ') : (raw as string) ?? '';
+                        })()}
+                        placeholder={field.placeholder}
+                        onChange={(e) => onUpdate(item.id, field.key, e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-300 focus:border-gray-400 focus:bg-white focus:outline-none transition-colors"
+                      />
                     ) : field.multiline ? (
                       <textarea
                         rows={3}

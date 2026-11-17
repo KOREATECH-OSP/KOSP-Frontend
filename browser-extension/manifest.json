@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "오픈소스포털 아우누리 자료 수집기",
+  "version": "0.1.0",
+  "description": "아우누리 과제/EL 자료를 오픈소스포털 이력서로 반자동 수집합니다. 학교 로그인 정보는 서버로 전송하지 않습니다.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://*.koreatech.ac.kr/*"
+  ],
+  "//host_permissions_note": "TODO: 위에 오픈소스포털 API 호스트(예: https://api.opensourceportal.example/*)를 추가해야 background 에서 import 요청이 CORS 없이 동작합니다.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "아우누리 자료 수집"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.koreatech.ac.kr/*"],
+      "js": ["config.js", "content-aunuri.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

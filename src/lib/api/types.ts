@@ -206,6 +206,192 @@ export interface GithubRecentActivityResponse {
   lastCommitDate: string;
 }
 
+/* ============================================
+ * 팔로잉/팔로워 — Follow
+ * ============================================ */
+
+export interface FollowUserResponse {
+  userId: number;
+  name: string;
+  profileImage: string | null;
+  introduction: string | null;
+  /** 대표 칭호명 (없으면 null) */
+  displayTitleName: string | null;
+  /** 대표 칭호 아이콘 URL (없으면 null) */
+  displayTitleIconUrl: string | null;
+  /** 로그인 조회자가 이 사용자를 팔로우 중인지 */
+  isFollowing: boolean;
+  /** 이 항목이 조회자 본인인지 (true면 팔로우 버튼 미노출) */
+  isMe: boolean;
+}
+
+/** GET /v1/users/:id/followers, /following 응답 (페이지) */
+export interface FollowUserListResponse {
+  users: FollowUserResponse[];
+  meta: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
+}
+
+export interface FollowSummaryResponse {
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+}
+
+/* ============================================
+ * 학습자료(과제/EL) — Material
+ * ============================================ */
+
+export type MaterialFolderType = 'YEAR' | 'SEMESTER' | 'SUBJECT' | 'CUSTOM';
+export type MaterialSource = 'AUNURI_ASSIGNMENT' | 'AUNURI_EL' | 'GITHUB' | 'MANUAL';
+export type MaterialVisibility = 'PUBLIC' | 'PRIVATE';
+
+export interface MaterialFolderResponse {
+  id: number;
+  parentId: number | null;
+  name: string;
+  folderType: MaterialFolderType;
+  source: MaterialSource;
+  visibility: MaterialVisibility;
+  isStartFolder: boolean;
+  sortOrder: number;
+  itemCount: number;
+}
+
+export interface MaterialItemResponse {
+  id: number;
+  folderId: number;
+  title: string;
+  subjectName: string | null;
+  materialYear: number | null;
+  semester: string | null;
+  source: MaterialSource;
+  sourceUrl: string | null;
+  fileUrl: string | null;
+  originalFileName: string | null;
+  fileSize: number | null;
+  contentType: string | null;
+  /** 내려받을 파일이 있는지 (공개 응답은 fileUrl이 null이므로 이 값으로 판단) */
+  hasFile: boolean;
+  isPublic: boolean;
+  semesterOrder: number | null;
+  autoImported: boolean;
+  duplicatedWithGithub: boolean;
+  duplicateRepoKey: string | null;
+  materialDate: string | null;
+  lastSyncedAt: string | null;
+  updatedAt: string;
+}
+
+/** 아우누리 과제/EL 자료 수집(import) 개별 항목 */
+export interface MaterialImportItem {
+  sourceExternalId: string;
+  source: Extract<MaterialSource, 'AUNURI_ASSIGNMENT' | 'AUNURI_EL'>;
+  title: string;
+  subjectName?: string | null;
+  materialYear?: number | null;
+  semester?: string | null;
+  sourceUrl?: string | null;
+  fileUrl?: string | null;
+  originalFileName?: string | null;
+  fileSize?: number | null;
+  contentType?: string | null;
+  materialDate?: string | null;
+}
+
+/** 아우누리 자료 수집 요청 */
+export interface MaterialImportRequest {
+  items: MaterialImportItem[];
+}
+
+/** 아우누리 자료 수집 결과 요약 */
+export interface MaterialImportResponse {
+  created: number;
+  updated: number;
+  unchanged: number;
+  items: MaterialItemResponse[];
+}
+
+/** 이력서 자동 프로젝트 (과제/EL 자료 → 이력서 프로젝트 실시간 투영) */
+export interface ResumeAutoProjectResponse {
+  materialItemId: number;
+  sourceType: Extract<MaterialSource, 'AUNURI_ASSIGNMENT' | 'AUNURI_EL'>;
+  name: string;
+  period: string | null;
+  summary: string | null;
+  docLink: string | null;
+  duplicatedWithGithub: boolean;
+  duplicateRepoKey: string | null;
+  autoImported: boolean;
+  userEdited: boolean;
+  deletedByUser: boolean;
+  isPublic: boolean;
+}
+
+/** 자동 프로젝트 수정 요청 (overrides + 공개 여부) */
+export interface AutoProjectUpdateRequest {
+  name?: string | null;
+  period?: string | null;
+  summary?: string | null;
+  docLink?: string | null;
+  visibility?: MaterialVisibility | null;
+}
+
+export interface MaterialFolderCreateRequest {
+  name: string;
+  parentId?: number | null;
+  folderType?: MaterialFolderType;
+  source?: MaterialSource;
+  visibility?: MaterialVisibility;
+  sortOrder?: number;
+}
+
+export interface MaterialFolderUpdateRequest {
+  name?: string;
+  folderType?: MaterialFolderType;
+  sortOrder?: number;
+}
+
+export interface MaterialItemCreateRequest {
+  folderId: number;
+  title: string;
+  subjectName?: string | null;
+  materialYear?: number | null;
+  semester?: string | null;
+  source?: MaterialSource;
+  sourceUrl?: string | null;
+  fileUrl?: string | null;
+  originalFileName?: string | null;
+  fileSize?: number | null;
+  contentType?: string | null;
+  visibility?: MaterialVisibility | null;
+  materialDate?: string | null;
+}
+
+/**
+ * GitHub 저장소 → 이력서 프로젝트 가져오기 항목
+ * GET /v1/users/me/github/repositories
+ */
+export interface GithubResumeProjectResponse {
+  repoKey: string;
+  name: string;
+  githubLink: string;
+  summary: string | null;
+  techStack: string | null;
+  period: string | null;
+  myContributions: string | null;
+  result: string | null;
+  isOwned: boolean | null;
+  stargazersCount: number | null;
+  userCommitsCount: number | null;
+  userPrsCount: number | null;
+  userIssuesCount: number | null;
+  primaryLanguage: string | null;
+}
+
 /**
  * 기여 점수 - /v1/users/{userId}/github/contribution-score
  */
@@ -443,11 +629,21 @@ export interface TeamListResponse {
   meta: PageMeta;
 }
 
+export type TeamRole = 'LEADER' | 'ADMIN' | 'MEMBER';
+
 export interface TeamMemberResponse {
   id: number;
   name: string;
   profileImage: string | null;
-  role: 'LEADER' | 'MEMBER';
+  role: TeamRole;
+}
+
+export interface PendingInviteResponse {
+  inviteId: number;
+  userId: number;
+  name: string;
+  profileImage: string | null;
+  expiresAt: string;
 }
 
 export interface TeamBasicInfo {
@@ -472,6 +668,7 @@ export interface TeamDetailResponse {
   description: string;
   imageUrl: string | null;
   members: TeamMemberResponse[];
+  pendingInvites?: PendingInviteResponse[];
 }
 
 // ============================================
@@ -621,6 +818,13 @@ export interface RepositorySearchSummary {
   lastCommitDate: string | null;
 }
 
+export interface OrganizationSearchSummary {
+  id: number;
+  githubOrgName: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
 export interface GlobalSearchResponse {
   articles: ArticleSummary[];
   recruits: RecruitSummary[];
@@ -628,6 +832,7 @@ export interface GlobalSearchResponse {
   challenges: ChallengeSearchSummary[];
   users: UserSearchSummary[];
   repositories: RepositorySearchSummary[];
+  organizations: OrganizationSearchSummary[];
   meta?: PageMeta;
 }
 
@@ -650,7 +855,28 @@ export interface UserTitleResponse {
 
 export interface UserTitleListResponse {
   titles: UserTitleResponse[];
+  subTitles: UserTitleResponse[];
   totalCount: number;
+}
+
+export interface TitleConditionProgress {
+  conditionType: string;
+  current: number;
+  target: number;
+  rate: number;        // 0~100
+  measurable: boolean;
+}
+
+export interface TitleProgressResponse {
+  titleId: number;
+  titleName: string;
+  description: string;
+  category: string;
+  rarity: string;
+  iconUrl: string | null;
+  overallRate: number; // 0~100
+  measurable: boolean;
+  conditions: TitleConditionProgress[];
 }
 
 // ============================================
@@ -732,7 +958,7 @@ export interface MySeasonRankingResponse {
   endDate: string; // "YYYY-MM-DD"
   rank: number;
   totalScore: number;
-  tier: string; // e.g. "BRONZE_4", "SILVER_2", "CHALLENGER"
+  tier: string; // e.g. "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "CHALLENGER"
   attendanceScore: number;
   commitScore: number;
   challengeScore: number;
@@ -784,7 +1010,7 @@ export interface SeasonRankingEntry {
   userName: string;
   profileImageUrl: string | null;
   totalScore: number;
-  tier: string; // e.g. "BRONZE_4", "GOLD_2", "CHALLENGER"
+  tier: string; // e.g. "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "CHALLENGER"
 }
 
 /**
@@ -809,6 +1035,7 @@ export type NotificationType =
   | 'CHALLENGE_ACHIEVED'
   | 'POINT_EARNED'
   | 'TEAM_INVITED'
+  | 'COFFEE_CHAT_RECEIVED'
   | 'SYSTEM';
 
 export interface NotificationResponse {
@@ -848,6 +1075,8 @@ export interface ResumeEducationItem {
   school: string;
   major: string;
   period: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeCareerItem {
@@ -855,6 +1084,8 @@ export interface ResumeCareerItem {
   company: string;
   role: string;
   period: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeExperienceItem {
@@ -862,6 +1093,8 @@ export interface ResumeExperienceItem {
   title: string;
   description: string;
   period: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeProjectItem {
@@ -870,7 +1103,7 @@ export interface ResumeProjectItem {
   period: string;
   summary: string;
   role: string;
-  techStack: string;
+  techStack: string[];
   mainFeatures: string;
   myContributions: string;
   problemSolving: string;
@@ -879,6 +1112,8 @@ export interface ResumeProjectItem {
   deployLink: string;
   docLink: string;
   featured: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ResumeAwardItem {
@@ -924,7 +1159,11 @@ export interface ResumeData {
   resumeTitle: string;
   headline: string;
   bio: string;
-  jobRole: string;
+  /**
+   * 개발 직무 (다중). 과거 버전은 단일 문자열로 저장했으므로
+   * 읽는 쪽에서 배열로 정규화해야 한다 (normalizeJobRole 사용).
+   */
+  jobRole: string[] | string;
   techStack: string[];
   links: ResumeLinkItem[];
   education: ResumeEducationItem[];
@@ -968,3 +1207,77 @@ export interface ResumeListResponse {
 
 /** POST /v1/users/me/resume 요청 */
 export type ResumeSaveRequest = ResumeData;
+
+// ============================================
+// CoffeeChat Types
+// ============================================
+
+export interface CoffeeChatRoomResponse {
+  roomId: number;
+  partnerId: number;
+  partnerName: string;
+  partnerGithubLogin: string | null;
+  partnerProfileImage: string | null;
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+  isPinned: boolean;
+}
+
+export interface CoffeeChatMessageResponse {
+  id: string;
+  senderId: number;
+  content: string;
+  sentAt: string;
+  isRead: boolean;
+}
+
+export interface CoffeeChatUnreadCountResponse {
+  count: number;
+}
+
+// ============================================
+// CodeReview Types
+// ============================================
+
+export interface CodeReviewResponse {
+  id: number;
+  authorId: number;
+  authorName: string;
+  authorProfileImage: string | null;
+  content: string;
+  likesCount: number;
+  likedByMe: boolean;
+  createdAt: string;
+  parentId: number | null;
+  isPrivate: boolean;
+  replies: CodeReviewResponse[];
+}
+
+export interface CodeReviewListResponse {
+  total: number;
+  reviews: CodeReviewResponse[];
+}
+
+// ============================================
+// Team Invite Restriction Types
+// ============================================
+
+/** 초대 제한이 걸린 축 */
+export type InviteRestrictionScope = 'TEAM' | 'INVITER';
+
+/** GET /v1/teams/{teamId}/invites/availability 응답 */
+export interface InviteAvailabilityResponse {
+  /** 지금 초대할 수 있는지 */
+  canInvite: boolean;
+  /** 차단된 축 (TEAM: 팀 단위, INVITER: 초대자 단위). 초대 가능하면 null */
+  blockedScope: InviteRestrictionScope | null;
+  /** 누적 거절 횟수 */
+  rejectionCount: number;
+  /** 최근 거절 시각 (ISO) */
+  lastRejectedAt: string | null;
+  /** 제한 종료 시각 (ISO). 초대 가능하면 null */
+  blockedUntil: string | null;
+  /** 사용자 안내 문구. 초대 가능하면 null */
+  reason: string | null;
+}

@@ -30,6 +30,7 @@
     "clsx": "^2.1.1",
     "gsap": "^3.14.2",
     "html2canvas": "^1.4.1",
+    "html2canvas-pro": "^2.1.1",
     "isomorphic-dompurify": "^2.35.0",
     "jspdf": "^4.2.1",
     "lexical": "^0.39.0",

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>프로젝트 관리 목업</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; display: flex; min-height: 100vh; }
+
+    /* ── 사이드바 ── */
+    .sidebar {
+      width: 256px; flex-shrink: 0; background: white;
+      border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; height: 100vh;
+    }
+    .sidebar-logo {
+      height: 56px; display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid #e5e7eb; padding: 0 16px;
+      font-size: 14px; font-weight: 700; color: #111827;
+    }
+    .sidebar-logo-badge {
+      background: #111827; color: white; font-size: 11px;
+      padding: 2px 7px; border-radius: 6px; font-weight: 600;
+    }
+    .sidebar-nav { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 10px; font-size: 13px;
+      font-weight: 500; color: #6b7280; cursor: pointer; transition: background .15s;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: #f3f4f6; color: #111827; }
+    .nav-item.active { background: #111827; color: white; }
+    .nav-item svg { flex-shrink: 0; }
+    .nav-section { font-size: 10px; font-weight: 600; color: #9ca3af; padding: 12px 12px 4px; letter-spacing: .5px; text-transform: uppercase; }
+
+    /* ── 메인 영역 ── */
+    .main { margin-left: 256px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── 탑바 ── */
+    .topbar {
+      height: 56px; background: white; border-bottom: 1px solid #e5e7eb;
+      position: sticky; top: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: flex-end; padding: 0 24px; gap: 12px;
+    }
+    .topbar-name { font-size: 13px; font-weight: 600; color: #111827; }
+    .topbar-email { font-size: 11px; color: #9ca3af; }
+    .topbar-avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: #111827;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: white;
+    }
+
+    /* ── 페이지 콘텐츠 ── */
+    .page { padding: 32px; max-width: 900px; display: none; }
+    .page.active { display: block; }
+
+    .page-title { font-size: 18px; font-weight: 700; color: #111827; }
+    .page-sub { font-size: 13px; color: #9ca3af; margin-top: 2px; }
+
+    /* ── 통계 카드 ── */
+    .stat-card {
+      background: white; border: 1px solid #e5e7eb; border-radius: 16px;
+      padding: 20px 24px; margin: 20px 0;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .stat-icon { width: 40px; height: 40px; border-radius: 10px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; }
+    .stat-label { font-size: 12px; color: #9ca3af; }
+    .stat-value { font-size: 24px; font-weight: 800; color: #111827; line-height: 1.1; }
+    .stat-row { display: flex; gap: 16px; }
+    .stat-card.small { flex: 1; padding: 16px 20px; margin: 0; }
+    .stat-divider { width: 1px; background: #f3f4f6; margin: 0 8px; }
+
+    /* ── 툴바 ── */
+    .toolbar {
+      background: white; border: 1px solid #e5e7eb; border-radius: 16px;
+      padding: 16px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .search-wrap { position: relative; flex: 1; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+    .search-input {
+      width: 100%; padding: 9px 12px 9px 36px;
+      border: 1px solid #e5e7eb; border-radius: 10px; font-size: 13px;
+      outline: none; transition: border .15s;
+    }
+    .search-input:focus { border-color: #9ca3af; }
+    .btn {
+      padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; transition: background .15s;
+    }
+    .btn-primary { background: #111827; color: white; }
+    .btn-primary:hover { background: #1f2937; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .btn-warning:hover { background: #fef3c7; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+    /* ── 프로젝트 목록 ── */
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; }
+    .list-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 20px; border-bottom: 1px solid #f3f4f6;
+      transition: background .1s; cursor: default;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item:hover { background: #f9fafb; }
+
+    .project-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800;
+    }
+    .level-1 { background: #f0fdf4; color: #16a34a; }
+    .level-2 { background: #eff6ff; color: #2563eb; }
+    .level-3 { background: #faf5ff; color: #9333ea; }
+    .level-4 { background: #fff7ed; color: #ea580c; }
+    .level-5 { background: #fffbeb; color: #d97706; }
+
+    .project-info { flex: 1; min-width: 0; }
+    .project-name { font-size: 14px; font-weight: 600; color: #111827; }
+    .project-meta { font-size: 12px; color: #9ca3af; margin-top: 3px; display: flex; align-items: center; gap: 8px; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .badge-open { background: #dcfce7; color: #16a34a; }
+    .badge-closed { background: #f3f4f6; color: #6b7280; }
+    .badge-level { background: #eff6ff; color: #2563eb; }
+    .badge-epic { background: #f5f3ff; color: #7c3aed; }
+
+    .project-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* ── 멤버 테이블 ── */
+    .back-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280; cursor: pointer; margin-bottom: 20px; }
+    .back-btn:hover { color: #111827; }
+
+    .project-header-card {
+      background: white; border: 1px solid #e5e7eb; border-radius: 16px;
+      padding: 20px 24px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .project-header-info { display: flex; align-items: center; gap: 16px; }
+    .project-header-title { font-size: 16px; font-weight: 700; color: #111827; }
+    .project-header-meta { font-size: 12px; color: #9ca3af; margin-top: 4px; display: flex; gap: 12px; }
+    .project-header-actions { display: flex; gap: 8px; }
+
+    .score-breakdown {
+      font-size: 12px; color: #6b7280;
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-radius: 8px; padding: 8px 12px; margin-top: 12px;
+      display: flex; gap: 16px; align-items: center;
+    }
+    .score-breakdown strong { color: #111827; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 10px 16px; font-size: 11px; font-weight: 600; color: #9ca3af;
+      text-align: left; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    td { padding: 14px 16px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%; background: #e5e7eb;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #6b7280; margin-right: 10px; vertical-align: middle;
+    }
+    .avatar.a { background: #dbeafe; color: #1d4ed8; }
+    .avatar.b { background: #fce7f3; color: #db2777; }
+    .avatar.c { background: #d1fae5; color: #059669; }
+    .avatar.d { background: #fef3c7; color: #d97706; }
+
+    .role-badge { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+    .role-lead { background: #fef9c3; color: #854d0e; }
+    .role-pm { background: #ede9fe; color: #6d28d9; }
+    .role-member { background: #f3f4f6; color: #6b7280; }
+
+    .score-chip {
+      background: #f0fdf4; color: #16a34a; padding: 3px 10px;
+      border-radius: 8px; font-size: 12px; font-weight: 700;
+    }
+    .granted-yes { color: #16a34a; font-weight: 600; font-size: 12px; }
+    .granted-no { color: #f59e0b; font-weight: 600; font-size: 12px; }
+
+    /* ── 모달 ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 20px;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: white; border-radius: 20px; padding: 28px;
+      width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    }
+    .modal-title { font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 20px; }
+    .modal-body { margin-bottom: 24px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid #e5e7eb;
+      border-radius: 10px; font-size: 13px; outline: none; transition: border .15s;
+      font-family: inherit;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #9ca3af; }
+    .level-preview {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 10px 14px; font-size: 13px; color: #6b7280; margin-top: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .level-preview strong { color: #111827; font-size: 15px; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn { flex: 1; justify-content: center; }
+
+    .warn-box {
+      background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px;
+      padding: 12px 14px; font-size: 13px; color: #c2410c; margin-bottom: 20px;
+    }
+    .warn-box strong { display: block; font-size: 14px; margin-bottom: 4px; }
+
+    /* ── 페이지 탭 ── */
+    .page-tabs { display: flex; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+    .page-tab { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; color: #6b7280; transition: all .15s; }
+    .page-tab.active { background: white; color: #111827; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+    /* ── 빈 상태 ── */
+    .empty { padding: 60px 20px; text-align: center; color: #9ca3af; font-size: 14px; }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- ── 사이드바 ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span>KOREATECH</span>
+    <span class="sidebar-logo-badge">관리자</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">메뉴</div>
+    <a class="nav-item" onclick="switchPage('dashboard')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      대시보드
+    </a>
+    <a class="nav-item" onclick="switchPage('dashboard')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      챌린지 관리
+    </a>
+    <a class="nav-item active" onclick="switchPage('list')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      프로젝트 관리
+    </a>
+    <a class="nav-item" onclick="switchPage('dashboard')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      사용자 관리
+    </a>
+    <a class="nav-item" onclick="switchPage('dashboard')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      포인트 관리
+    </a>
+    <a class="nav-item" onclick="switchPage('dashboard')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      칭호 관리
+    </a>
+  </nav>
+</aside>
+
+<!-- ── 메인 ── -->
+<div class="main">
+  <header class="topbar">
+    <div style="text-align:right">
+      <div class="topbar-name">관리자</div>
+      <div class="topbar-email">admin@koreatech.ac.kr</div>
+    </div>
+    <div class="topbar-avatar">관</div>
+  </header>
+
+  <!-- ══ 페이지 1: 프로젝트 목록 ══ -->
+  <div class="page active" id="page-list">
+    <div style="padding: 32px;">
+      <div class="page-tabs">
+        <div class="page-tab active" onclick="switchPage('list')">프로젝트 목록</div>
+        <div class="page-tab" onclick="switchPage('detail')">멤버 관리 (예시)</div>
+      </div>
+
+      <div class="page-title">프로젝트 관리</div>
+      <div class="page-sub">시즌 내 프로젝트를 생성하고 멤버 및 점수를 관리합니다</div>
+
+      <!-- 통계 -->
+      <div style="display:flex; gap:12px; margin: 20px 0;">
+        <div class="stat-card small">
+          <div class="stat-icon">📁</div>
+          <div>
+            <div class="stat-label">전체 프로젝트</div>
+            <div class="stat-value">5</div>
+          </div>
+        </div>
+        <div class="stat-card small">
+          <div class="stat-icon">🟢</div>
+          <div>
+            <div class="stat-label">진행 중 (OPEN)</div>
+            <div class="stat-value">3</div>
+          </div>
+        </div>
+        <div class="stat-card small">
+          <div class="stat-icon">✅</div>
+          <div>
+            <div class="stat-label">종료 (CLOSED)</div>
+            <div class="stat-value">2</div>
+          </div>
+        </div>
+        <div class="stat-card small">
+          <div class="stat-icon">👥</div>
+          <div>
+            <div class="stat-label">전체 참여자</div>
+            <div class="stat-value">21</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 툴바 -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="search-input" placeholder="프로젝트 이름으로 검색" />
+        </div>
+        <button class="btn btn-primary" onclick="openModal('create')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          프로젝트 생성
+        </button>
+      </div>
+
+      <!-- 프로젝트 목록 -->
+      <div class="card">
+        <!-- OPEN 프로젝트들 -->
+        <div class="list-item">
+          <div class="project-icon level-5">L5</div>
+          <div class="project-info">
+            <div class="project-name">오픈소스 기여 프로젝트 — 2026 상반기</div>
+            <div class="project-meta">
+              <span class="badge badge-open">● OPEN</span>
+              <span>Level 5 · 기본점수 10.0점</span>
+              <span>· 멤버 6명</span>
+              <span>· 비고: 산학협력 과제 연계</span>
+            </div>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-secondary btn-sm" onclick="switchPage('detail')">멤버 관리</button>
+          </div>
+        </div>
+
+        <div class="list-item">
+          <div class="project-icon level-3">L3</div>
+          <div class="project-info">
+            <div class="project-name">K-OSP 플랫폼 개선 TF</div>
+            <div class="project-meta">
+              <span class="badge badge-open">● OPEN</span>
+              <span>Level 3 · 기본점수 6.0점</span>
+              <span>· 멤버 4명</span>
+            </div>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-secondary btn-sm" onclick="switchPage('detail')">멤버 관리</button>
+          </div>
+        </div>
+
+        <div class="list-item">
+          <div class="project-icon level-2">L2</div>
+          <div class="project-info">
+            <div class="project-name">신규 기능 개발 스프린트</div>
+            <div class="project-meta">
+              <span class="badge badge-open">● OPEN</span>
+              <span>Level 2 · 기본점수 4.0점</span>
+              <span>· 멤버 3명</span>
+            </div>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-secondary btn-sm" onclick="switchPage('detail')">멤버 관리</button>
+          </div>
+        </div>
+
+        <!-- CLOSED 프로젝트들 -->
+        <div class="list-item" style="opacity: .65;">
+          <div class="project-icon level-4">L4</div>
+          <div class="project-info">
+            <div class="project-name">데이터 파이프라인 구축</div>
+            <div class="project-meta">
+              <span class="badge badge-closed">CLOSED</span>
+              <span>Level 4 · 기본점수 8.0점</span>
+              <span>· 멤버 5명 · 점수 지급 완료</span>
+              <span>· 종료: 2026-07-15</span>
+            </div>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-secondary btn-sm" onclick="switchPage('detail')">멤버 조회</button>
+          </div>
+        </div>
+
+        <div class="list-item" style="opacity: .65;">
+          <div class="project-icon level-1">L1</div>
+          <div class="project-info">
+            <div class="project-name">UI 컴포넌트 라이브러리</div>
+            <div class="project-meta">
+              <span class="badge badge-closed">CLOSED</span>
+              <span>Level 1 · 기본점수 2.0점</span>
+              <span>· 멤버 3명 · 점수 지급 완료</span>
+              <span>· 종료: 2026-06-30</span>
+            </div>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-secondary btn-sm" onclick="switchPage('detail')">멤버 조회</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 페이지 2: 멤버 관리 ══ -->
+  <div class="page" id="page-detail">
+    <div style="padding: 32px;">
+      <div class="page-tabs">
+        <div class="page-tab" onclick="switchPage('list')">프로젝트 목록</div>
+        <div class="page-tab active" onclick="switchPage('detail')">멤버 관리 (예시)</div>
+      </div>
+
+      <!-- 뒤로가기 -->
+      <div class="back-btn" onclick="switchPage('list')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        프로젝트 목록으로
+      </div>
+
+      <!-- 프로젝트 헤더 카드 -->
+      <div class="project-header-card">
+        <div class="project-header-info">
+          <div class="project-icon level-5" style="width:52px;height:52px;font-size:20px;">L5</div>
+          <div>
+            <div class="project-header-title">오픈소스 기여 프로젝트 — 2026 상반기</div>
+            <div class="project-header-meta">
+              <span class="badge badge-open">● OPEN</span>
+              <span>Level 5</span>
+              <span>기본점수 10.0점</span>
+              <span>멤버 6명</span>
+              <span>비고: 산학협력 과제 연계</span>
+            </div>
+          </div>
+        </div>
+        <div class="project-header-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addMember')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            멤버 추가
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="openModal('close')">프로젝트 종료</button>
+        </div>
+      </div>
+
+      <!-- 점수 미리보기 -->
+      <div class="score-breakdown" style="margin-bottom:16px;">
+        <span>점수 구조</span>
+        <span>팀장: <strong>10.0 + 2.0 = 12.0점</strong></span>
+        <span>PM: <strong>10.0 + 1.0 = 11.0점</strong></span>
+        <span>멤버: <strong>10.0 + 0.0 = 10.0점</strong></span>
+        <span style="color:#9ca3af;">종료 시 일괄 지급</span>
+      </div>
+
+      <!-- 멤버 테이블 -->
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>참여자</th>
+              <th>역할</th>
+              <th>역할 보너스</th>
+              <th>최종 점수</th>
+              <th>점수 지급</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="memberTableBody">
+            <tr>
+              <td><span class="avatar a">김</span>김민준 <span style="color:#9ca3af;font-size:11px;">ID: 42</span></td>
+              <td><span class="role-badge role-lead">팀장</span></td>
+              <td>+2.0점</td>
+              <td><span class="score-chip">12.0점</span></td>
+              <td><span class="granted-no">⏳ 미지급</span></td>
+              <td>
+                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                  <button class="btn btn-secondary btn-sm" onclick="openRoleModal('김민준', 'TEAM_LEAD')">역할 변경</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDeleteModal('김민준')">삭제</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="avatar b">이</span>이서연 <span style="color:#9ca3af;font-size:11px;">ID: 17</span></td>
+              <td><span class="role-badge role-pm">PM</span></td>
+              <td>+1.0점</td>
+              <td><span class="score-chip">11.0점</span></td>
+              <td><span class="granted-no">⏳ 미지급</span></td>
+              <td>
+                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                  <button class="btn btn-secondary btn-sm" onclick="openRoleModal('이서연', 'PM')">역할 변경</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDeleteModal('이서연')">삭제</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="avatar c">박</span>박지훈 <span style="color:#9ca3af;font-size:11px;">ID: 53</span></td>
+              <td><span class="role-badge role-member">멤버</span></td>
+              <td>+0.0점</td>
+              <td><span class="score-chip">10.0점</span></td>
+              <td><span class="granted-no">⏳ 미지급</span></td>
+              <td>
+                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                  <button class="btn btn-secondary btn-sm" onclick="openRoleModal('박지훈', 'MEMBER')">역할 변경</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDeleteModal('박지훈')">삭제</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="avatar d">최</span>최예은 <span style="color:#9ca3af;font-size:11px;">ID: 28</span></td>
+              <td><span class="role-badge role-member">멤버</span></td>
+              <td>+0.0점</td>
+              <td><span class="score-chip">10.0점</span></td>
+              <td><span class="granted-no">⏳ 미지급</span></td>
+              <td>
+                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                  <button class="btn btn-secondary btn-sm" onclick="openRoleModal('최예은', 'MEMBER')">역할 변경</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDeleteModal('최예은')">삭제</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="avatar" style="background:#fce7f3;color:#db2777;">정</span>정다은 <span style="color:#9ca3af;font-size:11px;">ID: 61</span></td>
+              <td><span class="role-badge role-member">멤버</span></td>
+              <td>+0.0점</td>
+              <td><span class="score-chip">10.0점</span></td>
+              <td><span class="granted-no">⏳ 미지급</span></td>
+              <td>
+                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                  <button class="btn btn-secondary btn-sm" onclick="openRoleModal('정다은', 'MEMBER')">역할 변경</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDeleteModal('정다은')">삭제</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="avatar" style="background:#d1fae5;color:#059669;">한</span>한승우 <span style="color:#9ca3af;font-size:11px;">ID: 89</span></td>
+              <td><span class="role-badge role-member">멤버</span></td>
+              <td>+0.0점</td>
+              <td><span class="score-chip">10.0점</span></td>
+              <td><span class="granted-no">⏳ 미지급</span></td>
+              <td>
+                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                  <button class="btn btn-secondary btn-sm" onclick="openRoleModal('한승우', 'MEMBER')">역할 변경</button>
+                  <button class="btn btn-danger btn-sm" onclick="openDeleteModal('한승우')">삭제</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 종료된 프로젝트 예시 안내 -->
+      <div style="margin-top:20px; padding:14px 18px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; font-size:13px; color:#15803d;">
+        💡 프로젝트 종료 후에는 모든 멤버의 점수 지급 여부가 <strong>✅ 지급 완료</strong>로 변경되고 추가/수정이 불가능합니다.
+      </div>
+    </div>
+  </div>
+</div><!-- end .main -->
+
+
+<!-- ══ 모달: 프로젝트 생성 ══ -->
+<div class="modal-overlay hidden" id="modal-create">
+  <div class="modal">
+    <div class="modal-title">프로젝트 생성</div>
+    <div class="modal-body">
+      <div class="field">
+        <label>프로젝트 이름 *</label>
+        <input type="text" placeholder="예: 오픈소스 기여 프로젝트" />
+      </div>
+      <div class="field">
+        <label>레벨 (1~5) *</label>
+        <select id="levelSelect" onchange="updateLevelPreview()">
+          <option value="">레벨을 선택하세요</option>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+          <option value="5">Level 5</option>
+        </select>
+        <div class="level-preview" id="levelPreview" style="display:none;">
+          <span>기본 점수</span>
+          <strong id="levelScore">—</strong>
+        </div>
+      </div>
+      <div class="field">
+        <label>비고 (선택)</label>
+        <textarea rows="2" placeholder="예: 산학협력 과제 연계" style="resize:none;"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('create')">취소</button>
+      <button class="btn btn-primary" onclick="closeModal('create')">생성</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 모달: 멤버 추가 ══ -->
+<div class="modal-overlay hidden" id="modal-addMember">
+  <div class="modal">
+    <div class="modal-title">멤버 추가</div>
+    <div class="modal-body">
+      <div class="field">
+        <label>유저 ID *</label>
+        <input type="number" placeholder="예: 42" id="memberUserId" oninput="updateMemberPreview()" />
+      </div>
+      <div class="field">
+        <label>역할 *</label>
+        <select id="memberRole" onchange="updateMemberPreview()">
+          <option value="">역할을 선택하세요</option>
+          <option value="TEAM_LEAD">팀장 (Team Lead) — +2.0점</option>
+          <option value="PM">PM — +1.0점</option>
+          <option value="MEMBER">멤버 (Member) — +0.0점</option>
+        </select>
+      </div>
+      <div class="level-preview" id="memberPreview" style="display:none;">
+        <span>지급될 점수 (종료 시)</span>
+        <strong id="memberScore">—</strong>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addMember')">취소</button>
+      <button class="btn btn-primary" onclick="closeModal('addMember')">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 모달: 역할 변경 ══ -->
+<div class="modal-overlay hidden" id="modal-changeRole">
+  <div class="modal">
+    <div class="modal-title">역할 변경</div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">
+        대상: <strong id="roleTargetName" style="color:#111827;"></strong>
+      </div>
+      <div class="field">
+        <label>새 역할</label>
+        <select id="changeRoleSelect" onchange="updateChangeRolePreview()">
+          <option value="TEAM_LEAD">팀장 (Team Lead) — +2.0점</option>
+          <option value="PM">PM — +1.0점</option>
+          <option value="MEMBER">멤버 (Member) — +0.0점</option>
+        </select>
+      </div>
+      <div class="level-preview" id="changeRolePreview">
+        <span>변경 후 지급 점수</span>
+        <strong id="changeRoleScore">—</strong>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('changeRole')">취소</button>
+      <button class="btn btn-primary" onclick="closeModal('changeRole')">변경</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 모달: 멤버 삭제 ══ -->
+<div class="modal-overlay hidden" id="modal-deleteMember">
+  <div class="modal">
+    <div class="modal-title">멤버 삭제</div>
+    <div class="warn-box">
+      <strong>⚠️ 멤버를 삭제하면 되돌릴 수 없습니다</strong>
+      삭제된 멤버는 종료 시 점수가 지급되지 않습니다.
+    </div>
+    <div style="font-size:14px;color:#374151;margin-bottom:24px;">
+      <strong id="deleteTargetName" style="color:#111827;"></strong> 멤버를 프로젝트에서 삭제하시겠습니까?
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('deleteMember')">취소</button>
+      <button class="btn btn-danger" onclick="closeModal('deleteMember')">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 모달: 프로젝트 종료 ══ -->
+<div class="modal-overlay hidden" id="modal-close">
+  <div class="modal">
+    <div class="modal-title">프로젝트 종료</div>
+    <div class="warn-box">
+      <strong>⚠️ 이 작업은 되돌릴 수 없습니다</strong>
+      프로젝트를 종료하면 모든 멤버에게 점수가 즉시 일괄 지급되며, 이후 멤버 추가·수정이 불가능합니다.
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;">
+      <div style="font-weight:600;color:#111827;margin-bottom:8px;">지급 예정 점수 (멤버 6명)</div>
+      <div style="display:flex;flex-direction:column;gap:4px;color:#6b7280;">
+        <span>김민준 (팀장) → <strong style="color:#111827;">12.0점</strong></span>
+        <span>이서연 (PM) → <strong style="color:#111827;">11.0점</strong></span>
+        <span>박지훈 외 4명 (멤버) → <strong style="color:#111827;">각 10.0점</strong></span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('close')">취소</button>
+      <button class="btn btn-danger" onclick="closeModal('close')">종료 및 점수 지급</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const levelScores = { '1': '2.0점', '2': '4.0점', '3': '6.0점', '4': '8.0점', '5': '10.0점' };
+  const levelScoreNums = { '1': 2, '2': 4, '3': 6, '4': 8, '5': 10 };
+  const roleBonuses = { 'TEAM_LEAD': 2.0, 'PM': 1.0, 'MEMBER': 0.0 };
+  const BASE_SCORE = 10.0; // Level 5 예시
+
+  function switchPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (name === 'list' || name === 'detail') {
+      document.querySelectorAll('.nav-item')[2].classList.add('active');
+    }
+  }
+
+  function openModal(name) {
+    document.getElementById('modal-' + name).classList.remove('hidden');
+  }
+
+  function closeModal(name) {
+    document.getElementById('modal-' + name).classList.add('hidden');
+  }
+
+  // 모달 바깥 클릭 닫기
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) this.classList.add('hidden');
+    });
+  });
+
+  function updateLevelPreview() {
+    const val = document.getElementById('levelSelect').value;
+    const preview = document.getElementById('levelPreview');
+    const scoreEl = document.getElementById('levelScore');
+    if (val) {
+      preview.style.display = 'flex';
+      scoreEl.textContent = levelScores[val];
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  function openRoleModal(name, currentRole) {
+    document.getElementById('roleTargetName').textContent = name;
+    document.getElementById('changeRoleSelect').value = currentRole;
+    updateChangeRolePreview();
+    openModal('changeRole');
+  }
+
+  function openDeleteModal(name) {
+    document.getElementById('deleteTargetName').textContent = name;
+    openModal('deleteMember');
+  }
+
+  function updateChangeRolePreview() {
+    const role = document.getElementById('changeRoleSelect').value;
+    const bonus = roleBonuses[role];
+    const total = BASE_SCORE + bonus;
+    document.getElementById('changeRoleScore').textContent = total.toFixed(1) + '점';
+  }
+
+  function updateMemberPreview() {
+    const role = document.getElementById('memberRole').value;
+    const preview = document.getElementById('memberPreview');
+    const scoreEl = document.getElementById('memberScore');
+    if (role) {
+      preview.style.display = 'flex';
+      const total = BASE_SCORE + roleBonuses[role];
+      scoreEl.textContent = total.toFixed(1) + '점';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>

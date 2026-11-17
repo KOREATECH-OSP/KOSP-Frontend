@@ -1,5 +1,8 @@
 import { ExternalLink } from 'lucide-react';
-import type { ResumeData } from '@/lib/api/types';
+import type { ResumeData, ResumeProjectItem } from '@/lib/api/types';
+import { normalizeJobRole } from '@/lib/constants/resume';
+import { formatPeriod } from '@/lib/utils/resumeDate';
+import ProjectCarousel from './ProjectCarousel';
 
 // ── 자격증 상태 라벨 ──────────────────────────────────────────────
 const CERT_STATUS_LABEL: Record<string, string> = {
@@ -19,9 +22,83 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+// ── PDF 전용 프로젝트 목록 ───────────────────────────────────────
+/**
+ * 프로젝트를 모든 필드와 함께 세로로 펼쳐 렌더링한다.
+ *
+ * <p>화면에서는 캐러셀(가로 스크롤) + 상세 모달을 쓰지만, 두 방식 모두 PDF 캡처에
+ * 담기지 않는다. 캐러셀은 화면 밖 카드가 overflow 로 잘리고, 모달 내용은 DOM 에
+ * 열려 있지 않기 때문이다. PDF 에서는 이 컴포넌트로 대체해 누락을 없앤다.</p>
+ */
+function ProjectPdfList({ projects }: { projects: ResumeData['projects'] }) {
+  const FIELD_LABELS: [keyof ResumeProjectItem, string][] = [
+    ['role', '역할'],
+    ['summary', '요약'],
+    ['mainFeatures', '주요 기능'],
+    ['myContributions', '기여한 부분'],
+    ['problemSolving', '문제 해결'],
+    ['result', '성과'],
+  ];
+
+  return (
+    <div className="space-y-5">
+      {projects.map((proj, i) => (
+        <div key={proj.id ?? i} data-pdf-cut>
+          {i > 0 && <Divider />}
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-gray-900">{proj.name}</p>
+            {periodOf(proj) && <span className="shrink-0 text-xs text-gray-400">{periodOf(proj)}</span>}
+          </div>
+
+          {proj.techStack && proj.techStack.length > 0 && (
+            <p className="mt-1 text-xs text-gray-500">
+              <span className="font-medium text-gray-600">기술스택</span> · {proj.techStack.join(', ')}
+            </p>
+          )}
+
+          <div className="mt-2 space-y-1.5">
+            {FIELD_LABELS.map(([key, label]) => {
+              const value = proj[key] as unknown;
+              if (!value || typeof value !== 'string') return null;
+              return (
+                <div key={label} className="flex items-start gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-gray-500">{label}</span>
+                  <span className="text-sm text-gray-700 whitespace-pre-wrap">{value}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {(proj.githubLink || proj.deployLink || proj.docLink) && (
+            <div className="mt-2 space-y-1">
+              {([['githubLink', 'GitHub'], ['deployLink', '배포'], ['docLink', '문서']] as const).map(
+                ([key, label]) => proj[key] ? (
+                  <div key={label} className="flex items-start gap-2">
+                    <span className="w-20 shrink-0 text-xs font-medium text-gray-500">{label}</span>
+                    <span className="break-all text-xs text-blue-600">{proj[key]}</span>
+                  </div>
+                ) : null
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── 빈 값 처리 ───────────────────────────────────────────────────
 function Empty({ message = '입력된 내용이 없습니다.' }: { message?: string }) {
   return <p className="text-sm text-gray-400">{message}</p>;
+}
+
+/**
+ * 항목의 기간 표시 문자열.
+ * 새 형식(startDate/endDate)을 우선하고, 없으면 과거 자유 입력 period 를 그대로 쓴다.
+ */
+function periodOf(item: { period?: string; startDate?: string; endDate?: string }): string {
+  const fromDates = formatPeriod(item.startDate, item.endDate);
+  return fromDates || item.period || '';
 }
 
 // ── 항목 구분선 ──────────────────────────────────────────────────
@@ -45,6 +122,8 @@ interface Props {
  */
 export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle, visibleSections }: Props) {
   const show = (id: string) => !visibleSections || visibleSections[id] !== false;
+  // 과거 이력서는 jobRole 이 단일 문자열이므로 배열로 정규화해서 렌더링한다.
+  const jobRoles = normalizeJobRole(data.jobRole);
   return (
     <div id="resume-print-area" className="space-y-4">
 
@@ -75,10 +154,26 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
               ) : (
                 <Empty message="한 줄 소개가 없습니다." />
               )}
-              {data.jobRole && (
-                <p className="mt-1 text-sm text-orange-500 font-medium">{data.jobRole}</p>
-              )}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── 개발 직무 ────────────────────────────────────── */}
+      {/* 이전에는 기본정보 안에 라벨 없이 인라인 표시되어 PDF에서 어떤 항목인지 알 수 없었다.
+          독립 섹션으로 분리해 제목이 항상 함께 출력되게 한다. */}
+      {show('sec-jobRole') && jobRoles.length > 0 && (
+        <section id="sec-jobRole" className="rounded-xl border border-gray-200 bg-white px-6 py-5">
+          <h3 className="mb-3 text-sm font-bold text-gray-900">개발 직무</h3>
+          <div className="flex flex-wrap gap-2">
+            {jobRoles.map((role) => (
+              <span
+                key={role}
+                className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-600 border border-orange-100"
+              >
+                {role}
+              </span>
+            ))}
           </div>
         </section>
       )}
@@ -110,7 +205,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="링크">
           <div className="space-y-2">
             {data.links.map((link, i) => (
-              <div key={link.id ?? i} className="flex items-center gap-2">
+              <div key={link.id ?? i} data-pdf-cut className="flex items-center gap-2">
                 <span className="w-20 shrink-0 text-xs text-gray-400">{link.label || '링크'}</span>
                 {link.url ? (
                   <a href={link.url} target="_blank" rel="noopener noreferrer"
@@ -132,11 +227,11 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="학력">
           <div className="space-y-4">
             {data.education.filter((e) => e.school).map((edu, i) => (
-              <div key={edu.id ?? i}>
+              <div key={edu.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <p className="text-sm font-semibold text-gray-900">{edu.school}</p>
                 {edu.major && <p className="mt-0.5 text-sm text-gray-500">{edu.major}</p>}
-                {edu.period && <p className="mt-0.5 text-xs text-gray-400">{edu.period}</p>}
+                {periodOf(edu) && <p className="mt-0.5 text-xs text-gray-400">{periodOf(edu)}</p>}
               </div>
             ))}
           </div>
@@ -148,11 +243,11 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="경력">
           <div className="space-y-4">
             {data.career.filter((c) => c.company).map((c, i) => (
-              <div key={c.id ?? i}>
+              <div key={c.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <p className="text-sm font-semibold text-gray-900">{c.company}</p>
                 {c.role && <p className="mt-0.5 text-sm text-gray-500">{c.role}</p>}
-                {c.period && <p className="mt-0.5 text-xs text-gray-400">{c.period}</p>}
+                {periodOf(c) && <p className="mt-0.5 text-xs text-gray-400">{periodOf(c)}</p>}
               </div>
             ))}
           </div>
@@ -162,62 +257,14 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       {/* ── 프로젝트 ─────────────────────────────────────── */}
       {show('sec-projects') && data.projects?.filter((p) => p.name).length > 0 && (
         <Section title="프로젝트">
-          <div className="space-y-6">
-            {data.projects.filter((p) => p.name).map((proj, i) => (
-              <div key={proj.id ?? i}>
-                {i > 0 && <Divider />}
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {proj.name}
-                    {proj.featured === 'true' && <span className="ml-2 text-xs text-orange-500">★ 대표</span>}
-                  </p>
-                  {proj.period && <span className="shrink-0 text-xs text-gray-400">{proj.period}</span>}
-                </div>
-                {proj.role && <p className="mt-0.5 text-xs text-gray-500">역할: {proj.role}</p>}
-                {proj.techStack && <p className="mt-0.5 text-xs text-gray-500">사용 기술: {proj.techStack}</p>}
-                {proj.summary && <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{proj.summary}</p>}
-                {proj.mainFeatures && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500 mb-1">주요 기능</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{proj.mainFeatures}</p>
-                  </div>
-                )}
-                {proj.myContributions && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500 mb-1">기여 내용</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{proj.myContributions}</p>
-                  </div>
-                )}
-                {proj.result && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500 mb-1">결과</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{proj.result}</p>
-                  </div>
-                )}
-                {(proj.githubLink || proj.deployLink || proj.docLink) && (
-                  <div className="mt-2 flex flex-wrap gap-3">
-                    {proj.githubLink && (
-                      <a href={proj.githubLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                        GitHub <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {proj.deployLink && (
-                      <a href={proj.deployLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                        배포 <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {proj.docLink && (
-                      <a href={proj.docLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1">
-                        문서 <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+          {/* 화면용: 가로 캐러셀. PDF 캡처 시에는 제외한다
+              (overflow 로 화면 밖 카드가 잘리고, 상세는 모달 안이라 캡처되지 않기 때문) */}
+          <div data-pdf-hidden>
+            <ProjectCarousel projects={data.projects.filter((p) => p.name)} />
+          </div>
+          {/* PDF용: 모든 프로젝트를 모든 필드와 함께 세로로 펼쳐 렌더링 */}
+          <div data-pdf-only style={{ display: 'none' }}>
+            <ProjectPdfList projects={data.projects.filter((p) => p.name)} />
           </div>
         </Section>
       )}
@@ -227,11 +274,11 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="교육이력">
           <div className="space-y-4">
             {data.experience.filter((e) => e.title).map((exp, i) => (
-              <div key={exp.id ?? i}>
+              <div key={exp.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-900">{exp.title}</p>
-                  {exp.period && <span className="shrink-0 text-xs text-gray-400">{exp.period}</span>}
+                  {periodOf(exp) && <span className="shrink-0 text-xs text-gray-400">{periodOf(exp)}</span>}
                 </div>
                 {exp.description && (
                   <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{exp.description}</p>
@@ -247,7 +294,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="수상이력">
           <div className="space-y-4">
             {data.awards.filter((a) => a.name).map((award, i) => (
-              <div key={award.id ?? i}>
+              <div key={award.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-900">{award.name}</p>
@@ -268,7 +315,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="자격증">
           <div className="space-y-3">
             {data.certifications.filter((c) => c.name).map((cert, i) => (
-              <div key={cert.id ?? i} className="flex items-center justify-between">
+              <div key={cert.id ?? i} data-pdf-cut className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{cert.name}</p>
                   {cert.organization && <p className="text-xs text-gray-500">{cert.organization}</p>}
@@ -292,7 +339,7 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
         <Section title="자기소개서">
           <div className="space-y-6">
             {data.coverLetters.filter((cl) => cl.content).map((cl, i) => (
-              <div key={cl.id ?? i}>
+              <div key={cl.id ?? i} data-pdf-cut>
                 {i > 0 && <Divider />}
                 {cl.title && <p className="mb-2 text-sm font-semibold text-gray-900">{cl.title}</p>}
                 <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
@@ -305,11 +352,13 @@ export default function ResumeReadOnlyView({ data, profileImageUrl, resumeTitle,
       )}
 
       {/* ── 커스텀 섹션 ─────────────────────────────────── */}
-      {data.customSections?.filter((s) => s.title && s.fields.some((f) => f.label || f.value)).map((section) => (
+      {/* fields 는 서버 검증이 없어 null/누락 상태로 저장될 수 있다.
+          이 컴포넌트는 화면 렌더와 PDF 캡처 대상을 겸하므로, 여기서 터지면 페이지 전체가 죽는다. */}
+      {data.customSections?.filter((s) => s.title && s.fields?.some((f) => f.label || f.value)).map((section) => (
         <Section key={section.id} title={section.title}>
           <div className="space-y-2">
-            {section.fields.filter((f) => f.label || f.value).map((field) => (
-              <div key={field.id} className="flex items-start gap-3">
+            {section.fields?.filter((f) => f.label || f.value).map((field) => (
+              <div key={field.id} data-pdf-cut className="flex items-start gap-3">
                 {field.label && (
                   <span className="w-24 shrink-0 text-xs font-medium text-gray-500 pt-0.5">{field.label}</span>
                 )}

@@ -19,10 +19,12 @@ import {
   Trophy,
   Bell,
   Flag,
+  BarChart2,
   ShieldX,
   Coins,
   Home,
   Settings,
+  Building2,
 } from 'lucide-react';
 import LogoImage from '@/assets/images/koreatech_hangeul.png';
 import { toast } from '@/lib/toast';
@@ -50,6 +52,16 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    name: '랭킹 관리',
+    href: '/admin/ranking',
+    icon: BarChart2,
+  },
+  {
+    name: '프로젝트 관리',
+    href: '/admin/projects',
+    icon: FileText,
+  },
+  {
     name: '콘텐츠 관리',
     href: '/admin/contents',
     icon: FileText,
@@ -73,6 +85,11 @@ const navigation: NavItem[] = [
     children: [
       { name: '사용자 목록', href: '/admin/users/list', icon: Users },
     ],
+  },
+  {
+    name: '조직 관리',
+    href: '/admin/organizations',
+    icon: Building2,
   },
   {
     name: '칭호 관리',

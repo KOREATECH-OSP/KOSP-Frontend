@@ -35,7 +35,12 @@ export interface EducationItem {
   id: string;
   school: string;
   major: string;
+  /** 표시/레거시 호환용 기간 문자열. startDate·endDate 로부터 파생된다. */
   period: string;
+  /** 시작일 YYYY.MM.DD */
+  startDate: string;
+  /** 종료일 YYYY.MM.DD (미입력이면 진행 중) */
+  endDate: string;
 }
 
 export interface CareerItem {
@@ -44,6 +49,8 @@ export interface CareerItem {
   company: string;
   role: string;
   period: string;
+  startDate: string;
+  endDate: string;
 }
 
 export interface ExperienceItem {
@@ -52,6 +59,8 @@ export interface ExperienceItem {
   title: string;
   description: string;
   period: string;
+  startDate: string;
+  endDate: string;
 }
 
 export interface ProjectItem {
@@ -59,6 +68,8 @@ export interface ProjectItem {
   id: string;
   name: string;
   period: string;
+  startDate: string;
+  endDate: string;
   summary: string;
   role: string;
   techStack: string;
@@ -171,7 +182,7 @@ interface ResumeData {
   certifications: CertificationItem[];
   coverLetters: CoverLetterItem[];
   customSections: CustomSectionItem[];
-  jobRole: string;
+  jobRole: string[];
   techStack: string[];
   visibleSections: VisibleSections;
   isPublic: boolean;
@@ -192,7 +203,7 @@ function loadAll(p: string): ResumeData {
     certifications: load(`${p}:certifications`, [] as CertificationItem[]),
     coverLetters: load(`${p}:coverLetters`, [] as CoverLetterItem[]),
     customSections: load(`${p}:customSections`, [] as CustomSectionItem[]),
-    jobRole: load(`${p}:jobRole`, ''),
+    jobRole: load(`${p}:jobRole`, [] as string[]),
     techStack: load(`${p}:techStack`, [] as string[]),
     visibleSections: load(`${p}:visibleSections`, DEFAULT_VISIBLE),
     isPublic: load(`${p}:isPublic`, false),
@@ -213,7 +224,7 @@ const INITIAL_DATA: ResumeData = {
   certifications: [],
   coverLetters: [],
   customSections: [],
-  jobRole: '',
+  jobRole: [],
   techStack: [],
   visibleSections: DEFAULT_VISIBLE,
   isPublic: false,
@@ -249,15 +260,28 @@ export interface ResumeStorage {
   setCoverLetters: (v: CoverLetterItem[]) => void;
   customSections: CustomSectionItem[];
   setCustomSections: (v: CustomSectionItem[]) => void;
-  jobRole: string;
-  setJobRole: (v: string) => void;
+  jobRole: string[];
+  setJobRole: (v: string[]) => void;
   techStack: string[];
   setTechStack: (v: string[]) => void;
   visibleSections: VisibleSections;
   toggleSection: (key: SectionKey) => void;
   isPublic: boolean;
   setIsPublic: (v: boolean) => void;
+  /** 현재 슬롯에 저장되지 않은 브라우저 draft 가 남아 있는지 여부 */
+  hasDraft: () => boolean;
+  /** 브라우저 draft 를 편집 상태로 복원한다 (사용자가 명시적으로 요청했을 때만) */
+  restoreDraft: () => void;
+  /** 서버 저장 성공 후 브라우저 draft 를 제거한다 */
+  clearDraft: () => void;
 }
+
+/** localStorage draft 키 목록 (슬롯 접두사 p 기준) */
+const DRAFT_KEYS = [
+  'title', 'headline', 'bio', 'links', 'education', 'career', 'experience',
+  'projects', 'awards', 'certifications', 'coverLetters', 'customSections',
+  'jobRole', 'techStack', 'visibleSections', 'isPublic',
+] as const;
 
 /**
  * 이력서 draft 데이터를 localStorage에 저장·불러오는 훅.
@@ -271,17 +295,16 @@ export function useResumeStorage(userId: number | null, resumeId: number | null 
 
   const [data, setData] = useState<ResumeData>(INITIAL_DATA);
 
-  // p(접두사)가 바뀌면 해당 슬롯에서 로드.
-  // 해당 슬롯에 저장된 데이터가 없으면 현재 상태를 유지(서버 데이터 보존).
+  // 슬롯(p)이 바뀌어도 localStorage 를 자동으로 덮어씌우지 않는다.
+  //
+  // 서버(user_resume.resume_data)가 유일한 Source of Truth 이고, localStorage 는
+  // 저장 전 임시 draft 일 뿐이다. 과거에는 여기서 loadAll(p) 를 무조건 적용해
+  // 서버에서 막 불러온 이력서를 오래된 브라우저 draft 로 덮어썼고,
+  // 그 결과 "저장에 실패해도 새로고침하면 그대로 보여서 저장된 것처럼 착각"하는
+  // 증상이 발생했다. 이제 하이드레이션은 페이지가 hydrate()/restoreDraft() 로 명시 제어한다.
   useEffect(() => {
-    const hasData = typeof window !== 'undefined' && localStorage.getItem(`${p}:title`) !== null;
     startTransition(() => {
-      if (hasData) {
-        setData(loadAll(p));
-      } else {
-        // 새 키(이력서 전환 직후 등): 현재 편집 상태 유지하고 loaded만 보장
-        setData(prev => ({ ...prev, loaded: true }));
-      }
+      setData(prev => ({ ...prev, loaded: true }));
     });
   }, [p]);
 
@@ -343,5 +366,11 @@ export function useResumeStorage(userId: number | null, resumeId: number | null 
     toggleSection,
     isPublic: data.isPublic,
     setIsPublic: (v) => set('isPublic', v),
+    hasDraft: () => typeof window !== 'undefined' && localStorage.getItem(`${p}:title`) !== null,
+    restoreDraft: () => setData(loadAll(p)),
+    clearDraft: () => {
+      if (typeof window === 'undefined') return;
+      DRAFT_KEYS.forEach((key) => localStorage.removeItem(`${p}:${key}`));
+    },
   };
 }

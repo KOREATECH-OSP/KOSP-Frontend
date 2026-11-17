@@ -250,6 +250,12 @@ export default function NotificationSSEProvider({ children }: { children: React.
             throw new FatalError('Logging out');
           }
 
+          // 탭이 숨겨진 상태면 라이브러리 자동 재연결 중단
+          // visibilitychange 핸들러가 탭 복귀 시 재연결 처리
+          if (document.visibilityState === 'hidden') {
+            throw new FatalError('Tab hidden, waiting for visibility');
+          }
+
           // 기본 에러: 라이브러리가 자동 재연결 시도
           // 반환하면 재연결, throw하면 중단
         },

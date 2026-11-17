@@ -63,7 +63,7 @@ function LoginContent() {
       window.sessionStorage.setItem('kosp:oauth-callback', callbackUrl);
     }
     const redirectUri = `${window.location.origin}/api/auth/github/callback`;
-    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email`;
+    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email,read:org`;
     window.location.href = oauthUrl;
   };
 

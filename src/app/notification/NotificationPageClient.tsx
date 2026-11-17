@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import type { AuthSession } from '@/lib/auth/types';
-import { Bell, Check, Trash2, Trophy, Award, AlertTriangle, Settings, Loader2, UserPlus } from 'lucide-react';
+import { Bell, Check, Trash2, Trophy, Award, AlertTriangle, Settings, Loader2, UserPlus, Coffee } from 'lucide-react';
 import {
   getNotifications,
   markNotificationAsRead,
@@ -17,7 +17,7 @@ import Pagination from '@/common/components/Pagination';
 
 const PAGE_SIZE = 10;
 
-type FilterType = '전체' | '신고' | '챌린지' | '포인트' | '팀' | '시스템';
+type FilterType = '전체' | '신고' | '챌린지' | '포인트' | '팀' | '커피챗' | '시스템';
 
 interface NotificationPageClientProps {
   session: AuthSession | null;
@@ -29,6 +29,7 @@ const FILTERS: { id: FilterType; label: string; types: NotificationType[] | null
   { id: '챌린지', label: '챌린지', types: ['CHALLENGE_ACHIEVED'] },
   { id: '포인트', label: '포인트', types: ['POINT_EARNED'] },
   { id: '팀', label: '팀', types: ['TEAM_INVITED'] },
+  { id: '커피챗', label: '커피챗', types: ['COFFEE_CHAT_RECEIVED'] },
   { id: '시스템', label: '시스템', types: ['SYSTEM'] },
 ];
 
@@ -43,6 +44,8 @@ const getNotificationIcon = (type: NotificationType) => {
       return <Award className="h-4 w-4" />;
     case 'TEAM_INVITED':
       return <UserPlus className="h-4 w-4" />;
+    case 'COFFEE_CHAT_RECEIVED':
+      return <Coffee className="h-4 w-4" />;
     case 'SYSTEM':
       return <Settings className="h-4 w-4" />;
     default:
@@ -61,6 +64,8 @@ const getNotificationColor = (type: NotificationType) => {
       return 'bg-green-100 text-green-600';
     case 'TEAM_INVITED':
       return 'bg-sky-100 text-sky-600';
+    case 'COFFEE_CHAT_RECEIVED':
+      return 'bg-orange-100 text-orange-600';
     case 'SYSTEM':
       return 'bg-gray-100 text-gray-600';
     default:
@@ -83,6 +88,8 @@ const getNotificationLink = (notification: NotificationResponse): string => {
       return '/user/points';
     case 'TEAM_INVITED':
       return `/team/invite/${referenceId}`;
+    case 'COFFEE_CHAT_RECEIVED':
+      return '#coffeeChat';
     case 'SYSTEM':
     default:
       return '#';
@@ -445,6 +452,34 @@ export default function NotificationPageClient({ session }: NotificationPageClie
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
+                          {notification.type === 'COFFEE_CHAT_RECEIVED' ? (
+                            <button
+                              className="block w-full text-left group"
+                              onClick={() => {
+                                if (notification.referenceId) {
+                                  window.dispatchEvent(new CustomEvent('coffeeChat:openByPartner', {
+                                    detail: { partnerId: notification.referenceId },
+                                  }));
+                                }
+                                markAsRead(notification.id);
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
+                                  {notification.title}
+                                </p>
+                                {!notification.isRead && (
+                                  <span className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                                )}
+                              </div>
+                              <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <p className="mt-2 text-xs text-gray-400">
+                                {formatDate(notification.createdAt)}
+                              </p>
+                            </button>
+                          ) : (
                           <Link
                             href={getNotificationLink(notification)}
                             className="block group"
@@ -464,6 +499,7 @@ export default function NotificationPageClient({ session }: NotificationPageClie
                               {formatDate(notification.createdAt)}
                             </p>
                           </Link>
+                          )}
 
                           {/* Action Buttons */}
                           <div className="mt-3 flex items-center gap-2">

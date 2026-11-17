@@ -333,3 +333,110 @@ export interface AdminUser {
   joinedAt: string;
   lastActive: string;
 }
+
+// ============================================
+// Season Project Types
+// ============================================
+
+export interface AdminCurrentSeasonResponse {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface AdminSeasonProjectResponse {
+  id: number;
+  name: string;
+  projectLevel: number;
+  baseScore: number;
+  status: 'OPEN' | 'CLOSED';
+  closedAt: string | null;
+  note: string | null;
+}
+
+export interface AdminSeasonProjectListResponse {
+  projects: AdminSeasonProjectResponse[];
+  totalCount: number;
+  page: number;
+  size: number;
+}
+
+export interface AdminSeasonProjectMemberResponse {
+  memberId: number;
+  userId: number;
+  userName: string;
+  roleType: 'TEAM_LEAD' | 'PM' | 'MEMBER';
+  roleBonus: number;
+  scoreGranted: boolean;
+}
+
+export interface AdminSeasonProjectMemberListResponse {
+  projectId: number;
+  projectName: string;
+  projectLevel: number;
+  baseScore: number;
+  members: AdminSeasonProjectMemberResponse[];
+}
+
+
+export interface AdminSeasonItem {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
+export interface AdminSeasonListResponse {
+  seasons: AdminSeasonItem[];
+}
+
+export interface AdminSeasonCreateRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface AdminSeasonUpdateRequest {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+}
+
+// ============================================
+// Collection Status Types
+// ============================================
+
+export type CollectionStatus = 'COLLECTING' | 'NORMAL' | 'ANOMALY' | 'FAILED' | 'NOT_COLLECTED';
+
+export interface CollectionStatusItem {
+  userId: number;
+  userName: string;
+  githubLogin: string | null;
+  lastCrawling: string | null; // UTC ISO 8601
+  totalCommitCount: number;
+  collectionStatus: CollectionStatus;
+}
+
+export interface CollectionStatusListResponse {
+  users: CollectionStatusItem[];
+}
+
+export interface RepositoryCommitStat {
+  repositoryName: string;
+  totalCommitCount: number;
+  scoredCommitCount: number;
+}
+
+export interface CollectionStatusDetailResponse {
+  userId: number;
+  userName: string;
+  githubLogin: string | null;
+  lastCrawling: string | null;
+  collectionStatus: CollectionStatus;
+  totalCommitCount: number;
+  scoredCommitCount: number;
+  repositories: RepositoryCommitStat[];
+}

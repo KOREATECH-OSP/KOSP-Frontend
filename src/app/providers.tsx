@@ -10,6 +10,7 @@ import { AuthProvider, useSession } from '@/lib/auth/AuthContext';
 import type { AuthSession } from '@/lib/auth/types';
 import Image from 'next/image';
 import surprisedKori from '@/assets/images/kori/11-09 L 놀람 .png';
+import CoffeeChatPanel from '@/common/components/CoffeeChatPanel';
 
 const HEALTH_CHECK_TIMEOUT_MS = 10000;
 const HEALTH_CHECK_INTERVAL_MS = 5000;
@@ -197,6 +198,7 @@ export function Providers({ children, initialSession }: ProvidersProps) {
           <NotificationSSEProvider>
             {!isWritePage && <NoticeBanner />}
             {children}
+            <CoffeeChatPanel />
           </NotificationSSEProvider>
         </TokenManagerInitializer>
       </AuthProvider>

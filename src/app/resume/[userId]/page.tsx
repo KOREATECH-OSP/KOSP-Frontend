@@ -21,6 +21,8 @@ export default async function PublicResumePage({ params }: Props) {
   let resumeData: ResumeData | null = null;
   let profileImageUrl: string | null = null;
   let errorMessage: string | null = null;
+  // hwpx 공개 엔드포인트는 resumeId 를 요구한다. 공개 이력서 응답이 함께 준다.
+  let resumeId: number | null = null;
 
   try {
     const [resumeRes, profileRes] = await Promise.allSettled([
@@ -30,6 +32,7 @@ export default async function PublicResumePage({ params }: Props) {
 
     if (resumeRes.status === 'fulfilled') {
       resumeData = resumeRes.value.resumeData;
+      resumeId = resumeRes.value.resumeId;
     } else {
       const err = resumeRes.reason;
       if (err instanceof ApiException) {
@@ -64,7 +67,7 @@ export default async function PublicResumePage({ params }: Props) {
           <h1 className="text-sm font-semibold text-gray-900 truncate">
             {resumeTitle}
           </h1>
-          <PrintButton resumeTitle={resumeTitle} />
+          <PrintButton resumeTitle={resumeTitle} userId={userId} resumeId={resumeId} />
         </div>
       </div>
 
