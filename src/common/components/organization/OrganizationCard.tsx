@@ -52,7 +52,7 @@ export default function OrganizationCard({ organization, fromTab = 'all', isBook
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <Link href={`/organization/${organization.id}?from=${fromTab}`} className="min-w-0 flex-1">
-              <p className="truncate text-base font-bold text-gray-900 hover:text-blue-600 transition-colors">
+              <p className="truncate text-[17px] font-bold text-gray-900 hover:text-blue-600 transition-colors leading-[1.5]">
                 {organization.displayName}
               </p>
             </Link>
@@ -61,7 +61,7 @@ export default function OrganizationCard({ organization, fromTab = 'all', isBook
               <button
                 onClick={handleShare}
                 className={[
-                  'flex items-center gap-1 text-sm transition-colors',
+                  'flex items-center gap-1 text-[15px] transition-colors',
                   copied ? 'text-green-500' : 'text-gray-700 hover:text-gray-600',
                 ].join(' ')}
                 title="링크 복사"
@@ -72,7 +72,7 @@ export default function OrganizationCard({ organization, fromTab = 'all', isBook
               <button
                 onClick={() => onToggleBookmark?.(organization.id)}
                 className={[
-                  'flex items-center gap-1 text-sm transition-colors',
+                  'flex items-center gap-1 text-[15px] transition-colors',
                   isBookmarked ? 'text-red-500' : 'text-gray-700 hover:text-red-500',
                 ].join(' ')}
                 title={isBookmarked ? '찜 취소' : '찜하기'}
@@ -83,7 +83,7 @@ export default function OrganizationCard({ organization, fromTab = 'all', isBook
             </div>
           </div>
           {organization.description && (
-            <p className="text-sm text-gray-600 line-clamp-1">{organization.description}</p>
+            <p className="text-[15px] text-gray-600 line-clamp-1 leading-[1.5]">{organization.description}</p>
           )}
         </div>
       </div>
@@ -94,13 +94,13 @@ export default function OrganizationCard({ organization, fromTab = 'all', isBook
           tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center h-8 rounded-full border border-gray-200 px-3 text-sm text-gray-700"
+              className="inline-flex items-center h-8 rounded-full border border-gray-200 px-[10px] text-[15px] text-gray-700 leading-[1.5]"
             >
               #{tag}
             </span>
           ))
         ) : (
-          <span className="text-sm text-gray-300">태그 없음</span>
+          <span className="text-[15px] text-gray-300">태그 없음</span>
         )}
       </div>
     </div>

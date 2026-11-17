@@ -85,7 +85,7 @@ export default function OrganizationPageClient({
         {/* 좌측 사이드바 */}
         <aside className="w-56 flex-shrink-0">
           <div className="pb-4 pt-6 px-2">
-            <h2 className="text-2xl font-bold text-gray-900">조직</h2>
+            <h2 className="text-[24px] font-bold text-gray-900 leading-[1.5]">조직</h2>
           </div>
 
           <nav className="space-y-2">
@@ -98,7 +98,7 @@ export default function OrganizationPageClient({
                 key={key}
                 onClick={() => handleTabChange(key)}
                 className={[
-                  'w-full h-12 rounded-[6px] px-2 text-left text-sm font-medium transition-colors',
+                  'w-full h-12 rounded-[6px] px-2 text-left text-[17px] transition-colors',
                   activeTab === key
                     ? 'bg-gray-100 text-gray-900 font-semibold'
                     : 'text-gray-500 hover:bg-gray-50',
@@ -112,7 +112,7 @@ export default function OrganizationPageClient({
           <div className="mt-6">
             <Link
               href="/organization/register"
-              className="flex w-full h-12 items-center justify-center gap-1 rounded-[6px] bg-black px-4 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="flex w-full h-12 items-center justify-center gap-1 rounded-[6px] bg-black px-4 text-[17px] text-white transition hover:bg-gray-800"
             >
               <Plus className="h-4 w-4" />
               {activeTab === 'mine' ? '새로운 조직 만들기' : '조직 등록하기'}
@@ -124,7 +124,7 @@ export default function OrganizationPageClient({
         {/* 우측 메인 */}
         <div className="flex-1 min-w-0">
           <div className="py-6 flex flex-col gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-[24px] font-bold text-gray-900 leading-[1.5]">
               {activeTab === 'mine' ? '내 조직' : activeTab === 'bookmarked' ? '찜한 조직' : '전체'}
             </h1>
 
@@ -135,7 +135,7 @@ export default function OrganizationPageClient({
                 placeholder="검색어를 입력해주세요"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-[8px] border border-gray-200 bg-white py-4 pl-4 pr-12 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200"
+                className="w-full rounded-[8px] border border-gray-200 bg-white py-4 pl-4 pr-12 text-[17px] text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200 leading-[1.5]"
               />
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
             </div>
