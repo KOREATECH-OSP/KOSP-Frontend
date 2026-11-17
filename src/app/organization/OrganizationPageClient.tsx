@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Plus, Share2, Heart } from 'lucide-react';
 import { useState } from 'react';
-import type { OrganizationResponse } from '@/lib/api/organization';
+import type { OrganizationResponse, OrganizationType } from '@/lib/api/organization';
+import { ORGANIZATION_TYPE_LABELS } from '@/lib/api/organization';
 import OrganizationCard from '@/common/components/organization/OrganizationCard';
 
 interface OrganizationPageClientProps {
@@ -20,9 +21,19 @@ export default function OrganizationPageClient({
 }: OrganizationPageClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<OrganizationType | null>(null);
+
+  const TYPE_FILTERS: { value: OrganizationType | null; label: string }[] = [
+    { value: null, label: '전체' },
+    { value: 'RESEARCH_LAB', label: ORGANIZATION_TYPE_LABELS.RESEARCH_LAB },
+    { value: 'CLUB', label: ORGANIZATION_TYPE_LABELS.CLUB },
+    { value: 'DEPARTMENT', label: ORGANIZATION_TYPE_LABELS.DEPARTMENT },
+    { value: 'OTHER', label: ORGANIZATION_TYPE_LABELS.OTHER },
+  ];
 
   const organizations = activeTab === 'mine' ? myOrganizations : allOrganizations;
   const filtered = organizations.filter((org) => {
+    if (typeFilter && org.organizationType !== typeFilter) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -97,6 +108,24 @@ export default function OrganizationPageClient({
                 className="w-full rounded-[8px] border border-[#cdd1d5] bg-white py-4 pl-4 pr-12 text-[17px] text-gray-700 placeholder-[#99a1af] outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200 leading-[1.5]"
               />
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
+            </div>
+
+            {/* 조직 유형 필터 */}
+            <div className="flex gap-2 flex-wrap">
+              {TYPE_FILTERS.map(({ value, label }) => (
+                <button
+                  key={value ?? 'all'}
+                  onClick={() => setTypeFilter(value)}
+                  className={[
+                    'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
+                    typeFilter === value
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-[#cdd1d5] text-[#6a7282] hover:bg-gray-50',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 

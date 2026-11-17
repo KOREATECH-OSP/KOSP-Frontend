@@ -7,6 +7,15 @@ export interface AvailableOrganizationResponse {
   alreadyRegistered: boolean;
 }
 
+export type OrganizationType = 'RESEARCH_LAB' | 'CLUB' | 'DEPARTMENT' | 'OTHER';
+
+export const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = {
+  RESEARCH_LAB: '랩실',
+  CLUB: '동아리',
+  DEPARTMENT: '학과',
+  OTHER: '기타',
+};
+
 export interface OrganizationResponse {
   id: number;
   githubOrgId: number;
@@ -15,6 +24,7 @@ export interface OrganizationResponse {
   avatarUrl: string | null;
   description: string | null;
   tags: string | null;
+  organizationType: OrganizationType | null;
   status: 'ACTIVE' | 'PENDING' | 'DISCONNECTED';
   createdAt: string;
 }
@@ -26,6 +36,7 @@ export interface OrganizationDetailResponse {
   avatarUrl: string | null;
   description: string | null;
   tags: string | null;
+  organizationType: OrganizationType | null;
   status: 'ACTIVE' | 'PENDING' | 'DISCONNECTED';
   totalMemberCount: number;
   linkedMemberCount: number;
@@ -42,6 +53,7 @@ export interface OrganizationUpdateRequest {
   description: string;
   tags: string;
   avatarUrl?: string;
+  organizationType?: OrganizationType | null;
 }
 
 export interface OrganizationAddMemberRequest {
@@ -94,9 +106,13 @@ export interface AdminOrganizationRepoResponse {
  */
 export async function getAllOrganizations(
   accessToken: string,
-  search?: string
+  search?: string,
+  type?: OrganizationType
 ): Promise<OrganizationResponse[]> {
-  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  const qs = new URLSearchParams();
+  if (search) qs.set('search', search);
+  if (type) qs.set('type', type);
+  const params = qs.toString() ? `?${qs.toString()}` : '';
   return apiClient<OrganizationResponse[]>(`/v1/organizations${params}`, {
     cache: 'no-store',
     accessToken,

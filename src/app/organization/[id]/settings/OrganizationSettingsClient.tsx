@@ -8,8 +8,9 @@ import { ArrowLeft, Crown, Shield, Search, X } from 'lucide-react';
 import type {
   OrganizationDetailResponse,
   OrganizationMemberResponse,
+  OrganizationType,
 } from '@/lib/api/organization';
-import { updateOrganization, addOrganizationMember } from '@/lib/api/organization';
+import { updateOrganization, addOrganizationMember, ORGANIZATION_TYPE_LABELS } from '@/lib/api/organization';
 import { uploadFile } from '@/lib/api/upload';
 import { searchUsers } from '@/lib/api/user';
 import type { UserProfileResponse } from '@/lib/api/types';
@@ -73,6 +74,7 @@ export default function OrganizationSettingsClient({
   const [tags, setTags] = useState<string[]>(
     detail.tags ? detail.tags.split(',').map((t) => t.trim()).filter(Boolean) : []
   );
+  const [orgType, setOrgType] = useState<OrganizationType | null>(detail.organizationType ?? null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -152,7 +154,7 @@ export default function OrganizationSettingsClient({
       }
       await updateOrganization(
         detail.id,
-        { displayName, description, tags: tags.join(','), avatarUrl },
+        { displayName, description, tags: tags.join(','), avatarUrl, organizationType: orgType },
         accessToken
       );
       router.push(`/organization/${detail.id}`);
@@ -255,6 +257,28 @@ export default function OrganizationSettingsClient({
 
               <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
                 <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">조직 유형</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.keys(ORGANIZATION_TYPE_LABELS) as OrganizationType[]).map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setOrgType(type)}
+                        disabled={!isOwner}
+                        className={[
+                          'rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50',
+                          orgType === type
+                            ? 'border-gray-900 bg-gray-900 text-white'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                        ].join(' ')}
+                      >
+                        {ORGANIZATION_TYPE_LABELS[type]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">조직 이름</label>
                   <input
                     type="text"
@@ -347,6 +371,7 @@ export default function OrganizationSettingsClient({
                       setDisplayName(detail.displayName);
                       setDescription(detail.description ?? '');
                       setTags(detail.tags ? detail.tags.split(',').map((t) => t.trim()).filter(Boolean) : []);
+                      setOrgType(detail.organizationType ?? null);
                       setImageFile(null);
                     }}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
