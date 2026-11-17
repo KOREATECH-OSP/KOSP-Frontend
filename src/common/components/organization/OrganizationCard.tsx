@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Building2, Share2, Heart } from 'lucide-react';
+import { Building2, Share2, Heart, Check } from 'lucide-react';
+import { useState } from 'react';
 import type { OrganizationResponse } from '@/lib/api/organization';
 
 interface OrganizationCardProps {
@@ -13,9 +14,19 @@ interface OrganizationCardProps {
 }
 
 export default function OrganizationCard({ organization, fromTab = 'all', isBookmarked = false, onToggleBookmark }: OrganizationCardProps) {
+  const [copied, setCopied] = useState(false);
+
   const tags = organization.tags
     ? organization.tags.split(',').map((t) => t.trim()).filter(Boolean)
     : [];
+
+  function handleShare() {
+    const url = `${window.location.origin}/organization/${organization.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 flex flex-col gap-3">
@@ -48,11 +59,15 @@ export default function OrganizationCard({ organization, fromTab = 'all', isBook
             {/* 공유하기 / 찜하기 */}
             <div className="flex items-center gap-4 flex-shrink-0 h-8">
               <button
-                className="flex items-center gap-1 text-[15px] text-[#1e2124] hover:text-gray-600 transition-colors"
-                title="공유하기"
+                onClick={handleShare}
+                className={[
+                  'flex items-center gap-1 text-[15px] transition-colors',
+                  copied ? 'text-green-500' : 'text-[#1e2124] hover:text-gray-600',
+                ].join(' ')}
+                title="링크 복사"
               >
-                <Share2 className="h-4 w-4" />
-                공유하기
+                {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                {copied ? '복사됨' : '공유하기'}
               </button>
               <button
                 onClick={() => onToggleBookmark?.(organization.id)}
