@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Crown, Shield, Search, X } from 'lucide-react';
 import type {
@@ -9,6 +10,7 @@ import type {
   OrganizationMemberResponse,
 } from '@/lib/api/organization';
 import { updateOrganization, addOrganizationMember } from '@/lib/api/organization';
+import { uploadFile } from '@/lib/api/upload';
 import { searchUsers } from '@/lib/api/user';
 import type { UserProfileResponse } from '@/lib/api/types';
 
@@ -60,6 +62,7 @@ export default function OrganizationSettingsClient({
   currentUserId,
   initialSection,
 }: OrganizationSettingsClientProps) {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
   const [members, setMembers] = useState(initialMembers);
 
@@ -142,12 +145,17 @@ export default function OrganizationSettingsClient({
   async function handleProfileSave() {
     setProfileLoading(true);
     try {
+      let avatarUrl: string | undefined;
+      if (imageFile) {
+        const result = await uploadFile(imageFile, { accessToken });
+        avatarUrl = result.url;
+      }
       await updateOrganization(
         detail.id,
-        { displayName, description, tags: tags.join(',') },
+        { displayName, description, tags: tags.join(','), avatarUrl },
         accessToken
       );
-      alert('저장되었습니다.');
+      router.push(`/organization/${detail.id}`);
     } catch {
       alert('저장에 실패했습니다.');
     } finally {
@@ -211,7 +219,7 @@ export default function OrganizationSettingsClient({
               className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-3"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              돌아가기
+              뒤로가기
             </Link>
             <h2 className="text-xl font-bold text-gray-900">설정하기</h2>
           </div>

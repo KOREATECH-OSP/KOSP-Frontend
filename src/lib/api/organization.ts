@@ -41,6 +41,7 @@ export interface OrganizationUpdateRequest {
   displayName: string;
   description: string;
   tags: string;
+  avatarUrl?: string;
 }
 
 export interface OrganizationAddMemberRequest {

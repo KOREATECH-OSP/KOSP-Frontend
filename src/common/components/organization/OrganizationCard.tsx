@@ -14,11 +14,11 @@ export default function OrganizationCard({ organization, fromTab = 'all' }: Orga
     : [];
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col gap-3">
+    <div className="rounded-xl border border-gray-200 bg-white p-6 flex flex-col gap-3">
       {/* 상단: 아바타 + 이름 + 공유/찜 */}
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-6">
         <Link href={`/organization/${organization.id}?from=${fromTab}`} className="flex-shrink-0">
-          <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-gray-100 border border-gray-100">
+          <div className="relative h-[57px] w-[57px] overflow-hidden rounded-[6px] bg-gray-100 border border-gray-100">
             {organization.avatarUrl ? (
               <Image
                 src={organization.avatarUrl}
@@ -28,58 +28,56 @@ export default function OrganizationCard({ organization, fromTab = 'all' }: Orga
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-gray-400">
-                <Building2 className="h-5 w-5" />
+                <Building2 className="h-6 w-6" />
               </div>
             )}
           </div>
         </Link>
 
         <div className="min-w-0 flex-1">
-          <Link href={`/organization/${organization.id}?from=${fromTab}`}>
-            <p className="truncate text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors">
-              {organization.displayName}
-            </p>
-          </Link>
+          <div className="flex items-start gap-2">
+            <Link href={`/organization/${organization.id}?from=${fromTab}`} className="min-w-0 flex-1">
+              <p className="truncate text-[17px] font-bold text-[#1e2124] hover:text-blue-600 transition-colors leading-[1.5]">
+                {organization.displayName}
+              </p>
+            </Link>
+            {/* 공유하기 / 찜하기 */}
+            <div className="flex items-center gap-4 flex-shrink-0 h-8">
+              <button
+                className="flex items-center gap-1 text-[15px] text-[#1e2124] hover:text-gray-600 transition-colors"
+                title="공유하기"
+              >
+                <Share2 className="h-4 w-4" />
+                공유하기
+              </button>
+              <button
+                className="flex items-center gap-1 text-[15px] text-[#1e2124] hover:text-red-500 transition-colors"
+                title="찜하기"
+              >
+                <Heart className="h-4 w-4" />
+                찜하기
+              </button>
+            </div>
+          </div>
           {organization.description && (
-            <p className="mt-0.5 text-xs text-gray-500 line-clamp-1">{organization.description}</p>
+            <p className="text-[15px] text-[#464c53] line-clamp-1 leading-[1.5]">{organization.description}</p>
           )}
-        </div>
-
-        {/* 공유하기 / 찜하기 (UI만, 기능 보류) */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-            title="공유하기"
-          >
-            <Share2 className="h-3.5 w-3.5" />
-            공유하기
-          </button>
-          <button
-            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
-            title="찜하기"
-          >
-            <Heart className="h-3.5 w-3.5" />
-            찜하기
-          </button>
         </div>
       </div>
 
-      {/* 구분선 */}
-      <div className="border-t border-gray-100" />
-
-      {/* 태그 */}
-      <div className="flex flex-wrap gap-1.5 min-h-[24px]">
+      {/* 구분선 + 태그 */}
+      <div className="border-t border-[#cdd1d5] pt-4 flex flex-wrap gap-2">
         {tags.length > 0 ? (
           tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-600"
+              className="inline-flex items-center h-8 rounded-full border border-[#cdd1d5] px-[10px] text-[15px] text-[#1e2124] leading-[1.5]"
             >
               #{tag}
             </span>
           ))
         ) : (
-          <span className="text-xs text-gray-300">태그 없음</span>
+          <span className="text-[15px] text-gray-300">태그 없음</span>
         )}
       </div>
     </div>
