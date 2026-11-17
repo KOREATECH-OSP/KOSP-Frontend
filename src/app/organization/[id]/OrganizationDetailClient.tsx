@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Building2,
@@ -19,6 +19,8 @@ import {
   Search,
   Settings,
   Plus,
+  FileText,
+  MessageSquare,
 } from 'lucide-react';
 import type {
   OrganizationDetailResponse,
@@ -31,6 +33,11 @@ import {
   activateOrganizationRepo,
   deactivateOrganizationRepo,
 } from '@/lib/api/organization';
+import {
+  getOrganizationPosts,
+  type OrganizationPostSummary,
+  type OrganizationPostCategory,
+} from '@/lib/api/organizationPost';
 import OrganizationStatusBadge from '@/common/components/organization/OrganizationStatusBadge';
 
 interface OrganizationDetailClientProps {
@@ -42,7 +49,7 @@ interface OrganizationDetailClientProps {
   fromTab: 'all' | 'mine';
 }
 
-type ActiveTab = 'all' | 'members' | 'repositories' | 'settings';
+type ActiveTab = 'all' | 'members' | 'repositories' | 'board' | 'settings';
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
@@ -122,6 +129,9 @@ export default function OrganizationDetailClient({
   const [loadingMemberId, setLoadingMemberId] = useState<number | null>(null);
   const [loadingRepoId, setLoadingRepoId] = useState<number | null>(null);
   const [repoSearch, setRepoSearch] = useState('');
+  const [posts, setPosts] = useState<OrganizationPostSummary[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postCategory, setPostCategory] = useState<OrganizationPostCategory | undefined>(undefined);
 
   const currentMember = members.find((m) => m.userId === currentUserId);
   const currentRole = currentMember?.role ?? 'MEMBER';
@@ -182,10 +192,20 @@ export default function OrganizationDetailClient({
     }
   }
 
+  useEffect(() => {
+    if (activeTab !== 'board') return;
+    setPostsLoading(true);
+    getOrganizationPosts(detail.id, accessToken, postCategory)
+      .then(setPosts)
+      .catch(() => setPosts([]))
+      .finally(() => setPostsLoading(false));
+  }, [activeTab, postCategory, detail.id, accessToken]);
+
   const TABS: { key: ActiveTab; label: string }[] = [
     { key: 'all', label: '전체' },
     { key: 'members', label: '멤버 목록' },
     { key: 'repositories', label: '레포지토리' },
+    { key: 'board', label: '게시판' },
     { key: 'settings', label: '설정하기' },
   ];
 
@@ -423,6 +443,91 @@ export default function OrganizationDetailClient({
               ) : (
                 <div className="px-5 py-8 text-center text-sm text-gray-400">
                   멤버 정보를 불러올 수 없습니다.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 게시판 */}
+          {activeTab === 'board' && (
+            <div className="rounded-xl border border-gray-200 bg-white">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    {(['전체', 'GENERAL', 'NOTICE'] as const).map((cat) => {
+                      const label = cat === '전체' ? '전체' : cat === 'GENERAL' ? '일반' : '공지';
+                      const value = cat === '전체' ? undefined : cat;
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setPostCategory(value as OrganizationPostCategory | undefined)}
+                          className={[
+                            'px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                            postCategory === value
+                              ? 'bg-gray-900 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                          ].join(' ')}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {currentMember && (
+                  <Link
+                    href={`/organization/${detail.id}/posts/create`}
+                    className="flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    글 작성하기
+                  </Link>
+                )}
+              </div>
+
+              {postsLoading ? (
+                <div className="py-16 text-center text-sm text-gray-400">불러오는 중...</div>
+              ) : posts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <FileText className="h-10 w-10 text-gray-300 mb-3" />
+                  <p className="text-sm font-medium text-gray-500">아직 게시글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {posts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/organization/${detail.id}/posts/${post.id}`}
+                      className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {post.category === 'NOTICE' && (
+                            <span className="shrink-0 rounded-md bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                              공지
+                            </span>
+                          )}
+                          {post.visibility === 'MEMBERS_ONLY' && (
+                            <span className="shrink-0 rounded-md bg-gray-100 border border-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+                              멤버 공개
+                            </span>
+                          )}
+                          <span className="text-sm font-medium text-gray-900 truncate">{post.title}</span>
+                        </div>
+                        {post.description && (
+                          <p className="mt-0.5 text-xs text-gray-400 truncate">{post.description}</p>
+                        )}
+                        <div className="mt-1 flex items-center gap-3 text-xs text-gray-400">
+                          <span>{post.author.name}</span>
+                          <span>{formatDate(post.createdAt)}</span>
+                          <span className="flex items-center gap-0.5">
+                            <MessageSquare className="h-3 w-3" />
+                            {post.commentsCount}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
