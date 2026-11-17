@@ -125,7 +125,7 @@ export default function OrganizationPageClient({
         <div className="flex-1 min-w-0">
           <div className="py-6 flex flex-col gap-4">
             <h1 className="text-[24px] font-bold text-[#131416] leading-[1.5]">
-              {activeTab === 'mine' ? '내 조직' : '전체'}
+              {activeTab === 'mine' ? '내 조직' : activeTab === 'bookmarked' ? '찜한 조직' : '전체'}
             </h1>
 
             {/* 검색창 */}
