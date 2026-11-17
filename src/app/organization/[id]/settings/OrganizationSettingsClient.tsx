@@ -8,9 +8,10 @@ import { ArrowLeft, Crown, Shield, Search, X } from 'lucide-react';
 import type {
   OrganizationDetailResponse,
   OrganizationMemberResponse,
+  OrganizationRepoResponse,
   OrganizationType,
 } from '@/lib/api/organization';
-import { updateOrganization, addOrganizationMember, ORGANIZATION_TYPE_LABELS } from '@/lib/api/organization';
+import { updateOrganization, addOrganizationMember, ORGANIZATION_TYPE_LABELS, activateOrganizationRepo, deactivateOrganizationRepo } from '@/lib/api/organization';
 import { uploadFile } from '@/lib/api/upload';
 import { searchUsers } from '@/lib/api/user';
 import type { UserProfileResponse } from '@/lib/api/types';
@@ -20,6 +21,7 @@ type Section = 'profile' | 'members' | 'repositories' | 'board';
 interface OrganizationSettingsClientProps {
   detail: OrganizationDetailResponse;
   members: OrganizationMemberResponse[];
+  repositories: OrganizationRepoResponse[];
   accessToken: string;
   currentUserId: number;
   initialSection: Section;
@@ -59,6 +61,7 @@ function MemberRoleBadge({ role }: { role: OrganizationMemberResponse['role'] })
 export default function OrganizationSettingsClient({
   detail,
   members: initialMembers,
+  repositories: initialRepositories,
   accessToken,
   currentUserId,
   initialSection,
@@ -66,6 +69,8 @@ export default function OrganizationSettingsClient({
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
   const [members, setMembers] = useState(initialMembers);
+  const [repositories, setRepositories] = useState(initialRepositories);
+  const [repoTogglingId, setRepoTogglingId] = useState<number | null>(null);
 
   // 기본 프로필 폼 상태
   const [displayName, setDisplayName] = useState(detail.displayName);
@@ -176,6 +181,24 @@ export default function OrganizationSettingsClient({
 
   function removePendingUser(userId: number) {
     setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+  }
+
+  async function handleToggleRepo(repoId: number, currentlyActive: boolean) {
+    setRepoTogglingId(repoId);
+    try {
+      if (currentlyActive) {
+        await deactivateOrganizationRepo(detail.id, repoId, accessToken);
+      } else {
+        await activateOrganizationRepo(detail.id, repoId, accessToken);
+      }
+      setRepositories((prev) =>
+        prev.map((r) => r.id === repoId ? { ...r, isActive: !currentlyActive } : r)
+      );
+    } catch {
+      alert('저장에 실패했습니다.');
+    } finally {
+      setRepoTogglingId(null);
+    }
   }
 
   async function handleMemberAdd() {
@@ -529,13 +552,62 @@ export default function OrganizationSettingsClient({
             </div>
           )}
 
-          {/* 공유된 레포지토리 - 미구성 */}
+          {/* 공유된 레포지토리 */}
           {activeSection === 'repositories' && (
             <div>
-              <h1 className="mb-6 text-xl font-bold text-gray-900">공유된 레포지토리</h1>
-              <div className="rounded-xl border border-dashed border-gray-200 bg-white py-20 text-center">
-                <p className="text-sm text-gray-400">준비 중입니다.</p>
-              </div>
+              <h1 className="mb-1 text-xl font-bold text-gray-900">공유된 레포지토리</h1>
+              <p className="mb-6 text-sm text-gray-500">
+                활성화된 저장소만 조직 페이지에 공개됩니다. Owner 또는 Admin만 변경할 수 있습니다.
+              </p>
+
+              {repositories.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-white py-20 text-center">
+                  <p className="text-sm text-gray-400">연결된 저장소가 없습니다.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
+                  {repositories.map((repo) => {
+                    const isAdmin = currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
+                    return (
+                      <div key={repo.id} className="flex items-center justify-between gap-3 px-5 py-4">
+                        <div className="min-w-0 flex-1">
+                          <a
+                            href={repo.repositoryUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-gray-800 hover:text-blue-600 hover:underline truncate block"
+                          >
+                            {repo.repositoryName}
+                          </a>
+                          <p className="text-xs text-gray-400 mt-0.5">{repo.visibility}</p>
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleToggleRepo(repo.id, repo.isActive)}
+                            disabled={repoTogglingId === repo.id}
+                            className={[
+                              'shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
+                              repo.isActive
+                                ? 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                                : 'border-gray-900 bg-gray-900 text-white hover:bg-gray-700',
+                            ].join(' ')}
+                          >
+                            {repoTogglingId === repo.id ? '처리 중...' : repo.isActive ? '비활성화' : '활성화'}
+                          </button>
+                        )}
+                        {!isAdmin && (
+                          <span className={[
+                            'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            repo.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400',
+                          ].join(' ')}>
+                            {repo.isActive ? '활성' : '비활성'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

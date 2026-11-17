@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/server';
-import { getOrganizationDetail, getOrganizationMembers } from '@/lib/api/organization';
+import { getOrganizationDetail, getOrganizationMembers, getOrganizationRepositories } from '@/lib/api/organization';
 import { ApiException } from '@/lib/api/client';
 import OrganizationSettingsClient from './OrganizationSettingsClient';
 
@@ -34,15 +34,24 @@ export default async function OrganizationSettingsPage({ params, searchParams }:
     throw error;
   }
 
-  const members = await getOrganizationMembers(orgId, session.accessToken).catch(() => []);
+  const [members, repositories] = await Promise.all([
+    getOrganizationMembers(orgId, session.accessToken).catch(() => []),
+    getOrganizationRepositories(orgId, session.accessToken).catch(() => []),
+  ]);
+
+  const validSections = ['profile', 'members', 'repositories', 'board'] as const;
+  const initialSection = validSections.includes(section as typeof validSections[number])
+    ? (section as typeof validSections[number])
+    : 'profile';
 
   return (
     <OrganizationSettingsClient
       detail={detail}
       members={members}
+      repositories={repositories}
       accessToken={session.accessToken}
       currentUserId={parseInt(session.user.id, 10)}
-      initialSection={section === 'members' ? 'members' : 'profile'}
+      initialSection={initialSection}
     />
   );
 }
