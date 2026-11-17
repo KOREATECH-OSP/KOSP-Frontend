@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Building2, Share2, Heart } from 'lucide-react';
@@ -5,10 +7,12 @@ import type { OrganizationResponse } from '@/lib/api/organization';
 
 interface OrganizationCardProps {
   organization: OrganizationResponse;
-  fromTab?: 'all' | 'mine';
+  fromTab?: 'all' | 'mine' | 'bookmarked';
+  isBookmarked?: boolean;
+  onToggleBookmark?: (orgId: number) => void;
 }
 
-export default function OrganizationCard({ organization, fromTab = 'all' }: OrganizationCardProps) {
+export default function OrganizationCard({ organization, fromTab = 'all', isBookmarked = false, onToggleBookmark }: OrganizationCardProps) {
   const tags = organization.tags
     ? organization.tags.split(',').map((t) => t.trim()).filter(Boolean)
     : [];
@@ -51,10 +55,14 @@ export default function OrganizationCard({ organization, fromTab = 'all' }: Orga
                 공유하기
               </button>
               <button
-                className="flex items-center gap-1 text-[15px] text-[#1e2124] hover:text-red-500 transition-colors"
-                title="찜하기"
+                onClick={() => onToggleBookmark?.(organization.id)}
+                className={[
+                  'flex items-center gap-1 text-[15px] transition-colors',
+                  isBookmarked ? 'text-red-500' : 'text-[#1e2124] hover:text-red-500',
+                ].join(' ')}
+                title={isBookmarked ? '찜 취소' : '찜하기'}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={['h-4 w-4', isBookmarked ? 'fill-current' : ''].join(' ')} />
                 찜하기
               </button>
             </div>

@@ -261,6 +261,31 @@ export async function deactivateOrganizationRepo(
 }
 
 /**
+ * 조직 찜하기 토글 (로그인 필요)
+ */
+export async function toggleOrganizationBookmark(
+  orgId: number,
+  accessToken: string
+): Promise<{ isBookmarked: boolean }> {
+  return clientApiClient<{ isBookmarked: boolean }>(`/v1/organizations/${orgId}/bookmark`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+/**
+ * 찜한 조직 목록 조회
+ */
+export async function getBookmarkedOrganizations(
+  accessToken: string
+): Promise<OrganizationResponse[]> {
+  return apiClient<OrganizationResponse[]>('/v1/organizations/bookmarked', {
+    cache: 'no-store',
+    accessToken,
+  });
+}
+
+/**
  * [관리자] 전체 조직 목록 조회
  */
 export async function getAdminOrganizations(
