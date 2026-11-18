@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getPublicResume, getUserProfile } from '@/lib/api/user';
 import { ApiException } from '@/lib/api/client';
 import ResumeReadOnlyView from '@/app/user/resume/components/ResumeReadOnlyView';
+import { ResumePrintOffscreen } from '@/app/user/resume/components/ResumePrintLayout';
 import PrintButton from './PrintButton';
 import type { ResumeData } from '@/lib/api/types';
 
@@ -20,6 +21,9 @@ export default async function PublicResumePage({ params }: Props) {
   // 공개 이력서 + 프로필 병렬 조회
   let resumeData: ResumeData | null = null;
   let profileImageUrl: string | null = null;
+  // 출력 양식 머리(이름·GitHub)에 쓴다. resume_data 에는 인적사항이 없다.
+  let profileName: string | null = null;
+  let githubUrl: string | null = null;
   let errorMessage: string | null = null;
   // hwpx 공개 엔드포인트는 resumeId 를 요구한다. 공개 이력서 응답이 함께 준다.
   let resumeId: number | null = null;
@@ -48,6 +52,8 @@ export default async function PublicResumePage({ params }: Props) {
 
     if (profileRes.status === 'fulfilled') {
       profileImageUrl = profileRes.value.profileImage ?? null;
+      profileName = profileRes.value.name ?? null;
+      githubUrl = profileRes.value.githubUrl ?? null;
     }
   } catch {
     errorMessage = '이력서를 불러오지 못했습니다.';
@@ -80,6 +86,13 @@ export default async function PublicResumePage({ params }: Props) {
           visibleSections={resumeData.visibleSections}
         />
       </main>
+
+      {/* PDF 캡처 전용 출력 양식 (화면 밖 렌더) */}
+      <ResumePrintOffscreen
+        data={resumeData}
+        profile={{ name: profileName, profileImageUrl, githubUrl }}
+        visibleSections={resumeData.visibleSections}
+      />
     </div>
   );
 }

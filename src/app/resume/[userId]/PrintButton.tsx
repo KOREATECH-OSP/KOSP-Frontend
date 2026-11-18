@@ -3,6 +3,7 @@
 import { Printer } from 'lucide-react';
 import PdfDownloadButton from '@/common/components/PdfDownloadButton';
 import PdfPreviewButton from '@/common/components/PdfPreviewButton';
+import { RESUME_PRINT_TARGET_ID } from '@/common/utils/generateResumePdf';
 
 interface PrintButtonProps {
   resumeTitle?: string;
@@ -16,7 +17,7 @@ interface PrintButtonProps {
  * 공개 이력서 페이지의 PDF 미리보기 + 다운로드 + 인쇄 버튼.
  *
  * - 미리보기: 실제 생성된 PDF를 모달에서 확인하고, 거기서 PDF 또는 한글로 저장
- * - PDF 다운로드: html2canvas+jsPDF로 #resume-print-area만 캡처
+ * - PDF 다운로드: 화면 밖에 렌더한 출력 전용 양식(ResumePrintLayout)을 캡처
  * - 인쇄: CSS @media print로 인쇄 불필요한 UI 숨긴 뒤 window.print()
  *
  * <p>여기는 공개 이력서 화면이므로 한글 내려받기도 <b>공개용 엔드포인트</b>를 쓴다
@@ -30,7 +31,7 @@ export default function PrintButton({
   return (
     <div className="flex items-center gap-2">
       <PdfPreviewButton
-        targetId="resume-print-area"
+        targetId={RESUME_PRINT_TARGET_ID}
         fileName={resumeTitle}
         hwpxSource={
           userId != null && resumeId != null
@@ -39,7 +40,7 @@ export default function PrintButton({
         }
       />
       <PdfDownloadButton
-        targetId="resume-print-area"
+        targetId={RESUME_PRINT_TARGET_ID}
         fileName={resumeTitle}
       />
       <button

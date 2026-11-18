@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Eye, Loader2 } from 'lucide-react';
-import { generateResumePdf, ResumePdfError } from '@/common/utils/generateResumePdf';
+import { RESUME_PRINT_TARGET_ID } from '@/common/utils/generateResumePdf';
+import { useResumePdfGeneration } from '@/common/hooks/useResumePdfGeneration';
 import PdfPreviewModal, { type HwpxSource } from './PdfPreviewModal';
 
 interface PdfPreviewButtonProps {
@@ -25,34 +27,28 @@ interface PdfPreviewButtonProps {
  * <p>클릭 시 {@link generateResumePdf} 로 PDF 를 <b>한 번만</b> 만들어 모달에 넘긴다.
  * 모달의 다운로드 버튼도 같은 Blob 을 저장하므로, 미리보기에서 본 것과 저장되는 파일이
  * 항상 동일하다.</p>
+ *
+ * <h2>모달은 body 에 포털로 띄운다</h2>
+ * <p>이 버튼은 편집 화면 하단 고정 바, 공개 이력서 상단 바처럼 {@code backdrop-filter}
+ * ({@code backdrop-blur-*}) 가 걸린 요소 안에 놓인다. CSS 규약상 backdrop-filter·filter·transform
+ * 이 있는 요소는 {@code position:fixed} 자손의 기준 상자가 된다. 그래서 모달을 버튼 옆에
+ * 렌더하면 {@code fixed inset-0} 이 화면 전체가 아니라 <b>바의 크기</b>로 줄어들어
+ * (실측: 1280×713 화면에서 1280×60) 아무것도 뜨지 않은 것처럼 보였다.
+ * 조상 스타일과 무관하게 화면 전체를 덮도록 {@code document.body} 로 포털한다.</p>
  */
 export default function PdfPreviewButton({
-  targetId = 'resume-print-area',
+  targetId = RESUME_PRINT_TARGET_ID,
   fileName = '이력서',
   hwpxSource,
   className,
   children,
 }: PdfPreviewButtonProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { isBusy, isOwner, generate } = useResumePdfGeneration();
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
 
   const handlePreview = async () => {
-    if (isGenerating) return;
-
-    setIsGenerating(true);
-    try {
-      const blob = await generateResumePdf(targetId);
-      setPreviewBlob(blob);
-    } catch (err) {
-      console.error('PDF 생성 실패:', err);
-      alert(
-        err instanceof ResumePdfError
-          ? err.message
-          : 'PDF 생성에 실패했습니다. 다시 시도해주세요.'
-      );
-    } finally {
-      setIsGenerating(false);
-    }
+    const blob = await generate(targetId);
+    if (blob) setPreviewBlob(blob);
   };
 
   return (
@@ -60,13 +56,13 @@ export default function PdfPreviewButton({
       <button
         type="button"
         onClick={handlePreview}
-        disabled={isGenerating}
+        disabled={isBusy}
         className={
           className ??
           'flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60'
         }
       >
-        {isGenerating ? (
+        {isOwner ? (
           <>
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             미리보기 준비 중…
@@ -81,14 +77,16 @@ export default function PdfPreviewButton({
         )}
       </button>
 
-      {previewBlob && (
-        <PdfPreviewModal
-          blob={previewBlob}
-          fileName={`${fileName}.pdf`}
-          hwpxSource={hwpxSource}
-          onClose={() => setPreviewBlob(null)}
-        />
-      )}
+      {previewBlob &&
+        createPortal(
+          <PdfPreviewModal
+            blob={previewBlob}
+            fileName={`${fileName}.pdf`}
+            hwpxSource={hwpxSource}
+            onClose={() => setPreviewBlob(null)}
+          />,
+          document.body
+        )}
     </>
   );
 }

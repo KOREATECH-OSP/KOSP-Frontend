@@ -12,11 +12,16 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
+    // 이미지 최적화 프록시(/_next/image)가 임의 호스트를 대신 요청하지 않도록(SSRF)
+    // 실제로 쓰는 호스트만 허용한다. 새 이미지 출처가 생기면 여기에 추가해야 한다.
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
+      // GitHub 프로필 이미지 (profileImage / avatarUrl)
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      // https://github.com/{username}.png → avatars 로 리다이렉트
+      { protocol: 'https', hostname: 'github.com', pathname: '/*.png' },
+      // S3 업로드 파일·칭호 아이콘 (AWS_S3_CUSTOM_DOMAIN): 운영 / 개발
+      { protocol: 'https', hostname: 'static.swkoreatech.io' },
+      { protocol: 'https', hostname: 'dev.static.swkoreatech.io' },
     ],
   },
   experimental: {

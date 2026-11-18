@@ -84,11 +84,9 @@ export default function OrganizationPageClient({
       <div className="flex gap-8">
         {/* 좌측 사이드바 */}
         <aside className="w-56 flex-shrink-0">
-          <div className="pb-4 pt-6 px-2">
-            <h2 className="text-[24px] font-bold text-[#101828] leading-[1.5]">조직</h2>
-          </div>
+          <h2 className="mb-4 text-xl font-bold text-gray-900">조직</h2>
 
-          <nav className="space-y-2">
+          <nav className="space-y-1">
             {([
               { key: 'all', label: '전체' },
               { key: 'mine', label: '내 조직' },
@@ -98,10 +96,10 @@ export default function OrganizationPageClient({
                 key={key}
                 onClick={() => handleTabChange(key)}
                 className={[
-                  'w-full h-12 rounded-[6px] px-2 text-left text-[17px] transition-colors',
+                  'w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors',
                   activeTab === key
-                    ? 'bg-[#f3f4f6] text-[#101828] font-semibold'
-                    : 'text-[#6a7282] hover:bg-gray-50',
+                    ? 'bg-gray-100 text-gray-900 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                 ].join(' ')}
               >
                 {label}
@@ -109,54 +107,52 @@ export default function OrganizationPageClient({
             ))}
           </nav>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <Link
               href="/organization/register"
-              className="flex w-full h-12 items-center justify-center gap-1 rounded-[6px] bg-black px-4 text-[17px] text-white transition hover:bg-gray-800"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               <Plus className="h-4 w-4" />
               {activeTab === 'mine' ? '새로운 조직 만들기' : '조직 등록하기'}
             </Link>
           </div>
-          <p className="mt-3 px-2 text-xs text-gray-400">찜한 조직: {bookmarkedIds.size}</p>
+          <p className="mt-3 text-xs text-gray-400">찜한 조직: {bookmarkedIds.size}</p>
         </aside>
 
         {/* 우측 메인 */}
         <div className="flex-1 min-w-0">
-          <div className="py-6 flex flex-col gap-4">
-            <h1 className="text-[24px] font-bold text-[#131416] leading-[1.5]">
-              {activeTab === 'mine' ? '내 조직' : activeTab === 'bookmarked' ? '찜한 조직' : '전체'}
-            </h1>
+          <h1 className="mb-4 text-xl font-bold text-gray-900">
+            {activeTab === 'mine' ? '내 조직' : activeTab === 'bookmarked' ? '찜한 조직' : '전체'}
+          </h1>
 
-            {/* 검색창 */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="검색어를 입력해주세요"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-[8px] border border-[#cdd1d5] bg-white py-4 pl-4 pr-12 text-[17px] text-gray-700 placeholder-[#99a1af] outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200 leading-[1.5]"
-              />
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
-            </div>
+          {/* 검색창 */}
+          <div className="relative mb-4">
+            <input
+              type="text"
+              placeholder="검색어를 입력해주세요"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-4 pr-12 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-200"
+            />
+            <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          </div>
 
-            {/* 조직 유형 필터 */}
-            <div className="flex gap-2 flex-wrap">
-              {TYPE_FILTERS.map(({ value, label }) => (
-                <button
-                  key={value ?? 'all'}
-                  onClick={() => setTypeFilter(value)}
-                  className={[
-                    'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
-                    typeFilter === value
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-[#cdd1d5] text-[#6a7282] hover:bg-gray-50',
-                  ].join(' ')}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          {/* 조직 유형 필터 */}
+          <div className="flex gap-2 flex-wrap mb-5">
+            {TYPE_FILTERS.map(({ value, label }) => (
+              <button
+                key={value ?? 'all'}
+                onClick={() => setTypeFilter(value)}
+                className={[
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                  typeFilter === value
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {/* 카드 그리드 */}
