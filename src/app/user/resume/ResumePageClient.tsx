@@ -33,6 +33,7 @@ import {
 import PdfDownloadButton from '@/common/components/PdfDownloadButton';
 import PdfPreviewButton from '@/common/components/PdfPreviewButton';
 import type { HwpxSource } from '@/common/components/PdfPreviewModal';
+import { RESUME_PRINT_TARGET_ID } from '@/common/utils/generateResumePdf';
 import {
   LAST_RESUME_MESSAGE,
   JOB_ROLE_PRESETS,
@@ -40,7 +41,7 @@ import {
   normalizeJobRole,
 } from '@/lib/constants/resume';
 import { validateResumeDate, validateDateRange, formatPeriod } from '@/lib/utils/resumeDate';
-import ResumeReadOnlyView from './components/ResumeReadOnlyView';
+import { ResumePrintOffscreen } from './components/ResumePrintLayout';
 import type { AuthSession } from '@/lib/auth/types';
 import {
   getUserProfile, getMyResume, saveMyResume,
@@ -884,13 +885,13 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <PdfPreviewButton
-              targetId="resume-print-area"
+              targetId={RESUME_PRINT_TARGET_ID}
               fileName={resumeTitle || '이력서'}
               hwpxSource={hwpxSource}
               className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
             />
             <PdfDownloadButton
-              targetId="resume-print-area"
+              targetId={RESUME_PRINT_TARGET_ID}
               fileName={resumeTitle || '이력서'}
               className="flex items-center gap-2 rounded-xl bg-orange-400 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-500 disabled:opacity-60"
             />
@@ -1595,44 +1596,40 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
       </div>
       {/* /main container */}
 
-      {/* ── PDF 캡처 전용 숨김 렌더링 영역 ──────────────────────────
-           position:fixed + left:-9999px → 뷰포트 밖에 위치하므로 사용자에게 보이지 않음.
-           html2canvas는 getBoundingClientRect() 기준으로 해당 영역을 캡처하므로 정상 동작.
-           ResumeReadOnlyView 루트 div에 id="resume-print-area"가 있어 PdfDownloadButton이 바로 타겟팅함. */}
+      {/* ── PDF 캡처 전용 출력 양식 (화면 밖 렌더) ──────────────────
+           화면 UI 가 아닌 정형 이력서 양식을 캡처한다. 숨김 방식은 ResumePrintOffscreen 주석 참고. */}
       {draftLoaded && (
-        <div
-          aria-hidden="true"
-          style={{ position: 'fixed', left: '-9999px', top: 0, width: '794px', pointerEvents: 'none' }}
-        >
-          <ResumeReadOnlyView
-            data={{
-              resumeTitle,
-              headline,
-              bio,
-              jobRole,
-              techStack,
-              links: links as ResumeData['links'],
-              education: education as ResumeData['education'],
-              career: career as ResumeData['career'],
-              experience: experience as ResumeData['experience'],
-              projects: projects.map((p) => ({
-                ...p,
-                techStack: p.techStack
-                  ? p.techStack.split(',').map((s) => s.trim()).filter(Boolean)
-                  : [],
-              })) as ResumeData['projects'],
-              awards: awards as ResumeData['awards'],
-              certifications: certifications as ResumeData['certifications'],
-              coverLetters: coverLetters as ResumeData['coverLetters'],
-              customSections: customSections as ResumeData['customSections'],
-              isPublic,
-              visibleSections,
-            }}
-            profileImageUrl={profile?.profileImage ?? null}
-            resumeTitle={resumeTitle}
-            visibleSections={visibleSections}
-          />
-        </div>
+        <ResumePrintOffscreen
+          data={{
+            resumeTitle,
+            headline,
+            bio,
+            jobRole,
+            techStack,
+            links: links as ResumeData['links'],
+            education: education as ResumeData['education'],
+            career: career as ResumeData['career'],
+            experience: experience as ResumeData['experience'],
+            projects: projects.map((p) => ({
+              ...p,
+              techStack: p.techStack
+                ? p.techStack.split(',').map((s) => s.trim()).filter(Boolean)
+                : [],
+            })) as ResumeData['projects'],
+            awards: awards as ResumeData['awards'],
+            certifications: certifications as ResumeData['certifications'],
+            coverLetters: coverLetters as ResumeData['coverLetters'],
+            customSections: customSections as ResumeData['customSections'],
+            isPublic,
+            visibleSections,
+          }}
+          profile={{
+            name: profile?.name,
+            profileImageUrl: profile?.profileImage,
+            githubUrl: profile?.githubUrl,
+          }}
+          visibleSections={visibleSections}
+        />
       )}
 
       {/* ── 하단 고정 저장 바 (인쇄 제외) ─────────────────────────── */}
@@ -1673,13 +1670,13 @@ export default function ResumePageClient({ session }: ResumePageClientProps) {
           </p>
           <div className="flex items-center gap-3 ml-auto">
             <PdfPreviewButton
-              targetId="resume-print-area"
+              targetId={RESUME_PRINT_TARGET_ID}
               fileName={resumeTitle || '이력서'}
               hwpxSource={hwpxSource}
               className="print:hidden flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
             />
             <PdfDownloadButton
-              targetId="resume-print-area"
+              targetId={RESUME_PRINT_TARGET_ID}
               fileName={resumeTitle || '이력서'}
               className="print:hidden flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
             />

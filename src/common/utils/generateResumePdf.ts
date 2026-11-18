@@ -20,6 +20,15 @@
  */
 export const PDF_CAPTURE_SCALE = 2;
 
+/**
+ * PDF 캡처 대상 요소의 id.
+ *
+ * <p>화면 컴포넌트(`ResumeReadOnlyView`, id `resume-print-area`)가 아니라 출력 전용 양식
+ * `ResumePrintLayout` 의 루트다. 화면을 그대로 캡처하면 출력물이 웹 화면의 복사본이 된다.
+ * `resume-print-area` 는 브라우저 인쇄(@media print)용으로 화면 쪽에 그대로 남아 있다.</p>
+ */
+export const RESUME_PRINT_TARGET_ID = 'resume-print-document';
+
 /** 캡처 대상의 폭을 알 수 없을 때 사용할 A4 기본 폭(px, 96dpi 기준). */
 const FALLBACK_CAPTURE_WIDTH = 794;
 
@@ -92,7 +101,7 @@ function measureCutPoints(root: HTMLElement): number[] {
 /**
  * 지정한 DOM 영역을 캡처해 A4 PDF Blob 을 만든다.
  *
- * @param targetId 캡처 대상 요소의 id (보통 `resume-print-area`)
+ * @param targetId 캡처 대상 요소의 id (보통 {@link RESUME_PRINT_TARGET_ID})
  * @throws {ResumePdfError} 대상을 찾지 못했거나 캡처 결과가 비어 있는 경우
  */
 export async function generateResumePdf(targetId: string): Promise<Blob> {
