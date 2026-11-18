@@ -22,10 +22,17 @@ export const MAX_JOB_ROLES = 10;
  *
  * 과거 이력서는 jobRole 을 단일 문자열(때로는 콤마 구분)로 저장했으므로
  * 화면·PDF에서 읽을 때 반드시 이 함수를 거쳐야 기존 데이터가 깨지지 않는다.
+ *
+ * 백엔드에 이력서 필드 검증이 없어 배열 안에 문자열이 아닌 값이 섞여 들어올 수 있다.
+ * 타입만 믿고 v.trim() 을 호출하면 TypeError 로 이력서 전체가 렌더되지 않으므로
+ * 요소 단위로 타입을 확인한다.
  */
 export function normalizeJobRole(value: string[] | string | null | undefined): string[] {
   if (Array.isArray(value)) {
-    return value.map((v) => v.trim()).filter(Boolean);
+    return value
+      .filter((v): v is string => typeof v === 'string')
+      .map((v) => v.trim())
+      .filter(Boolean);
   }
   if (typeof value === 'string') {
     return value

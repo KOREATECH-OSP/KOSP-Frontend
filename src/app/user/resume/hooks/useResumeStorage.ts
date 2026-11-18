@@ -6,6 +6,19 @@ import { useState, useEffect, startTransition } from 'react';
 // 타입 정의
 // ─────────────────────────────────────────
 
+/**
+ * @deprecated 사용하지 않음 — 실제 동작하는 섹션 키 체계는
+ * `ResumePageClient` 의 `SECTION_ANCHORS` (`sec-basic`, `sec-bio`, … 접두사 형식)다.
+ *
+ * 이 타입과 {@link DEFAULT_VISIBLE}, 아래 `visibleSections`/`toggleSection` 은
+ * 접두사 없는 구 체계로, 화면 렌더(`ResumeReadOnlyView`)와 키가 맞지 않아
+ * 실제로 참조되지 않는다. `ResumePageClient` 는 자체 `visibleSections` state 를
+ * 쓰며 이 훅의 구조분해에서 두 값을 받지 않는다.
+ *
+ * localStorage draft 저장/복원(`DRAFT_KEYS`)에 얽혀 있어 제거하지 않고 남겨 둔다.
+ * 되살릴 경우 반드시 `sec-` 접두사 체계로 맞춰야 한다 — 그렇지 않으면
+ * `ResumeReadOnlyView` 의 `show()` 가 항상 true 를 반환해 모든 섹션이 노출된다.
+ */
 export type SectionKey =
   | 'headline'
   | 'bio'
@@ -123,6 +136,7 @@ export interface CustomSectionItem {
 
 export type VisibleSections = Record<SectionKey, boolean>;
 
+/** @deprecated 미사용. {@link SectionKey} 주석 참고. */
 const DEFAULT_VISIBLE: VisibleSections = {
   headline: true,
   bio: true,
@@ -264,7 +278,9 @@ export interface ResumeStorage {
   setJobRole: (v: string[]) => void;
   techStack: string[];
   setTechStack: (v: string[]) => void;
+  /** @deprecated 미사용. {@link SectionKey} 주석 참고. */
   visibleSections: VisibleSections;
+  /** @deprecated 미사용. {@link SectionKey} 주석 참고. */
   toggleSection: (key: SectionKey) => void;
   isPublic: boolean;
   setIsPublic: (v: boolean) => void;
